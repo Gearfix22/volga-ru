@@ -7,13 +7,15 @@ export const ServicesHeader: React.FC = () => {
 
   return (
     <div className="text-center mb-12 animate-fade-in">
-      <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 text-shadow font-serif">
-        {t('ourServices')}
-      </h1>
-      
-      <p className="text-xl md:text-2xl text-gray-200 leading-relaxed text-shadow max-w-4xl mx-auto">
-        {t('servicesSubtitle')}
-      </p>
+      <div className="liquid-glass rounded-3xl p-6 sm:p-8 lg:p-12 mx-auto max-w-5xl hover-glass">
+        <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 text-shadow font-serif gradient-text">
+          {t('ourServices')}
+        </h1>
+        
+        <p className="text-xl md:text-2xl text-gray-100 leading-relaxed max-w-4xl mx-auto">
+          {t('servicesSubtitle')}
+        </p>
+      </div>
     </div>
   );
 };
