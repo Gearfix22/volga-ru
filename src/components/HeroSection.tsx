@@ -38,7 +38,7 @@ export const HeroSection: React.FC = () => {
         <Button
           onClick={handleExploreServices}
           size="lg"
-          className="bg-volga-gold hover:bg-volga-gold-dark text-volga-navy font-semibold px-8 py-4 text-lg rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
+          className="bg-volga-logo-red hover:bg-red-700 text-white font-semibold px-8 py-4 text-lg rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
         >
           {t('exploreServices')}
           <ArrowRight className={`h-5 w-5 ${language === 'ar' ? 'mr-2 rotate-180' : 'ml-2'}`} />
@@ -47,7 +47,7 @@ export const HeroSection: React.FC = () => {
       
       {/* Decorative elements */}
       <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-1 h-8 bg-gradient-to-b from-volga-gold to-transparent rounded-full" />
+        <div className="w-1 h-8 bg-gradient-to-b from-volga-logo-red to-transparent rounded-full" />
       </div>
     </div>
   );

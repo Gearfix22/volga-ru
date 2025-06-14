@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -63,11 +62,13 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Premium Russian brand colors
+				// Logo-inspired brand colors
 				volga: {
-					blue: '#1e3a8a',
+					blue: '#1e40af', // Deep blue from logo
 					'blue-light': '#3b82f6',
-					'blue-dark': '#1e40af',
+					'blue-dark': '#1e3a8a',
+					'logo-blue': '#1e40af', // Main logo blue
+					'logo-red': '#dc2626', // Logo red accent
 					gold: '#fbbf24',
 					'gold-light': '#fcd34d',
 					'gold-dark': '#f59e0b',
