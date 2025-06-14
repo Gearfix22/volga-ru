@@ -5,6 +5,7 @@ export interface TransportationDetails {
   date: string;
   time: string;
   vehicleType: string;
+  passengers?: string;
 }
 
 export interface HotelDetails {
@@ -13,6 +14,8 @@ export interface HotelDetails {
   checkin: string;
   checkout: string;
   roomType: string;
+  guests?: string;
+  specialRequests?: string;
 }
 
 export interface EventDetails {
@@ -20,12 +23,15 @@ export interface EventDetails {
   eventLocation: string;
   eventDate: string;
   tickets: string;
+  ticketType?: string;
 }
 
 export interface TripDetails {
   duration: string;
   regions: string;
   interests: string[];
+  budget?: string;
+  additionalInfo?: string;
 }
 
 export type ServiceDetails = TransportationDetails | HotelDetails | EventDetails | TripDetails | {};

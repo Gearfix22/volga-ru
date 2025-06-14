@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
@@ -9,11 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowRight, Car, Hotel, Calendar, MapPin } from 'lucide-react';
+import { ArrowRight, User, Mail, Phone, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { ServiceTypeSelector } from '@/components/booking/ServiceTypeSelector';
+import { ServiceDetailsForm } from '@/components/booking/ServiceDetailsForm';
+import { PricingDisplay } from '@/components/booking/PricingDisplay';
 import type { ServiceDetails, UserInfo } from '@/types/booking';
 
 const Booking = () => {
@@ -30,14 +32,29 @@ const Booking = () => {
     language: 'english'
   });
 
+  const serviceFromUrl = searchParams.get('service');
+  const isPreSelected = !!serviceFromUrl;
+
   // Pre-select service type from URL parameters
   useEffect(() => {
-    const serviceFromUrl = searchParams.get('service');
     if (serviceFromUrl) {
-      setServiceType(serviceFromUrl);
-      console.log(`Pre-selecting service type: ${serviceFromUrl}`);
+      const serviceMap: { [key: string]: string } = {
+        'transportation': 'Transportation',
+        'hotel': 'Hotels',
+        'hotels': 'Hotels',
+        'event': 'Events',
+        'events': 'Events',
+        'trip': 'Custom Trips',
+        'trips': 'Custom Trips'
+      };
+      
+      const mappedService = serviceMap[serviceFromUrl.toLowerCase()] || 
+                           serviceFromUrl.charAt(0).toUpperCase() + serviceFromUrl.slice(1);
+      
+      setServiceType(mappedService);
+      console.log(`Pre-selecting service type: ${mappedService}`);
     }
-  }, [searchParams]);
+  }, [serviceFromUrl]);
 
   const updateServiceDetail = (key: string, value: string | string[]) => {
     setServiceDetails(prev => ({
@@ -53,28 +70,34 @@ const Booking = () => {
     }));
   };
 
-  const calculatePrice = () => {
-    // Basic pricing logic - you can expand this
-    const basePrices = {
-      transportation: 50,
-      hotel: 100,
-      event: 75,
-      trip: 200
-    };
-    
-    return basePrices[serviceType as keyof typeof basePrices] || 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const validateForm = () => {
     if (!serviceType) {
       toast({
         title: t('serviceRequired'),
         description: t('pleaseSelectService'),
         variant: "destructive"
       });
-      return;
+      return false;
+    }
+
+    // Validate required service details
+    const details = serviceDetails as any;
+    const requiredFields: { [key: string]: string[] } = {
+      'Transportation': ['pickup', 'dropoff', 'date', 'time', 'vehicleType'],
+      'Hotels': ['city', 'checkin', 'checkout', 'roomType'],
+      'Events': ['eventName', 'eventLocation', 'eventDate', 'tickets'],
+      'Custom Trips': ['duration', 'regions']
+    };
+
+    const missing = requiredFields[serviceType]?.filter(field => !details[field]) || [];
+    
+    if (missing.length > 0) {
+      toast({
+        title: "Missing Required Information",
+        description: `Please fill in: ${missing.join(', ')}`,
+        variant: "destructive"
+      });
+      return false;
     }
 
     if (!userInfo.fullName || !userInfo.email || !userInfo.phone) {
@@ -83,6 +106,38 @@ const Booking = () => {
         description: t('fillRequiredFields'),
         variant: "destructive"
       });
+      return false;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(userInfo.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const calculatePrice = () => {
+    const basePrices = {
+      'Transportation': 50,
+      'Hotels': 100,
+      'Events': 75,
+      'Custom Trips': 200
+    };
+    
+    return basePrices[serviceType as keyof typeof basePrices] || 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
       return;
     }
 
@@ -94,240 +149,17 @@ const Booking = () => {
       totalPrice
     };
 
+    // Save to localStorage as backup
+    localStorage.setItem('bookingData', JSON.stringify(bookingData));
+
+    toast({
+      title: "Booking Details Saved",
+      description: "Proceeding to payment...",
+    });
+
     navigate('/payment', {
       state: { bookingData }
     });
-  };
-
-  const renderServiceForm = () => {
-    const details = serviceDetails as any;
-    
-    switch (serviceType) {
-      case 'transportation':
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="pickup">{t('pickupLocation')} *</Label>
-                <Input
-                  id="pickup"
-                  value={details.pickup || ''}
-                  onChange={(e) => updateServiceDetail('pickup', e.target.value)}
-                  placeholder={t('enterPickupLocation')}
-                />
-              </div>
-              <div>
-                <Label htmlFor="dropoff">{t('dropoffLocation')} *</Label>
-                <Input
-                  id="dropoff"
-                  value={details.dropoff || ''}
-                  onChange={(e) => updateServiceDetail('dropoff', e.target.value)}
-                  placeholder={t('enterDropoffLocation')}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="date">{t('date')} *</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={details.date || ''}
-                  onChange={(e) => updateServiceDetail('date', e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="time">{t('time')} *</Label>
-                <Input
-                  id="time"
-                  type="time"
-                  value={details.time || ''}
-                  onChange={(e) => updateServiceDetail('time', e.target.value)}
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="vehicleType">{t('vehicleType')}</Label>
-              <Select onValueChange={(value) => updateServiceDetail('vehicleType', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('selectVehicleType')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sedan">{t('sedan')}</SelectItem>
-                  <SelectItem value="suv">{t('suv')}</SelectItem>
-                  <SelectItem value="minivan">{t('minivan')}</SelectItem>
-                  <SelectItem value="bus">{t('bus')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-
-      case 'hotel':
-        return (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="city">{t('city')} *</Label>
-                <Input
-                  id="city"
-                  value={details.city || ''}
-                  onChange={(e) => updateServiceDetail('city', e.target.value)}
-                  placeholder={t('enterCityName')}
-                />
-              </div>
-              <div>
-                <Label htmlFor="hotel">{t('hotel')}</Label>
-                <Input
-                  id="hotel"
-                  value={details.hotel || ''}
-                  onChange={(e) => updateServiceDetail('hotel', e.target.value)}
-                  placeholder={t('preferredHotel')}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="checkin">{t('checkinDate')} *</Label>
-                <Input
-                  id="checkin"
-                  type="date"
-                  value={details.checkin || ''}
-                  onChange={(e) => updateServiceDetail('checkin', e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="checkout">{t('checkoutDate')} *</Label>
-                <Input
-                  id="checkout"
-                  type="date"
-                  value={details.checkout || ''}
-                  onChange={(e) => updateServiceDetail('checkout', e.target.value)}
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="roomType">{t('roomType')}</Label>
-              <Select onValueChange={(value) => updateServiceDetail('roomType', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('selectRoomType')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="single">{t('singleRoom')}</SelectItem>
-                  <SelectItem value="double">{t('doubleRoom')}</SelectItem>
-                  <SelectItem value="suite">{t('suite')}</SelectItem>
-                  <SelectItem value="family">{t('familyRoom')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        );
-
-      case 'event':
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="eventName">{t('eventName')} *</Label>
-              <Input
-                id="eventName"
-                value={details.eventName || ''}
-                onChange={(e) => updateServiceDetail('eventName', e.target.value)}
-                placeholder={t('enterEventName')}
-              />
-            </div>
-            <div>
-              <Label htmlFor="eventLocation">{t('eventLocation')} *</Label>
-              <Input
-                id="eventLocation"
-                value={details.eventLocation || ''}
-                onChange={(e) => updateServiceDetail('eventLocation', e.target.value)}
-                placeholder={t('enterEventLocation')}
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="eventDate">{t('eventDate')} *</Label>
-                <Input
-                  id="eventDate"
-                  type="date"
-                  value={details.eventDate || ''}
-                  onChange={(e) => updateServiceDetail('eventDate', e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="tickets">{t('numberOfTickets')} *</Label>
-                <Input
-                  id="tickets"
-                  type="number"
-                  min="1"
-                  value={details.tickets || ''}
-                  onChange={(e) => updateServiceDetail('tickets', e.target.value)}
-                  placeholder="1"
-                />
-              </div>
-            </div>
-          </div>
-        );
-
-      case 'trip':
-        const interests = details.interests || [];
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="duration">{t('tripDuration')} *</Label>
-              <Select onValueChange={(value) => updateServiceDetail('duration', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('selectDuration')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1-3-days">{t('oneToDays')}</SelectItem>
-                  <SelectItem value="4-7-days">{t('fourToSevenDays')}</SelectItem>
-                  <SelectItem value="1-2-weeks">{t('oneToTwoWeeks')}</SelectItem>
-                  <SelectItem value="3-4-weeks">{t('threeToFourWeeks')}</SelectItem>
-                  <SelectItem value="1-month+">{t('oneMonthPlus')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="regions">{t('regionsToVisit')} *</Label>
-              <Textarea
-                id="regions"
-                value={details.regions || ''}
-                onChange={(e) => updateServiceDetail('regions', e.target.value)}
-                placeholder={t('describeRegions')}
-                rows={3}
-              />
-            </div>
-            <div>
-              <Label>{t('interests')}</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                {[t('history'), t('culture'), t('nature'), t('adventure'), t('food'), t('shopping'), t('nightlife'), t('architecture'), t('museums')].map((interest, index) => {
-                  const interestKeys = ['history', 'culture', 'nature', 'adventure', 'food', 'shopping', 'nightlife', 'architecture', 'museums'];
-                  const interestKey = interestKeys[index];
-                  return (
-                    <div key={interestKey} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={interestKey}
-                        checked={interests.includes(interest)}
-                        onCheckedChange={(checked) => {
-                          const newInterests = checked
-                            ? [...interests, interest]
-                            : interests.filter((i: string) => i !== interest);
-                          updateServiceDetail('interests', newInterests);
-                        }}
-                      />
-                      <Label htmlFor={interestKey} className="text-sm">{interest}</Label>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
   };
 
   return (
@@ -346,113 +178,104 @@ const Booking = () => {
               {t('bookYourService')}
             </h1>
             <p className="text-xl text-slate-600 dark:text-slate-400">
-              {t('chooseServiceDetails')}
+              {isPreSelected 
+                ? `Complete your ${serviceType} booking details`
+                : t('chooseServiceDetails')
+              }
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Service Selection - Only show if no service is pre-selected */}
-            {!searchParams.get('service') && (
-              <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
-                <CardHeader>
-                  <CardTitle>{t('selectServiceType')}</CardTitle>
-                  <CardDescription>{t('chooseServiceYouNeed')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[
-                      { id: 'transportation', label: t('transportation'), icon: Car },
-                      { id: 'hotel', label: t('hotelReservation'), icon: Hotel },
-                      { id: 'event', label: t('eventBooking'), icon: Calendar },
-                      { id: 'trip', label: t('customTrip'), icon: MapPin }
-                    ].map(({ id, label, icon: Icon }) => (
-                      <Card
-                        key={id}
-                        className={`cursor-pointer transition-all hover:shadow-md ${
-                          serviceType === id ? 'ring-2 ring-primary bg-primary/5' : ''
-                        }`}
-                        onClick={() => setServiceType(id)}
-                      >
-                        <CardContent className="p-4 text-center">
-                          <Icon className="h-8 w-8 mx-auto mb-2 text-primary" />
-                          <p className="font-medium">{label}</p>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {/* Service Type Selection */}
+            <ServiceTypeSelector
+              serviceType={serviceType}
+              onSelectService={setServiceType}
+              preSelected={isPreSelected}
+            />
 
             {/* Service Details Form */}
             {serviceType && (
-              <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
-                <CardHeader>
-                  <CardTitle>{t('serviceDetails')}</CardTitle>
-                  <CardDescription>{t('provideSpecificInfo')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {renderServiceForm()}
-                  
-                  {/* Price Display */}
-                  {serviceType && (
-                    <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">Estimated Price:</span>
-                        <span className="text-2xl font-bold text-primary">${calculatePrice()}</span>
-                      </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                        Final price will be confirmed after consultation
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              <>
+                <div>
+                  <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-4">
+                    {serviceType} Details
+                  </h2>
+                  <ServiceDetailsForm
+                    serviceType={serviceType}
+                    serviceDetails={serviceDetails}
+                    onUpdateDetail={updateServiceDetail}
+                  />
+                </div>
+
+                {/* Pricing Display */}
+                <PricingDisplay
+                  serviceType={serviceType}
+                  serviceDetails={serviceDetails}
+                />
+              </>
             )}
 
             {/* User Information */}
             <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
               <CardHeader>
-                <CardTitle>{t('contactInformation')}</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  {t('contactInformation')}
+                </CardTitle>
                 <CardDescription>{t('contactInfoDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="fullName">{t('fullName')} *</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      {t('fullName')} *
+                    </Label>
                     <Input
                       id="fullName"
                       value={userInfo.fullName}
                       onChange={(e) => updateUserInfo('fullName', e.target.value)}
                       placeholder={t('enterFullName')}
+                      className="focus:ring-2 focus:ring-primary"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="email">{t('emailAddress')} *</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      {t('emailAddress')} *
+                    </Label>
                     <Input
                       id="email"
                       type="email"
                       value={userInfo.email}
                       onChange={(e) => updateUserInfo('email', e.target.value)}
                       placeholder={t('enterEmail')}
+                      className="focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="phone">{t('phoneNumber')} *</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      {t('phoneNumber')} *
+                    </Label>
                     <Input
                       id="phone"
                       type="tel"
                       value={userInfo.phone}
                       onChange={(e) => updateUserInfo('phone', e.target.value)}
                       placeholder={t('enterPhone')}
+                      className="focus:ring-2 focus:ring-primary"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="language">{t('preferredLanguage')}</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="language" className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      {t('preferredLanguage')}
+                    </Label>
                     <Select value={userInfo.language} onValueChange={(value) => updateUserInfo('language', value)}>
-                      <SelectTrigger>
+                      <SelectTrigger className="focus:ring-2 focus:ring-primary">
                         <SelectValue placeholder={t('selectLanguage')} />
                       </SelectTrigger>
                       <SelectContent>
@@ -468,9 +291,14 @@ const Booking = () => {
 
             {/* Submit Button */}
             <div className="text-center">
-              <Button type="submit" size="lg" className="px-8">
+              <Button 
+                type="submit" 
+                size="lg" 
+                className="px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                disabled={!serviceType || !userInfo.fullName || !userInfo.email || !userInfo.phone}
+              >
                 {t('proceedToPayment')}
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </div>
           </form>

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { BookingData } from '@/types/booking';
 
@@ -16,7 +15,7 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
   }
 
   try {
-    // Insert main booking record
+    // Insert main booking record with enhanced service details
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .insert({
@@ -42,17 +41,19 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
       throw bookingError;
     }
 
-    // Insert service-specific details based on service type
+    // Insert service-specific details with enhanced data
     if (bookingData.serviceType === 'Transportation' && 'pickup' in bookingData.serviceDetails) {
+      const details = bookingData.serviceDetails;
       const { error: transportError } = await supabase
         .from('transportation_bookings')
         .insert({
           booking_id: booking.id,
-          pickup_location: bookingData.serviceDetails.pickup,
-          dropoff_location: bookingData.serviceDetails.dropoff,
-          travel_date: bookingData.serviceDetails.date,
-          travel_time: bookingData.serviceDetails.time,
-          vehicle_type: bookingData.serviceDetails.vehicleType
+          pickup_location: details.pickup,
+          dropoff_location: details.dropoff,
+          travel_date: details.date,
+          travel_time: details.time,
+          vehicle_type: details.vehicleType,
+          passengers: details.passengers || '1'
         });
 
       if (transportError) {
@@ -61,15 +62,18 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
     }
 
     if (bookingData.serviceType === 'Hotels' && 'city' in bookingData.serviceDetails) {
+      const details = bookingData.serviceDetails;
       const { error: hotelError } = await supabase
         .from('hotel_bookings')
         .insert({
           booking_id: booking.id,
-          city: bookingData.serviceDetails.city,
-          hotel_name: bookingData.serviceDetails.hotel,
-          checkin_date: bookingData.serviceDetails.checkin,
-          checkout_date: bookingData.serviceDetails.checkout,
-          room_type: bookingData.serviceDetails.roomType
+          city: details.city,
+          hotel_name: details.hotel || 'To be determined',
+          checkin_date: details.checkin,
+          checkout_date: details.checkout,
+          room_type: details.roomType,
+          guests: details.guests || '1',
+          special_requests: details.specialRequests || null
         });
 
       if (hotelError) {
@@ -78,14 +82,16 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
     }
 
     if (bookingData.serviceType === 'Events' && 'eventName' in bookingData.serviceDetails) {
+      const details = bookingData.serviceDetails;
       const { error: eventError } = await supabase
         .from('event_bookings')
         .insert({
           booking_id: booking.id,
-          event_name: bookingData.serviceDetails.eventName,
-          event_location: bookingData.serviceDetails.eventLocation,
-          event_date: bookingData.serviceDetails.eventDate,
-          tickets_quantity: bookingData.serviceDetails.tickets
+          event_name: details.eventName,
+          event_location: details.eventLocation,
+          event_date: details.eventDate,
+          tickets_quantity: details.tickets,
+          ticket_type: details.ticketType || 'general'
         });
 
       if (eventError) {
@@ -94,13 +100,16 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
     }
 
     if (bookingData.serviceType === 'Custom Trips' && 'duration' in bookingData.serviceDetails) {
+      const details = bookingData.serviceDetails;
       const { error: tripError } = await supabase
         .from('custom_trip_bookings')
         .insert({
           booking_id: booking.id,
-          duration: bookingData.serviceDetails.duration,
-          regions: bookingData.serviceDetails.regions,
-          interests: bookingData.serviceDetails.interests || []
+          duration: details.duration,
+          regions: details.regions,
+          interests: details.interests || [],
+          budget_range: details.budget || null,
+          additional_info: details.additionalInfo || null
         });
 
       if (tripError) {
@@ -108,7 +117,7 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
       }
     }
 
-    console.log('Booking created successfully:', booking);
+    console.log('Enhanced booking created successfully:', booking);
     return booking;
 
   } catch (error) {
