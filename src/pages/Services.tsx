@@ -19,8 +19,8 @@ const Services = () => {
       <Navigation />
       
       {/* Main Content */}
-      <div className="relative z-10 pt-12 sm:pt-14 lg:pt-16 xl:pt-20 pb-6 sm:pb-8 lg:pb-12">
-        <div className="container mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 max-w-7xl">
+      <div className="relative z-10 pt-10 sm:pt-12 lg:pt-14 xl:pt-16 pb-4 sm:pb-6 lg:pb-8">
+        <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 max-w-7xl">
           <ServicesHeader />
           <ServicesTabs activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
           <ServicesGrid activeCategory={activeCategory} />

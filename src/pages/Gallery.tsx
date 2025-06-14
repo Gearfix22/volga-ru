@@ -63,24 +63,24 @@ const Gallery = () => {
       <Navigation />
       
       {/* Main Content */}
-      <div className="relative z-10 pt-12 sm:pt-14 lg:pt-16 xl:pt-20 pb-6 sm:pb-8 lg:pb-12">
-        <div className="container mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 max-w-7xl">
+      <div className="relative z-10 pt-10 sm:pt-12 lg:pt-14 xl:pt-16 pb-4 sm:pb-6 lg:pb-8">
+        <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 max-w-7xl">
           {/* Header */}
-          <div className="text-center mb-8 sm:mb-10 lg:mb-12">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 sm:mb-6 font-serif leading-tight px-2">
+          <div className="text-center mb-6 sm:mb-8 lg:mb-10">
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 sm:mb-4 font-serif leading-tight px-1">
               <span className="kremlin-text">GALLERY</span>
             </h1>
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-russian-cream max-w-4xl mx-auto px-2 leading-relaxed">
+            <p className="text-xs sm:text-sm md:text-base lg:text-lg text-russian-cream max-w-3xl mx-auto px-1 leading-relaxed">
               Discover the magnificent landmarks and architectural wonders of Russia
             </p>
           </div>
 
           {/* Gallery Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             {landmarks.map((landmark) => (
               <Card 
                 key={landmark.id} 
-                className="group overflow-hidden bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-[1.02] sm:hover:scale-105"
+                className="group overflow-hidden bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/15 transition-all duration-300 hover:scale-[1.02]"
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img
@@ -89,12 +89,12 @@ const Gallery = () => {
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4">
-                    <h3 className="text-white font-bold text-sm sm:text-base lg:text-lg mb-1 leading-tight">{landmark.name}</h3>
+                  <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 right-2 sm:right-3">
+                    <h3 className="text-white font-bold text-sm sm:text-base lg:text-lg mb-0.5 leading-tight">{landmark.name}</h3>
                     <p className="text-russian-cream text-xs sm:text-sm">{landmark.location}</p>
                   </div>
                 </div>
-                <CardContent className="p-3 sm:p-4">
+                <CardContent className="p-2 sm:p-3">
                   <p className="text-white/80 text-xs sm:text-sm leading-relaxed">{landmark.description}</p>
                 </CardContent>
               </Card>
@@ -102,17 +102,17 @@ const Gallery = () => {
           </div>
 
           {/* Call to Action */}
-          <div className="text-center mt-8 sm:mt-10 lg:mt-12">
-            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto">
-              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-3 sm:mb-4 font-serif leading-tight">
+          <div className="text-center mt-6 sm:mt-8 lg:mt-10">
+            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-3 sm:p-5 lg:p-6 max-w-3xl mx-auto">
+              <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-white mb-2 sm:mb-3 font-serif leading-tight">
                 Experience These Landmarks
               </h2>
-              <p className="text-russian-cream mb-4 sm:mb-6 text-sm sm:text-base leading-relaxed px-2">
+              <p className="text-russian-cream mb-3 sm:mb-4 text-xs sm:text-sm lg:text-base leading-relaxed px-1">
                 Book our guided tours to visit these incredible Russian landmarks with expert local guides
               </p>
               <button
                 onClick={() => window.location.href = '/services'}
-                className="bg-russian-gold hover:bg-russian-gold/90 text-white px-6 sm:px-8 py-2.5 sm:py-3 rounded-md font-semibold transition-colors text-sm sm:text-base"
+                className="bg-russian-gold hover:bg-russian-gold/90 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-md font-semibold transition-colors text-sm sm:text-base"
               >
                 Explore Our Tours
               </button>

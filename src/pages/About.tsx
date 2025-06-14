@@ -17,21 +17,21 @@ const About = () => {
       <Navigation />
       
       {/* Main Content */}
-      <div className="relative z-10 pt-16 sm:pt-20 lg:pt-24 pb-8 sm:pb-12">
-        <div className="container mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 max-w-6xl">
+      <div className="relative z-10 pt-12 sm:pt-14 lg:pt-16 pb-6 sm:pb-8">
+        <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 max-w-6xl">
           <div className="max-w-5xl mx-auto">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-6 sm:mb-8 text-center text-shadow-elegant font-serif leading-tight px-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 sm:mb-6 text-center text-shadow-elegant font-serif leading-tight px-1">
               {t('aboutUs')}
             </h1>
             
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6 lg:p-8 text-white border border-russian-gold/20">
-              <p className="text-sm sm:text-base lg:text-lg leading-relaxed mb-4 sm:mb-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-5 lg:p-6 text-white border border-russian-gold/20">
+              <p className="text-sm sm:text-base lg:text-lg leading-relaxed mb-3 sm:mb-5">
                 {t('aboutDescription')}
               </p>
               
-              <div className="grid sm:grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mt-6 sm:mt-8">
+              <div className="grid sm:grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-4 sm:mt-6">
                 <div>
-                  <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold mb-3 sm:mb-4 text-russian-gold">
+                  <h3 className="text-base sm:text-lg lg:text-xl font-semibold mb-2 sm:mb-3 text-russian-gold">
                     {t('ourMission')}
                   </h3>
                   <p className="text-russian-cream text-sm sm:text-base leading-relaxed">
@@ -40,7 +40,7 @@ const About = () => {
                 </div>
                 
                 <div>
-                  <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold mb-3 sm:mb-4 text-russian-gold">
+                  <h3 className="text-base sm:text-lg lg:text-xl font-semibold mb-2 sm:mb-3 text-russian-gold">
                     {t('ourVision')}
                   </h3>
                   <p className="text-russian-cream text-sm sm:text-base leading-relaxed">

@@ -47,28 +47,28 @@ const Contact = () => {
       <Navigation />
       
       {/* Main Content */}
-      <div className="relative z-10 pt-16 sm:pt-20 lg:pt-24 pb-8 sm:pb-12">
-        <div className="container mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 max-w-6xl">
+      <div className="relative z-10 pt-12 sm:pt-14 lg:pt-16 pb-6 sm:pb-8">
+        <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 max-w-6xl">
           <div className="max-w-5xl mx-auto">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-6 sm:mb-8 text-center text-shadow font-serif leading-tight px-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4 sm:mb-6 text-center text-shadow font-serif leading-tight px-1">
               {t('contactUs')}
             </h1>
             
-            <div className="grid sm:grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+            <div className="grid sm:grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
               {contactMethods.map((method, index) => (
-                <div key={index} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 sm:p-6">
-                  <div className="flex items-start sm:items-center space-x-3 sm:space-x-4">
-                    <div className="bg-volga-logo-blue p-2 sm:p-3 rounded-full flex-shrink-0">
-                      <method.icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                <div key={index} className="bg-white/10 backdrop-blur-sm rounded-xl p-3 sm:p-4 lg:p-5">
+                  <div className="flex items-start space-x-2 sm:space-x-3">
+                    <div className="bg-volga-logo-blue p-1.5 sm:p-2 lg:p-2.5 rounded-full flex-shrink-0">
+                      <method.icon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-white font-semibold text-base sm:text-lg mb-1">{method.title}</h3>
+                      <h3 className="text-white font-semibold text-sm sm:text-base lg:text-lg mb-1">{method.title}</h3>
                       {method.href === '#' ? (
-                        <p className="text-gray-200 text-sm sm:text-base leading-relaxed break-words">{method.value}</p>
+                        <p className="text-gray-200 text-xs sm:text-sm lg:text-base leading-relaxed break-words">{method.value}</p>
                       ) : (
                         <a 
                           href={method.href}
-                          className="text-gray-200 hover:text-white transition-colors text-sm sm:text-base leading-relaxed break-words block"
+                          className="text-gray-200 hover:text-white transition-colors text-xs sm:text-sm lg:text-base leading-relaxed break-words block"
                           target={method.href.startsWith('http') ? '_blank' : undefined}
                           rel={method.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                         >
