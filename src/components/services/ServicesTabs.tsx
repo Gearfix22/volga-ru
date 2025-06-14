@@ -21,13 +21,13 @@ export const ServicesTabs: React.FC<ServicesTabsProps> = ({ activeCategory, setA
 
   return (
     <div className="flex justify-center mb-8 sm:mb-12 animate-slide-up animation-delay-200 px-4 sm:px-0">
-      <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full max-w-4xl">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 liquid-glass border-0 h-auto p-2 rounded-2xl">
+      <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full max-w-5xl">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 liquid-glass border-0 h-auto p-3 rounded-3xl backdrop-blur-xl">
           {categories.map((category) => (
             <TabsTrigger
               key={category.id}
               value={category.id}
-              className="text-white data-[state=active]:liquid-glass-button data-[state=active]:text-white text-xs sm:text-sm py-3 px-2 sm:px-3 rounded-xl transition-all duration-300 hover-glass"
+              className="text-white/90 data-[state=active]:liquid-glass-button data-[state=active]:text-white data-[state=active]:logo-gradient-bg text-xs sm:text-sm py-3 px-2 sm:px-4 rounded-2xl transition-all duration-300 hover-glass font-medium"
             >
               {category.label}
             </TabsTrigger>
