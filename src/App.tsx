@@ -9,6 +9,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { SplashScreen } from "@/components/SplashScreen";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
+import Gallery from "./pages/Gallery";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
@@ -39,6 +40,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/services" element={<Services />} />
+              <Route path="/gallery" element={<Gallery />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/booking" element={<Booking />} />
