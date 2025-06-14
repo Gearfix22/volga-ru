@@ -3,7 +3,6 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import { Logo } from './Logo';
 import { Menu, X } from 'lucide-react';
 
 export const Navigation: React.FC = () => {
@@ -25,9 +24,17 @@ export const Navigation: React.FC = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-volga-navy/95 backdrop-blur-sm border-b border-white/10">
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <div className="flex-shrink-0">
-            <Logo showFullBranding={false} size="small" />
+          {/* Logo with Company Name */}
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
+            <img 
+              src="/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png"
+              alt="Volga Services Logo"
+              className="w-10 h-10"
+            />
+            <span className="text-white font-bold text-xl">
+              <span className="gradient-text">VOLGA</span>
+              <span className="ml-2">SERVICES</span>
+            </span>
           </div>
 
           {/* Desktop Navigation */}
