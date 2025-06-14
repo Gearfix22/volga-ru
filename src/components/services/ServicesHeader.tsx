@@ -11,7 +11,7 @@ export const ServicesHeader: React.FC = () => {
         {t('ourServices')}
       </h1>
       
-      <p className="text-xl md:text-2xl text-coastal-pearl leading-relaxed text-shadow-elegant max-w-4xl mx-auto">
+      <p className="text-xl md:text-2xl text-russian-cream leading-relaxed text-shadow-elegant max-w-4xl mx-auto">
         {t('servicesSubtitle')}
       </p>
     </div>

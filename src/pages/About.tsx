@@ -20,30 +20,30 @@ const About = () => {
       <div className="relative z-10 pt-24 pb-12">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-8 text-center text-shadow font-serif">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-8 text-center text-shadow-elegant font-serif">
               {t('aboutUs')}
             </h1>
             
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-white">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-white border border-russian-gold/20">
               <p className="text-lg leading-relaxed mb-6">
                 {t('aboutDescription')}
               </p>
               
               <div className="grid md:grid-cols-2 gap-8 mt-8">
                 <div>
-                  <h3 className="text-2xl font-semibold mb-4 text-volga-logo-blue">
+                  <h3 className="text-2xl font-semibold mb-4 text-russian-gold">
                     {t('ourMission')}
                   </h3>
-                  <p className="text-gray-200">
+                  <p className="text-russian-cream">
                     {t('missionDescription')}
                   </p>
                 </div>
                 
                 <div>
-                  <h3 className="text-2xl font-semibold mb-4 text-volga-logo-blue">
+                  <h3 className="text-2xl font-semibold mb-4 text-russian-gold">
                     {t('ourVision')}
                   </h3>
-                  <p className="text-gray-200">
+                  <p className="text-russian-cream">
                     {t('visionDescription')}
                   </p>
                 </div>

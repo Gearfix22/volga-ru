@@ -28,7 +28,7 @@ export const HeroSection: React.FC = () => {
           {t('welcome')}
         </h2>
         
-        <p className={`text-base sm:text-lg md:text-xl lg:text-2xl text-coastal-pearl leading-relaxed max-w-3xl mx-auto px-4 ${
+        <p className={`text-base sm:text-lg md:text-xl lg:text-2xl text-russian-cream leading-relaxed max-w-3xl mx-auto px-4 ${
           language === 'ar' ? 'font-medium' : ''
         }`}>
           {t('subtitle')}
@@ -40,7 +40,7 @@ export const HeroSection: React.FC = () => {
         <Button
           onClick={handleExploreServices}
           size="lg"
-          className="bg-coastal-blue hover:bg-ocean-700 text-white px-6 sm:px-8 py-3 text-base sm:text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+          className="bg-russian-red hover:bg-red-800 text-white px-6 sm:px-8 py-3 text-base sm:text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
         >
           {t('exploreServices')}
           <ArrowRight className={`h-4 w-4 sm:h-5 sm:w-5 ${language === 'ar' ? 'mr-2 sm:mr-3 rotate-180' : 'ml-2 sm:ml-3'}`} />
