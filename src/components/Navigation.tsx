@@ -33,10 +33,18 @@ export const Navigation: React.FC = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-volga-navy/95 backdrop-blur-sm border-b border-white/10">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+          {/* Logo - smaller version for navigation */}
           <div className="flex-shrink-0 cursor-pointer" onClick={() => navigate('/')}>
-            <div className="h-10">
-              <Logo />
+            <div className="flex items-center space-x-2">
+              <img 
+                src="/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png"
+                alt="Volga Services"
+                className="w-8 h-8"
+              />
+              <span className="text-white font-bold text-lg font-serif">
+                <span className="gradient-text">VOLGA</span>
+                <span className="ml-1">SERVICES</span>
+              </span>
             </div>
           </div>
 
