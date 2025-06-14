@@ -7,11 +7,11 @@ export const ServicesHeader: React.FC = () => {
 
   return (
     <div className="text-center mb-12 animate-fade-in">
-      <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 text-shadow font-serif">
+      <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 text-shadow-elegant font-serif">
         {t('ourServices')}
       </h1>
       
-      <p className="text-xl md:text-2xl text-gray-200 leading-relaxed text-shadow max-w-4xl mx-auto">
+      <p className="text-xl md:text-2xl text-coastal-pearl leading-relaxed text-shadow-elegant max-w-4xl mx-auto">
         {t('servicesSubtitle')}
       </p>
     </div>

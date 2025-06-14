@@ -53,16 +53,16 @@ export const Footer: React.FC = () => {
   ];
 
   return (
-    <footer className="relative overflow-hidden bg-volga-navy-dark/90 backdrop-blur-sm border-t border-white/10">
+    <footer className="relative overflow-hidden bg-ocean-900/90 coastal-glass border-t border-white/10">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Company Info */}
           <div className="space-y-4 sm:space-y-6">
             <div>
-              <h3 className="text-white font-bold text-xl sm:text-2xl mb-3 sm:mb-4">
-                <span className="gradient-text">Volga Services</span>
+              <h3 className="text-white font-bold text-xl sm:text-2xl mb-3 sm:mb-4 font-serif">
+                <span className="seaside-text">Volga Services</span>
               </h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
+              <p className="text-coastal-pearl text-sm leading-relaxed">
                 {t('footerDescription')}
               </p>
             </div>
@@ -85,15 +85,15 @@ export const Footer: React.FC = () => {
             <div className="space-y-3 sm:space-y-4">
               {contactInfo.map((item, index) => (
                 <div key={index} className="flex items-start space-x-3">
-                  <item.icon className="h-4 w-4 sm:h-5 sm:w-5 text-volga-logo-blue mt-1 flex-shrink-0" />
+                  <item.icon className="h-4 w-4 sm:h-5 sm:w-5 text-coastal-blue mt-1 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-gray-400 text-xs font-medium uppercase">{item.label}</p>
+                    <p className="text-coastal-sage text-xs font-medium uppercase">{item.label}</p>
                     {item.href === '#' ? (
                       <p className="text-white text-sm break-words">{item.value}</p>
                     ) : (
                       <a 
                         href={item.href}
-                        className="text-white hover:text-volga-logo-blue text-sm transition-colors break-words"
+                        className="text-white hover:text-coastal-blue text-sm transition-colors break-words"
                         target={item.href.startsWith('http') ? '_blank' : undefined}
                         rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                       >
@@ -111,12 +111,12 @@ export const Footer: React.FC = () => {
             <h3 className="text-white font-bold text-lg sm:text-xl">{t('businessInfo')}</h3>
             <div className="space-y-3 sm:space-y-4">
               <div>
-                <p className="text-gray-400 text-xs font-medium uppercase">{t('taxNumber')}</p>
-                <p className="text-volga-logo-blue font-mono text-base sm:text-lg font-semibold">4706086543</p>
+                <p className="text-coastal-sage text-xs font-medium uppercase">{t('taxNumber')}</p>
+                <p className="text-coastal-blue font-mono text-base sm:text-lg font-semibold">4706086543</p>
               </div>
               <div>
-                <p className="text-gray-400 text-xs font-medium uppercase">{t('registrationNumber')}</p>
-                <p className="text-volga-logo-blue font-mono text-base sm:text-lg font-semibold">1254700002831</p>
+                <p className="text-coastal-sage text-xs font-medium uppercase">{t('registrationNumber')}</p>
+                <p className="text-coastal-blue font-mono text-base sm:text-lg font-semibold">1254700002831</p>
               </div>
             </div>
           </div>
@@ -131,7 +131,7 @@ export const Footer: React.FC = () => {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-white/10 p-2 sm:p-3 rounded-lg hover:bg-volga-logo-blue transition-colors"
+                  className="coastal-glass p-2 sm:p-3 rounded-lg hover:bg-coastal-blue transition-colors"
                 >
                   <social.icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   <span className="sr-only">{social.label}</span>
@@ -143,8 +143,8 @@ export const Footer: React.FC = () => {
 
         {/* Bottom Bar */}
         <div className="border-t border-white/10 mt-8 sm:mt-12 pt-6 sm:pt-8 text-center">
-          <p className="text-gray-400 text-sm">
-            © 2024 <span className="text-volga-logo-blue font-medium">Volga Services</span>. {t('allRightsReserved')}
+          <p className="text-coastal-pearl text-sm">
+            © 2024 <span className="text-coastal-blue font-medium">Volga Services</span>. {t('allRightsReserved')}
           </p>
         </div>
       </div>

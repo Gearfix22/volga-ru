@@ -4,27 +4,27 @@ import React from 'react';
 export const AnimatedBackground: React.FC = () => {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Main gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-volga-navy via-volga-navy-light to-volga-navy-dark" />
+      {/* Ocean gradient background */}
+      <div className="absolute inset-0 ocean-gradient" />
       
-      {/* Animated overlay elements */}
+      {/* Animated ocean waves overlay */}
       <div className="absolute inset-0">
         <div 
-          className="absolute top-1/4 left-1/4 w-96 h-96 bg-volga-blue/20 rounded-full blur-3xl"
+          className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl"
           style={{
             animation: 'float 12s ease-in-out infinite',
             animationDelay: '0s'
           }}
         />
         <div 
-          className="absolute top-3/4 right-1/4 w-80 h-80 bg-volga-logo-red/20 rounded-full blur-3xl"
+          className="absolute top-3/4 right-1/4 w-80 h-80 bg-ocean-200/20 rounded-full blur-3xl"
           style={{
             animation: 'float 15s ease-in-out infinite',
             animationDelay: '5s'
           }}
         />
         <div 
-          className="absolute bottom-1/4 left-1/2 w-64 h-64 bg-volga-gold/20 rounded-full blur-3xl"
+          className="absolute bottom-1/4 left-1/2 w-64 h-64 bg-coastal-teal/20 rounded-full blur-3xl"
           style={{
             animation: 'float 18s ease-in-out infinite',
             animationDelay: '8s'
@@ -32,15 +32,18 @@ export const AnimatedBackground: React.FC = () => {
         />
       </div>
       
-      {/* Geometric pattern overlay */}
+      {/* Wave pattern overlay */}
+      <div className="absolute inset-0 wave-pattern opacity-30" />
+      
+      {/* Subtle shimmer effect */}
       <div 
-        className="absolute inset-0 opacity-10"
+        className="absolute inset-0 opacity-20"
         style={{
           backgroundImage: `
-            radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
-            radial-gradient(circle at 75% 75%, rgba(239, 68, 68, 0.3) 0%, transparent 50%)
+            linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%)
           `,
-          backgroundSize: '400px 400px'
+          backgroundSize: '200% 200%',
+          animation: 'wave 20s ease-in-out infinite'
         }}
       />
     </div>

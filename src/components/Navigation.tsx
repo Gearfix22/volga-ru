@@ -21,7 +21,7 @@ export const Navigation: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-volga-navy/95 backdrop-blur-sm border-b border-white/10">
+    <nav className="fixed top-0 left-0 right-0 z-50 coastal-glass border-b border-white/10">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo with Company Name */}
@@ -31,9 +31,9 @@ export const Navigation: React.FC = () => {
               alt="Volga Services Logo"
               className="w-8 h-8 sm:w-10 sm:h-10"
             />
-            <span className="text-white font-bold text-lg sm:text-xl">
-              <span className="gradient-text">VOLGA</span>
-              <span className="ml-1 sm:ml-2">SERVICES</span>
+            <span className="text-white font-bold text-lg sm:text-xl font-serif">
+              <span className="seaside-text">VOLGA</span>
+              <span className="ml-1 sm:ml-2 text-coastal-pearl">SERVICES</span>
             </span>
           </div>
 
@@ -46,8 +46,8 @@ export const Navigation: React.FC = () => {
                   onClick={() => navigate(item.path)}
                   className={`px-2 lg:px-3 py-2 text-sm font-medium transition-colors ${
                     isActive(item.path) 
-                      ? 'text-volga-logo-blue' 
-                      : 'text-white hover:text-volga-logo-blue'
+                      ? 'text-coastal-blue' 
+                      : 'text-white hover:text-coastal-blue'
                   }`}
                 >
                   {item.label}
@@ -88,8 +88,8 @@ export const Navigation: React.FC = () => {
                   }}
                   className={`block w-full text-left px-4 py-2 sm:py-3 text-sm font-medium transition-colors ${
                     isActive(item.path)
-                      ? 'text-volga-logo-blue'
-                      : 'text-white hover:text-volga-logo-blue'
+                      ? 'text-coastal-blue'
+                      : 'text-white hover:text-coastal-blue'
                   }`}
                 >
                   {item.label}
