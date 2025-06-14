@@ -1,9 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
+import { BackButton } from '@/components/BackButton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Clock, FileText, ArrowRight, Home, DollarSign } from 'lucide-react';
@@ -40,6 +40,10 @@ const BookingConfirmation = () => {
       
       <div className="relative z-10 pt-24 pb-12">
         <div className="container mx-auto px-4 max-w-4xl">
+          <div className="mb-6">
+            <BackButton className="text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800" />
+          </div>
+          
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
               {isPaymentCompleted ? (
