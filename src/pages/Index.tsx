@@ -15,9 +15,7 @@ const Index = () => {
       <Navigation />
       
       {/* Main Content */}
-      <div className="flex-1">
-        <HeroSection />
-      </div>
+      <HeroSection />
       
       {/* Footer */}
       <Footer />
