@@ -7,7 +7,9 @@ import { BackButton } from '@/components/BackButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Shield, Lock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { CreditCard, Shield, Lock, DollarSign } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { createBooking } from '@/services/database';
@@ -28,6 +30,7 @@ const Payment = () => {
   const [cardholderName, setCardholderName] = useState('');
   const [paypalEmail, setPaypalEmail] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [customAmount, setCustomAmount] = useState(bookingData?.totalPrice?.toString() || '0');
 
   useEffect(() => {
     if (!bookingData) {
@@ -39,8 +42,28 @@ const Payment = () => {
     return null;
   }
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow only numbers and decimal point
+    if (/^\d*\.?\d*$/.test(value)) {
+      setCustomAmount(value);
+    }
+  };
+
+  const finalAmount = parseFloat(customAmount) || 0;
+
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (finalAmount <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid payment amount greater than $0.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsProcessing(true);
     
     try {
@@ -48,15 +71,18 @@ const Payment = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       const transactionId = `TXN${Date.now()}`;
-      const totalPrice = bookingData.totalPrice || 0;
       const paymentMethod = selectedMethod === 'credit-card' ? 'Credit Card' : 'PayPal';
       
       // Save booking to Supabase if user is authenticated
       if (user) {
-        await createBooking(bookingData, {
+        await createBooking({
+          ...bookingData,
+          customAmount: finalAmount,
+          totalPrice: finalAmount
+        }, {
           paymentMethod,
           transactionId,
-          totalPrice
+          totalPrice: finalAmount
         });
         
         toast({
@@ -68,7 +94,7 @@ const Payment = () => {
       // Store payment details for confirmation page
       localStorage.setItem('paymentStatus', 'completed');
       localStorage.setItem('transactionId', transactionId);
-      localStorage.setItem('paymentAmount', totalPrice.toString());
+      localStorage.setItem('paymentAmount', finalAmount.toString());
       
       navigate('/booking-confirmation', {
         state: {
@@ -76,7 +102,8 @@ const Payment = () => {
             ...bookingData,
             paymentMethod,
             transactionId,
-            paidAmount: totalPrice
+            paidAmount: finalAmount,
+            totalPrice: finalAmount
           }
         }
       });
@@ -147,6 +174,34 @@ const Payment = () => {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handlePayment} className="space-y-6">
+                  {/* Payment Amount */}
+                  <div className="space-y-4">
+                    <h3 className="text-white font-medium flex items-center gap-2">
+                      <DollarSign className="h-5 w-5" />
+                      Payment Amount
+                    </h3>
+                    <div>
+                      <Label htmlFor="amount" className="block text-white text-sm font-medium mb-2">
+                        Amount (USD)
+                      </Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70">$</span>
+                        <Input
+                          id="amount"
+                          type="text"
+                          value={customAmount}
+                          onChange={handleAmountChange}
+                          className="pl-8 bg-white/10 border-white/20 text-white placeholder-white/50 focus:ring-russian-gold"
+                          placeholder="0.00"
+                          required
+                        />
+                      </div>
+                      <p className="text-white/60 text-xs mt-1">
+                        Enter the amount you wish to pay
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Payment Method Selection */}
                   <div className="space-y-4">
                     <h3 className="text-white font-medium">Payment Method</h3>
@@ -262,10 +317,10 @@ const Payment = () => {
 
                   <Button
                     type="submit"
-                    disabled={isProcessing}
+                    disabled={isProcessing || finalAmount <= 0}
                     className="w-full bg-russian-gold hover:bg-russian-gold/90 text-white font-semibold py-3"
                   >
-                    {isProcessing ? 'Processing...' : `Pay $${bookingData.totalPrice || 0}`}
+                    {isProcessing ? 'Processing...' : `Pay $${finalAmount.toFixed(2)}`}
                   </Button>
                 </form>
               </CardContent>
@@ -317,8 +372,13 @@ const Payment = () => {
                 <div className="border-t border-white/20 pt-4">
                   <div className="flex justify-between text-white text-lg font-bold">
                     <span>Total:</span>
-                    <span className="text-russian-gold">${bookingData.totalPrice || 0}</span>
+                    <span className="text-russian-gold">${finalAmount.toFixed(2)}</span>
                   </div>
+                  {finalAmount !== (bookingData.totalPrice || 0) && (
+                    <p className="text-white/60 text-sm mt-1">
+                      Original amount: ${bookingData.totalPrice || 0}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 text-white/70 text-sm">
