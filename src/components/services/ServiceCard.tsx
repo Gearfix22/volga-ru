@@ -84,8 +84,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
           </Button>
           <Button
             onClick={handleLearnMore}
-            variant="outline"
-            className="flex-1 border-white/20 text-white hover:bg-white/10 text-sm sm:text-base"
+            className="flex-1 russian-glass border-white/20 text-white hover:bg-white/20 text-sm sm:text-base backdrop-blur-md"
           >
             {t('learnMore')}
           </Button>

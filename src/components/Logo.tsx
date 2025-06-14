@@ -37,9 +37,9 @@ export const Logo: React.FC<LogoProps> = ({
         {showFullBranding && (
           <>
             {/* Company name */}
-            <h1 className={`${textSizeClasses[size]} font-bold text-white mb-2 font-serif`}>
-              <span className="gradient-text">VOLGA</span>
-              <span className="text-white ml-3">SERVICES</span>
+            <h1 className={`${textSizeClasses[size]} font-bold mb-2 font-serif`}>
+              <span className="text-russian-blue">VOLGA</span>
+              <span className="text-russian-red ml-3">SERVICES</span>
             </h1>
             
             {/* Elegant underline */}
