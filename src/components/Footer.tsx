@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Phone, Mail, MapPin, Globe, Facebook, Instagram } from 'lucide-react';
@@ -48,7 +47,7 @@ export const Footer: React.FC = () => {
     {
       icon: Instagram,
       label: 'Instagram',
-      href: 'https://www.instagram.com/volga.servicesegy/',
+      href: 'https://www.instagram.com/volga.services/',
     },
   ];
 
