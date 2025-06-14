@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Navigation } from '@/components/Navigation';
@@ -15,6 +16,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { createBooking } from '@/services/database';
 import { useToast } from '@/hooks/use-toast';
 
+declare global {
+  interface Window {
+    paypal: any;
+  }
+}
+
 const Payment = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -22,21 +29,126 @@ const Payment = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const bookingData = location.state?.bookingData;
+  const paypalRef = useRef<HTMLDivElement>(null);
 
   const [selectedMethod, setSelectedMethod] = useState('credit-card');
   const [cardNumber, setCardNumber] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
   const [cardholderName, setCardholderName] = useState('');
-  const [paypalEmail, setPaypalEmail] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [customAmount, setCustomAmount] = useState(bookingData?.totalPrice?.toString() || '0');
+  const [customAmount, setCustomAmount] = useState(bookingData?.totalPrice?.toString() || '50');
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
 
   useEffect(() => {
     if (!bookingData) {
       navigate('/booking');
     }
   }, [bookingData, navigate]);
+
+  useEffect(() => {
+    const loadPayPalScript = () => {
+      if (window.paypal) {
+        setPaypalLoaded(true);
+        renderPayPalButton();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = `https://www.paypal.com/sdk/js?client-id=AU15djn3gU9YlY__yWU0ZFAGCo8AepH1KSx2I5Kr_0YrgktGrApSOcI-yAaeAFmfHDN4-yWUu2V1NHqV&currency=USD`;
+      script.onload = () => {
+        setPaypalLoaded(true);
+        renderPayPalButton();
+      };
+      document.body.appendChild(script);
+    };
+
+    if (selectedMethod === 'paypal') {
+      loadPayPalScript();
+    }
+  }, [selectedMethod, customAmount]);
+
+  const renderPayPalButton = () => {
+    if (!window.paypal || !paypalRef.current) return;
+
+    // Clear existing PayPal button
+    paypalRef.current.innerHTML = '';
+
+    const amount = parseFloat(customAmount) || 50;
+
+    window.paypal.Buttons({
+      createOrder: (data: any, actions: any) => {
+        return actions.order.create({
+          purchase_units: [{
+            amount: {
+              value: amount.toFixed(2)
+            }
+          }]
+        });
+      },
+      onApprove: async (data: any, actions: any) => {
+        try {
+          const details = await actions.order.capture();
+          const transactionId = details.id;
+          
+          // Save booking to Supabase if user is authenticated
+          if (user && bookingData) {
+            await createBooking({
+              ...bookingData,
+              customAmount: amount,
+              totalPrice: amount
+            }, {
+              paymentMethod: 'PayPal',
+              transactionId,
+              totalPrice: amount
+            });
+            
+            toast({
+              title: "Booking saved successfully!",
+              description: "Your booking has been saved to your account.",
+            });
+          }
+          
+          // Store payment details for confirmation page
+          localStorage.setItem('paymentStatus', 'completed');
+          localStorage.setItem('transactionId', transactionId);
+          localStorage.setItem('paymentAmount', amount.toString());
+          
+          toast({
+            title: "Payment successful!",
+            description: `Transaction ID: ${transactionId}`,
+          });
+
+          navigate('/booking-confirmation', {
+            state: {
+              bookingData: {
+                ...bookingData,
+                paymentMethod: 'PayPal',
+                transactionId,
+                paidAmount: amount,
+                totalPrice: amount
+              }
+            }
+          });
+        } catch (error) {
+          console.error('PayPal payment error:', error);
+          toast({
+            title: "Payment failed",
+            description: "There was an error processing your PayPal payment.",
+            variant: "destructive"
+          });
+        }
+      },
+      onError: (err: any) => {
+        console.error('PayPal error:', err);
+        toast({
+          title: "Payment error",
+          description: "There was an error with PayPal. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }).render(paypalRef.current);
+  };
 
   if (!bookingData) {
     return null;
@@ -52,7 +164,7 @@ const Payment = () => {
 
   const finalAmount = parseFloat(customAmount) || 0;
 
-  const handlePayment = async (e: React.FormEvent) => {
+  const handleCreditCardPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (finalAmount <= 0) {
@@ -71,7 +183,6 @@ const Payment = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       const transactionId = `TXN${Date.now()}`;
-      const paymentMethod = selectedMethod === 'credit-card' ? 'Credit Card' : 'PayPal';
       
       // Save booking to Supabase if user is authenticated
       if (user) {
@@ -80,7 +191,7 @@ const Payment = () => {
           customAmount: finalAmount,
           totalPrice: finalAmount
         }, {
-          paymentMethod,
+          paymentMethod: 'Credit Card',
           transactionId,
           totalPrice: finalAmount
         });
@@ -100,7 +211,7 @@ const Payment = () => {
         state: {
           bookingData: {
             ...bookingData,
-            paymentMethod,
+            paymentMethod: 'Credit Card',
             transactionId,
             paidAmount: finalAmount,
             totalPrice: finalAmount
@@ -173,156 +284,154 @@ const Payment = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handlePayment} className="space-y-6">
-                  {/* Payment Amount */}
-                  <div className="space-y-4">
-                    <h3 className="text-white font-medium flex items-center gap-2">
-                      <DollarSign className="h-5 w-5" />
-                      Payment Amount
-                    </h3>
-                    <div>
-                      <Label htmlFor="amount" className="block text-white text-sm font-medium mb-2">
-                        Amount (USD)
-                      </Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70">$</span>
-                        <Input
-                          id="amount"
-                          type="text"
-                          value={customAmount}
-                          onChange={handleAmountChange}
-                          className="pl-8 bg-white/10 border-white/20 text-white placeholder-white/50 focus:ring-russian-gold"
-                          placeholder="0.00"
-                          required
-                        />
-                      </div>
-                      <p className="text-white/60 text-xs mt-1">
-                        Enter the amount you wish to pay
-                      </p>
+                {/* Payment Amount */}
+                <div className="space-y-4 mb-6">
+                  <h3 className="text-white font-medium flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Payment Amount
+                  </h3>
+                  <div>
+                    <Label htmlFor="amount" className="block text-white text-sm font-medium mb-2">
+                      Amount (USD)
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70">$</span>
+                      <Input
+                        id="amount"
+                        type="text"
+                        value={customAmount}
+                        onChange={handleAmountChange}
+                        className="pl-8 bg-white/10 border-white/20 text-white placeholder-white/50 focus:ring-russian-gold"
+                        placeholder="0.00"
+                        required
+                      />
                     </div>
+                    <p className="text-white/60 text-xs mt-1">
+                      Enter the amount you wish to pay
+                    </p>
                   </div>
+                </div>
 
-                  {/* Payment Method Selection */}
-                  <div className="space-y-4">
-                    <h3 className="text-white font-medium">Payment Method</h3>
-                    <div className="grid grid-cols-1 gap-3">
-                      {paymentMethods.map((method) => (
-                        <div
-                          key={method.id}
-                          className={`relative rounded-lg border-2 cursor-pointer transition-all ${
-                            selectedMethod === method.id
-                              ? 'border-russian-gold bg-russian-gold/10'
-                              : 'border-white/20 bg-white/5 hover:border-white/30'
-                          }`}
-                          onClick={() => setSelectedMethod(method.id)}
-                        >
-                          <div className="p-4 flex items-center space-x-3">
-                            <method.icon className="h-5 w-5 text-white" />
-                            <div className="flex-1">
-                              <p className="text-white font-medium">{method.name}</p>
-                              <p className="text-white/60 text-sm">{method.description}</p>
-                            </div>
-                            <div className={`w-4 h-4 rounded-full border-2 ${
-                              selectedMethod === method.id
-                                ? 'border-russian-gold bg-russian-gold'
-                                : 'border-white/40'
-                            }`} />
+                {/* Payment Method Selection */}
+                <div className="space-y-4 mb-6">
+                  <h3 className="text-white font-medium">Payment Method</h3>
+                  <div className="grid grid-cols-1 gap-3">
+                    {paymentMethods.map((method) => (
+                      <div
+                        key={method.id}
+                        className={`relative rounded-lg border-2 cursor-pointer transition-all ${
+                          selectedMethod === method.id
+                            ? 'border-russian-gold bg-russian-gold/10'
+                            : 'border-white/20 bg-white/5 hover:border-white/30'
+                        }`}
+                        onClick={() => setSelectedMethod(method.id)}
+                      >
+                        <div className="p-4 flex items-center space-x-3">
+                          <method.icon className="h-5 w-5 text-white" />
+                          <div className="flex-1">
+                            <p className="text-white font-medium">{method.name}</p>
+                            <p className="text-white/60 text-sm">{method.description}</p>
                           </div>
+                          <div className={`w-4 h-4 rounded-full border-2 ${
+                            selectedMethod === method.id
+                              ? 'border-russian-gold bg-russian-gold'
+                              : 'border-white/40'
+                          }`} />
                         </div>
-                      ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Credit Card Form */}
+                {selectedMethod === 'credit-card' && (
+                  <form onSubmit={handleCreditCardPayment} className="space-y-4">
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Cardholder Name
+                      </label>
+                      <input
+                        type="text"
+                        value={cardholderName}
+                        onChange={(e) => setCardholderName(e.target.value)}
+                        className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
+                        placeholder="Enter cardholder name"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        Card Number
+                      </label>
+                      <input
+                        type="text"
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(e.target.value)}
+                        className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
+                        placeholder="1234 5678 9012 3456"
+                        maxLength={19}
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-white text-sm font-medium mb-2">
+                          Expiry Date
+                        </label>
+                        <input
+                          type="text"
+                          value={expiryDate}
+                          onChange={(e) => setExpiryDate(e.target.value)}
+                          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
+                          placeholder="MM/YY"
+                          maxLength={5}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-white text-sm font-medium mb-2">
+                          CVV
+                        </label>
+                        <input
+                          type="text"
+                          value={cvv}
+                          onChange={(e) => setCvv(e.target.value)}
+                          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
+                          placeholder="123"
+                          maxLength={4}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={isProcessing || finalAmount <= 0}
+                      className="w-full bg-russian-gold hover:bg-russian-gold/90 text-white font-semibold py-3"
+                    >
+                      {isProcessing ? 'Processing...' : `Pay $${finalAmount.toFixed(2)} with Credit Card`}
+                    </Button>
+                  </form>
+                )}
+
+                {/* PayPal Form */}
+                {selectedMethod === 'paypal' && (
+                  <div className="space-y-4">
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/20">
+                      <h4 className="text-white font-medium mb-3">PayPal Payment</h4>
+                      <p className="text-white/70 text-sm mb-4">
+                        Click the PayPal button below to complete your payment securely.
+                      </p>
+                      <div ref={paypalRef} className="min-h-[50px]">
+                        {!paypalLoaded && (
+                          <div className="flex items-center justify-center py-4">
+                            <div className="text-white/60">Loading PayPal...</div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-
-                  {/* Credit Card Form */}
-                  {selectedMethod === 'credit-card' && (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Cardholder Name
-                        </label>
-                        <input
-                          type="text"
-                          value={cardholderName}
-                          onChange={(e) => setCardholderName(e.target.value)}
-                          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
-                          placeholder="Enter cardholder name"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Card Number
-                        </label>
-                        <input
-                          type="text"
-                          value={cardNumber}
-                          onChange={(e) => setCardNumber(e.target.value)}
-                          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
-                          placeholder="1234 5678 9012 3456"
-                          maxLength={19}
-                          required
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-white text-sm font-medium mb-2">
-                            Expiry Date
-                          </label>
-                          <input
-                            type="text"
-                            value={expiryDate}
-                            onChange={(e) => setExpiryDate(e.target.value)}
-                            className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
-                            placeholder="MM/YY"
-                            maxLength={5}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-white text-sm font-medium mb-2">
-                            CVV
-                          </label>
-                          <input
-                            type="text"
-                            value={cvv}
-                            onChange={(e) => setCvv(e.target.value)}
-                            className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
-                            placeholder="123"
-                            maxLength={4}
-                            required
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* PayPal Form */}
-                  {selectedMethod === 'paypal' && (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          PayPal Email
-                        </label>
-                        <input
-                          type="email"
-                          value={paypalEmail}
-                          onChange={(e) => setPaypalEmail(e.target.value)}
-                          className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
-                          placeholder="your@email.com"
-                          required
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <Button
-                    type="submit"
-                    disabled={isProcessing || finalAmount <= 0}
-                    className="w-full bg-russian-gold hover:bg-russian-gold/90 text-white font-semibold py-3"
-                  >
-                    {isProcessing ? 'Processing...' : `Pay $${finalAmount.toFixed(2)}`}
-                  </Button>
-                </form>
+                )}
               </CardContent>
             </Card>
 
@@ -374,7 +483,7 @@ const Payment = () => {
                     <span>Total:</span>
                     <span className="text-russian-gold">${finalAmount.toFixed(2)}</span>
                   </div>
-                  {finalAmount !== (bookingData.totalPrice || 0) && (
+                  {finalAmount !== (bookingData.totalPrice || 0) && bookingData.totalPrice && (
                     <p className="text-white/60 text-sm mt-1">
                       Original amount: ${bookingData.totalPrice || 0}
                     </p>
@@ -383,7 +492,7 @@ const Payment = () => {
 
                 <div className="flex items-center gap-2 text-white/70 text-sm">
                   <Shield className="h-4 w-4" />
-                  <span>Your payment is protected by 256-bit SSL encryption</span>
+                  <span>Your payment is protected by secure encryption</span>
                 </div>
               </CardContent>
             </Card>
