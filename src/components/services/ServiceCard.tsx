@@ -37,18 +37,17 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
 
   return (
     <Card 
-      className="glass-morphism text-white hover-glass overflow-hidden group border-0 rounded-3xl"
+      className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/15 transition-all duration-300 transform hover:scale-105 overflow-hidden group"
       style={{ animationDelay: `${index * 100}ms` }}
     >
-      <div className="relative h-40 sm:h-48 overflow-hidden rounded-t-3xl">
+      <div className="relative h-40 sm:h-48 overflow-hidden">
         <img 
           src={service.image} 
           alt={service.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
         <div className="absolute top-3 sm:top-4 left-3 sm:left-4">
-          <div className="liquid-glass rounded-2xl p-3 hover-glass">
+          <div className="bg-volga-logo-blue/80 backdrop-blur-sm rounded-full p-2">
             <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>
         </div>
@@ -69,7 +68,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
             <Badge 
               key={featureIndex}
               variant="outline" 
-              className="liquid-glass border-0 text-white text-xs sm:text-sm rounded-xl px-3 py-1"
+              className="border-volga-logo-red/50 text-white bg-volga-logo-red/20 text-xs sm:text-sm"
             >
               {feature}
             </Badge>
@@ -79,15 +78,14 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
         <div className="flex flex-col sm:flex-row gap-2 pt-4">
           <Button
             onClick={handleBookNow}
-            className="flex-1 liquid-glass-button text-white text-sm sm:text-base rounded-xl border-0 relative overflow-hidden group"
+            className="flex-1 bg-volga-logo-red hover:bg-red-700 text-white text-sm sm:text-base"
           >
-            <span className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity"></span>
-            <span className="relative z-10">{t('bookNow')}</span>
+            {t('bookNow')}
           </Button>
           <Button
             onClick={handleLearnMore}
             variant="outline"
-            className="flex-1 liquid-glass border-0 text-white hover:text-white text-sm sm:text-base rounded-xl"
+            className="flex-1 border-white/20 text-white hover:bg-white/10 text-sm sm:text-base"
           >
             {t('learnMore')}
           </Button>
