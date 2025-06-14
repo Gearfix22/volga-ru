@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -45,11 +46,6 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
     navigate(`/booking?service=${serviceType}`);
   };
 
-  const handleLearnMore = () => {
-    console.log(`Learning more about: ${service.id}`);
-    // TODO: Navigate to service details page
-  };
-
   return (
     <Card 
       className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/15 transition-all duration-300 transform hover:scale-105 overflow-hidden group"
@@ -90,18 +86,12 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
           ))}
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-2 pt-4">
+        <div className="pt-4">
           <Button
             onClick={handleBookNow}
-            className="flex-1 bg-volga-logo-red hover:bg-red-700 text-white text-sm sm:text-base"
+            className="w-full bg-volga-logo-red hover:bg-red-700 text-white text-sm sm:text-base"
           >
             {t('bookNow')}
-          </Button>
-          <Button
-            onClick={handleLearnMore}
-            className="flex-1 russian-glass border-white/20 text-white hover:bg-white/20 text-sm sm:text-base backdrop-blur-md"
-          >
-            {t('learnMore')}
           </Button>
         </div>
       </CardContent>
