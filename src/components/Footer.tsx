@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Phone, Mail, MapPin, Globe, Facebook, Instagram } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Logo } from './Logo';
 
 export const Footer: React.FC = () => {
   const { t, language } = useLanguage();
@@ -59,9 +57,6 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <div className="h-12">
-              <Logo />
-            </div>
             <p className="text-gray-300 text-sm leading-relaxed">
               {t('footerDescription')}
             </p>

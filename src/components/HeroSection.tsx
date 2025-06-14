@@ -4,6 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
+import { Logo } from './Logo';
 
 export const HeroSection: React.FC = () => {
   const { t, language } = useLanguage();
@@ -16,6 +17,11 @@ export const HeroSection: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 relative z-10">
+      {/* Logo */}
+      <div className="mb-12">
+        <Logo />
+      </div>
+      
       {/* Welcome text */}
       <div className="max-w-4xl mx-auto mb-8 animate-slide-up animation-delay-200">
         <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-6 text-shadow font-serif">
