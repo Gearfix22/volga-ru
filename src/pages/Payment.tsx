@@ -9,9 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { CreditCard, Shield, Lock } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { createBooking } from '@/services/database';
+import { useToast } from '@/hooks/use-toast';
 
 const Payment = () => {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const bookingData = location.state?.bookingData;
@@ -39,20 +44,49 @@ const Payment = () => {
     setIsProcessing(true);
     
     try {
+      // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const transactionId = `TXN${Date.now()}`;
+      const totalPrice = bookingData.totalPrice || 0;
+      const paymentMethod = selectedMethod === 'credit-card' ? 'Credit Card' : 'PayPal';
+      
+      // Save booking to Supabase if user is authenticated
+      if (user) {
+        await createBooking(bookingData, {
+          paymentMethod,
+          transactionId,
+          totalPrice
+        });
+        
+        toast({
+          title: "Booking saved successfully!",
+          description: "Your booking has been saved to your account.",
+        });
+      }
+      
+      // Store payment details for confirmation page
+      localStorage.setItem('paymentStatus', 'completed');
+      localStorage.setItem('transactionId', transactionId);
+      localStorage.setItem('paymentAmount', totalPrice.toString());
       
       navigate('/booking-confirmation', {
         state: {
           bookingData: {
             ...bookingData,
-            paymentMethod: selectedMethod === 'credit-card' ? 'Credit Card' : 'PayPal',
-            transactionId: `TXN${Date.now()}`,
-            paidAmount: bookingData.totalPrice
+            paymentMethod,
+            transactionId,
+            paidAmount: totalPrice
           }
         }
       });
     } catch (error) {
       console.error('Payment failed:', error);
+      toast({
+        title: "Payment failed",
+        description: "There was an error processing your payment. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -87,6 +121,17 @@ const Payment = () => {
           <div className="mb-6">
             <BackButton variant="outline" className="mb-4 bg-white/10 border-white/20 text-white hover:bg-white/20" />
           </div>
+
+          {!user && (
+            <Card className="bg-yellow-50 border-yellow-200 mb-6">
+              <CardContent className="p-4">
+                <p className="text-yellow-800 text-sm">
+                  <strong>Note:</strong> You're not logged in. Your booking will be processed but not saved to an account. 
+                  Consider signing in to keep track of your bookings.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Payment Form */}
@@ -220,7 +265,7 @@ const Payment = () => {
                     disabled={isProcessing}
                     className="w-full bg-russian-gold hover:bg-russian-gold/90 text-white font-semibold py-3"
                   >
-                    {isProcessing ? 'Processing...' : `Pay $${bookingData.totalPrice}`}
+                    {isProcessing ? 'Processing...' : `Pay $${bookingData.totalPrice || 0}`}
                   </Button>
                 </form>
               </CardContent>
@@ -235,24 +280,32 @@ const Payment = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between text-white">
                     <span>Service:</span>
-                    <span className="font-medium">{bookingData.serviceName}</span>
+                    <span className="font-medium">{bookingData.serviceName || bookingData.serviceType}</span>
                   </div>
-                  <div className="flex justify-between text-white">
-                    <span>Date:</span>
-                    <span>{bookingData.date}</span>
-                  </div>
-                  <div className="flex justify-between text-white">
-                    <span>Time:</span>
-                    <span>{bookingData.time}</span>
-                  </div>
-                  <div className="flex justify-between text-white">
-                    <span>Duration:</span>
-                    <span>{bookingData.duration}</span>
-                  </div>
-                  <div className="flex justify-between text-white">
-                    <span>Location:</span>
-                    <span>{bookingData.location}</span>
-                  </div>
+                  {bookingData.date && (
+                    <div className="flex justify-between text-white">
+                      <span>Date:</span>
+                      <span>{bookingData.date}</span>
+                    </div>
+                  )}
+                  {bookingData.time && (
+                    <div className="flex justify-between text-white">
+                      <span>Time:</span>
+                      <span>{bookingData.time}</span>
+                    </div>
+                  )}
+                  {bookingData.duration && (
+                    <div className="flex justify-between text-white">
+                      <span>Duration:</span>
+                      <span>{bookingData.duration}</span>
+                    </div>
+                  )}
+                  {bookingData.location && (
+                    <div className="flex justify-between text-white">
+                      <span>Location:</span>
+                      <span>{bookingData.location}</span>
+                    </div>
+                  )}
                   {bookingData.guests && (
                     <div className="flex justify-between text-white">
                       <span>Guests:</span>
@@ -264,7 +317,7 @@ const Payment = () => {
                 <div className="border-t border-white/20 pt-4">
                   <div className="flex justify-between text-white text-lg font-bold">
                     <span>Total:</span>
-                    <span className="text-russian-gold">${bookingData.totalPrice}</span>
+                    <span className="text-russian-gold">${bookingData.totalPrice || 0}</span>
                   </div>
                 </div>
 

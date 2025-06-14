@@ -53,6 +53,18 @@ const Booking = () => {
     }));
   };
 
+  const calculatePrice = () => {
+    // Basic pricing logic - you can expand this
+    const basePrices = {
+      transportation: 50,
+      hotel: 100,
+      event: 75,
+      trip: 200
+    };
+    
+    return basePrices[serviceType as keyof typeof basePrices] || 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -74,14 +86,17 @@ const Booking = () => {
       return;
     }
 
+    const totalPrice = calculatePrice();
     const bookingData = {
       serviceType,
       serviceDetails,
-      userInfo
+      userInfo,
+      totalPrice
     };
 
-    localStorage.setItem('bookingData', JSON.stringify(bookingData));
-    navigate('/payment');
+    navigate('/payment', {
+      state: { bookingData }
+    });
   };
 
   const renderServiceForm = () => {
@@ -378,6 +393,19 @@ const Booking = () => {
                 </CardHeader>
                 <CardContent>
                   {renderServiceForm()}
+                  
+                  {/* Price Display */}
+                  {serviceType && (
+                    <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Estimated Price:</span>
+                        <span className="text-2xl font-bold text-primary">${calculatePrice()}</span>
+                      </div>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                        Final price will be confirmed after consultation
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

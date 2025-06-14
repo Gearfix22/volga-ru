@@ -42,4 +42,8 @@ export interface BookingData {
   serviceDetails: ServiceDetails;
   userInfo: UserInfo;
   customAmount?: number;
+  totalPrice?: number;
+  paymentMethod?: string;
+  transactionId?: string;
+  paidAmount?: number;
 }
