@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Calendar, Star, Users, Car } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,11 @@ export const HeroSection: React.FC = () => {
   const handleExploreServices = () => {
     console.log('Navigating to services page...');
     navigate('/services');
+  };
+
+  const handleBookNow = () => {
+    console.log('Navigating directly to booking...');
+    navigate('/booking');
   };
 
   return (
@@ -27,18 +32,49 @@ export const HeroSection: React.FC = () => {
         }`}>
           {t('subtitle')}
         </p>
+
+        {/* Service highlights */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-8 sm:mt-12 max-w-2xl mx-auto">
+          <div className="flex flex-col items-center space-y-2 p-4 bg-white/10 backdrop-blur-sm rounded-lg">
+            <Car className="h-8 w-8 text-russian-gold" />
+            <span className="text-white text-sm font-medium">Luxury Transport</span>
+          </div>
+          <div className="flex flex-col items-center space-y-2 p-4 bg-white/10 backdrop-blur-sm rounded-lg">
+            <Star className="h-8 w-8 text-russian-gold" />
+            <span className="text-white text-sm font-medium">Premium Hotels</span>
+          </div>
+          <div className="flex flex-col items-center space-y-2 p-4 bg-white/10 backdrop-blur-sm rounded-lg">
+            <Calendar className="h-8 w-8 text-russian-gold" />
+            <span className="text-white text-sm font-medium">Custom Events</span>
+          </div>
+        </div>
       </div>
       
-      {/* CTA Button */}
-      <div className="fade-in-up" style={{ animationDelay: '0.4s' }}>
+      {/* CTA Buttons */}
+      <div className="fade-in-up flex flex-col sm:flex-row gap-4 sm:gap-6" style={{ animationDelay: '0.4s' }}>
         <Button
           onClick={handleExploreServices}
           size="lg"
           className="bg-russian-red hover:bg-red-800 text-white px-6 sm:px-8 py-3 text-base sm:text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
         >
-          {t('exploreServices')}
+          Browse Services
           <ArrowRight className={`h-4 w-4 sm:h-5 sm:w-5 ${language === 'ar' ? 'mr-2 sm:mr-3 rotate-180' : 'ml-2 sm:ml-3'}`} />
         </Button>
+        
+        <Button
+          onClick={handleBookNow}
+          variant="outline"
+          size="lg"
+          className="border-2 border-russian-gold text-russian-gold hover:bg-russian-gold hover:text-white px-6 sm:px-8 py-3 text-base sm:text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+        >
+          Quick Book
+          <Calendar className={`h-4 w-4 sm:h-5 sm:w-5 ${language === 'ar' ? 'mr-2 sm:mr-3' : 'ml-2 sm:ml-3'}`} />
+        </Button>
+      </div>
+
+      {/* Navigation hint */}
+      <div className="mt-8 text-russian-cream/70 text-sm max-w-md mx-auto">
+        Start by browsing our services or jump directly to booking
       </div>
     </div>
   );
