@@ -31,6 +31,9 @@ export interface CreditCardPaymentResponse {
 
 export const createPayPalOrder = async (amount: number, bookingData?: any): Promise<PayPalOrderResponse> => {
   try {
+    console.log('Creating PayPal order with amount:', amount);
+    console.log('Booking data:', bookingData);
+
     const { data, error } = await supabase.functions.invoke('create-paypal-order', {
       body: {
         amount,
@@ -39,22 +42,45 @@ export const createPayPalOrder = async (amount: number, bookingData?: any): Prom
       }
     });
 
+    console.log('Supabase function response:', { data, error });
+
     if (error) {
+      console.error('Supabase function error:', error);
       throw error;
+    }
+
+    if (!data) {
+      throw new Error('No data returned from edge function');
     }
 
     return data;
   } catch (error) {
     console.error('Error creating PayPal order:', error);
+    
+    // Provide more specific error messages
+    let errorMessage = 'Failed to create PayPal order';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to send a request to the Edge Function')) {
+        errorMessage = 'PayPal service is not available. Please ensure the edge function is deployed and PayPal credentials are configured.';
+      } else if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'Network error occurred. Please check your internet connection and try again.';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to create PayPal order'
+      error: errorMessage
     };
   }
 };
 
 export const capturePayPalPayment = async (orderId: string, bookingData?: any): Promise<PaymentCaptureResponse> => {
   try {
+    console.log('Capturing PayPal payment for order:', orderId);
+    
     const { data: { session } } = await supabase.auth.getSession();
     
     const { data, error } = await supabase.functions.invoke('capture-paypal-payment', {
@@ -67,16 +93,30 @@ export const capturePayPalPayment = async (orderId: string, bookingData?: any): 
       } : {}
     });
 
+    console.log('Capture response:', { data, error });
+
     if (error) {
+      console.error('Capture error:', error);
       throw error;
     }
 
     return data;
   } catch (error) {
     console.error('Error capturing PayPal payment:', error);
+    
+    let errorMessage = 'Failed to capture PayPal payment';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to send a request to the Edge Function')) {
+        errorMessage = 'PayPal capture service is not available. Please contact support.';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to capture PayPal payment'
+      error: errorMessage
     };
   }
 };
@@ -92,6 +132,8 @@ export const processCreditCardPayment = async (
   bookingData?: any
 ): Promise<CreditCardPaymentResponse> => {
   try {
+    console.log('Processing credit card payment with amount:', amount);
+    
     const { data: { session } } = await supabase.auth.getSession();
     
     const { data, error } = await supabase.functions.invoke('process-credit-card', {
@@ -106,16 +148,30 @@ export const processCreditCardPayment = async (
       } : {}
     });
 
+    console.log('Credit card response:', { data, error });
+
     if (error) {
+      console.error('Credit card error:', error);
       throw error;
     }
 
     return data;
   } catch (error) {
     console.error('Error processing credit card payment:', error);
+    
+    let errorMessage = 'Failed to process credit card payment';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to send a request to the Edge Function')) {
+        errorMessage = 'Credit card processing service is not available. Please try PayPal or contact support.';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to process credit card payment'
+      error: errorMessage
     };
   }
 };
