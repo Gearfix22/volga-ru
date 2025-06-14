@@ -30,6 +30,7 @@ const Payment = () => {
   const bookingData = location.state?.bookingData;
   const paypalRef = useRef<HTMLDivElement>(null);
   const paypalButtonsRef = useRef<any>(null);
+  const isCleaningUpRef = useRef(false);
 
   const [selectedMethod, setSelectedMethod] = useState('credit-card');
   const [cardNumber, setCardNumber] = useState('');
@@ -46,41 +47,51 @@ const Payment = () => {
     }
   }, [bookingData, navigate]);
 
-  // Cleanup PayPal buttons when component unmounts or method changes
-  useEffect(() => {
-    return () => {
+  // Safe cleanup function for PayPal buttons
+  const cleanupPayPalButtons = () => {
+    if (isCleaningUpRef.current) return;
+    isCleaningUpRef.current = true;
+
+    try {
       if (paypalButtonsRef.current) {
-        try {
-          paypalButtonsRef.current.close();
-        } catch (e) {
-          console.log('PayPal cleanup error (safe to ignore):', e);
-        }
+        paypalButtonsRef.current.close();
         paypalButtonsRef.current = null;
       }
+      
+      if (paypalRef.current && paypalRef.current.firstChild) {
+        paypalRef.current.innerHTML = '';
+      }
+    } catch (error) {
+      console.log('PayPal cleanup error (safe to ignore):', error);
+    } finally {
+      isCleaningUpRef.current = false;
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cleanupPayPalButtons();
     };
   }, []);
 
+  // Handle PayPal integration
   useEffect(() => {
-    // Cleanup previous PayPal buttons when switching away from PayPal
-    if (selectedMethod !== 'paypal' && paypalButtonsRef.current) {
-      try {
-        paypalButtonsRef.current.close();
-        paypalButtonsRef.current = null;
-      } catch (e) {
-        console.log('PayPal cleanup error (safe to ignore):', e);
-      }
-      if (paypalRef.current) {
-        paypalRef.current.innerHTML = '';
-      }
+    // Skip if not PayPal method
+    if (selectedMethod !== 'paypal') {
+      cleanupPayPalButtons();
+      return;
     }
 
     const loadPayPalScript = () => {
+      // Check if PayPal is already loaded
       if (window.paypal) {
         setPaypalLoaded(true);
         renderPayPalButton();
         return;
       }
 
+      // Load PayPal script
       const script = document.createElement('script');
       script.src = `https://www.paypal.com/sdk/js?client-id=AU15djn3gU9YlY__yWU0ZFAGCo8AepH1KSx2I5Kr_0YrgktGrApSOcI-yAaeAFmfHDN4-yWUu2V1NHqV&currency=USD`;
       script.onload = () => {
@@ -98,121 +109,115 @@ const Payment = () => {
       document.body.appendChild(script);
     };
 
-    if (selectedMethod === 'paypal') {
-      loadPayPalScript();
-    }
+    loadPayPalScript();
   }, [selectedMethod, customAmount]);
 
   const renderPayPalButton = () => {
-    if (!window.paypal || !paypalRef.current || selectedMethod !== 'paypal') return;
-
-    // Clean up existing PayPal buttons
-    if (paypalButtonsRef.current) {
-      try {
-        paypalButtonsRef.current.close();
-      } catch (e) {
-        console.log('PayPal cleanup error (safe to ignore):', e);
-      }
+    if (!window.paypal || !paypalRef.current || selectedMethod !== 'paypal' || isCleaningUpRef.current) {
+      return;
     }
 
-    // Clear container safely
-    if (paypalRef.current) {
-      paypalRef.current.innerHTML = '';
-    }
+    // Clean up existing buttons first
+    cleanupPayPalButtons();
 
     const amount = parseFloat(customAmount) || 50;
 
-    try {
-      paypalButtonsRef.current = window.paypal.Buttons({
-        createOrder: (data: any, actions: any) => {
-          return actions.order.create({
-            purchase_units: [{
-              amount: {
-                value: amount.toFixed(2)
-              }
-            }]
-          });
-        },
-        onApprove: async (data: any, actions: any) => {
-          try {
-            const details = await actions.order.capture();
-            const transactionId = details.id;
-            
-            // Save booking to Supabase if user is authenticated
-            if (user && bookingData) {
-              await createBooking({
-                ...bookingData,
-                customAmount: amount,
-                totalPrice: amount
-              }, {
-                paymentMethod: 'PayPal',
-                transactionId,
-                totalPrice: amount
-              });
-              
-              toast({
-                title: "Booking saved successfully!",
-                description: "Your booking has been saved to your account.",
-              });
-            }
-            
-            // Store payment details for confirmation page
-            localStorage.setItem('paymentStatus', 'completed');
-            localStorage.setItem('transactionId', transactionId);
-            localStorage.setItem('paymentAmount', amount.toString());
-            
-            toast({
-              title: "Payment successful!",
-              description: `Transaction ID: ${transactionId}`,
-            });
+    // Add a small delay to ensure DOM is ready
+    setTimeout(() => {
+      try {
+        if (!paypalRef.current || isCleaningUpRef.current) return;
 
-            navigate('/booking-confirmation', {
-              state: {
-                bookingData: {
+        paypalButtonsRef.current = window.paypal.Buttons({
+          createOrder: (data: any, actions: any) => {
+            return actions.order.create({
+              purchase_units: [{
+                amount: {
+                  value: amount.toFixed(2)
+                }
+              }]
+            });
+          },
+          onApprove: async (data: any, actions: any) => {
+            try {
+              const details = await actions.order.capture();
+              const transactionId = details.id;
+              
+              // Save booking to Supabase if user is authenticated
+              if (user && bookingData) {
+                await createBooking({
                   ...bookingData,
+                  customAmount: amount,
+                  totalPrice: amount
+                }, {
                   paymentMethod: 'PayPal',
                   transactionId,
-                  paidAmount: amount,
                   totalPrice: amount
-                }
+                });
+                
+                toast({
+                  title: "Booking saved successfully!",
+                  description: "Your booking has been saved to your account.",
+                });
               }
-            });
-          } catch (error) {
-            console.error('PayPal payment error:', error);
+              
+              // Store payment details for confirmation page
+              localStorage.setItem('paymentStatus', 'completed');
+              localStorage.setItem('transactionId', transactionId);
+              localStorage.setItem('paymentAmount', amount.toString());
+              
+              toast({
+                title: "Payment successful!",
+                description: `Transaction ID: ${transactionId}`,
+              });
+
+              navigate('/booking-confirmation', {
+                state: {
+                  bookingData: {
+                    ...bookingData,
+                    paymentMethod: 'PayPal',
+                    transactionId,
+                    paidAmount: amount,
+                    totalPrice: amount
+                  }
+                }
+              });
+            } catch (error) {
+              console.error('PayPal payment error:', error);
+              toast({
+                title: "Payment failed",
+                description: "There was an error processing your PayPal payment.",
+                variant: "destructive"
+              });
+            }
+          },
+          onError: (err: any) => {
+            console.error('PayPal error:', err);
             toast({
-              title: "Payment failed",
-              description: "There was an error processing your PayPal payment.",
+              title: "Payment error",
+              description: "There was an error with PayPal. Please try again.",
               variant: "destructive"
             });
+          },
+          onCancel: () => {
+            toast({
+              title: "Payment cancelled",
+              description: "PayPal payment was cancelled.",
+            });
           }
-        },
-        onError: (err: any) => {
-          console.error('PayPal error:', err);
-          toast({
-            title: "Payment error",
-            description: "There was an error with PayPal. Please try again.",
-            variant: "destructive"
-          });
-        },
-        onCancel: () => {
-          toast({
-            title: "Payment cancelled",
-            description: "PayPal payment was cancelled.",
-          });
-        }
-      });
+        });
 
-      if (paypalRef.current) {
-        paypalButtonsRef.current.render(paypalRef.current);
+        if (paypalRef.current && !isCleaningUpRef.current) {
+          paypalButtonsRef.current.render(paypalRef.current);
+        }
+      } catch (error) {
+        console.error('Error rendering PayPal button:', error);
+        toast({
+          title: "PayPal Error",
+          description: "Failed to initialize PayPal button. Please try again.",
+          variant: "destructive"
+        });
       }
-    } catch (error) {
-      console.error('Error rendering PayPal button:', error);
-      toast({
-        title: "PayPal Error",
-        description: "Failed to initialize PayPal button. Please try again.",
-        variant: "destructive"
-      });
-    }
+    }, 100);
   };
 
   if (!bookingData) {
@@ -487,7 +492,11 @@ const Payment = () => {
                       <p className="text-white/70 text-sm mb-4">
                         Click the PayPal button below to complete your payment securely.
                       </p>
-                      <div ref={paypalRef} className="min-h-[50px]">
+                      <div 
+                        ref={paypalRef} 
+                        className="min-h-[50px]"
+                        key={`paypal-${customAmount}-${selectedMethod}`}
+                      >
                         {!paypalLoaded && (
                           <div className="flex items-center justify-center py-4">
                             <div className="text-white/60">Loading PayPal...</div>
