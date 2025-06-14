@@ -16,6 +16,29 @@ export interface DatabaseBooking {
   updated_at?: string;
 }
 
+export interface UserProfile {
+  id: string;
+  full_name?: string;
+  phone?: string;
+  preferred_language?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Service {
+  id: string;
+  name: string;
+  category: string;
+  description?: string;
+  price?: number;
+  duration?: number;
+  image_url?: string;
+  features?: string[];
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export const createBooking = async (bookingData: BookingData, paymentDetails: {
   paymentMethod: string;
   transactionId: string;
@@ -23,8 +46,12 @@ export const createBooking = async (bookingData: BookingData, paymentDetails: {
 }) => {
   const { data: { user } } = await supabase.auth.getUser();
   
+  if (!user) {
+    throw new Error('User must be authenticated to create a booking');
+  }
+
   const booking: DatabaseBooking = {
-    user_id: user?.id,
+    user_id: user.id,
     service_type: bookingData.serviceType,
     service_details: bookingData.serviceDetails,
     user_info: bookingData.userInfo,
@@ -85,20 +112,96 @@ export const updateBookingStatus = async (bookingId: string, status: string) => 
   return data;
 };
 
-export const createUserProfile = async (profileData: {
-  id: string;
-  full_name: string;
+export const createOrUpdateUserProfile = async (profileData: {
+  full_name?: string;
   phone?: string;
   preferred_language?: string;
 }) => {
-  const { data, error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('User must be authenticated');
+  }
+
+  // Try to update first, if no rows affected, then insert
+  const { data: updateData, error: updateError } = await supabase
     .from('profiles')
-    .insert(profileData)
+    .update(profileData)
+    .eq('id', user.id)
     .select()
     .single();
 
+  if (updateError && updateError.code === 'PGRST116') {
+    // No rows found, create new profile
+    const { data: insertData, error: insertError } = await supabase
+      .from('profiles')
+      .insert({
+        id: user.id,
+        ...profileData
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error('Error creating user profile:', insertError);
+      throw insertError;
+    }
+
+    return insertData;
+  } else if (updateError) {
+    console.error('Error updating user profile:', updateError);
+    throw updateError;
+  }
+
+  return updateData;
+};
+
+export const getUserProfile = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Error fetching user profile:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const getAvailableServices = async () => {
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .eq('is_active', true)
+    .order('category', { ascending: true });
+
   if (error) {
-    console.error('Error creating user profile:', error);
+    console.error('Error fetching services:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const getServicesByCategory = async (category: string) => {
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .eq('category', category)
+    .eq('is_active', true)
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching services by category:', error);
     throw error;
   }
 
