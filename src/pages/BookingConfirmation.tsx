@@ -6,8 +6,10 @@ import { Footer } from '@/components/Footer';
 import { BackButton } from '@/components/BackButton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Clock, FileText, ArrowRight, Home, DollarSign } from 'lucide-react';
+import { CheckCircle, Clock, FileText, ArrowRight, Home, DollarSign, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { sendBookingEmail, redirectToWhatsApp } from '@/utils/postBookingActions';
+import { BookingData } from '@/types/booking';
 
 const BookingConfirmation = () => {
   const navigate = useNavigate();
@@ -15,11 +17,13 @@ const BookingConfirmation = () => {
   const [paymentStatus, setPaymentStatus] = useState('');
   const [transactionId, setTransactionId] = useState('');
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [bookingData, setBookingData] = useState<BookingData | null>(null);
 
   useEffect(() => {
     const status = localStorage.getItem('paymentStatus');
     const txId = localStorage.getItem('transactionId');
     const amount = localStorage.getItem('paymentAmount');
+    const storedBookingData = localStorage.getItem('bookingData');
     
     if (!status || !txId) {
       navigate('/booking');
@@ -29,9 +33,29 @@ const BookingConfirmation = () => {
     setPaymentStatus(status);
     setTransactionId(txId);
     setPaymentAmount(amount || '0');
+    
+    if (storedBookingData) {
+      try {
+        const parsedBookingData = JSON.parse(storedBookingData);
+        setBookingData(parsedBookingData);
+        
+        // Send booking email if payment is completed
+        if (status === 'completed') {
+          sendBookingEmail(parsedBookingData, txId, amount || '0');
+        }
+      } catch (error) {
+        console.error('Error parsing booking data:', error);
+      }
+    }
   }, [navigate]);
 
   const isPaymentCompleted = paymentStatus === 'completed';
+
+  const handleWhatsAppContact = () => {
+    if (bookingData) {
+      redirectToWhatsApp(bookingData, transactionId);
+    }
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -168,28 +192,40 @@ const BookingConfirmation = () => {
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Button 
-                  onClick={() => navigate('/')}
-                  className="flex-1"
-                >
-                  <Home className="mr-2 h-4 w-4" />
-                  {t('returnToHome')}
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    localStorage.removeItem('bookingData');
-                    localStorage.removeItem('paymentStatus');
-                    localStorage.removeItem('transactionId');
-                    localStorage.removeItem('paymentAmount');
-                    navigate('/booking');
-                  }}
-                  className="flex-1"
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  {t('newBooking')}
-                </Button>
+              <div className="flex flex-col gap-4 pt-4">
+                {isPaymentCompleted && (
+                  <Button 
+                    onClick={handleWhatsAppContact}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Continue on WhatsApp
+                  </Button>
+                )}
+                
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button 
+                    onClick={() => navigate('/')}
+                    className="flex-1"
+                  >
+                    <Home className="mr-2 h-4 w-4" />
+                    {t('returnToHome')}
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      localStorage.removeItem('bookingData');
+                      localStorage.removeItem('paymentStatus');
+                      localStorage.removeItem('transactionId');
+                      localStorage.removeItem('paymentAmount');
+                      navigate('/booking');
+                    }}
+                    className="flex-1"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    {t('newBooking')}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
