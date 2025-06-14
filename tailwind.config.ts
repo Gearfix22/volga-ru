@@ -21,7 +21,7 @@ export default {
 		extend: {
 			fontFamily: {
 				'sans': ['Inter', 'system-ui', 'sans-serif'],
-				'serif': ['Crimson Text', 'Georgia', 'serif'],
+				'serif': ['Playfair Display', 'Georgia', 'serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
@@ -57,19 +57,37 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				// Volga Services color palette
-				volga: {
-					blue: '#3b82f6',
-					'blue-light': '#60a5fa',
-					'blue-dark': '#2563eb',
-					'logo-blue': '#3b82f6',
-					'logo-red': '#ef4444',
-					gold: '#f59e0b',
-					'gold-light': '#fbbf24',
-					'gold-dark': '#d97706',
-					navy: '#1e293b',
-					'navy-light': '#334155',
-					'navy-dark': '#0f172a'
+				// Beachfront luxury theme colors
+				ocean: {
+					50: '#f0f9ff',
+					100: '#e0f2fe',
+					200: '#bae6fd',
+					300: '#7dd3fc',
+					400: '#38bdf8',
+					500: '#0ea5e9',
+					600: '#0284c7',
+					700: '#0369a1',
+					800: '#075985',
+					900: '#0c4a6e',
+					950: '#082f49'
+				},
+				sand: {
+					50: '#fefdfb',
+					100: '#fef7ed',
+					200: '#fdecd3',
+					300: '#fbd9a8',
+					400: '#f7bc6c',
+					500: '#f59e0b',
+					600: '#d97706',
+					700: '#b45309',
+					800: '#92400e',
+					900: '#78350f'
+				},
+				luxury: {
+					cream: '#fefefe',
+					pearl: '#f8fafc',
+					charcoal: '#334155',
+					deep: '#1e293b'
 				}
 			},
 			borderRadius: {
@@ -121,6 +139,14 @@ export default {
 					'50%': {
 						transform: 'translateY(-20px)'
 					}
+				},
+				'wave': {
+					'0%, 100%': {
+						transform: 'translateX(0%)'
+					},
+					'50%': {
+						transform: 'translateX(-25%)'
+					}
 				}
 			},
 			animation: {
@@ -128,7 +154,8 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fade-in 0.6s ease-out',
 				'slide-up': 'slide-up 0.6s ease-out',
-				'float': 'float 6s ease-in-out infinite'
+				'float': 'float 6s ease-in-out infinite',
+				'wave': 'wave 8s ease-in-out infinite'
 			}
 		}
 	},
