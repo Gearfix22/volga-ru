@@ -17,7 +17,6 @@ export const Navigation: React.FC = () => {
   const navigationItems = [
     { key: 'home', path: '/', label: t('home') },
     { key: 'services', path: '/services', label: t('services') },
-    { key: 'booking', path: '/booking', label: 'Book Now' },
     { key: 'about', path: '/about', label: t('about') },
     { key: 'contact', path: '/contact', label: t('contact') },
   ];
@@ -39,9 +38,7 @@ export const Navigation: React.FC = () => {
                   key={item.key}
                   onClick={() => navigate(item.path)}
                   className={`px-3 py-2 text-sm font-medium transition-colors ${
-                    item.key === 'booking' 
-                      ? 'bg-volga-logo-blue text-white rounded-lg hover:bg-volga-blue-dark' 
-                      : isActive(item.path) 
+                    isActive(item.path) 
                       ? 'text-volga-logo-blue' 
                       : 'text-white hover:text-volga-logo-blue'
                   }`}
@@ -80,9 +77,7 @@ export const Navigation: React.FC = () => {
                     setIsOpen(false);
                   }}
                   className={`block w-full text-left px-4 py-2 text-sm font-medium transition-colors ${
-                    item.key === 'booking' 
-                      ? 'bg-volga-logo-blue text-white rounded-lg'
-                      : isActive(item.path)
+                    isActive(item.path)
                       ? 'text-volga-logo-blue'
                       : 'text-white hover:text-volga-logo-blue'
                   }`}

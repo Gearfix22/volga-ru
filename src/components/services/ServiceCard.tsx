@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,11 +22,12 @@ interface ServiceCardProps {
 
 export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const Icon = service.icon;
 
   const handleBookNow = () => {
-    console.log(`Booking service: ${service.id}`);
-    // TODO: Implement booking functionality
+    console.log(`Navigating to booking page for service: ${service.id}`);
+    navigate('/booking');
   };
 
   const handleLearnMore = () => {
