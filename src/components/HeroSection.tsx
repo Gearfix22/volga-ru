@@ -17,9 +17,9 @@ export const HeroSection: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 sm:px-6 lg:px-8 relative">
-      {/* Dynamic logo without branding text */}
+      {/* Main logo */}
       <div className="mb-8 sm:mb-12 lg:mb-16 fade-in-up">
-        <Logo showFullBranding={false} size="large" animate={true} />
+        <Logo />
       </div>
       
       {/* Hero content */}
