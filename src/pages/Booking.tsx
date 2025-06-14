@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
@@ -20,6 +19,7 @@ const Booking = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useLanguage();
+  const [searchParams] = useSearchParams();
   const [serviceType, setServiceType] = useState('');
   const [serviceDetails, setServiceDetails] = useState<ServiceDetails>({});
   const [userInfo, setUserInfo] = useState<UserInfo>({
@@ -28,6 +28,15 @@ const Booking = () => {
     phone: '',
     language: 'english'
   });
+
+  // Pre-select service type from URL parameters
+  useEffect(() => {
+    const serviceFromUrl = searchParams.get('service');
+    if (serviceFromUrl) {
+      setServiceType(serviceFromUrl);
+      console.log(`Pre-selecting service type: ${serviceFromUrl}`);
+    }
+  }, [searchParams]);
 
   const updateServiceDetail = (key: string, value: string | string[]) => {
     setServiceDetails(prev => ({
@@ -322,36 +331,38 @@ const Booking = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Service Selection */}
-            <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
-              <CardHeader>
-                <CardTitle>{t('selectServiceType')}</CardTitle>
-                <CardDescription>{t('chooseServiceYouNeed')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {[
-                    { id: 'transportation', label: t('transportation'), icon: Car },
-                    { id: 'hotel', label: t('hotelReservation'), icon: Hotel },
-                    { id: 'event', label: t('eventBooking'), icon: Calendar },
-                    { id: 'trip', label: t('customTrip'), icon: MapPin }
-                  ].map(({ id, label, icon: Icon }) => (
-                    <Card
-                      key={id}
-                      className={`cursor-pointer transition-all hover:shadow-md ${
-                        serviceType === id ? 'ring-2 ring-primary bg-primary/5' : ''
-                      }`}
-                      onClick={() => setServiceType(id)}
-                    >
-                      <CardContent className="p-4 text-center">
-                        <Icon className="h-8 w-8 mx-auto mb-2 text-primary" />
-                        <p className="font-medium">{label}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {/* Service Selection - Only show if no service is pre-selected */}
+            {!searchParams.get('service') && (
+              <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
+                <CardHeader>
+                  <CardTitle>{t('selectServiceType')}</CardTitle>
+                  <CardDescription>{t('chooseServiceYouNeed')}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                      { id: 'transportation', label: t('transportation'), icon: Car },
+                      { id: 'hotel', label: t('hotelReservation'), icon: Hotel },
+                      { id: 'event', label: t('eventBooking'), icon: Calendar },
+                      { id: 'trip', label: t('customTrip'), icon: MapPin }
+                    ].map(({ id, label, icon: Icon }) => (
+                      <Card
+                        key={id}
+                        className={`cursor-pointer transition-all hover:shadow-md ${
+                          serviceType === id ? 'ring-2 ring-primary bg-primary/5' : ''
+                        }`}
+                        onClick={() => setServiceType(id)}
+                      >
+                        <CardContent className="p-4 text-center">
+                          <Icon className="h-8 w-8 mx-auto mb-2 text-primary" />
+                          <p className="font-medium">{label}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Service Details Form */}
             {serviceType && (

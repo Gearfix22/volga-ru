@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -25,9 +24,25 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
   const navigate = useNavigate();
   const Icon = service.icon;
 
+  const getServiceTypeFromCategory = (category: string) => {
+    switch (category) {
+      case 'transportation':
+        return 'transportation';
+      case 'hotels':
+        return 'hotel';
+      case 'events':
+        return 'event';
+      case 'customTrips':
+        return 'trip';
+      default:
+        return 'transportation';
+    }
+  };
+
   const handleBookNow = () => {
-    console.log(`Navigating to booking page for service: ${service.id}`);
-    navigate('/booking');
+    const serviceType = getServiceTypeFromCategory(service.category);
+    console.log(`Navigating to booking page for service: ${service.id} with type: ${serviceType}`);
+    navigate(`/booking?service=${serviceType}`);
   };
 
   const handleLearnMore = () => {
