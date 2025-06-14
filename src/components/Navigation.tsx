@@ -32,7 +32,7 @@ export const Navigation: React.FC = () => {
               alt="Volga Services Logo"
               className="w-10 h-10 sm:w-12 sm:h-12"
             />
-            <span className="text-white font-bold text-xl sm:text-2xl font-serif">
+            <span className="text-pearl-white font-bold text-xl sm:text-2xl font-serif">
               <span className="luxury-text">VOLGA</span>
               <span className="ml-2">SERVICES</span>
             </span>
@@ -47,8 +47,8 @@ export const Navigation: React.FC = () => {
                   onClick={() => navigate(item.path)}
                   className={`px-3 py-2 text-sm font-medium transition-colors ${
                     isActive(item.path) 
-                      ? 'text-ocean-300 border-b-2 border-ocean-300' 
-                      : 'text-white/90 hover:text-ocean-300'
+                      ? 'text-ocean-bright border-b-2 border-ocean-bright' 
+                      : 'text-pearl-white/90 hover:text-ocean-bright'
                   }`}
                 >
                   {item.label}
@@ -76,7 +76,7 @@ export const Navigation: React.FC = () => {
             <div className="md:hidden">
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="text-white p-2 glass-effect rounded-lg"
+                className="text-pearl-white p-2 glass-effect rounded-lg"
               >
                 {isOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
@@ -97,8 +97,8 @@ export const Navigation: React.FC = () => {
                   }}
                   className={`block w-full text-left px-4 py-3 text-sm font-medium transition-colors rounded-lg ${
                     isActive(item.path)
-                      ? 'text-ocean-300 bg-white/10'
-                      : 'text-white hover:text-ocean-300 hover:bg-white/5'
+                      ? 'text-ocean-bright bg-white/20'
+                      : 'text-pearl-white hover:text-ocean-bright hover:bg-white/10'
                   }`}
                 >
                   {item.label}

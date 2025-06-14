@@ -59,10 +59,10 @@ export const Footer: React.FC = () => {
           {/* Company Info */}
           <div className="space-y-6">
             <div>
-              <h3 className="text-white font-serif font-bold text-2xl sm:text-3xl mb-4">
+              <h3 className="text-pearl-white font-serif font-bold text-2xl sm:text-3xl mb-4">
                 <span className="luxury-text">Volga Services</span>
               </h3>
-              <p className="text-luxury-cream/70 text-sm leading-relaxed">
+              <p className="text-ocean-light/75 text-sm leading-relaxed">
                 {t('footerDescription')}
               </p>
             </div>
@@ -81,19 +81,19 @@ export const Footer: React.FC = () => {
 
           {/* Contact Information */}
           <div className="space-y-6">
-            <h3 className="text-white font-serif font-bold text-lg sm:text-xl">{t('contactInfo')}</h3>
+            <h3 className="text-pearl-white font-serif font-bold text-lg sm:text-xl">{t('contactInfo')}</h3>
             <div className="space-y-4">
               {contactInfo.map((item, index) => (
                 <div key={index} className="flex items-start space-x-3">
-                  <item.icon className="h-5 w-5 text-ocean-300 mt-1 flex-shrink-0" />
+                  <item.icon className="h-5 w-5 text-ocean-bright mt-1 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-luxury-cream/60 text-xs font-medium uppercase tracking-wide">{item.label}</p>
+                    <p className="text-ocean-light/70 text-xs font-medium uppercase tracking-wide">{item.label}</p>
                     {item.href === '#' ? (
-                      <p className="text-white text-sm break-words">{item.value}</p>
+                      <p className="text-pearl-white text-sm break-words">{item.value}</p>
                     ) : (
                       <a 
                         href={item.href}
-                        className="text-white hover:text-ocean-300 text-sm transition-colors break-words"
+                        className="text-pearl-white hover:text-ocean-bright text-sm transition-colors break-words"
                         target={item.href.startsWith('http') ? '_blank' : undefined}
                         rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                       >
@@ -108,22 +108,22 @@ export const Footer: React.FC = () => {
 
           {/* Business Information */}
           <div className="space-y-6">
-            <h3 className="text-white font-serif font-bold text-lg sm:text-xl">{t('businessInfo')}</h3>
+            <h3 className="text-pearl-white font-serif font-bold text-lg sm:text-xl">{t('businessInfo')}</h3>
             <div className="space-y-4">
               <div>
-                <p className="text-luxury-cream/60 text-xs font-medium uppercase tracking-wide">{t('taxNumber')}</p>
-                <p className="text-ocean-300 font-mono text-lg font-semibold">4706086543</p>
+                <p className="text-ocean-light/70 text-xs font-medium uppercase tracking-wide">{t('taxNumber')}</p>
+                <p className="text-ocean-bright font-mono text-lg font-semibold">4706086543</p>
               </div>
               <div>
-                <p className="text-luxury-cream/60 text-xs font-medium uppercase tracking-wide">{t('registrationNumber')}</p>
-                <p className="text-ocean-300 font-mono text-lg font-semibold">1254700002831</p>
+                <p className="text-ocean-light/70 text-xs font-medium uppercase tracking-wide">{t('registrationNumber')}</p>
+                <p className="text-ocean-bright font-mono text-lg font-semibold">1254700002831</p>
               </div>
             </div>
           </div>
 
           {/* Social Media */}
           <div className="space-y-6">
-            <h3 className="text-white font-serif font-bold text-lg sm:text-xl">{t('followUs')}</h3>
+            <h3 className="text-pearl-white font-serif font-bold text-lg sm:text-xl">{t('followUs')}</h3>
             <div className="flex space-x-4">
               {socialLinks.map((social, index) => (
                 <a
@@ -133,7 +133,7 @@ export const Footer: React.FC = () => {
                   rel="noopener noreferrer"
                   className="glass-effect p-3 rounded-full hover:bg-ocean-500/20 transition-colors"
                 >
-                  <social.icon className="h-6 w-6 text-white" />
+                  <social.icon className="h-6 w-6 text-pearl-white" />
                   <span className="sr-only">{social.label}</span>
                 </a>
               ))}
@@ -143,8 +143,8 @@ export const Footer: React.FC = () => {
 
         {/* Bottom Bar */}
         <div className="border-t border-white/10 mt-12 pt-8 text-center">
-          <p className="text-luxury-cream/60 text-sm">
-            © 2024 <span className="text-ocean-300 font-medium">Volga Services</span>. {t('allRightsReserved')}
+          <p className="text-ocean-light/70 text-sm">
+            © 2024 <span className="text-ocean-bright font-medium">Volga Services</span>. {t('allRightsReserved')}
           </p>
         </div>
       </div>
