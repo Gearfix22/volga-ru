@@ -20,7 +20,7 @@ export const HeroSection: React.FC = () => {
       {/* Main logo with glass effect */}
       <div className="mb-8 sm:mb-12 lg:mb-16 fade-in-up">
         <div className="liquid-glass rounded-3xl p-6 sm:p-8 hover-glass">
-          <Logo variant="dark" />
+          <Logo />
         </div>
       </div>
       
