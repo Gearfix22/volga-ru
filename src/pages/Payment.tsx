@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CreditCard, Shield, Lock, DollarSign } from 'lucide-react';
+import { CreditCard, Shield, Lock, DollarSign, MapPin, Calendar, Clock, Users, Car, Building2, Ticket, Globe } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { createBooking } from '@/services/database';
@@ -321,6 +321,176 @@ const Payment = () => {
     }
   ];
 
+  const renderBookingDetails = () => {
+    const { serviceType, serviceDetails } = bookingData;
+    
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Badge variant="secondary" className="bg-russian-gold/20 text-russian-gold">
+            {serviceType}
+          </Badge>
+        </div>
+        
+        {serviceType === 'Transportation' && serviceDetails && 'pickup' in serviceDetails && (
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <MapPin className="h-4 w-4 text-white/70 mt-1" />
+              <div>
+                <p className="text-white/70 text-sm">Pickup Location</p>
+                <p className="text-white font-medium">{serviceDetails.pickup}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <MapPin className="h-4 w-4 text-white/70 mt-1" />
+              <div>
+                <p className="text-white/70 text-sm">Drop-off Location</p>
+                <p className="text-white font-medium">{serviceDetails.dropoff}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Calendar className="h-4 w-4 text-white/70 mt-1" />
+              <div>
+                <p className="text-white/70 text-sm">Date & Time</p>
+                <p className="text-white font-medium">{serviceDetails.date} at {serviceDetails.time}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Car className="h-4 w-4 text-white/70 mt-1" />
+              <div>
+                <p className="text-white/70 text-sm">Vehicle Type</p>
+                <p className="text-white font-medium">{serviceDetails.vehicleType}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {serviceType === 'Hotels' && serviceDetails && 'city' in serviceDetails && (
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <MapPin className="h-4 w-4 text-white/70 mt-1" />
+              <div>
+                <p className="text-white/70 text-sm">City</p>
+                <p className="text-white font-medium">{serviceDetails.city}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Building2 className="h-4 w-4 text-white/70 mt-1" />
+              <div>
+                <p className="text-white/70 text-sm">Hotel</p>
+                <p className="text-white font-medium">{serviceDetails.hotel}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Calendar className="h-4 w-4 text-white/70 mt-1" />
+              <div>
+                <p className="text-white/70 text-sm">Check-in / Check-out</p>
+                <p className="text-white font-medium">{serviceDetails.checkin} - {serviceDetails.checkout}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Users className="h-4 w-4 text-white/70 mt-1" />
+              <div>
+                <p className="text-white/70 text-sm">Room Type</p>
+                <p className="text-white font-medium">{serviceDetails.roomType}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {serviceType === 'Events' && serviceDetails && 'eventName' in serviceDetails && (
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <Ticket className="h-4 w-4 text-white/70 mt-1" />
+              <div>
+                <p className="text-white/70 text-sm">Event Name</p>
+                <p className="text-white font-medium">{serviceDetails.eventName}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <MapPin className="h-4 w-4 text-white/70 mt-1" />
+              <div>
+                <p className="text-white/70 text-sm">Location</p>
+                <p className="text-white font-medium">{serviceDetails.eventLocation}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Calendar className="h-4 w-4 text-white/70 mt-1" />
+              <div>
+                <p className="text-white/70 text-sm">Event Date</p>
+                <p className="text-white font-medium">{serviceDetails.eventDate}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Users className="h-4 w-4 text-white/70 mt-1" />
+              <div>
+                <p className="text-white/70 text-sm">Tickets</p>
+                <p className="text-white font-medium">{serviceDetails.tickets}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {serviceType === 'Custom Trips' && serviceDetails && 'duration' in serviceDetails && (
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <Clock className="h-4 w-4 text-white/70 mt-1" />
+              <div>
+                <p className="text-white/70 text-sm">Duration</p>
+                <p className="text-white font-medium">{serviceDetails.duration}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Globe className="h-4 w-4 text-white/70 mt-1" />
+              <div>
+                <p className="text-white/70 text-sm">Regions</p>
+                <p className="text-white font-medium">{serviceDetails.regions}</p>
+              </div>
+            </div>
+            {serviceDetails.interests && serviceDetails.interests.length > 0 && (
+              <div className="flex items-start gap-3">
+                <Users className="h-4 w-4 text-white/70 mt-1" />
+                <div>
+                  <p className="text-white/70 text-sm">Interests</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {serviceDetails.interests.map((interest, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {interest}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Customer Information */}
+        <div className="border-t border-white/20 pt-4 mt-6">
+          <h4 className="text-white font-medium mb-3">Customer Information</h4>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-white/70">Name:</span>
+              <span className="text-white">{bookingData.userInfo.fullName}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-white/70">Email:</span>
+              <span className="text-white">{bookingData.userInfo.email}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-white/70">Phone:</span>
+              <span className="text-white">{bookingData.userInfo.phone}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-white/70">Language:</span>
+              <span className="text-white">{bookingData.userInfo.language}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Animated Background */}
@@ -530,50 +700,18 @@ const Payment = () => {
               </CardContent>
             </Card>
 
-            {/* Booking Summary */}
+            {/* Enhanced Booking Summary */}
             <Card className="bg-white/10 backdrop-blur-sm border-white/20">
               <CardHeader>
                 <CardTitle className="text-white">Booking Summary</CardTitle>
+                <CardDescription className="text-white/70">
+                  Review your service details before payment
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between text-white">
-                    <span>Service:</span>
-                    <span className="font-medium">{bookingData.serviceName || bookingData.serviceType}</span>
-                  </div>
-                  {bookingData.date && (
-                    <div className="flex justify-between text-white">
-                      <span>Date:</span>
-                      <span>{bookingData.date}</span>
-                    </div>
-                  )}
-                  {bookingData.time && (
-                    <div className="flex justify-between text-white">
-                      <span>Time:</span>
-                      <span>{bookingData.time}</span>
-                    </div>
-                  )}
-                  {bookingData.duration && (
-                    <div className="flex justify-between text-white">
-                      <span>Duration:</span>
-                      <span>{bookingData.duration}</span>
-                    </div>
-                  )}
-                  {bookingData.location && (
-                    <div className="flex justify-between text-white">
-                      <span>Location:</span>
-                      <span>{bookingData.location}</span>
-                    </div>
-                  )}
-                  {bookingData.guests && (
-                    <div className="flex justify-between text-white">
-                      <span>Guests:</span>
-                      <span>{bookingData.guests}</span>
-                    </div>
-                  )}
-                </div>
+              <CardContent>
+                {renderBookingDetails()}
 
-                <div className="border-t border-white/20 pt-4">
+                <div className="border-t border-white/20 pt-4 mt-6">
                   <div className="flex justify-between text-white text-lg font-bold">
                     <span>Total:</span>
                     <span className="text-russian-gold">${finalAmount.toFixed(2)}</span>
@@ -585,7 +723,7 @@ const Payment = () => {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 text-white/70 text-sm">
+                <div className="flex items-center gap-2 text-white/70 text-sm mt-4">
                   <Shield className="h-4 w-4" />
                   <span>Your payment is protected by secure encryption</span>
                 </div>

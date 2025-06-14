@@ -1,12 +1,13 @@
+
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { BackButton } from '@/components/BackButton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Clock, FileText, ArrowRight, Home, DollarSign, MessageCircle } from 'lucide-react';
+import { CheckCircle, Clock, FileText, ArrowRight, Home, DollarSign, MessageCircle, Mail } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { sendBookingEmail, redirectToWhatsApp } from '@/utils/postBookingActions';
 import { BookingData } from '@/types/booking';
@@ -14,12 +15,16 @@ import { BookingData } from '@/types/booking';
 const BookingConfirmation = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const location = useLocation();
   const [paymentStatus, setPaymentStatus] = useState('');
   const [transactionId, setTransactionId] = useState('');
   const [paymentAmount, setPaymentAmount] = useState('');
   const [bookingData, setBookingData] = useState<BookingData | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
 
   useEffect(() => {
+    // Get data from navigation state first, then localStorage as fallback
+    const stateBookingData = location.state?.bookingData;
     const status = localStorage.getItem('paymentStatus');
     const txId = localStorage.getItem('transactionId');
     const amount = localStorage.getItem('paymentAmount');
@@ -34,20 +39,25 @@ const BookingConfirmation = () => {
     setTransactionId(txId);
     setPaymentAmount(amount || '0');
     
-    if (storedBookingData) {
-      try {
-        const parsedBookingData = JSON.parse(storedBookingData);
-        setBookingData(parsedBookingData);
-        
-        // Send booking email if payment is completed
-        if (status === 'completed') {
-          sendBookingEmail(parsedBookingData, txId, amount || '0');
-        }
-      } catch (error) {
-        console.error('Error parsing booking data:', error);
+    // Use state data if available, otherwise fall back to localStorage
+    const dataToUse = stateBookingData || (storedBookingData ? JSON.parse(storedBookingData) : null);
+    
+    if (dataToUse) {
+      setBookingData(dataToUse);
+      
+      // Send booking email if payment is completed and email hasn't been sent yet
+      if (status === 'completed' && !emailSent) {
+        sendBookingEmail(dataToUse, txId, amount || '0')
+          .then(() => {
+            setEmailSent(true);
+            console.log('Booking email sent successfully');
+          })
+          .catch((error) => {
+            console.error('Error sending booking email:', error);
+          });
       }
     }
-  }, [navigate]);
+  }, [navigate, location.state, emailSent]);
 
   const isPaymentCompleted = paymentStatus === 'completed';
 
@@ -133,6 +143,23 @@ const BookingConfirmation = () => {
                 )}
               </div>
 
+              {/* Email Notification Status */}
+              {isPaymentCompleted && (
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border-l-4 border-green-400">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-5 w-5 text-green-600" />
+                    <div>
+                      <p className="font-medium text-green-800 dark:text-green-200">
+                        Booking Details Sent
+                      </p>
+                      <p className="text-sm text-green-700 dark:text-green-300">
+                        Your booking details have been sent to our team at info@volgaservices.com for processing.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg">{t('whatHappensNext')}</h3>
                 <div className="space-y-3">
@@ -141,9 +168,9 @@ const BookingConfirmation = () => {
                       <div className="flex items-start gap-3">
                         <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
                         <div>
-                          <p className="font-medium">{t('confirmationEmailSent')}</p>
+                          <p className="font-medium">Booking Details Forwarded</p>
                           <p className="text-sm text-slate-600 dark:text-slate-400">
-                            {t('checkEmailDetails')}
+                            Your complete booking information has been sent to our service team
                           </p>
                         </div>
                       </div>
@@ -185,8 +212,8 @@ const BookingConfirmation = () => {
               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-400">
                 <p className="text-sm text-blue-800 dark:text-blue-200">
                   <strong>{t('needHelp')}</strong> {t('contactSupport')}{' '}
-                  <a href="mailto:support@volgatourism.com" className="underline">
-                    support@volgatourism.com
+                  <a href="mailto:info@volgaservices.com" className="underline">
+                    info@volgaservices.com
                   </a>{' '}
                   or call +7 (xxx) xxx-xxxx. {t('referenceTransaction')}
                 </p>
