@@ -12,17 +12,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { CreditCard, Upload, CheckCircle, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-interface BookingData {
-  serviceType: string;
-  serviceDetails: any;
-  userInfo: {
-    fullName: string;
-    email: string;
-    phone: string;
-    language: string;
-  };
-}
+import type { BookingData } from '@/types/booking';
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -54,8 +44,11 @@ const Payment = () => {
     let basePrice = basePrices[bookingData.serviceType as keyof typeof basePrices] || 100;
     
     // Add some logic based on service details
-    if (bookingData.serviceType === 'event' && bookingData.serviceDetails.tickets) {
-      basePrice *= parseInt(bookingData.serviceDetails.tickets);
+    if (bookingData.serviceType === 'event') {
+      const details = bookingData.serviceDetails as any;
+      if (details.tickets) {
+        basePrice *= parseInt(details.tickets);
+      }
     }
     
     return basePrice;
@@ -120,6 +113,23 @@ const Payment = () => {
     return names[type as keyof typeof names] || type;
   };
 
+  const renderServiceDetails = () => {
+    if (!bookingData) return null;
+    
+    const details = bookingData.serviceDetails as any;
+    return Object.entries(details).map(([key, value]) => {
+      if (value && typeof value !== 'object') {
+        return (
+          <div key={key} className="flex justify-between">
+            <span className="capitalize font-medium">{key.replace(/([A-Z])/g, ' $1')}:</span>
+            <span className="text-slate-600 dark:text-slate-400">{String(value)}</span>
+          </div>
+        );
+      }
+      return null;
+    }).filter(Boolean);
+  };
+
   if (!bookingData) {
     return <div>Loading...</div>;
   }
@@ -159,14 +169,7 @@ const Payment = () => {
                   </p>
                   
                   <div className="space-y-2 text-sm">
-                    {Object.entries(bookingData.serviceDetails).map(([key, value]) => (
-                      value && (
-                        <div key={key} className="flex justify-between">
-                          <span className="capitalize font-medium">{key.replace(/([A-Z])/g, ' $1')}:</span>
-                          <span className="text-slate-600 dark:text-slate-400">{value}</span>
-                        </div>
-                      )
-                    ))}
+                    {renderServiceDetails()}
                   </div>
                 </div>
 
