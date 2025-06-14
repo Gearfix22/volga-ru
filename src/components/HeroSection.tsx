@@ -23,53 +23,28 @@ export const HeroSection: React.FC = () => {
       </div>
       
       {/* Hero content */}
-      <div className="max-w-5xl mx-auto mb-8 sm:mb-12 space-y-6 sm:space-y-8 fade-in-up" style={{ animationDelay: '0.2s' }}>
-        <div className="mb-4 sm:mb-6">
-          <p className="text-pearl-white/90 text-sm sm:text-base font-medium tracking-wider uppercase mb-4">
-            LUXURY TRAVEL SERVICES
-          </p>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-pearl-white mb-6 sm:mb-8 elegant-shadow leading-tight">
-            Experience Premium
-            <br />
-            <span className="luxury-text">Travel Excellence</span>
-          </h1>
-        </div>
+      <div className="max-w-4xl mx-auto mb-8 sm:mb-12 space-y-4 sm:space-y-6 fade-in-up" style={{ animationDelay: '0.2s' }}>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 lg:mb-8 text-shadow font-serif leading-tight">
+          {t('welcome')}
+        </h2>
         
-        <p className={`text-lg sm:text-xl md:text-2xl text-ocean-light/90 leading-relaxed max-w-4xl mx-auto px-4 elegant-shadow ${
+        <p className={`text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 leading-relaxed max-w-3xl mx-auto px-4 ${
           language === 'ar' ? 'font-medium' : ''
         }`}>
           {t('subtitle')}
         </p>
       </div>
       
-      {/* CTA Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 fade-in-up" style={{ animationDelay: '0.4s' }}>
+      {/* CTA Button */}
+      <div className="fade-in-up" style={{ animationDelay: '0.4s' }}>
         <Button
           onClick={handleExploreServices}
           size="lg"
-          className="bg-ocean-500 hover:bg-ocean-600 text-white px-8 py-4 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 border-0"
+          className="bg-volga-logo-blue hover:bg-volga-blue-dark text-white px-6 sm:px-8 py-3 text-base sm:text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
         >
           {t('exploreServices')}
-          <ArrowRight className={`h-5 w-5 ${language === 'ar' ? 'mr-3 rotate-180' : 'ml-3'}`} />
+          <ArrowRight className={`h-4 w-4 sm:h-5 sm:w-5 ${language === 'ar' ? 'mr-2 sm:mr-3 rotate-180' : 'ml-2 sm:ml-3'}`} />
         </Button>
-        
-        <Button
-          variant="outline"
-          size="lg"
-          className="glass-effect text-pearl-white border-white/30 hover:bg-white/20 px-8 py-4 text-lg font-semibold rounded-full transition-all duration-300"
-        >
-          Learn More
-        </Button>
-      </div>
-      
-      {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 fade-in-up" style={{ animationDelay: '0.6s' }}>
-        <div className="flex flex-col items-center text-pearl-white/70">
-          <span className="text-sm mb-2">Scroll Down</span>
-          <div className="w-px h-16 bg-white/30 relative">
-            <div className="absolute top-0 w-px h-4 bg-ocean-bright/80 animate-pulse"></div>
-          </div>
-        </div>
       </div>
     </div>
   );

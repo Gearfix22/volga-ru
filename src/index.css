@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -78,51 +78,29 @@
   }
 }
 
-/* Luxury beachfront theme styles */
-.ocean-gradient {
-  background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 50%, #075985 100%);
-}
-
-.luxury-text {
-  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+/* Volga Services specific styles */
+.gradient-text {
+  background: linear-gradient(135deg, #3b82f6, #ef4444);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.elegant-shadow {
-  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+.text-shadow {
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.glass-effect {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+.floating {
+  animation: float 6s ease-in-out infinite;
 }
 
-.wave-pattern {
-  background-image: 
-    radial-gradient(circle at 25% 25%, rgba(14, 165, 233, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(56, 189, 248, 0.1) 0%, transparent 50%);
-  background-size: 200px 200px;
-  animation: wave 8s ease-in-out infinite;
-}
-
-/* Enhanced text readability classes */
-.text-ocean-light {
-  color: #e0f2fe;
-}
-
-.text-cream-warm {
-  color: #fef7ed;
-}
-
-.text-ocean-bright {
-  color: #7dd3fc;
-}
-
-.text-pearl-white {
-  color: #f8fafc;
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 @keyframes fadeInUp {
@@ -137,10 +115,5 @@
 }
 
 .fade-in-up {
-  animation: fadeInUp 0.8s ease-out forwards;
-}
-
-/* Smooth scroll behavior */
-html {
-  scroll-behavior: smooth;
+  animation: fadeInUp 0.6s ease-out forwards;
 }
