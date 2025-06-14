@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Navigation } from '@/components/Navigation';
@@ -24,8 +24,13 @@ const Payment = () => {
   const [paypalEmail, setPaypalEmail] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
+  useEffect(() => {
+    if (!bookingData) {
+      navigate('/booking');
+    }
+  }, [bookingData, navigate]);
+
   if (!bookingData) {
-    navigate('/booking');
     return null;
   }
 
