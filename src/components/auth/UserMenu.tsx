@@ -1,0 +1,48 @@
+
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { User, LogOut } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { AuthModal } from './AuthModal';
+
+export const UserMenu: React.FC = () => {
+  const { user, signOut } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  if (!user) {
+    return (
+      <>
+        <Button 
+          onClick={() => setShowAuthModal(true)}
+          variant="outline"
+          size="sm"
+          className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+        >
+          Sign In
+        </Button>
+        <AuthModal 
+          isOpen={showAuthModal} 
+          onClose={() => setShowAuthModal(false)} 
+        />
+      </>
+    );
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
+          <User className="h-4 w-4 mr-2" />
+          {user.email?.split('@')[0]}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem onClick={signOut}>
+          <LogOut className="h-4 w-4 mr-2" />
+          Sign Out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};

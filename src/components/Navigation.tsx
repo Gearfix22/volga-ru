@@ -3,6 +3,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { UserMenu } from './auth/UserMenu';
 import { Menu, X } from 'lucide-react';
 
 export const Navigation: React.FC = () => {
@@ -63,6 +64,9 @@ export const Navigation: React.FC = () => {
             <div className="hidden sm:block">
               <LanguageSwitcher />
             </div>
+
+            {/* User Menu */}
+            <UserMenu />
 
             {/* Mobile menu button */}
             <div className="md:hidden">
