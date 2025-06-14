@@ -20,14 +20,14 @@ export const ServicesTabs: React.FC<ServicesTabsProps> = ({ activeCategory, setA
   ];
 
   return (
-    <div className="flex justify-center mb-12 animate-slide-up animation-delay-200">
+    <div className="flex justify-center mb-8 sm:mb-12 animate-slide-up animation-delay-200 px-4 sm:px-0">
       <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full max-w-4xl">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 bg-white/10 backdrop-blur-sm border-white/20">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 bg-white/10 backdrop-blur-sm border-white/20 h-auto p-1">
           {categories.map((category) => (
             <TabsTrigger
               key={category.id}
               value={category.id}
-              className="text-white data-[state=active]:bg-volga-logo-blue data-[state=active]:text-white"
+              className="text-white data-[state=active]:bg-volga-logo-blue data-[state=active]:text-white text-xs sm:text-sm py-2 px-2 sm:px-3"
             >
               {category.label}
             </TabsTrigger>
