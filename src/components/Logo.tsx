@@ -4,11 +4,13 @@ import React from 'react';
 interface LogoProps {
   showFullBranding?: boolean;
   size?: 'small' | 'medium' | 'large';
+  variant?: 'light' | 'dark';
 }
 
 export const Logo: React.FC<LogoProps> = ({ 
   showFullBranding = true, 
-  size = 'medium' 
+  size = 'medium',
+  variant = 'light'
 }) => {
   const sizeClasses = {
     small: 'w-8 h-8',
@@ -22,13 +24,18 @@ export const Logo: React.FC<LogoProps> = ({
     large: 'text-4xl md:text-6xl'
   };
 
+  // Choose the appropriate logo based on background
+  const logoSrc = variant === 'light' 
+    ? "/lovable-uploads/74d1c817-c5b9-4f38-9527-af8fc875d0e4.png" // Colored logo for light backgrounds
+    : "/lovable-uploads/3f45c906-39cb-411c-999d-81770bd3e3e1.png"; // White logo for dark backgrounds
+
   return (
     <div className="text-center animate-fade-in">
       <div className="inline-block">
         {/* Company logo image */}
         <div className="relative mb-6">
           <img 
-            src="/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png"
+            src={logoSrc}
             alt="Volga Services Logo"
             className={`${sizeClasses[size]} mx-auto animate-float`}
           />

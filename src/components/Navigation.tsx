@@ -27,7 +27,7 @@ export const Navigation: React.FC = () => {
           {/* Logo with Company Name */}
           <div className="flex items-center space-x-2 sm:space-x-3 cursor-pointer" onClick={() => navigate('/')}>
             <img 
-              src="/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png"
+              src="/lovable-uploads/3f45c906-39cb-411c-999d-81770bd3e3e1.png"
               alt="Volga Services Logo"
               className="w-8 h-8 sm:w-10 sm:h-10"
             />
