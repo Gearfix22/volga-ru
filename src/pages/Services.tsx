@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
+import { Navigation } from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
 import { ServicesHeader } from '@/components/services/ServicesHeader';
 import { ServicesTabs } from '@/components/services/ServicesTabs';
 import { ServicesGrid } from '@/components/services/ServicesGrid';
@@ -15,17 +15,20 @@ const Services = () => {
       {/* Animated Background */}
       <AnimatedBackground />
       
-      {/* Language Switcher - Fixed Position */}
-      <div className="fixed top-6 right-6 z-50">
-        <LanguageSwitcher />
-      </div>
+      {/* Navigation */}
+      <Navigation />
       
       {/* Main Content */}
-      <div className="relative z-10 container mx-auto px-4 py-12">
-        <ServicesHeader />
-        <ServicesTabs activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
-        <ServicesGrid activeCategory={activeCategory} />
+      <div className="relative z-10 pt-24 pb-12">
+        <div className="container mx-auto px-4">
+          <ServicesHeader />
+          <ServicesTabs activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
+          <ServicesGrid activeCategory={activeCategory} />
+        </div>
       </div>
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

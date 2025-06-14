@@ -1,0 +1,27 @@
+
+{
+  "name": "Volga Services - Premium Russian Tourism",
+  "short_name": "Volga Services",
+  "description": "Russia's premium tourist experience. VIP transportation, seamless hotel bookings, curated event access, and unforgettable Russian adventures.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#1e40af",
+  "background_color": "#1e293b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["travel", "tourism", "business"],
+  "lang": "en"
+}

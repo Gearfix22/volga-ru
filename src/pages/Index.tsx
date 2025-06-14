@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { HeroSection } from '@/components/HeroSection';
+import { Navigation } from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
 
 const Index = () => {
   return (
@@ -10,13 +11,14 @@ const Index = () => {
       {/* Animated Background */}
       <AnimatedBackground />
       
-      {/* Language Switcher - Fixed Position */}
-      <div className="fixed top-6 right-6 z-50">
-        <LanguageSwitcher />
-      </div>
+      {/* Navigation */}
+      <Navigation />
       
       {/* Main Content */}
       <HeroSection />
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };
