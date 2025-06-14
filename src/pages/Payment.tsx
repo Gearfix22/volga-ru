@@ -19,11 +19,17 @@ const Payment = () => {
   const { toast } = useToast();
   const { t } = useLanguage();
   const [bookingData, setBookingData] = useState<BookingData | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState('bank-transfer');
+  const [paymentMethod, setPaymentMethod] = useState('credit-card');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [customAmount, setCustomAmount] = useState(0);
   const [isEditingAmount, setIsEditingAmount] = useState(false);
+  
+  // Credit card form fields
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [cvv, setCvv] = useState('');
+  const [cardholderName, setCardholderName] = useState('');
 
   useEffect(() => {
     const storedData = localStorage.getItem('bookingData');
@@ -90,6 +96,107 @@ const Payment = () => {
         });
       }
     }
+  };
+
+  const formatCardNumber = (value: string) => {
+    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+    const matches = v.match(/\d{4,16}/g);
+    const match = matches && matches[0] || '';
+    const parts = [];
+    for (let i = 0, len = match.length; i < len; i += 4) {
+      parts.push(match.substring(i, i + 4));
+    }
+    if (parts.length) {
+      return parts.join(' ');
+    } else {
+      return v;
+    }
+  };
+
+  const formatExpiryDate = (value: string) => {
+    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+    if (v.length >= 2) {
+      return v.substring(0, 2) + '/' + v.substring(2, 4);
+    }
+    return v;
+  };
+
+  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatCardNumber(e.target.value);
+    if (formatted.length <= 19) {
+      setCardNumber(formatted);
+    }
+  };
+
+  const handleExpiryDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatExpiryDate(e.target.value);
+    if (formatted.length <= 5) {
+      setExpiryDate(formatted);
+    }
+  };
+
+  const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9]/gi, '');
+    if (value.length <= 4) {
+      setCvv(value);
+    }
+  };
+
+  const validateCreditCardForm = () => {
+    if (!cardNumber || cardNumber.replace(/\s/g, '').length < 13) {
+      toast({
+        title: "Invalid Card Number",
+        description: "Please enter a valid card number",
+        variant: "destructive"
+      });
+      return false;
+    }
+    if (!expiryDate || expiryDate.length < 5) {
+      toast({
+        title: "Invalid Expiry Date",
+        description: "Please enter a valid expiry date (MM/YY)",
+        variant: "destructive"
+      });
+      return false;
+    }
+    if (!cvv || cvv.length < 3) {
+      toast({
+        title: "Invalid CVV",
+        description: "Please enter a valid CVV",
+        variant: "destructive"
+      });
+      return false;
+    }
+    if (!cardholderName.trim()) {
+      toast({
+        title: "Cardholder Name Required",
+        description: "Please enter the cardholder name",
+        variant: "destructive"
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const handleCreditCardPayment = () => {
+    if (!validateCreditCardForm()) {
+      return;
+    }
+
+    setIsProcessing(true);
+    
+    // Save the custom amount before processing
+    saveAmountToBooking();
+    
+    // Credit card processing would go here
+    // For now, simulate successful payment
+    setTimeout(() => {
+      const transactionId = `CC${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('paymentStatus', 'completed');
+      localStorage.setItem('transactionId', transactionId);
+      localStorage.setItem('paymentAmount', customAmount.toString());
+      navigate('/booking-confirmation');
+    }, 3000);
   };
 
   const handleBankTransferSubmit = () => {
@@ -292,6 +399,10 @@ const Payment = () => {
               <CardContent className="space-y-6">
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
                   <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="credit-card" id="credit-card" />
+                    <Label htmlFor="credit-card" className="font-medium">Credit Card</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
                     <RadioGroupItem value="bank-transfer" id="bank-transfer" />
                     <Label htmlFor="bank-transfer" className="font-medium">{t('bankTransfer')}</Label>
                   </div>
@@ -300,6 +411,86 @@ const Payment = () => {
                     <Label htmlFor="paypal" className="font-medium">{t('paypal')}</Label>
                   </div>
                 </RadioGroup>
+
+                {paymentMethod === 'credit-card' && (
+                  <div className="space-y-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                    <h3 className="font-semibold">Credit Card Information</h3>
+                    
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="cardNumber">Card Number *</Label>
+                        <Input
+                          id="cardNumber"
+                          type="text"
+                          placeholder="1234 5678 9012 3456"
+                          value={cardNumber}
+                          onChange={handleCardNumberChange}
+                          className="font-mono"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="cardholderName">Cardholder Name *</Label>
+                        <Input
+                          id="cardholderName"
+                          type="text"
+                          placeholder="John Doe"
+                          value={cardholderName}
+                          onChange={(e) => setCardholderName(e.target.value)}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="expiryDate">Expiry Date *</Label>
+                          <Input
+                            id="expiryDate"
+                            type="text"
+                            placeholder="MM/YY"
+                            value={expiryDate}
+                            onChange={handleExpiryDateChange}
+                            className="font-mono"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="cvv">CVV *</Label>
+                          <Input
+                            id="cvv"
+                            type="text"
+                            placeholder="123"
+                            value={cvv}
+                            onChange={handleCvvChange}
+                            className="font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border-l-4 border-blue-400">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        Amount to charge: <strong>${customAmount} USD</strong>
+                      </p>
+                    </div>
+
+                    <Button 
+                      onClick={handleCreditCardPayment}
+                      disabled={isProcessing}
+                      className="w-full"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <CreditCard className="mr-2 h-4 w-4 animate-spin" />
+                          Processing Payment...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="mr-2 h-4 w-4" />
+                          Pay ${customAmount} USD
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
 
                 {paymentMethod === 'bank-transfer' && (
                   <div className="space-y-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
