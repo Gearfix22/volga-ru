@@ -30,7 +30,8 @@ const Payment = () => {
   const bookingData = location.state?.bookingData;
   const paypalRef = useRef<HTMLDivElement>(null);
   const paypalButtonsRef = useRef<any>(null);
-  const isCleaningUpRef = useRef(false);
+  const mountedRef = useRef(true);
+  const renderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [selectedMethod, setSelectedMethod] = useState('credit-card');
   const [cardNumber, setCardNumber] = useState('');
@@ -47,38 +48,67 @@ const Payment = () => {
     }
   }, [bookingData, navigate]);
 
-  // Safe cleanup function for PayPal buttons
+  // Enhanced cleanup function
   const cleanupPayPalButtons = () => {
-    if (isCleaningUpRef.current) return;
-    isCleaningUpRef.current = true;
+    console.log('Cleaning up PayPal buttons...');
+    
+    if (renderTimeoutRef.current) {
+      clearTimeout(renderTimeoutRef.current);
+      renderTimeoutRef.current = null;
+    }
 
     try {
       if (paypalButtonsRef.current) {
-        paypalButtonsRef.current.close();
+        if (typeof paypalButtonsRef.current.close === 'function') {
+          paypalButtonsRef.current.close();
+        }
         paypalButtonsRef.current = null;
       }
-      
-      if (paypalRef.current && paypalRef.current.firstChild) {
-        paypalRef.current.innerHTML = '';
-      }
     } catch (error) {
-      console.log('PayPal cleanup error (safe to ignore):', error);
-    } finally {
-      isCleaningUpRef.current = false;
+      console.log('PayPal button cleanup error (safe to ignore):', error);
+    }
+
+    // Safe DOM cleanup
+    if (paypalRef.current) {
+      try {
+        // Create a new container to avoid React DOM conflicts
+        const newContainer = document.createElement('div');
+        newContainer.className = paypalRef.current.className;
+        
+        // Replace the entire container
+        if (paypalRef.current.parentNode) {
+          paypalRef.current.parentNode.replaceChild(newContainer, paypalRef.current);
+        }
+        
+        // Update ref to point to new container
+        paypalRef.current = newContainer;
+      } catch (error) {
+        console.log('DOM cleanup error (safe to ignore):', error);
+        // Fallback: just clear innerHTML
+        try {
+          if (paypalRef.current) {
+            paypalRef.current.innerHTML = '';
+          }
+        } catch (fallbackError) {
+          console.log('Fallback cleanup error (safe to ignore):', fallbackError);
+        }
+      }
     }
   };
 
-  // Cleanup on unmount
+  // Component unmount cleanup
   useEffect(() => {
+    mountedRef.current = true;
+    
     return () => {
+      mountedRef.current = false;
       cleanupPayPalButtons();
     };
   }, []);
 
-  // Handle PayPal integration
+  // Handle PayPal integration with improved error handling
   useEffect(() => {
-    // Skip if not PayPal method
-    if (selectedMethod !== 'paypal') {
+    if (selectedMethod !== 'paypal' || !mountedRef.current) {
       cleanupPayPalButtons();
       return;
     }
@@ -91,20 +121,36 @@ const Payment = () => {
         return;
       }
 
+      // Check if script is already loading
+      const existingScript = document.querySelector('script[src*="paypal.com/sdk"]');
+      if (existingScript) {
+        existingScript.addEventListener('load', () => {
+          if (mountedRef.current) {
+            setPaypalLoaded(true);
+            renderPayPalButton();
+          }
+        });
+        return;
+      }
+
       // Load PayPal script
       const script = document.createElement('script');
       script.src = `https://www.paypal.com/sdk/js?client-id=AU15djn3gU9YlY__yWU0ZFAGCo8AepH1KSx2I5Kr_0YrgktGrApSOcI-yAaeAFmfHDN4-yWUu2V1NHqV&currency=USD`;
       script.onload = () => {
-        setPaypalLoaded(true);
-        renderPayPalButton();
+        if (mountedRef.current) {
+          setPaypalLoaded(true);
+          renderPayPalButton();
+        }
       };
       script.onerror = () => {
         console.error('Failed to load PayPal SDK');
-        toast({
-          title: "PayPal Error",
-          description: "Failed to load PayPal. Please try again or use credit card.",
-          variant: "destructive"
-        });
+        if (mountedRef.current) {
+          toast({
+            title: "PayPal Error",
+            description: "Failed to load PayPal. Please try again or use credit card.",
+            variant: "destructive"
+          });
+        }
       };
       document.body.appendChild(script);
     };
@@ -113,7 +159,7 @@ const Payment = () => {
   }, [selectedMethod, customAmount]);
 
   const renderPayPalButton = () => {
-    if (!window.paypal || !paypalRef.current || selectedMethod !== 'paypal' || isCleaningUpRef.current) {
+    if (!window.paypal || !mountedRef.current || selectedMethod !== 'paypal') {
       return;
     }
 
@@ -122,11 +168,15 @@ const Payment = () => {
 
     const amount = parseFloat(customAmount) || 50;
 
-    // Add a small delay to ensure DOM is ready
-    setTimeout(() => {
-      try {
-        if (!paypalRef.current || isCleaningUpRef.current) return;
+    // Use timeout to ensure DOM is ready and avoid race conditions
+    renderTimeoutRef.current = setTimeout(() => {
+      if (!mountedRef.current || !paypalRef.current) {
+        return;
+      }
 
+      try {
+        console.log('Rendering PayPal button with amount:', amount);
+        
         paypalButtonsRef.current = window.paypal.Buttons({
           createOrder: (data: any, actions: any) => {
             return actions.order.create({
@@ -170,54 +220,64 @@ const Payment = () => {
                 description: `Transaction ID: ${transactionId}`,
               });
 
-              navigate('/booking-confirmation', {
-                state: {
-                  bookingData: {
-                    ...bookingData,
-                    paymentMethod: 'PayPal',
-                    transactionId,
-                    paidAmount: amount,
-                    totalPrice: amount
+              if (mountedRef.current) {
+                navigate('/booking-confirmation', {
+                  state: {
+                    bookingData: {
+                      ...bookingData,
+                      paymentMethod: 'PayPal',
+                      transactionId,
+                      paidAmount: amount,
+                      totalPrice: amount
+                    }
                   }
-                }
-              });
+                });
+              }
             } catch (error) {
               console.error('PayPal payment error:', error);
-              toast({
-                title: "Payment failed",
-                description: "There was an error processing your PayPal payment.",
-                variant: "destructive"
-              });
+              if (mountedRef.current) {
+                toast({
+                  title: "Payment failed",
+                  description: "There was an error processing your PayPal payment.",
+                  variant: "destructive"
+                });
+              }
             }
           },
           onError: (err: any) => {
             console.error('PayPal error:', err);
-            toast({
-              title: "Payment error",
-              description: "There was an error with PayPal. Please try again.",
-              variant: "destructive"
-            });
+            if (mountedRef.current) {
+              toast({
+                title: "Payment error",
+                description: "There was an error with PayPal. Please try again.",
+                variant: "destructive"
+              });
+            }
           },
           onCancel: () => {
-            toast({
-              title: "Payment cancelled",
-              description: "PayPal payment was cancelled.",
-            });
+            if (mountedRef.current) {
+              toast({
+                title: "Payment cancelled",
+                description: "PayPal payment was cancelled.",
+              });
+            }
           }
         });
 
-        if (paypalRef.current && !isCleaningUpRef.current) {
+        if (paypalRef.current && mountedRef.current) {
           paypalButtonsRef.current.render(paypalRef.current);
         }
       } catch (error) {
         console.error('Error rendering PayPal button:', error);
-        toast({
-          title: "PayPal Error",
-          description: "Failed to initialize PayPal button. Please try again.",
-          variant: "destructive"
-        });
+        if (mountedRef.current) {
+          toast({
+            title: "PayPal Error",
+            description: "Failed to initialize PayPal button. Please try again.",
+            variant: "destructive"
+          });
+        }
       }
-    }, 100);
+    }, 200);
   };
 
   if (!bookingData) {
@@ -494,8 +554,8 @@ const Payment = () => {
                       </p>
                       <div 
                         ref={paypalRef} 
-                        className="min-h-[50px]"
-                        key={`paypal-${customAmount}-${selectedMethod}`}
+                        className="min-h-[50px] paypal-button-container"
+                        key={`paypal-${customAmount}-${Date.now()}`}
                       >
                         {!paypalLoaded && (
                           <div className="flex items-center justify-center py-4">
