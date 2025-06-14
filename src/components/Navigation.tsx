@@ -27,6 +27,7 @@ export const Navigation: React.FC = () => {
   const navigationItems = [
     { key: 'home', path: '/', label: t('home') },
     { key: 'services', path: '/services', label: t('services') },
+    { key: 'booking', path: '/booking', label: 'Book Now' },
     { key: 'about', path: '/about', label: t('about') },
     { key: 'contact', path: '/contact', label: t('contact') },
   ];
@@ -50,7 +51,9 @@ export const Navigation: React.FC = () => {
                       className={cn(
                         "relative px-6 py-2 text-sm font-medium transition-all duration-300 rounded-2xl",
                         "hover:bg-slate-100 dark:hover:bg-slate-800 transform hover:scale-105",
-                        isActive(item.path) 
+                        item.key === 'booking' 
+                          ? 'bg-primary text-primary-foreground shadow-md hover:bg-primary/90' 
+                          : isActive(item.path) 
                           ? 'bg-primary text-primary-foreground shadow-md' 
                           : 'text-slate-700 dark:text-slate-300'
                       )}
@@ -93,7 +96,9 @@ export const Navigation: React.FC = () => {
                   }}
                   className={cn(
                     "block w-full text-left px-4 py-3 rounded-2xl transition-all duration-300",
-                    isActive(item.path)
+                    item.key === 'booking' 
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      : isActive(item.path)
                       ? 'bg-primary text-primary-foreground'
                       : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                   )}
