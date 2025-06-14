@@ -1,52 +1,91 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Modern design system with unique touches */
+/* Modern clean design system */
 
 @layer base {
   :root {
-    --background: 8 8 16;
-    --foreground: 248 250 252;
+    --background: 248 250 252;
+    --foreground: 15 23 42;
 
-    --card: 17 17 27;
-    --card-foreground: 248 250 252;
+    --card: 255 255 255;
+    --card-foreground: 15 23 42;
 
-    --popover: 17 17 27;
-    --popover-foreground: 248 250 252;
+    --popover: 255 255 255;
+    --popover-foreground: 15 23 42;
 
-    --primary: 99 102 241;
-    --primary-foreground: 248 250 252;
+    --primary: 59 130 246;
+    --primary-foreground: 255 255 255;
 
-    --secondary: 30 30 46;
-    --secondary-foreground: 248 250 252;
+    --secondary: 241 245 249;
+    --secondary-foreground: 51 65 85;
 
-    --muted: 30 30 46;
-    --muted-foreground: 156 163 175;
+    --muted: 248 250 252;
+    --muted-foreground: 100 116 139;
 
-    --accent: 236 72 153;
-    --accent-foreground: 248 250 252;
+    --accent: 241 245 249;
+    --accent-foreground: 51 65 85;
 
     --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+
+    --border: 226 232 240;
+    --input: 226 232 240;
+    --ring: 59 130 246;
+
+    --radius: 1rem;
+
+    --sidebar-background: 255 255 255;
+    --sidebar-foreground: 15 23 42;
+    --sidebar-primary: 59 130 246;
+    --sidebar-primary-foreground: 255 255 255;
+    --sidebar-accent: 241 245 249;
+    --sidebar-accent-foreground: 51 65 85;
+    --sidebar-border: 226 232 240;
+    --sidebar-ring: 59 130 246;
+  }
+
+  .dark {
+    --background: 2 6 23;
+    --foreground: 248 250 252;
+
+    --card: 15 23 42;
+    --card-foreground: 248 250 252;
+
+    --popover: 15 23 42;
+    --popover-foreground: 248 250 252;
+
+    --primary: 59 130 246;
+    --primary-foreground: 255 255 255;
+
+    --secondary: 30 41 59;
+    --secondary-foreground: 248 250 252;
+
+    --muted: 30 41 59;
+    --muted-foreground: 148 163 184;
+
+    --accent: 30 41 59;
+    --accent-foreground: 248 250 252;
+
+    --destructive: 220 38 38;
     --destructive-foreground: 248 250 252;
 
-    --border: 39 39 42;
-    --input: 39 39 42;
-    --ring: 99 102 241;
+    --border: 30 41 59;
+    --input: 30 41 59;
+    --ring: 59 130 246;
 
-    --radius: 0.75rem;
-
-    --sidebar-background: 8 8 16;
+    --sidebar-background: 2 6 23;
     --sidebar-foreground: 248 250 252;
-    --sidebar-primary: 99 102 241;
-    --sidebar-primary-foreground: 248 250 252;
-    --sidebar-accent: 30 30 46;
+    --sidebar-primary: 59 130 246;
+    --sidebar-primary-foreground: 255 255 255;
+    --sidebar-accent: 30 41 59;
     --sidebar-accent-foreground: 248 250 252;
-    --sidebar-border: 39 39 42;
-    --sidebar-ring: 99 102 241;
+    --sidebar-border: 30 41 59;
+    --sidebar-ring: 59 130 246;
   }
 }
 
@@ -57,141 +96,90 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-optical-sizing: auto;
-    background: radial-gradient(ellipse at top, rgba(99, 102, 241, 0.1) 0%, rgba(8, 8, 16, 1) 50%);
+    background: linear-gradient(135deg, rgb(248, 250, 252) 0%, rgb(241, 245, 249) 100%);
     background-attachment: fixed;
+    transition: background-color 0.3s ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Crimson Text', Georgia, serif;
     font-optical-sizing: auto;
+    letter-spacing: -0.02em;
   }
 }
 
 @layer components {
-  .text-glow {
-    text-shadow: 0 0 20px rgba(99, 102, 241, 0.5), 0 0 40px rgba(99, 102, 241, 0.3);
+  .modern-card {
+    @apply bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-slate-900/50;
   }
 
-  .card-glow {
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.1), 0 10px 40px rgba(0, 0, 0, 0.2);
+  .modern-button {
+    @apply bg-primary text-primary-foreground rounded-2xl px-6 py-3 font-medium transition-all duration-300 hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2;
   }
 
-  .holographic {
-    background: linear-gradient(
-      135deg,
-      rgba(99, 102, 241, 0.1) 0%,
-      rgba(236, 72, 153, 0.1) 25%,
-      rgba(99, 102, 241, 0.1) 50%,
-      rgba(236, 72, 153, 0.1) 75%,
-      rgba(99, 102, 241, 0.1) 100%
-    );
-    background-size: 400% 400%;
-    animation: holographic-shift 8s ease-in-out infinite;
+  .modern-input {
+    @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none;
   }
 
-  .glassmorphism {
-    background: rgba(17, 17, 27, 0.4);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(99, 102, 241, 0.2);
+  .fade-in-up {
+    animation: fadeInUp 0.6s ease-out forwards;
   }
 
-  .text-gradient {
-    background: linear-gradient(135deg, #6366f1, #ec4899, #06b6d4);
-    background-size: 200% 200%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: gradient-flow 3s ease-in-out infinite;
+  .fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
   }
 
-  .floating-element {
-    animation: float-unique 6s ease-in-out infinite;
+  .slide-in-left {
+    animation: slideInLeft 0.6s ease-out forwards;
   }
 
-  .morphing-border {
-    position: relative;
-    border-radius: 1rem;
-    overflow: hidden;
-  }
-
-  .morphing-border::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    padding: 2px;
-    background: linear-gradient(45deg, #6366f1, #ec4899, #06b6d4, #6366f1);
-    background-size: 300% 300%;
-    border-radius: inherit;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    animation: border-flow 4s ease-in-out infinite;
+  .glass-effect {
+    @apply bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-white/20 dark:border-slate-700/50;
   }
 }
 
-@layer utilities {
-  .animation-delay-1000 {
-    animation-delay: 1000ms;
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
   }
-  
-  .animation-delay-1500 {
-    animation-delay: 1500ms;
-  }
-  
-  .animation-delay-2000 {
-    animation-delay: 2000ms;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@keyframes holographic-shift {
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes float {
   0%, 100% {
-    background-position: 0% 50%;
+    transform: translateY(0px);
   }
   50% {
-    background-position: 100% 50%;
+    transform: translateY(-20px);
   }
 }
 
-@keyframes gradient-flow {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-@keyframes float-unique {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  33% {
-    transform: translateY(-10px) rotate(1deg);
-  }
-  66% {
-    transform: translateY(5px) rotate(-1deg);
-  }
-}
-
-@keyframes border-flow {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(99, 102, 241, 0.6), 0 0 60px rgba(236, 72, 153, 0.2);
-  }
-}
-
-.pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
+.floating {
+  animation: float 6s ease-in-out infinite;
 }

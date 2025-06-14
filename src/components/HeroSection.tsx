@@ -17,68 +17,64 @@ export const HeroSection: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-center px-6 relative overflow-hidden">
-      {/* Animated background elements */}
+      {/* Subtle floating elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="floating-element absolute top-1/4 left-1/4 w-4 h-4 bg-purple-500/30 rounded-full blur-sm" />
-        <div className="floating-element absolute top-1/3 right-1/3 w-3 h-3 bg-pink-500/40 rounded-full blur-sm animation-delay-1000" />
-        <div className="floating-element absolute bottom-1/3 left-1/2 w-2 h-2 bg-cyan-500/50 rounded-full blur-sm animation-delay-1500" />
-        <div className="floating-element absolute top-1/2 right-1/4 w-5 h-5 bg-purple-500/20 rounded-full blur-sm animation-delay-2000" />
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-blue-200/20 dark:bg-blue-800/20 rounded-full blur-xl floating" />
+        <div className="absolute top-1/3 right-1/3 w-24 h-24 bg-indigo-200/20 dark:bg-indigo-800/20 rounded-full blur-xl floating" style={{ animationDelay: '2s' }} />
+        <div className="absolute bottom-1/3 left-1/2 w-40 h-40 bg-slate-200/20 dark:bg-slate-800/20 rounded-full blur-xl floating" style={{ animationDelay: '4s' }} />
       </div>
 
-      {/* Logo with unique styling */}
-      <div className="mb-20 relative z-10">
-        <div className="morphing-border p-8 rounded-3xl holographic">
+      {/* Logo with modern styling */}
+      <div className="mb-16 relative z-10 fade-in-up">
+        <div className="modern-card p-8 hover:shadow-xl transition-all duration-500">
           <div className="transform hover:scale-110 transition-all duration-500">
             <Logo />
           </div>
         </div>
       </div>
       
-      {/* Hero content with modern typography */}
-      <div className="max-w-6xl mx-auto mb-16 space-y-8 relative z-10">
-        <div className="flex items-center justify-center mb-8">
-          <div className="flex items-center space-x-4">
-            <Zap className="h-5 w-5 text-purple-400 animate-pulse" />
-            <span className="text-purple-400 font-medium text-sm uppercase tracking-[0.2em] font-space-grotesk">
+      {/* Hero content with clean typography */}
+      <div className="max-w-5xl mx-auto mb-12 space-y-6 relative z-10 fade-in-up" style={{ animationDelay: '0.2s' }}>
+        <div className="flex items-center justify-center mb-6">
+          <div className="flex items-center space-x-3 modern-card px-6 py-3">
+            <Zap className="h-4 w-4 text-primary" />
+            <span className="text-slate-600 dark:text-slate-400 font-medium text-sm tracking-wide">
               Premium Services
             </span>
-            <Sparkles className="h-5 w-5 text-pink-400 animate-pulse animation-delay-400" />
+            <Sparkles className="h-4 w-4 text-primary" />
           </div>
         </div>
         
-        <h2 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-12 text-glow leading-[0.9] font-crimson">
-          <span className="text-gradient block mb-4">
+        <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold text-slate-900 dark:text-white mb-8 leading-tight">
+          <span className="bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent block mb-2">
             {t('welcome')}
           </span>
         </h2>
         
-        <p className={`text-xl md:text-2xl lg:text-3xl text-gray-300 leading-relaxed max-w-5xl mx-auto font-light ${
+        <p className={`text-lg md:text-xl lg:text-2xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-4xl mx-auto font-light ${
           language === 'ar' ? 'font-medium' : ''
-        } font-space-grotesk`}>
-          <span className="bg-gradient-to-r from-gray-200 via-white to-gray-300 bg-clip-text text-transparent">
-            {t('subtitle')}
-          </span>
+        }`}>
+          {t('subtitle')}
         </p>
       </div>
       
       {/* Modern CTA Button */}
-      <div className="relative z-10 group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 rounded-full blur opacity-30 group-hover:opacity-50 transition duration-500" />
+      <div className="relative z-10 fade-in-up" style={{ animationDelay: '0.4s' }}>
         <Button
           onClick={handleExploreServices}
           size="lg"
-          className="relative bg-black/50 backdrop-blur-sm border border-white/20 text-white font-semibold px-12 py-6 text-lg rounded-full transition-all duration-500 transform hover:scale-105 glassmorphism pulse-glow font-space-grotesk"
+          className="modern-button text-lg px-8 py-4 shadow-lg hover:shadow-xl group"
         >
           <span className="flex items-center space-x-3">
-            <span className="text-gradient font-medium">{t('exploreServices')}</span>
+            <span className="font-semibold">{t('exploreServices')}</span>
             <ArrowRight className={`h-5 w-5 ${language === 'ar' ? 'mr-3 rotate-180' : 'ml-3'} transition-transform group-hover:translate-x-1`} />
           </span>
         </Button>
       </div>
       
       {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
-        <div className="w-1 h-16 bg-gradient-to-b from-purple-500 via-pink-500 to-transparent rounded-full animate-pulse" />
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10 fade-in" style={{ animationDelay: '0.6s' }}>
+        <div className="w-1 h-12 bg-gradient-to-b from-primary to-transparent rounded-full opacity-60" />
       </div>
     </div>
   );

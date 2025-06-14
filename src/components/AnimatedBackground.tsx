@@ -4,51 +4,48 @@ import React from 'react';
 export const AnimatedBackground: React.FC = () => {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Primary background with modern gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-black to-gray-900" />
+      {/* Clean gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800" />
       
-      {/* Animated mesh gradient overlay */}
-      <div className="absolute inset-0 opacity-40">
+      {/* Subtle animated mesh overlay */}
+      <div className="absolute inset-0 opacity-30 dark:opacity-20">
         <div 
-          className="absolute inset-0 bg-gradient-to-tr from-purple-500/20 via-transparent to-pink-500/20 animate-pulse"
-          style={{ animationDuration: '8s' }}
+          className="absolute inset-0 bg-gradient-to-tr from-blue-100/40 via-transparent to-indigo-100/40 dark:from-blue-900/20 dark:to-indigo-900/20"
+          style={{
+            animation: 'float 12s ease-in-out infinite',
+            animationDelay: '0s'
+          }}
         />
         <div 
-          className="absolute inset-0 bg-gradient-to-bl from-cyan-500/10 via-transparent to-purple-500/10 animate-pulse"
-          style={{ animationDuration: '12s', animationDelay: '2s' }}
+          className="absolute inset-0 bg-gradient-to-bl from-slate-100/30 via-transparent to-gray-100/30 dark:from-slate-800/30 dark:to-gray-800/30"
+          style={{
+            animation: 'float 16s ease-in-out infinite',
+            animationDelay: '4s'
+          }}
         />
       </div>
       
-      {/* Geometric pattern overlay */}
+      {/* Minimal geometric pattern */}
       <div 
-        className="absolute inset-0 opacity-5"
+        className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
         style={{
           backgroundImage: `
-            radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.3) 0%, transparent 70%),
-            radial-gradient(circle at 75% 75%, rgba(236, 72, 153, 0.3) 0%, transparent 70%),
-            linear-gradient(45deg, rgba(6, 182, 212, 0.1) 25%, transparent 25%),
-            linear-gradient(-45deg, rgba(99, 102, 241, 0.1) 25%, transparent 25%)
+            radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, rgba(99, 102, 241, 0.1) 0%, transparent 50%)
           `,
-          backgroundSize: '60px 60px, 80px 80px, 40px 40px, 40px 40px'
+          backgroundSize: '150px 150px, 200px 200px'
         }}
       />
       
-      {/* Floating orbs */}
-      <div className="absolute inset-0">
-        <div className="floating-element absolute top-1/4 left-1/6 w-32 h-32 bg-purple-500/10 rounded-full blur-xl" />
-        <div className="floating-element absolute top-3/4 right-1/4 w-48 h-48 bg-pink-500/10 rounded-full blur-xl animation-delay-1000" />
-        <div className="floating-element absolute top-1/2 left-3/4 w-24 h-24 bg-cyan-500/10 rounded-full blur-xl animation-delay-1500" />
-      </div>
-      
-      {/* Subtle grid lines */}
+      {/* Clean grid overlay */}
       <div 
-        className="absolute inset-0 opacity-[0.02]"
+        className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)
+            linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)
           `,
-          backgroundSize: '100px 100px'
+          backgroundSize: '60px 60px'
         }}
       />
     </div>

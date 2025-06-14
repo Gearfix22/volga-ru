@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -18,6 +19,10 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				'sans': ['Inter', 'system-ui', 'sans-serif'],
+				'serif': ['Crimson Text', 'Georgia', 'serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -62,16 +67,16 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Logo-inspired brand colors
+				// Modern color palette
 				volga: {
-					blue: '#1e40af', // Deep blue from logo
-					'blue-light': '#3b82f6',
-					'blue-dark': '#1e3a8a',
-					'logo-blue': '#1e40af', // Main logo blue
-					'logo-red': '#dc2626', // Logo red accent
-					gold: '#fbbf24',
-					'gold-light': '#fcd34d',
-					'gold-dark': '#f59e0b',
+					blue: '#3b82f6',
+					'blue-light': '#60a5fa',
+					'blue-dark': '#2563eb',
+					'logo-blue': '#3b82f6',
+					'logo-red': '#ef4444',
+					gold: '#f59e0b',
+					'gold-light': '#fbbf24',
+					'gold-dark': '#d97706',
 					navy: '#1e293b',
 					'navy-light': '#334155',
 					'navy-dark': '#0f172a'
@@ -112,7 +117,7 @@ export default {
 				'slide-up': {
 					'0%': {
 						opacity: '0',
-						transform: 'translateY(40px)'
+						transform: 'translateY(30px)'
 					},
 					'100%': {
 						opacity: '1',
@@ -124,29 +129,20 @@ export default {
 						transform: 'translateY(0px)'
 					},
 					'50%': {
-						transform: 'translateY(-10px)'
-					}
-				},
-				'parallax': {
-					'0%': {
-						transform: 'translateY(0px) scale(1.1)'
-					},
-					'100%': {
-						transform: 'translateY(-50px) scale(1.1)'
+						transform: 'translateY(-20px)'
 					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'fade-in': 'fade-in 0.8s ease-out',
+				'fade-in': 'fade-in 0.6s ease-out',
 				'slide-up': 'slide-up 0.6s ease-out',
-				'float': 'float 3s ease-in-out infinite',
-				'parallax': 'parallax 20s ease-in-out infinite'
+				'float': 'float 6s ease-in-out infinite'
 			},
-			backgroundImage: {
-				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-				'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))'
+			boxShadow: {
+				'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+				'soft-lg': '0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
 			}
 		}
 	},

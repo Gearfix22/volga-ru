@@ -53,20 +53,18 @@ export const Footer: React.FC = () => {
   ];
 
   return (
-    <footer className="relative overflow-hidden">
-      {/* Background with gradient */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-gray-950 to-background" />
-      <div className="absolute inset-0 holographic opacity-20" />
-      
-      <div className="relative z-10 container mx-auto px-6 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+    <footer className="relative overflow-hidden bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+      <div className="container mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
-          <div className="space-y-8">
+          <div className="space-y-6 fade-in-up">
             <div>
-              <h3 className="text-white font-bold text-2xl font-crimson text-gradient mb-4">
-                Volga Services
+              <h3 className="text-slate-900 dark:text-white font-bold text-2xl mb-4">
+                <span className="bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">
+                  Volga Services
+                </span>
               </h3>
-              <p className="text-gray-400 text-sm leading-relaxed font-space-grotesk">
+              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
                 {t('footerDescription')}
               </p>
             </div>
@@ -74,10 +72,10 @@ export const Footer: React.FC = () => {
             {/* WhatsApp Button */}
             <Button
               asChild
-              className="group glassmorphism border-green-500/30 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 font-space-grotesk"
+              className="modern-button bg-green-600 hover:bg-green-700 text-white group"
             >
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-3">
-                <Phone className="h-4 w-4 text-green-400" />
+                <Phone className="h-4 w-4" />
                 <span>{t('whatsapp')}</span>
                 <ArrowUpRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
               </a>
@@ -85,23 +83,23 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Contact Information */}
-          <div className="space-y-8">
-            <h3 className="text-white font-bold text-xl font-crimson">{t('contactInfo')}</h3>
-            <div className="space-y-6">
+          <div className="space-y-6 fade-in-up" style={{ animationDelay: '0.1s' }}>
+            <h3 className="text-slate-900 dark:text-white font-bold text-xl">{t('contactInfo')}</h3>
+            <div className="space-y-4">
               {contactInfo.map((item, index) => (
-                <div key={index} className="group glassmorphism p-4 rounded-xl transition-all duration-300 hover:scale-105">
-                  <div className="flex items-start space-x-4">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
-                      <item.icon className="h-4 w-4 text-purple-400 group-hover:text-pink-400 transition-colors" />
+                <div key={index} className="modern-card p-4 hover:shadow-md transition-all duration-300 group">
+                  <div className="flex items-start space-x-3">
+                    <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                      <item.icon className="h-4 w-4" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-gray-500 text-xs font-medium uppercase tracking-wide font-space-grotesk">{item.label}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wide">{item.label}</p>
                       {item.href === '#' ? (
-                        <p className="text-gray-300 text-sm font-light font-space-grotesk">{item.value}</p>
+                        <p className="text-slate-700 dark:text-slate-300 text-sm">{item.value}</p>
                       ) : (
                         <a 
                           href={item.href}
-                          className="text-gray-300 hover:text-white text-sm transition-colors font-light hover:underline font-space-grotesk"
+                          className="text-slate-700 dark:text-slate-300 hover:text-primary text-sm transition-colors hover:underline"
                           target={item.href.startsWith('http') ? '_blank' : undefined}
                           rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                         >
@@ -116,23 +114,23 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Business Information */}
-          <div className="space-y-8">
-            <h3 className="text-white font-bold text-xl font-crimson">{t('businessInfo')}</h3>
+          <div className="space-y-6 fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <h3 className="text-slate-900 dark:text-white font-bold text-xl">{t('businessInfo')}</h3>
             <div className="space-y-4">
-              <div className="glassmorphism p-6 rounded-xl morphing-border">
-                <p className="text-gray-500 text-xs font-medium uppercase tracking-wide mb-2 font-space-grotesk">{t('taxNumber')}</p>
-                <p className="font-mono text-lg text-gradient">4706086543</p>
+              <div className="modern-card p-6">
+                <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">{t('taxNumber')}</p>
+                <p className="font-mono text-lg bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent font-semibold">4706086543</p>
               </div>
-              <div className="glassmorphism p-6 rounded-xl morphing-border">
-                <p className="text-gray-500 text-xs font-medium uppercase tracking-wide mb-2 font-space-grotesk">{t('registrationNumber')}</p>
-                <p className="font-mono text-lg text-gradient">1254700002831</p>
+              <div className="modern-card p-6">
+                <p className="text-slate-500 dark:text-slate-400 text-xs font-medium uppercase tracking-wide mb-2">{t('registrationNumber')}</p>
+                <p className="font-mono text-lg bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent font-semibold">1254700002831</p>
               </div>
             </div>
           </div>
 
           {/* Social Media */}
-          <div className="space-y-8">
-            <h3 className="text-white font-bold text-xl font-crimson">{t('followUs')}</h3>
+          <div className="space-y-6 fade-in-up" style={{ animationDelay: '0.3s' }}>
+            <h3 className="text-slate-900 dark:text-white font-bold text-xl">{t('followUs')}</h3>
             <div className="flex space-x-4">
               {socialLinks.map((social, index) => (
                 <a
@@ -140,9 +138,9 @@ export const Footer: React.FC = () => {
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group glassmorphism p-4 rounded-xl transition-all duration-500 transform hover:scale-110 hover:rotate-3"
+                  className="modern-card p-4 hover:shadow-md transition-all duration-300 transform hover:scale-110 group"
                 >
-                  <social.icon className="h-6 w-6 text-gray-400 group-hover:text-purple-400 transition-colors" />
+                  <social.icon className="h-6 w-6 text-slate-600 dark:text-slate-400 group-hover:text-primary transition-colors" />
                   <span className="sr-only">{social.label}</span>
                 </a>
               ))}
@@ -151,9 +149,9 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-white/10 mt-16 pt-8 text-center">
-          <p className="text-gray-500 text-sm font-space-grotesk">
-            © 2024 <span className="font-medium text-gradient">Volga Services</span>. {t('allRightsReserved')}
+        <div className="border-t border-slate-200 dark:border-slate-800 mt-12 pt-8 text-center fade-in-up" style={{ animationDelay: '0.4s' }}>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
+            © 2024 <span className="font-medium bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">Volga Services</span>. {t('allRightsReserved')}
           </p>
         </div>
       </div>
