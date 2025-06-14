@@ -4,42 +4,51 @@ import React from 'react';
 export const AnimatedBackground: React.FC = () => {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Main background image with parallax effect */}
+      {/* Primary background with modern gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-950 via-black to-gray-900" />
+      
+      {/* Animated mesh gradient overlay */}
+      <div className="absolute inset-0 opacity-40">
+        <div 
+          className="absolute inset-0 bg-gradient-to-tr from-purple-500/20 via-transparent to-pink-500/20 animate-pulse"
+          style={{ animationDuration: '8s' }}
+        />
+        <div 
+          className="absolute inset-0 bg-gradient-to-bl from-cyan-500/10 via-transparent to-purple-500/10 animate-pulse"
+          style={{ animationDuration: '12s', animationDelay: '2s' }}
+        />
+      </div>
+      
+      {/* Geometric pattern overlay */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-parallax"
+        className="absolute inset-0 opacity-5"
         style={{
-          backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.6), rgba(30, 58, 138, 0.4)), url('https://images.unsplash.com/photo-1466442929976-97f336a657be?auto=format&fit=crop&w=2000&q=80')`
+          backgroundImage: `
+            radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.3) 0%, transparent 70%),
+            radial-gradient(circle at 75% 75%, rgba(236, 72, 153, 0.3) 0%, transparent 70%),
+            linear-gradient(45deg, rgba(6, 182, 212, 0.1) 25%, transparent 25%),
+            linear-gradient(-45deg, rgba(99, 102, 241, 0.1) 25%, transparent 25%)
+          `,
+          backgroundSize: '60px 60px, 80px 80px, 40px 40px, 40px 40px'
         }}
       />
       
-      {/* Overlay with animated gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-volga-navy/80 via-volga-blue/60 to-volga-navy/90" />
-      
-      {/* Floating particles effect */}
+      {/* Floating orbs */}
       <div className="absolute inset-0">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-2 h-2 bg-volga-gold/30 rounded-full animate-float"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${3 + Math.random() * 2}s`
-            }}
-          />
-        ))}
+        <div className="floating-element absolute top-1/4 left-1/6 w-32 h-32 bg-purple-500/10 rounded-full blur-xl" />
+        <div className="floating-element absolute top-3/4 right-1/4 w-48 h-48 bg-pink-500/10 rounded-full blur-xl animation-delay-1000" />
+        <div className="floating-element absolute top-1/2 left-3/4 w-24 h-24 bg-cyan-500/10 rounded-full blur-xl animation-delay-1500" />
       </div>
       
-      {/* Subtle grid pattern */}
+      {/* Subtle grid lines */}
       <div 
-        className="absolute inset-0 opacity-10"
+        className="absolute inset-0 opacity-[0.02]"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(251, 191, 36, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(251, 191, 36, 0.1) 1px, transparent 1px)
+            linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)
           `,
-          backgroundSize: '50px 50px'
+          backgroundSize: '100px 100px'
         }}
       />
     </div>

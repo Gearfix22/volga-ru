@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -16,65 +16,69 @@ export const HeroSection: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 relative z-10">
-      {/* Logo with enhanced styling */}
-      <div className="mb-16 relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-volga-logo-blue/20 to-volga-logo-red/20 blur-3xl rounded-full animate-pulse" />
-        <div className="relative">
-          <Logo />
+    <div className="flex flex-col items-center justify-center min-h-screen text-center px-6 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="floating-element absolute top-1/4 left-1/4 w-4 h-4 bg-purple-500/30 rounded-full blur-sm" />
+        <div className="floating-element absolute top-1/3 right-1/3 w-3 h-3 bg-pink-500/40 rounded-full blur-sm animation-delay-1000" />
+        <div className="floating-element absolute bottom-1/3 left-1/2 w-2 h-2 bg-cyan-500/50 rounded-full blur-sm animation-delay-1500" />
+        <div className="floating-element absolute top-1/2 right-1/4 w-5 h-5 bg-purple-500/20 rounded-full blur-sm animation-delay-2000" />
+      </div>
+
+      {/* Logo with unique styling */}
+      <div className="mb-20 relative z-10">
+        <div className="morphing-border p-8 rounded-3xl holographic">
+          <div className="transform hover:scale-110 transition-all duration-500">
+            <Logo />
+          </div>
         </div>
       </div>
       
-      {/* Welcome text with modern typography */}
-      <div className="max-w-5xl mx-auto mb-12 animate-slide-up animation-delay-200">
-        <div className="flex items-center justify-center mb-6">
-          <Sparkles className="h-6 w-6 text-volga-logo-red mr-3 animate-pulse" />
-          <span className="text-volga-logo-red font-semibold text-sm uppercase tracking-widest">
-            Professional Services
-          </span>
-          <Sparkles className="h-6 w-6 text-volga-logo-red ml-3 animate-pulse" />
+      {/* Hero content with modern typography */}
+      <div className="max-w-6xl mx-auto mb-16 space-y-8 relative z-10">
+        <div className="flex items-center justify-center mb-8">
+          <div className="flex items-center space-x-4">
+            <Zap className="h-5 w-5 text-purple-400 animate-pulse" />
+            <span className="text-purple-400 font-medium text-sm uppercase tracking-[0.2em] font-space-grotesk">
+              Premium Services
+            </span>
+            <Sparkles className="h-5 w-5 text-pink-400 animate-pulse animation-delay-400" />
+          </div>
         </div>
         
-        <h2 className="text-3xl md:text-5xl lg:text-7xl font-black text-white mb-8 text-shadow leading-tight">
-          <span className="bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent">
+        <h2 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-12 text-glow leading-[0.9] font-crimson">
+          <span className="text-gradient block mb-4">
             {t('welcome')}
           </span>
         </h2>
         
-        <p className={`text-xl md:text-2xl lg:text-3xl text-gray-300 leading-relaxed text-shadow max-w-4xl mx-auto font-light ${
+        <p className={`text-xl md:text-2xl lg:text-3xl text-gray-300 leading-relaxed max-w-5xl mx-auto font-light ${
           language === 'ar' ? 'font-medium' : ''
-        }`}>
-          <span className="bg-gradient-to-r from-gray-300 to-gray-100 bg-clip-text text-transparent">
+        } font-space-grotesk`}>
+          <span className="bg-gradient-to-r from-gray-200 via-white to-gray-300 bg-clip-text text-transparent">
             {t('subtitle')}
           </span>
         </p>
       </div>
       
-      {/* Enhanced CTA Button */}
-      <div className="animate-slide-up animation-delay-400 relative group">
-        <div className="absolute inset-0 bg-gradient-to-r from-volga-logo-red to-red-600 rounded-full blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-300" />
+      {/* Modern CTA Button */}
+      <div className="relative z-10 group">
+        <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 rounded-full blur opacity-30 group-hover:opacity-50 transition duration-500" />
         <Button
           onClick={handleExploreServices}
           size="lg"
-          className="relative bg-gradient-to-r from-volga-logo-red to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold px-12 py-6 text-xl rounded-full transition-all duration-300 transform hover:scale-105 hover:shadow-2xl border-2 border-white/20"
+          className="relative bg-black/50 backdrop-blur-sm border border-white/20 text-white font-semibold px-12 py-6 text-lg rounded-full transition-all duration-500 transform hover:scale-105 glassmorphism pulse-glow font-space-grotesk"
         >
-          <span className="flex items-center">
-            {t('exploreServices')}
-            <ArrowRight className={`h-6 w-6 ${language === 'ar' ? 'mr-3 rotate-180' : 'ml-3'} transition-transform group-hover:translate-x-1`} />
+          <span className="flex items-center space-x-3">
+            <span className="text-gradient font-medium">{t('exploreServices')}</span>
+            <ArrowRight className={`h-5 w-5 ${language === 'ar' ? 'mr-3 rotate-180' : 'ml-3'} transition-transform group-hover:translate-x-1`} />
           </span>
         </Button>
       </div>
       
-      {/* Enhanced decorative elements */}
-      <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-2 h-12 bg-gradient-to-b from-volga-logo-red via-red-400 to-transparent rounded-full" />
-      </div>
-      
-      {/* Floating particles effect */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-volga-logo-blue rounded-full animate-pulse opacity-60" />
-        <div className="absolute top-1/3 right-1/4 w-1 h-1 bg-volga-logo-red rounded-full animate-pulse opacity-40 animation-delay-200" />
-        <div className="absolute bottom-1/3 left-1/3 w-1.5 h-1.5 bg-white rounded-full animate-pulse opacity-30 animation-delay-400" />
+      {/* Scroll indicator */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="w-1 h-16 bg-gradient-to-b from-purple-500 via-pink-500 to-transparent rounded-full animate-pulse" />
       </div>
     </div>
   );
