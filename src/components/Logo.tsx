@@ -4,11 +4,13 @@ import React from 'react';
 interface LogoProps {
   showFullBranding?: boolean;
   size?: 'small' | 'medium' | 'large';
+  animate?: boolean;
 }
 
 export const Logo: React.FC<LogoProps> = ({ 
   showFullBranding = true, 
-  size = 'medium' 
+  size = 'medium',
+  animate = false
 }) => {
   const sizeClasses = {
     small: 'w-8 h-8',
@@ -30,7 +32,7 @@ export const Logo: React.FC<LogoProps> = ({
           <img 
             src="/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png"
             alt="Volga Services Logo"
-            className={`${sizeClasses[size]} mx-auto animate-float`}
+            className={`${sizeClasses[size]} mx-auto ${animate ? 'animate-float hover:scale-110 transition-transform duration-300' : 'animate-float'}`}
           />
         </div>
         
