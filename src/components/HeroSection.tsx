@@ -15,14 +15,14 @@ export const HeroSection: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 sm:px-6 lg:px-8 relative">
+    <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 sm:px-6 lg:px-8 xl:px-12 relative">
       {/* Hero content */}
-      <div className="max-w-4xl mx-auto mb-8 sm:mb-12 space-y-4 sm:space-y-6 fade-in-up">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 lg:mb-8 text-shadow-elegant font-serif leading-tight">
+      <div className="max-w-6xl mx-auto mb-8 sm:mb-12 lg:mb-16 space-y-4 sm:space-y-6 lg:space-y-8 fade-in-up">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white mb-4 sm:mb-6 lg:mb-8 text-shadow-elegant font-serif leading-tight px-2">
           {t('welcome')}
         </h2>
         
-        <p className={`text-base sm:text-lg md:text-xl lg:text-2xl text-russian-cream leading-relaxed max-w-3xl mx-auto px-4 ${
+        <p className={`text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-russian-cream leading-relaxed max-w-4xl mx-auto px-2 sm:px-4 ${
           language === 'ar' ? 'font-medium' : ''
         }`}>
           {t('subtitle')}
@@ -34,7 +34,7 @@ export const HeroSection: React.FC = () => {
         <Button
           onClick={handleExploreServices}
           size="lg"
-          className="bg-russian-red hover:bg-red-800 text-white px-6 sm:px-8 py-3 text-base sm:text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+          className="bg-russian-red hover:bg-red-800 text-white px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 text-sm sm:text-base lg:text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 w-auto min-w-[200px] sm:min-w-[240px]"
         >
           {t('exploreServices')}
           <ArrowRight className={`h-4 w-4 sm:h-5 sm:w-5 ${language === 'ar' ? 'mr-2 sm:mr-3 rotate-180' : 'ml-2 sm:ml-3'}`} />
