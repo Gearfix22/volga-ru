@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { CreditCard, Upload, CheckCircle, FileText, Edit } from 'lucide-react';
+import { CreditCard, CheckCircle, FileText, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { BookingData } from '@/types/booking';
@@ -21,7 +21,6 @@ const Payment = () => {
   const { t } = useLanguage();
   const [bookingData, setBookingData] = useState<BookingData | null>(null);
   const [paymentMethod, setPaymentMethod] = useState('credit-card');
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [customAmount, setCustomAmount] = useState(0);
   const [isEditingAmount, setIsEditingAmount] = useState(false);
@@ -198,30 +197,6 @@ const Payment = () => {
       localStorage.setItem('paymentAmount', customAmount.toString());
       navigate('/booking-confirmation');
     }, 3000);
-  };
-
-  const handleBankTransferSubmit = () => {
-    if (!receiptFile) {
-      toast({
-        title: t('receiptRequired'),
-        description: t('pleaseUploadReceipt'),
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-    
-    // Save the custom amount before processing
-    saveAmountToBooking();
-    
-    // Simulate upload process
-    setTimeout(() => {
-      localStorage.setItem('paymentStatus', 'pending-verification');
-      localStorage.setItem('transactionId', `BT${Date.now()}`);
-      localStorage.setItem('paymentAmount', customAmount.toString());
-      navigate('/booking-confirmation');
-    }, 2000);
   };
 
   const handlePayPalPayment = () => {
@@ -408,10 +383,6 @@ const Payment = () => {
                     <Label htmlFor="credit-card" className="font-medium">Credit Card</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="bank-transfer" id="bank-transfer" />
-                    <Label htmlFor="bank-transfer" className="font-medium">{t('bankTransfer')}</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
                     <RadioGroupItem value="paypal" id="paypal" />
                     <Label htmlFor="paypal" className="font-medium">{t('paypal')}</Label>
                   </div>
@@ -492,76 +463,6 @@ const Payment = () => {
                           <CreditCard className="mr-2 h-4 w-4" />
                           Pay ${customAmount} USD
                         </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-
-                {paymentMethod === 'bank-transfer' && (
-                  <div className="space-y-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                    <h3 className="font-semibold">{t('bankTransferDetails')}</h3>
-                    <div className="grid grid-cols-1 gap-3 text-sm">
-                      <div className="flex justify-between">
-                        <span className="font-medium">{t('bankName')}:</span>
-                        <span>Volga Tourism Bank</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium">{t('accountNumber')}:</span>
-                        <span>1234567890123456</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium">{t('swiftCode')}:</span>
-                        <span>VTBANKRU</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium">{t('iban')}:</span>
-                        <span>RU1234567890123456789012</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium">{t('beneficiary')}:</span>
-                        <span>Volga Tourism Services LLC</span>
-                      </div>
-                    </div>
-                    
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border-l-4 border-blue-400">
-                      <p className="text-sm text-blue-800 dark:text-blue-200">
-                        {t('transferAmount')}: <strong>${customAmount} USD</strong>
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="receipt">{t('uploadPaymentReceipt')} *</Label>
-                      <div className="flex items-center gap-4">
-                        <Input
-                          id="receipt"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={handleFileUpload}
-                          className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                        />
-                        {receiptFile && (
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                        )}
-                      </div>
-                      {receiptFile && (
-                        <p className="text-sm text-green-600 dark:text-green-400">
-                          {t('fileUploaded')}: {receiptFile.name}
-                        </p>
-                      )}
-                    </div>
-
-                    <Button 
-                      onClick={handleBankTransferSubmit}
-                      disabled={!receiptFile || isProcessing}
-                      className="w-full"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <Upload className="mr-2 h-4 w-4 animate-spin" />
-                          {t('processing')}
-                        </>
-                      ) : (
-                        t('submitPaymentReceipt')
                       )}
                     </Button>
                   </div>
