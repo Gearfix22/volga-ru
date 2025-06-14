@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
@@ -10,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { CreditCard, Upload, CheckCircle, FileText } from 'lucide-react';
+import { CreditCard, Upload, CheckCircle, FileText, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { BookingData } from '@/types/booking';
@@ -23,18 +22,22 @@ const Payment = () => {
   const [paymentMethod, setPaymentMethod] = useState('bank-transfer');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [customAmount, setCustomAmount] = useState(0);
+  const [isEditingAmount, setIsEditingAmount] = useState(false);
 
   useEffect(() => {
     const storedData = localStorage.getItem('bookingData');
     if (storedData) {
-      setBookingData(JSON.parse(storedData));
+      const data = JSON.parse(storedData);
+      setBookingData(data);
+      setCustomAmount(calculatePrice(data));
     } else {
       navigate('/booking');
     }
   }, [navigate]);
 
-  const calculatePrice = () => {
-    if (!bookingData) return 0;
+  const calculatePrice = (data?: BookingData) => {
+    if (!data) return 0;
     
     const basePrices = {
       transportation: 50,
@@ -43,17 +46,34 @@ const Payment = () => {
       trip: 200
     };
     
-    let basePrice = basePrices[bookingData.serviceType as keyof typeof basePrices] || 100;
+    let basePrice = basePrices[data.serviceType as keyof typeof basePrices] || 100;
     
     // Add some logic based on service details
-    if (bookingData.serviceType === 'event') {
-      const details = bookingData.serviceDetails as any;
+    if (data.serviceType === 'event') {
+      const details = data.serviceDetails as any;
       if (details.tickets) {
         basePrice *= parseInt(details.tickets);
       }
     }
     
     return basePrice;
+  };
+
+  const handleAmountChange = (value: string) => {
+    const numValue = parseFloat(value) || 0;
+    setCustomAmount(numValue);
+  };
+
+  const saveAmountToBooking = () => {
+    if (bookingData) {
+      const updatedBookingData = {
+        ...bookingData,
+        customAmount: customAmount
+      };
+      localStorage.setItem('bookingData', JSON.stringify(updatedBookingData));
+      setBookingData(updatedBookingData);
+    }
+    setIsEditingAmount(false);
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,10 +104,14 @@ const Payment = () => {
 
     setIsProcessing(true);
     
+    // Save the custom amount before processing
+    saveAmountToBooking();
+    
     // Simulate upload process
     setTimeout(() => {
       localStorage.setItem('paymentStatus', 'pending-verification');
       localStorage.setItem('transactionId', `BT${Date.now()}`);
+      localStorage.setItem('paymentAmount', customAmount.toString());
       navigate('/booking-confirmation');
     }, 2000);
   };
@@ -95,12 +119,16 @@ const Payment = () => {
   const handlePayPalPayment = () => {
     setIsProcessing(true);
     
+    // Save the custom amount before processing
+    saveAmountToBooking();
+    
     // PayPal integration would go here
     // For now, simulate successful payment
     setTimeout(() => {
       const transactionId = `PP${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
       localStorage.setItem('paymentStatus', 'completed');
       localStorage.setItem('transactionId', transactionId);
+      localStorage.setItem('paymentAmount', customAmount.toString());
       navigate('/booking-confirmation');
     }, 3000);
   };
@@ -135,8 +163,6 @@ const Payment = () => {
   if (!bookingData) {
     return <div>Loading...</div>;
   }
-
-  const totalAmount = calculatePrice();
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -201,10 +227,53 @@ const Payment = () => {
 
                 <Separator />
 
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-primary">
-                    {t('total')}: ${totalAmount} USD
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-semibold">{t('total')}:</span>
+                    <div className="flex items-center gap-2">
+                      {isEditingAmount ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">$</span>
+                          <Input
+                            type="number"
+                            value={customAmount}
+                            onChange={(e) => handleAmountChange(e.target.value)}
+                            className="w-24 h-8"
+                            min="0"
+                            step="0.01"
+                          />
+                          <span className="text-sm">USD</span>
+                          <Button
+                            size="sm"
+                            onClick={saveAmountToBooking}
+                            className="h-8 px-2"
+                          >
+                            <CheckCircle className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div className="text-2xl font-bold text-primary">
+                            ${customAmount} USD
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setIsEditingAmount(true)}
+                            className="h-8 px-2"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  
+                  {isEditingAmount && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 text-right">
+                      Click the checkmark to save your custom amount
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -260,7 +329,7 @@ const Payment = () => {
                     
                     <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border-l-4 border-blue-400">
                       <p className="text-sm text-blue-800 dark:text-blue-200">
-                        {t('transferAmount')}
+                        {t('transferAmount')}: <strong>${customAmount} USD</strong>
                       </p>
                     </div>
 
@@ -311,7 +380,7 @@ const Payment = () => {
                     
                     <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded border-l-4 border-yellow-400">
                       <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                        {t('amountToCharge')}: <strong>${totalAmount} USD</strong>
+                        {t('amountToCharge')}: <strong>${customAmount} USD</strong>
                       </p>
                     </div>
 

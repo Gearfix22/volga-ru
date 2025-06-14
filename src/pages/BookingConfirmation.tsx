@@ -6,7 +6,7 @@ import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Clock, FileText, ArrowRight, Home } from 'lucide-react';
+import { CheckCircle, Clock, FileText, ArrowRight, Home, DollarSign } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const BookingConfirmation = () => {
@@ -14,10 +14,12 @@ const BookingConfirmation = () => {
   const { t } = useLanguage();
   const [paymentStatus, setPaymentStatus] = useState('');
   const [transactionId, setTransactionId] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState('');
 
   useEffect(() => {
     const status = localStorage.getItem('paymentStatus');
     const txId = localStorage.getItem('transactionId');
+    const amount = localStorage.getItem('paymentAmount');
     
     if (!status || !txId) {
       navigate('/booking');
@@ -26,6 +28,7 @@ const BookingConfirmation = () => {
     
     setPaymentStatus(status);
     setTransactionId(txId);
+    setPaymentAmount(amount || '0');
   }, [navigate]);
 
   const isPaymentCompleted = paymentStatus === 'completed';
@@ -68,22 +71,38 @@ const BookingConfirmation = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="font-semibold">{t('transactionId')}:</span>
-                  <span className="font-mono text-sm bg-white dark:bg-slate-700 px-3 py-1 rounded">
-                    {transactionId}
-                  </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">{t('transactionId')}:</span>
+                    <span className="font-mono text-sm bg-white dark:bg-slate-700 px-3 py-1 rounded">
+                      {transactionId}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold">{t('status')}:</span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      isPaymentCompleted 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                    }`}>
+                      {isPaymentCompleted ? t('confirmed') : t('pendingVerification')}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">{t('status')}:</span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    isPaymentCompleted 
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                  }`}>
-                    {isPaymentCompleted ? t('confirmed') : t('pendingVerification')}
-                  </span>
-                </div>
+                
+                {paymentAmount && (
+                  <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-600">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold flex items-center gap-2">
+                        <DollarSign className="h-4 w-4" />
+                        Payment Amount:
+                      </span>
+                      <span className="text-lg font-bold text-primary">
+                        ${paymentAmount} USD
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -159,6 +178,7 @@ const BookingConfirmation = () => {
                     localStorage.removeItem('bookingData');
                     localStorage.removeItem('paymentStatus');
                     localStorage.removeItem('transactionId');
+                    localStorage.removeItem('paymentAmount');
                     navigate('/booking');
                   }}
                   className="flex-1"
