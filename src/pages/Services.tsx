@@ -21,7 +21,7 @@ const Services = () => {
       
       {/* Main Content */}
       <div className="relative z-10 pt-16 sm:pt-20 lg:pt-24 pb-8 sm:pb-12">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto px-2 sm:px-4 lg:px-8 max-w-7xl">
           <BookingProgress />
           <ServicesHeader />
           <ServicesTabs activeCategory={activeCategory} setActiveCategory={setActiveCategory} />

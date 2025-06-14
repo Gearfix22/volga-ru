@@ -43,16 +43,16 @@ export const BookingProgress: React.FC = () => {
   };
 
   return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mb-6">
-      <div className="flex items-center justify-between">
+    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6 mx-2 sm:mx-0">
+      <div className="flex items-center justify-between overflow-x-auto">
         {steps.map((step, index) => {
           const status = getStepStatus(index);
           
           return (
-            <div key={step.id} className="flex items-center">
+            <div key={step.id} className="flex items-center min-w-0 flex-shrink-0">
               <div className="flex flex-col items-center">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
                     status === 'completed'
                       ? 'bg-green-500 text-white'
                       : status === 'current'
@@ -63,28 +63,28 @@ export const BookingProgress: React.FC = () => {
                   }`}
                 >
                   {status === 'completed' ? (
-                    <Check className="h-4 w-4" />
+                    <Check className="h-3 w-3 sm:h-4 sm:w-4" />
                   ) : status === 'locked' ? (
-                    <Lock className="h-3 w-3" />
+                    <Lock className="h-2 w-2 sm:h-3 sm:w-3" />
                   ) : (
                     index + 1
                   )}
                 </div>
                 <span
-                  className={`text-xs mt-1 text-center ${
+                  className={`text-xs mt-1 text-center max-w-16 sm:max-w-20 leading-tight ${
                     status === 'completed' || status === 'current' ? 'text-white' : 
                     status === 'locked' ? 'text-red-300' : 'text-white/60'
                   }`}
                 >
                   {step.title}
                   {status === 'locked' && (
-                    <div className="text-xs text-red-200 mt-1">Login Required</div>
+                    <div className="text-xs text-red-200 mt-1 hidden sm:block">Login Required</div>
                   )}
                 </span>
               </div>
               {index < steps.length - 1 && (
                 <div
-                  className={`h-0.5 w-12 mx-2 ${
+                  className={`h-0.5 w-8 sm:w-12 mx-1 sm:mx-2 ${
                     index < currentStepIndex ? 'bg-green-500' : 'bg-white/20'
                   }`}
                 />
@@ -95,8 +95,8 @@ export const BookingProgress: React.FC = () => {
       </div>
       
       {!user && currentPath !== '/services' && (
-        <div className="mt-4 text-center">
-          <p className="text-white/80 text-sm">
+        <div className="mt-3 sm:mt-4 text-center">
+          <p className="text-white/80 text-xs sm:text-sm">
             Please sign in to continue with your booking
           </p>
         </div>
