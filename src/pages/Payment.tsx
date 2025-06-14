@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
@@ -30,6 +29,7 @@ const Payment = () => {
   const location = useLocation();
   const bookingData = location.state?.bookingData;
   const paypalRef = useRef<HTMLDivElement>(null);
+  const paypalButtonsRef = useRef<any>(null);
 
   const [selectedMethod, setSelectedMethod] = useState('credit-card');
   const [cardNumber, setCardNumber] = useState('');
@@ -46,7 +46,34 @@ const Payment = () => {
     }
   }, [bookingData, navigate]);
 
+  // Cleanup PayPal buttons when component unmounts or method changes
   useEffect(() => {
+    return () => {
+      if (paypalButtonsRef.current) {
+        try {
+          paypalButtonsRef.current.close();
+        } catch (e) {
+          console.log('PayPal cleanup error (safe to ignore):', e);
+        }
+        paypalButtonsRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    // Cleanup previous PayPal buttons when switching away from PayPal
+    if (selectedMethod !== 'paypal' && paypalButtonsRef.current) {
+      try {
+        paypalButtonsRef.current.close();
+        paypalButtonsRef.current = null;
+      } catch (e) {
+        console.log('PayPal cleanup error (safe to ignore):', e);
+      }
+      if (paypalRef.current) {
+        paypalRef.current.innerHTML = '';
+      }
+    }
+
     const loadPayPalScript = () => {
       if (window.paypal) {
         setPaypalLoaded(true);
@@ -60,6 +87,14 @@ const Payment = () => {
         setPaypalLoaded(true);
         renderPayPalButton();
       };
+      script.onerror = () => {
+        console.error('Failed to load PayPal SDK');
+        toast({
+          title: "PayPal Error",
+          description: "Failed to load PayPal. Please try again or use credit card.",
+          variant: "destructive"
+        });
+      };
       document.body.appendChild(script);
     };
 
@@ -69,85 +104,115 @@ const Payment = () => {
   }, [selectedMethod, customAmount]);
 
   const renderPayPalButton = () => {
-    if (!window.paypal || !paypalRef.current) return;
+    if (!window.paypal || !paypalRef.current || selectedMethod !== 'paypal') return;
 
-    // Clear existing PayPal button
-    paypalRef.current.innerHTML = '';
+    // Clean up existing PayPal buttons
+    if (paypalButtonsRef.current) {
+      try {
+        paypalButtonsRef.current.close();
+      } catch (e) {
+        console.log('PayPal cleanup error (safe to ignore):', e);
+      }
+    }
+
+    // Clear container safely
+    if (paypalRef.current) {
+      paypalRef.current.innerHTML = '';
+    }
 
     const amount = parseFloat(customAmount) || 50;
 
-    window.paypal.Buttons({
-      createOrder: (data: any, actions: any) => {
-        return actions.order.create({
-          purchase_units: [{
-            amount: {
-              value: amount.toFixed(2)
-            }
-          }]
-        });
-      },
-      onApprove: async (data: any, actions: any) => {
-        try {
-          const details = await actions.order.capture();
-          const transactionId = details.id;
-          
-          // Save booking to Supabase if user is authenticated
-          if (user && bookingData) {
-            await createBooking({
-              ...bookingData,
-              customAmount: amount,
-              totalPrice: amount
-            }, {
-              paymentMethod: 'PayPal',
-              transactionId,
-              totalPrice: amount
-            });
-            
-            toast({
-              title: "Booking saved successfully!",
-              description: "Your booking has been saved to your account.",
-            });
-          }
-          
-          // Store payment details for confirmation page
-          localStorage.setItem('paymentStatus', 'completed');
-          localStorage.setItem('transactionId', transactionId);
-          localStorage.setItem('paymentAmount', amount.toString());
-          
-          toast({
-            title: "Payment successful!",
-            description: `Transaction ID: ${transactionId}`,
+    try {
+      paypalButtonsRef.current = window.paypal.Buttons({
+        createOrder: (data: any, actions: any) => {
+          return actions.order.create({
+            purchase_units: [{
+              amount: {
+                value: amount.toFixed(2)
+              }
+            }]
           });
-
-          navigate('/booking-confirmation', {
-            state: {
-              bookingData: {
+        },
+        onApprove: async (data: any, actions: any) => {
+          try {
+            const details = await actions.order.capture();
+            const transactionId = details.id;
+            
+            // Save booking to Supabase if user is authenticated
+            if (user && bookingData) {
+              await createBooking({
                 ...bookingData,
+                customAmount: amount,
+                totalPrice: amount
+              }, {
                 paymentMethod: 'PayPal',
                 transactionId,
-                paidAmount: amount,
                 totalPrice: amount
-              }
+              });
+              
+              toast({
+                title: "Booking saved successfully!",
+                description: "Your booking has been saved to your account.",
+              });
             }
-          });
-        } catch (error) {
-          console.error('PayPal payment error:', error);
+            
+            // Store payment details for confirmation page
+            localStorage.setItem('paymentStatus', 'completed');
+            localStorage.setItem('transactionId', transactionId);
+            localStorage.setItem('paymentAmount', amount.toString());
+            
+            toast({
+              title: "Payment successful!",
+              description: `Transaction ID: ${transactionId}`,
+            });
+
+            navigate('/booking-confirmation', {
+              state: {
+                bookingData: {
+                  ...bookingData,
+                  paymentMethod: 'PayPal',
+                  transactionId,
+                  paidAmount: amount,
+                  totalPrice: amount
+                }
+              }
+            });
+          } catch (error) {
+            console.error('PayPal payment error:', error);
+            toast({
+              title: "Payment failed",
+              description: "There was an error processing your PayPal payment.",
+              variant: "destructive"
+            });
+          }
+        },
+        onError: (err: any) => {
+          console.error('PayPal error:', err);
           toast({
-            title: "Payment failed",
-            description: "There was an error processing your PayPal payment.",
+            title: "Payment error",
+            description: "There was an error with PayPal. Please try again.",
             variant: "destructive"
           });
+        },
+        onCancel: () => {
+          toast({
+            title: "Payment cancelled",
+            description: "PayPal payment was cancelled.",
+          });
         }
-      },
-      onError: (err: any) => {
-        console.error('PayPal error:', err);
-        toast({
-          title: "Payment error",
-          description: "There was an error with PayPal. Please try again.",
-          variant: "destructive"
-        });
+      });
+
+      if (paypalRef.current) {
+        paypalButtonsRef.current.render(paypalRef.current);
       }
-    }).render(paypalRef.current);
+    } catch (error) {
+      console.error('Error rendering PayPal button:', error);
+      toast({
+        title: "PayPal Error",
+        description: "Failed to initialize PayPal button. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (!bookingData) {
