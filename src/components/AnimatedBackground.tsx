@@ -4,8 +4,19 @@ import React from 'react';
 export const AnimatedBackground: React.FC = () => {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Russian landmarks gradient background */}
-      <div className="absolute inset-0 russia-gradient" />
+      {/* Kremlin landmark background photo */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1513326738677-b964603b136d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2126&q=80')`
+        }}
+      />
+      
+      {/* Dark overlay for better text readability */}
+      <div className="absolute inset-0 bg-black/40" />
+      
+      {/* Russian flag colors gradient overlay */}
+      <div className="absolute inset-0 russia-gradient opacity-60" />
       
       {/* Animated floating elements overlay */}
       <div className="absolute inset-0">
@@ -33,7 +44,7 @@ export const AnimatedBackground: React.FC = () => {
       </div>
       
       {/* Kremlin-inspired pattern overlay */}
-      <div className="absolute inset-0 kremlin-pattern opacity-30" />
+      <div className="absolute inset-0 kremlin-pattern opacity-20" />
       
       {/* Subtle shimmer effect */}
       <div 
