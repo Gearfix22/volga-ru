@@ -13,6 +13,7 @@ import { CreditCard, Shield, Lock, DollarSign } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { createBooking } from '@/services/database';
+import { createPayPalOrder, capturePayPalPayment, processCreditCardPayment } from '@/services/paymentService';
 import { useToast } from '@/hooks/use-toast';
 
 declare global {
@@ -29,8 +30,6 @@ const Payment = () => {
   const location = useLocation();
   const bookingData = location.state?.bookingData;
   const paypalContainerRef = useRef<HTMLDivElement>(null);
-  const paypalButtonsInstance = useRef<any>(null);
-  const isPaypalMounted = useRef(false);
 
   const [selectedMethod, setSelectedMethod] = useState('credit-card');
   const [cardNumber, setCardNumber] = useState('');
@@ -40,7 +39,7 @@ const Payment = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [customAmount, setCustomAmount] = useState(bookingData?.totalPrice?.toString() || '50');
   const [paypalScriptLoaded, setPaypalScriptLoaded] = useState(false);
-  const [paypalError, setPaypalError] = useState('');
+  const [paypalOrderId, setPaypalOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!bookingData) {
@@ -48,37 +47,10 @@ const Payment = () => {
     }
   }, [bookingData, navigate]);
 
-  // Clean up PayPal when component unmounts or method changes
-  const cleanupPayPal = () => {
-    console.log('Cleaning up PayPal...');
-    if (paypalButtonsInstance.current) {
-      try {
-        if (typeof paypalButtonsInstance.current.close === 'function') {
-          paypalButtonsInstance.current.close();
-        }
-      } catch (error) {
-        console.log('PayPal cleanup error (safe to ignore):', error);
-      }
-      paypalButtonsInstance.current = null;
-    }
-    
-    if (paypalContainerRef.current) {
-      paypalContainerRef.current.innerHTML = '';
-    }
-    
-    isPaypalMounted.current = false;
-  };
-
-  // Load PayPal script only once
+  // Load PayPal script
   useEffect(() => {
     if (paypalScriptLoaded || window.paypal) {
       setPaypalScriptLoaded(true);
-      return;
-    }
-
-    const existingScript = document.querySelector('script[src*="paypal.com/sdk"]');
-    if (existingScript) {
-      existingScript.addEventListener('load', () => setPaypalScriptLoaded(true));
       return;
     }
 
@@ -86,137 +58,97 @@ const Payment = () => {
     script.src = `https://www.paypal.com/sdk/js?client-id=AU15djn3gU9YlY__yWU0ZFAGCo8AepH1KSx2I5Kr_0YrgktGrApSOcI-yAaeAFmfHDN4-yWUu2V1NHqV&currency=USD`;
     script.onload = () => setPaypalScriptLoaded(true);
     script.onerror = () => {
-      setPaypalError('Failed to load PayPal SDK');
       toast({
         title: "PayPal Error",
-        description: "Failed to load PayPal. Please try credit card instead.",
+        description: "Failed to load PayPal SDK",
         variant: "destructive"
       });
     };
     document.body.appendChild(script);
   }, []);
 
-  // Handle PayPal button rendering with better error handling
+  // Render PayPal buttons
   useEffect(() => {
-    if (selectedMethod !== 'paypal' || !paypalScriptLoaded || !window.paypal || isPaypalMounted.current) {
-      if (selectedMethod !== 'paypal') {
-        cleanupPayPal();
-      }
+    if (selectedMethod !== 'paypal' || !paypalScriptLoaded || !window.paypal || !paypalContainerRef.current) {
       return;
     }
 
-    const renderPayPalButtons = () => {
-      if (!paypalContainerRef.current || isPaypalMounted.current) {
-        return;
-      }
+    const amount = parseFloat(customAmount) || 50;
 
-      const amount = parseFloat(customAmount) || 50;
-      console.log('Rendering PayPal buttons with amount:', amount);
+    paypalContainerRef.current.innerHTML = '';
 
-      try {
-        paypalButtonsInstance.current = window.paypal.Buttons({
-          createOrder: (data: any, actions: any) => {
-            return actions.order.create({
-              purchase_units: [{
-                amount: {
-                  value: amount.toFixed(2)
-                }
-              }]
-            });
-          },
-          onApprove: async (data: any, actions: any) => {
-            try {
-              const details = await actions.order.capture();
-              const transactionId = details.id;
-              
-              if (user && bookingData) {
-                await createBooking({
-                  ...bookingData,
-                  customAmount: amount,
-                  totalPrice: amount
-                }, {
-                  paymentMethod: 'PayPal',
-                  transactionId,
-                  totalPrice: amount
-                });
-                
-                toast({
-                  title: "Booking saved successfully!",
-                  description: "Your booking has been saved to your account.",
-                });
-              }
-              
-              localStorage.setItem('paymentStatus', 'completed');
-              localStorage.setItem('transactionId', transactionId);
-              localStorage.setItem('paymentAmount', amount.toString());
-              
-              toast({
-                title: "Payment successful!",
-                description: `Transaction ID: ${transactionId}`,
-              });
-
-              navigate('/booking-confirmation', {
-                state: {
-                  bookingData: {
-                    ...bookingData,
-                    paymentMethod: 'PayPal',
-                    transactionId,
-                    paidAmount: amount,
-                    totalPrice: amount
-                  }
-                }
-              });
-            } catch (error) {
-              console.error('PayPal payment error:', error);
-              toast({
-                title: "Payment failed",
-                description: "There was an error processing your PayPal payment.",
-                variant: "destructive"
-              });
-            }
-          },
-          onError: (err: any) => {
-            console.error('PayPal error:', err);
-            setPaypalError('PayPal error occurred');
-            toast({
-              title: "Payment error",
-              description: "There was an error with PayPal. Please try again.",
-              variant: "destructive"
-            });
-          },
-          onCancel: () => {
-            toast({
-              title: "Payment cancelled",
-              description: "PayPal payment was cancelled.",
-            });
+    window.paypal.Buttons({
+      createOrder: async () => {
+        try {
+          const response = await createPayPalOrder(amount, bookingData);
+          if (response.success && response.order) {
+            setPaypalOrderId(response.order.id);
+            return response.order.id;
+          } else {
+            throw new Error(response.error || 'Failed to create order');
           }
-        });
-
-        if (paypalContainerRef.current) {
-          paypalButtonsInstance.current.render(paypalContainerRef.current).then(() => {
-            isPaypalMounted.current = true;
-            console.log('PayPal buttons rendered successfully');
-          }).catch((error: any) => {
-            console.error('PayPal render error:', error);
-            setPaypalError('Failed to render PayPal buttons');
+        } catch (error) {
+          console.error('Error creating PayPal order:', error);
+          toast({
+            title: "Order Creation Failed",
+            description: "Failed to create PayPal order",
+            variant: "destructive"
           });
+          throw error;
         }
-      } catch (error) {
-        console.error('Error setting up PayPal buttons:', error);
-        setPaypalError('Failed to initialize PayPal');
+      },
+      onApprove: async (data: any) => {
+        try {
+          setIsProcessing(true);
+          const response = await capturePayPalPayment(data.orderID, bookingData);
+          
+          if (response.success) {
+            toast({
+              title: "Payment successful!",
+              description: `Transaction ID: ${response.transactionId}`,
+            });
+
+            navigate('/booking-confirmation', {
+              state: {
+                bookingData: {
+                  ...bookingData,
+                  paymentMethod: 'PayPal',
+                  transactionId: response.transactionId,
+                  paidAmount: amount,
+                  totalPrice: amount
+                }
+              }
+            });
+          } else {
+            throw new Error(response.error || 'Payment capture failed');
+          }
+        } catch (error) {
+          console.error('PayPal payment error:', error);
+          toast({
+            title: "Payment failed",
+            description: "There was an error processing your PayPal payment.",
+            variant: "destructive"
+          });
+        } finally {
+          setIsProcessing(false);
+        }
+      },
+      onError: (err: any) => {
+        console.error('PayPal error:', err);
+        toast({
+          title: "Payment error",
+          description: "There was an error with PayPal. Please try again.",
+          variant: "destructive"
+        });
+      },
+      onCancel: () => {
+        toast({
+          title: "Payment cancelled",
+          description: "PayPal payment was cancelled.",
+        });
       }
-    };
-
-    // Small delay to ensure DOM is ready
-    setTimeout(renderPayPalButtons, 100);
-  }, [selectedMethod, paypalScriptLoaded, customAmount, user, bookingData, navigate, toast]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      cleanupPayPal();
-    };
-  }, []);
+    }).render(paypalContainerRef.current);
+  }, [selectedMethod, paypalScriptLoaded, customAmount, bookingData, navigate, toast]);
 
   if (!bookingData) {
     return null;
@@ -226,19 +158,7 @@ const Payment = () => {
     const value = e.target.value;
     if (/^\d*\.?\d*$/.test(value)) {
       setCustomAmount(value);
-      // Reset PayPal when amount changes
-      if (selectedMethod === 'paypal') {
-        cleanupPayPal();
-      }
     }
-  };
-
-  const handlePaymentMethodChange = (method: string) => {
-    if (method !== selectedMethod) {
-      cleanupPayPal();
-      setPaypalError('');
-    }
-    setSelectedMethod(method);
   };
 
   const finalAmount = parseFloat(customAmount) || 0;
@@ -258,42 +178,37 @@ const Payment = () => {
     setIsProcessing(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const transactionId = `TXN${Date.now()}`;
-      
-      if (user) {
-        await createBooking({
-          ...bookingData,
-          customAmount: finalAmount,
-          totalPrice: finalAmount
-        }, {
-          paymentMethod: 'Credit Card',
-          transactionId,
-          totalPrice: finalAmount
-        });
-        
+      const response = await processCreditCardPayment(
+        finalAmount,
+        {
+          number: cardNumber,
+          expiry: expiryDate,
+          cvv: cvv,
+          name: cardholderName
+        },
+        bookingData
+      );
+
+      if (response.success) {
         toast({
-          title: "Booking saved successfully!",
-          description: "Your booking has been saved to your account.",
+          title: "Payment successful!",
+          description: `Transaction ID: ${response.transactionId}`,
         });
-      }
-      
-      localStorage.setItem('paymentStatus', 'completed');
-      localStorage.setItem('transactionId', transactionId);
-      localStorage.setItem('paymentAmount', finalAmount.toString());
-      
-      navigate('/booking-confirmation', {
-        state: {
-          bookingData: {
-            ...bookingData,
-            paymentMethod: 'Credit Card',
-            transactionId,
-            paidAmount: finalAmount,
-            totalPrice: finalAmount
+
+        navigate('/booking-confirmation', {
+          state: {
+            bookingData: {
+              ...bookingData,
+              paymentMethod: 'Credit Card',
+              transactionId: response.transactionId,
+              paidAmount: finalAmount,
+              totalPrice: finalAmount
+            }
           }
-        }
-      });
+        });
+      } else {
+        throw new Error(response.error || 'Payment failed');
+      }
     } catch (error) {
       console.error('Payment failed:', error);
       toast({
@@ -323,13 +238,9 @@ const Payment = () => {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      {/* Animated Background */}
       <AnimatedBackground />
-      
-      {/* Navigation */}
       <Navigation />
       
-      {/* Main Content */}
       <div className="relative z-10 pt-16 sm:pt-20 lg:pt-24 pb-8 sm:pb-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-4xl">
           <div className="mb-6">
@@ -348,7 +259,6 @@ const Payment = () => {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Payment Form */}
             <Card className="bg-white/10 backdrop-blur-sm border-white/20">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
@@ -360,7 +270,6 @@ const Payment = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Payment Amount */}
                 <div className="space-y-4 mb-6">
                   <h3 className="text-white font-medium flex items-center gap-2">
                     <DollarSign className="h-5 w-5" />
@@ -382,13 +291,9 @@ const Payment = () => {
                         required
                       />
                     </div>
-                    <p className="text-white/60 text-xs mt-1">
-                      Enter the amount you wish to pay
-                    </p>
                   </div>
                 </div>
 
-                {/* Payment Method Selection */}
                 <div className="space-y-4 mb-6">
                   <h3 className="text-white font-medium">Payment Method</h3>
                   <div className="grid grid-cols-1 gap-3">
@@ -400,7 +305,7 @@ const Payment = () => {
                             ? 'border-russian-gold bg-russian-gold/10'
                             : 'border-white/20 bg-white/5 hover:border-white/30'
                         }`}
-                        onClick={() => handlePaymentMethodChange(method.id)}
+                        onClick={() => setSelectedMethod(method.id)}
                       >
                         <div className="p-4 flex items-center space-x-3">
                           <method.icon className="h-5 w-5 text-white" />
@@ -419,7 +324,6 @@ const Payment = () => {
                   </div>
                 </div>
 
-                {/* Credit Card Form */}
                 {selectedMethod === 'credit-card' && (
                   <form onSubmit={handleCreditCardPayment} className="space-y-4">
                     <div>
@@ -490,35 +394,18 @@ const Payment = () => {
                   </form>
                 )}
 
-                {/* PayPal Form */}
                 {selectedMethod === 'paypal' && (
                   <div className="space-y-4">
                     <div className="bg-white/5 rounded-lg p-4 border border-white/20">
                       <h4 className="text-white font-medium mb-3">PayPal Payment</h4>
-                      {paypalError ? (
-                        <div className="text-red-400 text-sm mb-4 p-3 bg-red-500/10 rounded">
-                          {paypalError}
-                          <Button 
-                            onClick={() => {
-                              setPaypalError('');
-                              cleanupPayPal();
-                            }}
-                            className="ml-2 text-xs bg-red-500/20 hover:bg-red-500/30"
-                            size="sm"
-                          >
-                            Retry
-                          </Button>
-                        </div>
-                      ) : (
-                        <p className="text-white/70 text-sm mb-4">
-                          Click the PayPal button below to complete your payment securely.
-                        </p>
-                      )}
+                      <p className="text-white/70 text-sm mb-4">
+                        Click the PayPal button below to complete your payment securely.
+                      </p>
                       <div 
                         ref={paypalContainerRef}
                         className="min-h-[50px]"
                       >
-                        {!paypalScriptLoaded && !paypalError && (
+                        {!paypalScriptLoaded && (
                           <div className="flex items-center justify-center py-4">
                             <div className="text-white/60">Loading PayPal...</div>
                           </div>
@@ -530,7 +417,6 @@ const Payment = () => {
               </CardContent>
             </Card>
 
-            {/* Booking Summary */}
             <Card className="bg-white/10 backdrop-blur-sm border-white/20">
               <CardHeader>
                 <CardTitle className="text-white">Booking Summary</CardTitle>
@@ -595,7 +481,6 @@ const Payment = () => {
         </div>
       </div>
       
-      {/* Footer */}
       <Footer />
     </div>
   );
