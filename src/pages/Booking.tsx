@@ -13,11 +13,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowRight, Car, Hotel, Calendar, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { ServiceDetails, UserInfo } from '@/types/booking';
 
 const Booking = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [serviceType, setServiceType] = useState('');
   const [serviceDetails, setServiceDetails] = useState<ServiceDetails>({});
   const [userInfo, setUserInfo] = useState<UserInfo>({
@@ -46,8 +48,8 @@ const Booking = () => {
     
     if (!serviceType) {
       toast({
-        title: "Service required",
-        description: "Please select a service type.",
+        title: t('serviceRequired'),
+        description: t('pleaseSelectService'),
         variant: "destructive"
       });
       return;
@@ -55,8 +57,8 @@ const Booking = () => {
 
     if (!userInfo.fullName || !userInfo.email || !userInfo.phone) {
       toast({
-        title: "Contact information required",
-        description: "Please fill in all required contact fields.",
+        title: t('contactInfoRequired'),
+        description: t('fillRequiredFields'),
         variant: "destructive"
       });
       return;
@@ -81,27 +83,27 @@ const Booking = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="pickup">Pickup Location *</Label>
+                <Label htmlFor="pickup">{t('pickupLocation')} *</Label>
                 <Input
                   id="pickup"
                   value={details.pickup || ''}
                   onChange={(e) => updateServiceDetail('pickup', e.target.value)}
-                  placeholder="Enter pickup location"
+                  placeholder={t('enterPickupLocation')}
                 />
               </div>
               <div>
-                <Label htmlFor="dropoff">Drop-off Location *</Label>
+                <Label htmlFor="dropoff">{t('dropoffLocation')} *</Label>
                 <Input
                   id="dropoff"
                   value={details.dropoff || ''}
                   onChange={(e) => updateServiceDetail('dropoff', e.target.value)}
-                  placeholder="Enter drop-off location"
+                  placeholder={t('enterDropoffLocation')}
                 />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="date">Date *</Label>
+                <Label htmlFor="date">{t('date')} *</Label>
                 <Input
                   id="date"
                   type="date"
@@ -110,7 +112,7 @@ const Booking = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="time">Time *</Label>
+                <Label htmlFor="time">{t('time')} *</Label>
                 <Input
                   id="time"
                   type="time"
@@ -120,16 +122,16 @@ const Booking = () => {
               </div>
             </div>
             <div>
-              <Label htmlFor="vehicleType">Vehicle Type</Label>
+              <Label htmlFor="vehicleType">{t('vehicleType')}</Label>
               <Select onValueChange={(value) => updateServiceDetail('vehicleType', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select vehicle type" />
+                  <SelectValue placeholder={t('selectVehicleType')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sedan">Sedan</SelectItem>
-                  <SelectItem value="suv">SUV</SelectItem>
-                  <SelectItem value="minivan">Minivan</SelectItem>
-                  <SelectItem value="bus">Bus</SelectItem>
+                  <SelectItem value="sedan">{t('sedan')}</SelectItem>
+                  <SelectItem value="suv">{t('suv')}</SelectItem>
+                  <SelectItem value="minivan">{t('minivan')}</SelectItem>
+                  <SelectItem value="bus">{t('bus')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -141,27 +143,27 @@ const Booking = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="city">City *</Label>
+                <Label htmlFor="city">{t('city')} *</Label>
                 <Input
                   id="city"
                   value={details.city || ''}
                   onChange={(e) => updateServiceDetail('city', e.target.value)}
-                  placeholder="Enter city name"
+                  placeholder={t('enterCityName')}
                 />
               </div>
               <div>
-                <Label htmlFor="hotel">Hotel Name</Label>
+                <Label htmlFor="hotel">{t('hotel')}</Label>
                 <Input
                   id="hotel"
                   value={details.hotel || ''}
                   onChange={(e) => updateServiceDetail('hotel', e.target.value)}
-                  placeholder="Preferred hotel (optional)"
+                  placeholder={t('preferredHotel')}
                 />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="checkin">Check-in Date *</Label>
+                <Label htmlFor="checkin">{t('checkinDate')} *</Label>
                 <Input
                   id="checkin"
                   type="date"
@@ -170,7 +172,7 @@ const Booking = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="checkout">Check-out Date *</Label>
+                <Label htmlFor="checkout">{t('checkoutDate')} *</Label>
                 <Input
                   id="checkout"
                   type="date"
@@ -180,16 +182,16 @@ const Booking = () => {
               </div>
             </div>
             <div>
-              <Label htmlFor="roomType">Room Type</Label>
+              <Label htmlFor="roomType">{t('roomType')}</Label>
               <Select onValueChange={(value) => updateServiceDetail('roomType', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select room type" />
+                  <SelectValue placeholder={t('selectRoomType')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="single">Single Room</SelectItem>
-                  <SelectItem value="double">Double Room</SelectItem>
-                  <SelectItem value="suite">Suite</SelectItem>
-                  <SelectItem value="family">Family Room</SelectItem>
+                  <SelectItem value="single">{t('singleRoom')}</SelectItem>
+                  <SelectItem value="double">{t('doubleRoom')}</SelectItem>
+                  <SelectItem value="suite">{t('suite')}</SelectItem>
+                  <SelectItem value="family">{t('familyRoom')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -200,26 +202,26 @@ const Booking = () => {
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="eventName">Event Name *</Label>
+              <Label htmlFor="eventName">{t('eventName')} *</Label>
               <Input
                 id="eventName"
                 value={details.eventName || ''}
                 onChange={(e) => updateServiceDetail('eventName', e.target.value)}
-                placeholder="Enter event name"
+                placeholder={t('enterEventName')}
               />
             </div>
             <div>
-              <Label htmlFor="eventLocation">Event Location *</Label>
+              <Label htmlFor="eventLocation">{t('eventLocation')} *</Label>
               <Input
                 id="eventLocation"
                 value={details.eventLocation || ''}
                 onChange={(e) => updateServiceDetail('eventLocation', e.target.value)}
-                placeholder="Enter event location"
+                placeholder={t('enterEventLocation')}
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="eventDate">Event Date *</Label>
+                <Label htmlFor="eventDate">{t('eventDate')} *</Label>
                 <Input
                   id="eventDate"
                   type="date"
@@ -228,7 +230,7 @@ const Booking = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="tickets">Number of Tickets *</Label>
+                <Label htmlFor="tickets">{t('numberOfTickets')} *</Label>
                 <Input
                   id="tickets"
                   type="number"
@@ -247,48 +249,52 @@ const Booking = () => {
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="duration">Trip Duration *</Label>
+              <Label htmlFor="duration">{t('tripDuration')} *</Label>
               <Select onValueChange={(value) => updateServiceDetail('duration', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select duration" />
+                  <SelectValue placeholder={t('selectDuration')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1-3-days">1-3 days</SelectItem>
-                  <SelectItem value="4-7-days">4-7 days</SelectItem>
-                  <SelectItem value="1-2-weeks">1-2 weeks</SelectItem>
-                  <SelectItem value="3-4-weeks">3-4 weeks</SelectItem>
-                  <SelectItem value="1-month+">1 month+</SelectItem>
+                  <SelectItem value="1-3-days">{t('oneToDays')}</SelectItem>
+                  <SelectItem value="4-7-days">{t('fourToSevenDays')}</SelectItem>
+                  <SelectItem value="1-2-weeks">{t('oneToTwoWeeks')}</SelectItem>
+                  <SelectItem value="3-4-weeks">{t('threeToFourWeeks')}</SelectItem>
+                  <SelectItem value="1-month+">{t('oneMonthPlus')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="regions">Regions to Visit *</Label>
+              <Label htmlFor="regions">{t('regionsToVisit')} *</Label>
               <Textarea
                 id="regions"
                 value={details.regions || ''}
                 onChange={(e) => updateServiceDetail('regions', e.target.value)}
-                placeholder="Describe the regions or cities you'd like to visit"
+                placeholder={t('describeRegions')}
                 rows={3}
               />
             </div>
             <div>
-              <Label>Interests (Select all that apply)</Label>
+              <Label>{t('interests')}</Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2">
-                {['History', 'Culture', 'Nature', 'Adventure', 'Food', 'Shopping', 'Nightlife', 'Architecture', 'Museums'].map((interest) => (
-                  <div key={interest} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={interest}
-                      checked={interests.includes(interest)}
-                      onCheckedChange={(checked) => {
-                        const newInterests = checked
-                          ? [...interests, interest]
-                          : interests.filter((i: string) => i !== interest);
-                        updateServiceDetail('interests', newInterests);
-                      }}
-                    />
-                    <Label htmlFor={interest} className="text-sm">{interest}</Label>
-                  </div>
-                ))}
+                {[t('history'), t('culture'), t('nature'), t('adventure'), t('food'), t('shopping'), t('nightlife'), t('architecture'), t('museums')].map((interest, index) => {
+                  const interestKeys = ['history', 'culture', 'nature', 'adventure', 'food', 'shopping', 'nightlife', 'architecture', 'museums'];
+                  const interestKey = interestKeys[index];
+                  return (
+                    <div key={interestKey} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={interestKey}
+                        checked={interests.includes(interest)}
+                        onCheckedChange={(checked) => {
+                          const newInterests = checked
+                            ? [...interests, interest]
+                            : interests.filter((i: string) => i !== interest);
+                          updateServiceDetail('interests', newInterests);
+                        }}
+                      />
+                      <Label htmlFor={interestKey} className="text-sm">{interest}</Label>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -308,10 +314,10 @@ const Booking = () => {
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-              Book Your Service
+              {t('bookYourService')}
             </h1>
             <p className="text-xl text-slate-600 dark:text-slate-400">
-              Choose your service and provide the necessary details
+              {t('chooseServiceDetails')}
             </p>
           </div>
 
@@ -319,16 +325,16 @@ const Booking = () => {
             {/* Service Selection */}
             <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
               <CardHeader>
-                <CardTitle>Select Service Type</CardTitle>
-                <CardDescription>Choose the service you need</CardDescription>
+                <CardTitle>{t('selectServiceType')}</CardTitle>
+                <CardDescription>{t('chooseServiceYouNeed')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
-                    { id: 'transportation', label: 'Transportation', icon: Car },
-                    { id: 'hotel', label: 'Hotel Reservation', icon: Hotel },
-                    { id: 'event', label: 'Event Booking', icon: Calendar },
-                    { id: 'trip', label: 'Custom Trip', icon: MapPin }
+                    { id: 'transportation', label: t('transportation'), icon: Car },
+                    { id: 'hotel', label: t('hotelReservation'), icon: Hotel },
+                    { id: 'event', label: t('eventBooking'), icon: Calendar },
+                    { id: 'trip', label: t('customTrip'), icon: MapPin }
                   ].map(({ id, label, icon: Icon }) => (
                     <Card
                       key={id}
@@ -351,8 +357,8 @@ const Booking = () => {
             {serviceType && (
               <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
                 <CardHeader>
-                  <CardTitle>Service Details</CardTitle>
-                  <CardDescription>Provide specific information for your selected service</CardDescription>
+                  <CardTitle>{t('serviceDetails')}</CardTitle>
+                  <CardDescription>{t('provideSpecificInfo')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {renderServiceForm()}
@@ -363,52 +369,52 @@ const Booking = () => {
             {/* User Information */}
             <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
               <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
-                <CardDescription>We'll use this information to contact you about your booking</CardDescription>
+                <CardTitle>{t('contactInformation')}</CardTitle>
+                <CardDescription>{t('contactInfoDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="fullName">Full Name *</Label>
+                    <Label htmlFor="fullName">{t('fullName')} *</Label>
                     <Input
                       id="fullName"
                       value={userInfo.fullName}
                       onChange={(e) => updateUserInfo('fullName', e.target.value)}
-                      placeholder="Enter your full name"
+                      placeholder={t('enterFullName')}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="email">Email Address *</Label>
+                    <Label htmlFor="email">{t('emailAddress')} *</Label>
                     <Input
                       id="email"
                       type="email"
                       value={userInfo.email}
                       onChange={(e) => updateUserInfo('email', e.target.value)}
-                      placeholder="Enter your email"
+                      placeholder={t('enterEmail')}
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Label htmlFor="phone">{t('phoneNumber')} *</Label>
                     <Input
                       id="phone"
                       type="tel"
                       value={userInfo.phone}
                       onChange={(e) => updateUserInfo('phone', e.target.value)}
-                      placeholder="Enter your phone number"
+                      placeholder={t('enterPhone')}
                     />
                   </div>
                   <div>
-                    <Label htmlFor="language">Preferred Language</Label>
+                    <Label htmlFor="language">{t('preferredLanguage')}</Label>
                     <Select value={userInfo.language} onValueChange={(value) => updateUserInfo('language', value)}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select language" />
+                        <SelectValue placeholder={t('selectLanguage')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="english">English</SelectItem>
-                        <SelectItem value="arabic">Arabic</SelectItem>
-                        <SelectItem value="russian">Russian</SelectItem>
+                        <SelectItem value="english">{t('english')}</SelectItem>
+                        <SelectItem value="arabic">{t('arabic')}</SelectItem>
+                        <SelectItem value="russian">{t('russian')}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -419,7 +425,7 @@ const Booking = () => {
             {/* Submit Button */}
             <div className="text-center">
               <Button type="submit" size="lg" className="px-8">
-                Proceed to Payment
+                {t('proceedToPayment')}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>

@@ -12,11 +12,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { CreditCard, Upload, CheckCircle, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { BookingData } from '@/types/booking';
 
 const Payment = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [bookingData, setBookingData] = useState<BookingData | null>(null);
   const [paymentMethod, setPaymentMethod] = useState('bank-transfer');
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
@@ -62,8 +64,8 @@ const Payment = () => {
         setReceiptFile(file);
       } else {
         toast({
-          title: "Invalid file type",
-          description: "Please upload a PDF, JPG, or PNG file.",
+          title: t('invalidFileType'),
+          description: t('uploadValidFile'),
           variant: "destructive"
         });
       }
@@ -73,8 +75,8 @@ const Payment = () => {
   const handleBankTransferSubmit = () => {
     if (!receiptFile) {
       toast({
-        title: "Receipt required",
-        description: "Please upload your payment receipt.",
+        title: t('receiptRequired'),
+        description: t('pleaseUploadReceipt'),
         variant: "destructive"
       });
       return;
@@ -105,10 +107,10 @@ const Payment = () => {
 
   const getServiceTypeName = (type: string) => {
     const names = {
-      transportation: 'Transportation',
-      hotel: 'Hotel Reservation',
-      event: 'Event Booking',
-      trip: 'Custom Trip'
+      transportation: t('transportation'),
+      hotel: t('hotelReservation'),
+      event: t('eventBooking'),
+      trip: t('customTrip')
     };
     return names[type as keyof typeof names] || type;
   };
@@ -145,10 +147,10 @@ const Payment = () => {
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-              Payment & Confirmation
+              {t('paymentAndConfirmation')}
             </h1>
             <p className="text-xl text-slate-600 dark:text-slate-400">
-              Review your booking and complete the payment
+              {t('reviewBookingComplete')}
             </p>
           </div>
 
@@ -158,12 +160,12 @@ const Payment = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  Booking Summary
+                  {t('bookingSummary')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h3 className="font-semibold text-lg mb-2">Service Details</h3>
+                  <h3 className="font-semibold text-lg mb-2">{t('serviceDetails')}</h3>
                   <p className="text-slate-600 dark:text-slate-400 mb-4">
                     {getServiceTypeName(bookingData.serviceType)}
                   </p>
@@ -176,22 +178,22 @@ const Payment = () => {
                 <Separator />
 
                 <div>
-                  <h3 className="font-semibold text-lg mb-2">Contact Information</h3>
+                  <h3 className="font-semibold text-lg mb-2">{t('contactInformation')}</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="font-medium">Name:</span>
+                      <span className="font-medium">{t('name')}:</span>
                       <span className="text-slate-600 dark:text-slate-400">{bookingData.userInfo.fullName}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="font-medium">Email:</span>
+                      <span className="font-medium">{t('email')}:</span>
                       <span className="text-slate-600 dark:text-slate-400">{bookingData.userInfo.email}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="font-medium">Phone:</span>
+                      <span className="font-medium">{t('phone')}:</span>
                       <span className="text-slate-600 dark:text-slate-400">{bookingData.userInfo.phone}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="font-medium">Language:</span>
+                      <span className="font-medium">{t('language')}:</span>
                       <span className="text-slate-600 dark:text-slate-400 capitalize">{bookingData.userInfo.language}</span>
                     </div>
                   </div>
@@ -201,7 +203,7 @@ const Payment = () => {
 
                 <div className="text-right">
                   <div className="text-2xl font-bold text-primary">
-                    Total: ${totalAmount} USD
+                    {t('total')}: ${totalAmount} USD
                   </div>
                 </div>
               </CardContent>
@@ -212,59 +214,58 @@ const Payment = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="h-5 w-5" />
-                  Payment Method
+                  {t('paymentMethod')}
                 </CardTitle>
                 <CardDescription>
-                  Choose your preferred payment method
+                  {t('choosePaymentMethod')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="bank-transfer" id="bank-transfer" />
-                    <Label htmlFor="bank-transfer" className="font-medium">Bank Transfer</Label>
+                    <Label htmlFor="bank-transfer" className="font-medium">{t('bankTransfer')}</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="paypal" id="paypal" />
-                    <Label htmlFor="paypal" className="font-medium">PayPal</Label>
+                    <Label htmlFor="paypal" className="font-medium">{t('paypal')}</Label>
                   </div>
                 </RadioGroup>
 
                 {paymentMethod === 'bank-transfer' && (
                   <div className="space-y-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                    <h3 className="font-semibold">Bank Transfer Details</h3>
+                    <h3 className="font-semibold">{t('bankTransferDetails')}</h3>
                     <div className="grid grid-cols-1 gap-3 text-sm">
                       <div className="flex justify-between">
-                        <span className="font-medium">Bank Name:</span>
+                        <span className="font-medium">{t('bankName')}:</span>
                         <span>Volga Tourism Bank</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="font-medium">Account Number:</span>
+                        <span className="font-medium">{t('accountNumber')}:</span>
                         <span>1234567890123456</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="font-medium">SWIFT Code:</span>
+                        <span className="font-medium">{t('swiftCode')}:</span>
                         <span>VTBANKRU</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="font-medium">IBAN:</span>
+                        <span className="font-medium">{t('iban')}:</span>
                         <span>RU1234567890123456789012</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="font-medium">Beneficiary:</span>
+                        <span className="font-medium">{t('beneficiary')}:</span>
                         <span>Volga Tourism Services LLC</span>
                       </div>
                     </div>
                     
                     <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border-l-4 border-blue-400">
                       <p className="text-sm text-blue-800 dark:text-blue-200">
-                        Please transfer the total amount and upload the payment receipt below. 
-                        Our team will confirm your booking once payment is verified.
+                        {t('transferAmount')}
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="receipt">Upload Payment Receipt *</Label>
+                      <Label htmlFor="receipt">{t('uploadPaymentReceipt')} *</Label>
                       <div className="flex items-center gap-4">
                         <Input
                           id="receipt"
@@ -279,7 +280,7 @@ const Payment = () => {
                       </div>
                       {receiptFile && (
                         <p className="text-sm text-green-600 dark:text-green-400">
-                          File uploaded: {receiptFile.name}
+                          {t('fileUploaded')}: {receiptFile.name}
                         </p>
                       )}
                     </div>
@@ -292,10 +293,10 @@ const Payment = () => {
                       {isProcessing ? (
                         <>
                           <Upload className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
+                          {t('processing')}
                         </>
                       ) : (
-                        'Submit Payment Receipt'
+                        t('submitPaymentReceipt')
                       )}
                     </Button>
                   </div>
@@ -303,14 +304,14 @@ const Payment = () => {
 
                 {paymentMethod === 'paypal' && (
                   <div className="space-y-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                    <h3 className="font-semibold">PayPal Payment</h3>
+                    <h3 className="font-semibold">{t('paypalPayment')}</h3>
                     <p className="text-sm text-slate-600 dark:text-slate-400">
-                      You will be redirected to PayPal to complete your payment securely.
+                      {t('paypalRedirect')}
                     </p>
                     
                     <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded border-l-4 border-yellow-400">
                       <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                        Amount to be charged: <strong>${totalAmount} USD</strong>
+                        {t('amountToCharge')}: <strong>${totalAmount} USD</strong>
                       </p>
                     </div>
 
@@ -322,12 +323,12 @@ const Payment = () => {
                       {isProcessing ? (
                         <>
                           <CreditCard className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
+                          {t('processing')}
                         </>
                       ) : (
                         <>
                           <CreditCard className="mr-2 h-4 w-4" />
-                          Pay with PayPal
+                          {t('payWithPaypal')}
                         </>
                       )}
                     </Button>
@@ -340,7 +341,7 @@ const Payment = () => {
                     onClick={() => navigate('/booking')}
                     className="w-full"
                   >
-                    Back to Booking
+                    {t('backToBooking')}
                   </Button>
                 </div>
               </CardContent>
