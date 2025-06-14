@@ -1,16 +1,17 @@
-
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Logo } from './Logo';
 
 export const HeroSection: React.FC = () => {
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
 
   const handleExploreServices = () => {
     console.log('Navigating to services page...');
-    // TODO: Navigate to services page when implemented
+    navigate('/services');
   };
 
   return (
