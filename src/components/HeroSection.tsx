@@ -4,7 +4,6 @@ import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { Logo } from './Logo';
 
 export const HeroSection: React.FC = () => {
   const { t, language } = useLanguage();
@@ -17,13 +16,8 @@ export const HeroSection: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 sm:px-6 lg:px-8 relative">
-      {/* Main logo - centered and larger */}
-      <div className="mb-8 sm:mb-12 lg:mb-16 fade-in-up">
-        <Logo size="large" />
-      </div>
-      
       {/* Hero content */}
-      <div className="max-w-4xl mx-auto mb-8 sm:mb-12 space-y-4 sm:space-y-6 fade-in-up" style={{ animationDelay: '0.2s' }}>
+      <div className="max-w-4xl mx-auto mb-8 sm:mb-12 space-y-4 sm:space-y-6 fade-in-up">
         <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 lg:mb-8 text-shadow-elegant font-serif leading-tight">
           {t('welcome')}
         </h2>
