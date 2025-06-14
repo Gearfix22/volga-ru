@@ -28,10 +28,9 @@ const Payment = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const bookingData = location.state?.bookingData;
-  const paypalRef = useRef<HTMLDivElement>(null);
-  const paypalButtonsRef = useRef<any>(null);
-  const mountedRef = useRef(true);
-  const renderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const paypalContainerRef = useRef<HTMLDivElement>(null);
+  const paypalButtonsInstance = useRef<any>(null);
+  const isPaypalMounted = useRef(false);
 
   const [selectedMethod, setSelectedMethod] = useState('credit-card');
   const [cardNumber, setCardNumber] = useState('');
@@ -40,7 +39,8 @@ const Payment = () => {
   const [cardholderName, setCardholderName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [customAmount, setCustomAmount] = useState(bookingData?.totalPrice?.toString() || '50');
-  const [paypalLoaded, setPaypalLoaded] = useState(false);
+  const [paypalScriptLoaded, setPaypalScriptLoaded] = useState(false);
+  const [paypalError, setPaypalError] = useState('');
 
   useEffect(() => {
     if (!bookingData) {
@@ -48,136 +48,73 @@ const Payment = () => {
     }
   }, [bookingData, navigate]);
 
-  // Enhanced cleanup function
-  const cleanupPayPalButtons = () => {
-    console.log('Cleaning up PayPal buttons...');
-    
-    if (renderTimeoutRef.current) {
-      clearTimeout(renderTimeoutRef.current);
-      renderTimeoutRef.current = null;
-    }
-
-    try {
-      if (paypalButtonsRef.current) {
-        if (typeof paypalButtonsRef.current.close === 'function') {
-          paypalButtonsRef.current.close();
-        }
-        paypalButtonsRef.current = null;
-      }
-    } catch (error) {
-      console.log('PayPal button cleanup error (safe to ignore):', error);
-    }
-
-    // Safe DOM cleanup
-    if (paypalRef.current) {
+  // Clean up PayPal when component unmounts or method changes
+  const cleanupPayPal = () => {
+    console.log('Cleaning up PayPal...');
+    if (paypalButtonsInstance.current) {
       try {
-        // Create a new container to avoid React DOM conflicts
-        const newContainer = document.createElement('div');
-        newContainer.className = paypalRef.current.className;
-        
-        // Replace the entire container
-        if (paypalRef.current.parentNode) {
-          paypalRef.current.parentNode.replaceChild(newContainer, paypalRef.current);
+        if (typeof paypalButtonsInstance.current.close === 'function') {
+          paypalButtonsInstance.current.close();
         }
-        
-        // Update ref to point to new container
-        paypalRef.current = newContainer;
       } catch (error) {
-        console.log('DOM cleanup error (safe to ignore):', error);
-        // Fallback: just clear innerHTML
-        try {
-          if (paypalRef.current) {
-            paypalRef.current.innerHTML = '';
-          }
-        } catch (fallbackError) {
-          console.log('Fallback cleanup error (safe to ignore):', fallbackError);
-        }
+        console.log('PayPal cleanup error (safe to ignore):', error);
       }
+      paypalButtonsInstance.current = null;
     }
+    
+    if (paypalContainerRef.current) {
+      paypalContainerRef.current.innerHTML = '';
+    }
+    
+    isPaypalMounted.current = false;
   };
 
-  // Component unmount cleanup
+  // Load PayPal script only once
   useEffect(() => {
-    mountedRef.current = true;
-    
-    return () => {
-      mountedRef.current = false;
-      cleanupPayPalButtons();
+    if (paypalScriptLoaded || window.paypal) {
+      setPaypalScriptLoaded(true);
+      return;
+    }
+
+    const existingScript = document.querySelector('script[src*="paypal.com/sdk"]');
+    if (existingScript) {
+      existingScript.addEventListener('load', () => setPaypalScriptLoaded(true));
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://www.paypal.com/sdk/js?client-id=AU15djn3gU9YlY__yWU0ZFAGCo8AepH1KSx2I5Kr_0YrgktGrApSOcI-yAaeAFmfHDN4-yWUu2V1NHqV&currency=USD`;
+    script.onload = () => setPaypalScriptLoaded(true);
+    script.onerror = () => {
+      setPaypalError('Failed to load PayPal SDK');
+      toast({
+        title: "PayPal Error",
+        description: "Failed to load PayPal. Please try credit card instead.",
+        variant: "destructive"
+      });
     };
+    document.body.appendChild(script);
   }, []);
 
-  // Handle PayPal integration with improved error handling
+  // Handle PayPal button rendering with better error handling
   useEffect(() => {
-    if (selectedMethod !== 'paypal' || !mountedRef.current) {
-      cleanupPayPalButtons();
+    if (selectedMethod !== 'paypal' || !paypalScriptLoaded || !window.paypal || isPaypalMounted.current) {
+      if (selectedMethod !== 'paypal') {
+        cleanupPayPal();
+      }
       return;
     }
 
-    const loadPayPalScript = () => {
-      // Check if PayPal is already loaded
-      if (window.paypal) {
-        setPaypalLoaded(true);
-        renderPayPalButton();
+    const renderPayPalButtons = () => {
+      if (!paypalContainerRef.current || isPaypalMounted.current) {
         return;
       }
 
-      // Check if script is already loading
-      const existingScript = document.querySelector('script[src*="paypal.com/sdk"]');
-      if (existingScript) {
-        existingScript.addEventListener('load', () => {
-          if (mountedRef.current) {
-            setPaypalLoaded(true);
-            renderPayPalButton();
-          }
-        });
-        return;
-      }
-
-      // Load PayPal script
-      const script = document.createElement('script');
-      script.src = `https://www.paypal.com/sdk/js?client-id=AU15djn3gU9YlY__yWU0ZFAGCo8AepH1KSx2I5Kr_0YrgktGrApSOcI-yAaeAFmfHDN4-yWUu2V1NHqV&currency=USD`;
-      script.onload = () => {
-        if (mountedRef.current) {
-          setPaypalLoaded(true);
-          renderPayPalButton();
-        }
-      };
-      script.onerror = () => {
-        console.error('Failed to load PayPal SDK');
-        if (mountedRef.current) {
-          toast({
-            title: "PayPal Error",
-            description: "Failed to load PayPal. Please try again or use credit card.",
-            variant: "destructive"
-          });
-        }
-      };
-      document.body.appendChild(script);
-    };
-
-    loadPayPalScript();
-  }, [selectedMethod, customAmount]);
-
-  const renderPayPalButton = () => {
-    if (!window.paypal || !mountedRef.current || selectedMethod !== 'paypal') {
-      return;
-    }
-
-    // Clean up existing buttons first
-    cleanupPayPalButtons();
-
-    const amount = parseFloat(customAmount) || 50;
-
-    // Use timeout to ensure DOM is ready and avoid race conditions
-    renderTimeoutRef.current = setTimeout(() => {
-      if (!mountedRef.current || !paypalRef.current) {
-        return;
-      }
+      const amount = parseFloat(customAmount) || 50;
+      console.log('Rendering PayPal buttons with amount:', amount);
 
       try {
-        console.log('Rendering PayPal button with amount:', amount);
-        
-        paypalButtonsRef.current = window.paypal.Buttons({
+        paypalButtonsInstance.current = window.paypal.Buttons({
           createOrder: (data: any, actions: any) => {
             return actions.order.create({
               purchase_units: [{
@@ -192,7 +129,6 @@ const Payment = () => {
               const details = await actions.order.capture();
               const transactionId = details.id;
               
-              // Save booking to Supabase if user is authenticated
               if (user && bookingData) {
                 await createBooking({
                   ...bookingData,
@@ -210,7 +146,6 @@ const Payment = () => {
                 });
               }
               
-              // Store payment details for confirmation page
               localStorage.setItem('paymentStatus', 'completed');
               localStorage.setItem('transactionId', transactionId);
               localStorage.setItem('paymentAmount', amount.toString());
@@ -220,65 +155,68 @@ const Payment = () => {
                 description: `Transaction ID: ${transactionId}`,
               });
 
-              if (mountedRef.current) {
-                navigate('/booking-confirmation', {
-                  state: {
-                    bookingData: {
-                      ...bookingData,
-                      paymentMethod: 'PayPal',
-                      transactionId,
-                      paidAmount: amount,
-                      totalPrice: amount
-                    }
+              navigate('/booking-confirmation', {
+                state: {
+                  bookingData: {
+                    ...bookingData,
+                    paymentMethod: 'PayPal',
+                    transactionId,
+                    paidAmount: amount,
+                    totalPrice: amount
                   }
-                });
-              }
+                }
+              });
             } catch (error) {
               console.error('PayPal payment error:', error);
-              if (mountedRef.current) {
-                toast({
-                  title: "Payment failed",
-                  description: "There was an error processing your PayPal payment.",
-                  variant: "destructive"
-                });
-              }
-            }
-          },
-          onError: (err: any) => {
-            console.error('PayPal error:', err);
-            if (mountedRef.current) {
               toast({
-                title: "Payment error",
-                description: "There was an error with PayPal. Please try again.",
+                title: "Payment failed",
+                description: "There was an error processing your PayPal payment.",
                 variant: "destructive"
               });
             }
           },
+          onError: (err: any) => {
+            console.error('PayPal error:', err);
+            setPaypalError('PayPal error occurred');
+            toast({
+              title: "Payment error",
+              description: "There was an error with PayPal. Please try again.",
+              variant: "destructive"
+            });
+          },
           onCancel: () => {
-            if (mountedRef.current) {
-              toast({
-                title: "Payment cancelled",
-                description: "PayPal payment was cancelled.",
-              });
-            }
+            toast({
+              title: "Payment cancelled",
+              description: "PayPal payment was cancelled.",
+            });
           }
         });
 
-        if (paypalRef.current && mountedRef.current) {
-          paypalButtonsRef.current.render(paypalRef.current);
-        }
-      } catch (error) {
-        console.error('Error rendering PayPal button:', error);
-        if (mountedRef.current) {
-          toast({
-            title: "PayPal Error",
-            description: "Failed to initialize PayPal button. Please try again.",
-            variant: "destructive"
+        if (paypalContainerRef.current) {
+          paypalButtonsInstance.current.render(paypalContainerRef.current).then(() => {
+            isPaypalMounted.current = true;
+            console.log('PayPal buttons rendered successfully');
+          }).catch((error: any) => {
+            console.error('PayPal render error:', error);
+            setPaypalError('Failed to render PayPal buttons');
           });
         }
+      } catch (error) {
+        console.error('Error setting up PayPal buttons:', error);
+        setPaypalError('Failed to initialize PayPal');
       }
-    }, 200);
-  };
+    };
+
+    // Small delay to ensure DOM is ready
+    setTimeout(renderPayPalButtons, 100);
+  }, [selectedMethod, paypalScriptLoaded, customAmount, user, bookingData, navigate, toast]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cleanupPayPal();
+    };
+  }, []);
 
   if (!bookingData) {
     return null;
@@ -286,10 +224,21 @@ const Payment = () => {
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Allow only numbers and decimal point
     if (/^\d*\.?\d*$/.test(value)) {
       setCustomAmount(value);
+      // Reset PayPal when amount changes
+      if (selectedMethod === 'paypal') {
+        cleanupPayPal();
+      }
     }
+  };
+
+  const handlePaymentMethodChange = (method: string) => {
+    if (method !== selectedMethod) {
+      cleanupPayPal();
+      setPaypalError('');
+    }
+    setSelectedMethod(method);
   };
 
   const finalAmount = parseFloat(customAmount) || 0;
@@ -309,12 +258,10 @@ const Payment = () => {
     setIsProcessing(true);
     
     try {
-      // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       const transactionId = `TXN${Date.now()}`;
       
-      // Save booking to Supabase if user is authenticated
       if (user) {
         await createBooking({
           ...bookingData,
@@ -332,7 +279,6 @@ const Payment = () => {
         });
       }
       
-      // Store payment details for confirmation page
       localStorage.setItem('paymentStatus', 'completed');
       localStorage.setItem('transactionId', transactionId);
       localStorage.setItem('paymentAmount', finalAmount.toString());
@@ -454,7 +400,7 @@ const Payment = () => {
                             ? 'border-russian-gold bg-russian-gold/10'
                             : 'border-white/20 bg-white/5 hover:border-white/30'
                         }`}
-                        onClick={() => setSelectedMethod(method.id)}
+                        onClick={() => handlePaymentMethodChange(method.id)}
                       >
                         <div className="p-4 flex items-center space-x-3">
                           <method.icon className="h-5 w-5 text-white" />
@@ -549,15 +495,30 @@ const Payment = () => {
                   <div className="space-y-4">
                     <div className="bg-white/5 rounded-lg p-4 border border-white/20">
                       <h4 className="text-white font-medium mb-3">PayPal Payment</h4>
-                      <p className="text-white/70 text-sm mb-4">
-                        Click the PayPal button below to complete your payment securely.
-                      </p>
+                      {paypalError ? (
+                        <div className="text-red-400 text-sm mb-4 p-3 bg-red-500/10 rounded">
+                          {paypalError}
+                          <Button 
+                            onClick={() => {
+                              setPaypalError('');
+                              cleanupPayPal();
+                            }}
+                            className="ml-2 text-xs bg-red-500/20 hover:bg-red-500/30"
+                            size="sm"
+                          >
+                            Retry
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-white/70 text-sm mb-4">
+                          Click the PayPal button below to complete your payment securely.
+                        </p>
+                      )}
                       <div 
-                        ref={paypalRef} 
-                        className="min-h-[50px] paypal-button-container"
-                        key={`paypal-${customAmount}-${Date.now()}`}
+                        ref={paypalContainerRef}
+                        className="min-h-[50px]"
                       >
-                        {!paypalLoaded && (
+                        {!paypalScriptLoaded && !paypalError && (
                           <div className="flex items-center justify-center py-4">
                             <div className="text-white/60">Loading PayPal...</div>
                           </div>
