@@ -18,14 +18,14 @@ export const HeroSection: React.FC = () => {
     <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 sm:px-6 lg:px-8 relative">
       {/* Hero content */}
       <div className="max-w-4xl mx-auto mb-8 sm:mb-12 space-y-4 sm:space-y-6 fade-in-up">
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 lg:mb-8 text-shadow-elegant font-serif leading-tight">
-          {t('welcome')}
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 lg:mb-8 text-shadow-elegant font-serif leading-tight">
+          <span className="text-red-500">{t('welcome')}</span>
         </h2>
         
-        <p className={`text-base sm:text-lg md:text-xl lg:text-2xl text-russian-cream leading-relaxed max-w-3xl mx-auto px-4 ${
+        <p className={`text-base sm:text-lg md:text-xl lg:text-2xl leading-relaxed max-w-3xl mx-auto px-4 ${
           language === 'ar' ? 'font-medium' : ''
         }`}>
-          {t('subtitle')}
+          <span className="text-blue-500">{t('subtitle')}</span>
         </p>
       </div>
       
