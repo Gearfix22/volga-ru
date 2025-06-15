@@ -170,12 +170,14 @@ const ActualDashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => 
                   {collapsed ? <Menu className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
                 </Button>
               </SidebarTrigger>
-              <Link to="/" className="ml-4 lg:ml-0">
-                <Button variant="ghost" size="sm" className="text-russian-blue hover:bg-russian-blue/10 font-medium">
-                  <Home className="h-4 w-4 mr-2" />
-                  Back to Site
-                </Button>
-              </Link>
+              <Button asChild variant="ghost" size="sm" className="text-russian-blue hover:bg-russian-blue/10 font-medium ml-4 lg:ml-0">
+                <Link to="/">
+                  <span className="flex items-center">
+                    <Home className="h-4 w-4 mr-2" />
+                    Back to Site
+                  </span>
+                </Link>
+              </Button>
             </div>
             
             <div className="flex items-center space-x-4">
