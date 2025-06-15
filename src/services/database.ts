@@ -11,7 +11,7 @@ export interface PaymentInfo {
 
 export const createBooking = async (bookingData: BookingData, paymentInfo: PaymentInfo) => {
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) {
     throw new Error('User must be authenticated to create a booking');
   }
@@ -24,7 +24,7 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
       totalPrice: paymentInfo.totalPrice
     });
 
-    // Insert main booking record with enhanced service details
+    // Insert main booking record
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .insert({
@@ -52,6 +52,81 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
         error: bookingError.message
       });
       throw bookingError;
+    }
+
+    // Insert into the corresponding details table
+    let detailError = null;
+    switch (bookingData.serviceType) {
+      case 'Transportation': {
+        const d = bookingData.serviceDetails as any;
+        const { error } = await supabase
+          .from('transportation_bookings')
+          .insert({
+            booking_id: booking.id,
+            pickup_location: d.pickup,
+            dropoff_location: d.dropoff,
+            travel_date: d.date,
+            travel_time: d.time,
+            vehicle_type: d.vehicleType,
+            passengers: d.passengers || '1'
+          });
+        detailError = error;
+        break;
+      }
+      case 'Hotels': {
+        const d = bookingData.serviceDetails as any;
+        const { error } = await supabase
+          .from('hotel_bookings')
+          .insert({
+            booking_id: booking.id,
+            city: d.city,
+            hotel_name: d.hotel,
+            checkin_date: d.checkin,
+            checkout_date: d.checkout,
+            room_type: d.roomType,
+            guests: d.guests || '1',
+            special_requests: d.specialRequests || null
+          });
+        detailError = error;
+        break;
+      }
+      case 'Events': {
+        const d = bookingData.serviceDetails as any;
+        const { error } = await supabase
+          .from('event_bookings')
+          .insert({
+            booking_id: booking.id,
+            event_name: d.eventName,
+            event_location: d.eventLocation,
+            event_date: d.eventDate,
+            tickets_quantity: d.tickets,
+            ticket_type: d.ticketType || 'general'
+          });
+        detailError = error;
+        break;
+      }
+      case 'Custom Trips': {
+        const d = bookingData.serviceDetails as any;
+        const { error } = await supabase
+          .from('custom_trip_bookings')
+          .insert({
+            booking_id: booking.id,
+            duration: d.duration,
+            regions: d.regions,
+            interests: d.interests || [],
+            budget_range: d.budget || null,
+            additional_info: d.additionalInfo || null
+          });
+        detailError = error;
+        break;
+      }
+      default:
+        break;
+    }
+    if (detailError) {
+      // If this fails, you may want to handle detail insert errors/log as needed
+      console.error('Error inserting booking details:', detailError);
+      // Optionally rollback the booking, or just log this error
     }
 
     // Track successful booking creation
