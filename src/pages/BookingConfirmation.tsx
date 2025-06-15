@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
@@ -65,6 +64,10 @@ const BookingConfirmation = () => {
     if (bookingData) {
       redirectToWhatsApp(bookingData, transactionId);
     }
+  };
+
+  const gotoDashboard = () => {
+    navigate('/dashboard');
   };
 
   return (
@@ -229,8 +232,15 @@ const BookingConfirmation = () => {
                     Continue on WhatsApp
                   </Button>
                 )}
-                
                 <div className="flex flex-col sm:flex-row gap-4">
+                  <Button 
+                    onClick={gotoDashboard}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    <Home className="mr-2 h-4 w-4" />
+                    Go to Dashboard
+                  </Button>
                   <Button 
                     onClick={() => navigate('/')}
                     className="flex-1"

@@ -11,7 +11,9 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Calendar, MapPin, Users, CreditCard } from 'lucide-react';
+import { Calendar } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface Booking {
   id: string;
@@ -34,6 +36,9 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
   isLoading,
   error
 }) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
   if (isLoading) {
     return (
       <Card>
@@ -86,6 +91,17 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
     }
   };
 
+  // Helper to go to payment for unpaid bookings
+  const handlePayNow = (booking: Booking) => {
+    toast({
+      title: "Redirecting to Payment",
+      description: "You'll complete payment for your selected booking.",
+    });
+    navigate('/payment', {
+      state: { bookingId: booking.id, amount: booking.total_price }
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -135,9 +151,19 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                       <div className="font-medium">${booking.total_price}</div>
                     </TableCell>
                     <TableCell>
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
+                      {booking.payment_status !== "completed" ? (
+                        <Button 
+                          variant="default"
+                          size="sm"
+                          onClick={() => handlePayNow(booking)}
+                        >
+                          Pay Now
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" disabled>
+                          Paid
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
