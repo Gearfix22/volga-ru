@@ -105,8 +105,9 @@ const ActualDashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => 
               const active = isActive(item.path);
               return (
                 <SidebarMenuItem key={item.path}>
-                  <Link to={item.path}>
-                    <SidebarMenuButton
+                  <SidebarMenuButton asChild>
+                    <Link
+                      to={item.path}
                       className={`flex items-center w-full px-4 py-3 mt-2 text-sm rounded-xl transition-all duration-200 font-medium ${
                         active
                           ? 'bg-gradient-to-r from-russian-blue to-volga-logo-blue text-white shadow-lg'
@@ -115,8 +116,8 @@ const ActualDashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => 
                     >
                       <Icon className={`h-5 w-5 ${!collapsed ? 'mr-4' : ''}`} />
                       {!collapsed && item.label}
-                    </SidebarMenuButton>
-                  </Link>
+                    </Link>
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               );
             })}
