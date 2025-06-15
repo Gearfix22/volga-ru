@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useDataTracking } from '@/hooks/useDataTracking';
 import { updateUserProfile } from '@/services/database';
+import { Settings, User, Mail, Phone, Globe, Bell, Shield, Crown } from 'lucide-react';
 
 export const AccountSettings: React.FC = () => {
   const { user } = useAuth();
@@ -68,56 +69,73 @@ export const AccountSettings: React.FC = () => {
 
   if (!user) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-center text-gray-500">Please sign in to view account settings.</p>
+      <Card className="bg-gradient-to-br from-white to-volga-pearl border-russian-silver/20 shadow-xl">
+        <CardContent className="p-8">
+          <div className="text-center">
+            <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500 font-medium">Please sign in to view account settings.</p>
+          </div>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Profile Information */}
-      <Card>
-        <CardHeader>
+      <Card className="bg-gradient-to-br from-white to-volga-pearl border-russian-silver/20 shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-russian-blue to-volga-logo-blue text-white rounded-t-lg">
           <div className="flex items-center justify-between">
-            <CardTitle>Profile Information</CardTitle>
+            <div className="flex items-center space-x-3">
+              <Crown className="h-6 w-6 text-russian-gold" />
+              <CardTitle className="text-xl font-serif">Profile Information</CardTitle>
+            </div>
             <Button
-              variant={isEditing ? "outline" : "default"}
+              variant={isEditing ? "outline" : "secondary"}
               onClick={() => setIsEditing(!isEditing)}
               disabled={loading}
+              className={isEditing ? "border-white text-white hover:bg-white hover:text-russian-blue" : "bg-russian-gold text-russian-blue hover:bg-yellow-400 font-semibold"}
             >
-              {isEditing ? "Cancel" : "Edit"}
+              {isEditing ? "Cancel" : "Edit Profile"}
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <Label htmlFor="displayName">Display Name</Label>
+              <Label htmlFor="displayName" className="flex items-center space-x-2 text-gray-700 font-medium">
+                <User className="h-4 w-4" />
+                <span>Display Name</span>
+              </Label>
               <Input
                 id="displayName"
                 value={formData.displayName}
                 onChange={(e) => handleInputChange('displayName', e.target.value)}
                 disabled={!isEditing || loading}
+                className="mt-2 border-russian-silver/30 focus:border-russian-blue"
               />
             </div>
             <div>
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email" className="flex items-center space-x-2 text-gray-700 font-medium">
+                <Mail className="h-4 w-4" />
+                <span>Email Address</span>
+              </Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 disabled
-                className="bg-gray-50"
+                className="mt-2 bg-gray-50 border-russian-silver/30"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 mt-1 ml-1">
                 Email cannot be changed from here
               </p>
             </div>
             <div>
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone" className="flex items-center space-x-2 text-gray-700 font-medium">
+                <Phone className="h-4 w-4" />
+                <span>Phone Number</span>
+              </Label>
               <Input
                 id="phone"
                 type="tel"
@@ -125,37 +143,44 @@ export const AccountSettings: React.FC = () => {
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 disabled={!isEditing || loading}
                 placeholder="+1 (555) 123-4567"
+                className="mt-2 border-russian-silver/30 focus:border-russian-blue"
               />
             </div>
             <div>
-              <Label htmlFor="language">Preferred Language</Label>
+              <Label htmlFor="language" className="flex items-center space-x-2 text-gray-700 font-medium">
+                <Globe className="h-4 w-4" />
+                <span>Preferred Language</span>
+              </Label>
               <select
                 id="language"
                 value={formData.language}
                 onChange={(e) => handleInputChange('language', e.target.value)}
                 disabled={!isEditing || loading}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+                className="w-full mt-2 px-3 py-2 border border-russian-silver/30 rounded-md focus:outline-none focus:ring-2 focus:ring-russian-blue focus:border-russian-blue disabled:bg-gray-50 disabled:text-gray-500"
               >
                 <option value="English">English</option>
-                <option value="Spanish">Spanish</option>
-                <option value="French">French</option>
-                <option value="German">German</option>
+                <option value="Russian">Русский</option>
+                <option value="Spanish">Español</option>
+                <option value="French">Français</option>
+                <option value="German">Deutsch</option>
               </select>
             </div>
           </div>
 
           {isEditing && (
-            <div className="flex justify-end space-x-2 pt-4">
+            <div className="flex justify-end space-x-3 pt-6 border-t border-russian-silver/20">
               <Button 
                 variant="outline" 
                 onClick={() => setIsEditing(false)}
                 disabled={loading}
+                className="border-russian-blue text-russian-blue hover:bg-russian-blue hover:text-white"
               >
                 Cancel
               </Button>
               <Button 
                 onClick={handleSave}
                 disabled={loading}
+                className="bg-gradient-to-r from-russian-blue to-volga-logo-blue text-white hover:from-volga-logo-blue hover:to-russian-blue font-semibold"
               >
                 {loading ? 'Saving...' : 'Save Changes'}
               </Button>
@@ -165,17 +190,20 @@ export const AccountSettings: React.FC = () => {
       </Card>
 
       {/* Notification Preferences */}
-      <Card>
+      <Card className="bg-gradient-to-br from-white to-volga-pearl border-russian-silver/20 shadow-xl">
         <CardHeader>
-          <CardTitle>Notification Preferences</CardTitle>
+          <div className="flex items-center space-x-3">
+            <Bell className="h-6 w-6 text-russian-blue" />
+            <CardTitle className="text-xl font-serif text-gray-800">Notification Preferences</CardTitle>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between p-4 bg-white/50 rounded-xl border border-russian-silver/20">
               <div>
-                <Label>Email Notifications</Label>
-                <p className="text-sm text-gray-600">
-                  Receive booking confirmations and updates via email
+                <Label className="text-base font-medium text-gray-800">Email Notifications</Label>
+                <p className="text-sm text-gray-600 mt-1">
+                  Receive booking confirmations and exclusive travel updates
                 </p>
               </div>
               <input
@@ -183,7 +211,7 @@ export const AccountSettings: React.FC = () => {
                 checked={formData.notifications}
                 onChange={(e) => handleInputChange('notifications', e.target.checked)}
                 disabled={loading}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-5 w-5 text-russian-blue focus:ring-russian-blue border-gray-300 rounded"
               />
             </div>
           </div>
@@ -191,37 +219,49 @@ export const AccountSettings: React.FC = () => {
       </Card>
 
       {/* Account Information */}
-      <Card>
+      <Card className="bg-gradient-to-br from-white to-volga-pearl border-russian-silver/20 shadow-xl">
         <CardHeader>
-          <CardTitle>Account Information</CardTitle>
+          <div className="flex items-center space-x-3">
+            <Shield className="h-6 w-6 text-russian-blue" />
+            <CardTitle className="text-xl font-serif text-gray-800">Account Information</CardTitle>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Account Created</Label>
-                <p className="text-sm text-gray-600">
-                  {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-4 bg-white/50 rounded-xl border border-russian-silver/20">
+              <Label className="text-sm font-medium text-gray-700">Account Created</Label>
+              <p className="text-base text-gray-900 font-medium mt-1">
+                {user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                }) : 'Unknown'}
+              </p>
+            </div>
+            <div className="p-4 bg-white/50 rounded-xl border border-russian-silver/20">
+              <Label className="text-sm font-medium text-gray-700">Last Sign In</Label>
+              <p className="text-base text-gray-900 font-medium mt-1">
+                {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                }) : 'Unknown'}
+              </p>
+            </div>
+            <div className="p-4 bg-white/50 rounded-xl border border-russian-silver/20">
+              <Label className="text-sm font-medium text-gray-700">Email Verified</Label>
+              <div className="flex items-center space-x-2 mt-1">
+                <div className={`w-2 h-2 rounded-full ${user.email_confirmed_at ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+                <p className="text-base text-gray-900 font-medium">
+                  {user.email_confirmed_at ? 'Verified' : 'Pending Verification'}
                 </p>
               </div>
-              <div>
-                <Label>Last Sign In</Label>
-                <p className="text-sm text-gray-600">
-                  {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Unknown'}
-                </p>
-              </div>
-              <div>
-                <Label>Email Verified</Label>
-                <p className="text-sm text-gray-600">
-                  {user.email_confirmed_at ? 'Yes' : 'No'}
-                </p>
-              </div>
-              <div>
-                <Label>User ID</Label>
-                <p className="text-sm text-gray-600 font-mono">
-                  {user.id}
-                </p>
-              </div>
+            </div>
+            <div className="p-4 bg-white/50 rounded-xl border border-russian-silver/20">
+              <Label className="text-sm font-medium text-gray-700">User ID</Label>
+              <p className="text-xs text-gray-600 font-mono mt-1 break-all">
+                {user.id}
+              </p>
             </div>
           </div>
         </CardContent>
