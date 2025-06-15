@@ -89,12 +89,18 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 z-50 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:!block`}
+        className={`
+          fixed top-0 left-0 z-50 h-full 
+          w-60 md:w-56 lg:w-64 
+          bg-white shadow-lg 
+          transform transition-transform duration-300 ease-in-out 
+          lg:translate-x-0 lg:static lg:inset-0
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:!block
+        `}
         aria-label="Sidebar"
       >
-        <div className="flex items-center justify-between h-16 px-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-800">Dashboard</h2>
+        <div className="flex items-center justify-between h-14 md:h-16 px-4 md:px-5 border-b">
+          <h2 className="text-lg md:text-xl font-semibold text-gray-800">Dashboard</h2>
           <Button
             variant="ghost"
             size="icon"
@@ -105,29 +111,29 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
           </Button>
         </div>
 
-        <nav className="mt-6 px-3 flex-1 flex flex-col">
+        <nav className="mt-4 md:mt-6 px-2 md:px-3 flex-1 flex flex-col gap-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center px-3 py-2 mt-2 text-sm rounded-lg transition-colors ${
+                className={`flex items-center px-3 py-2 text-sm md:text-base rounded-lg transition-colors ${
                   isActive(item.path)
                     ? 'bg-blue-100 text-blue-700'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
                 onClick={() => setSidebarOpen(false)}
               >
-                <Icon className="h-5 w-5 mr-3" />
+                <Icon className="h-5 w-5 mr-2" />
                 {item.label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="absolute bottom-6 left-3 right-3 max-w-full">
-          <Card className="p-4">
+        <div className="absolute bottom-5 md:bottom-6 left-2 md:left-3 right-2 md:right-3 max-w-full">
+          <Card className="p-3 md:p-4">
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
@@ -157,9 +163,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       </aside>
 
       {/* Main content (with top bar for mobile/desktop) */}
-      <div className="flex-1 lg:pl-64 flex flex-col min-h-screen">
+      <div className="flex-1 lg:pl-60 md:pl-56 flex flex-col min-h-screen">
         {/* Top bar */}
-        <div className="sticky top-0 z-30 bg-white shadow-sm border-b flex items-center h-16 px-4 sm:px-6 lg:px-8">
+        <div className="sticky top-0 z-30 bg-white shadow-sm border-b flex items-center h-14 md:h-16 px-2 md:px-4 lg:px-6">
           <Button
             variant="ghost"
             size="icon"
@@ -169,7 +175,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <Link to="/" className="ml-4 lg:ml-0 shrink-0">
+          <Link to="/" className="ml-2 md:ml-4 lg:ml-0 shrink-0">
             <Button variant="ghost" size="sm">
               <Home className="h-4 w-4 mr-2" />
               <span className="hidden xs:inline">Back to Site</span>
@@ -185,7 +191,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         </div>
 
         {/* Page content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-[calc(100vh-4rem)] mt-0">
+        <main className="flex-1 p-2 md:p-4 lg:p-6 bg-gray-50 min-h-[calc(100vh-3.5rem)] md:min-h-[calc(100vh-4rem)] mt-0">
           {children}
         </main>
       </div>
