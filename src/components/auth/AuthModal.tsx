@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -17,12 +16,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<'sign-in' | 'sign-up' | 'forgot'>('sign-in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
 
   const resetState = () => {
     setEmail('');
     setPassword('');
+    setPhone('');
     setLoading(false);
   };
 
@@ -47,7 +48,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           onClose();
         }
       } else if (activeTab === 'sign-up') {
-        const { error } = await signUp(email, password);
+        if (!phone.trim()) {
+          toast({
+            title: 'Error',
+            description: 'Phone number is required.',
+            variant: 'destructive',
+          });
+          setLoading(false);
+          return;
+        }
+        const { error } = await signUp(email, password, phone);
         if (error) {
           toast({
             title: 'Error',
@@ -183,6 +193,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   required
                 />
               </div>
+              {activeTab === 'sign-up' && (
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Enter your phone number"
+                    required
+                  />
+                </div>
+              )}
               {activeTab !== 'forgot' && (
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
