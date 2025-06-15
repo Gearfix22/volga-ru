@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -130,10 +129,8 @@ const ActualDashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => 
                           : 'text-gray-700 hover:bg-russian-blue/10 hover:text-russian-blue'
                       } ${collapsed ? 'justify-center' : ''}`}
                     >
-                      <span>
-                        <Icon className={`h-5 w-5 ${!collapsed ? 'mr-4' : ''}`} />
-                        {!collapsed && item.label}
-                      </span>
+                      <Icon className={`h-5 w-5 ${!collapsed ? 'mr-4' : ''}`} />
+                      {!collapsed && item.label}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -239,5 +236,3 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     </SidebarProvider>
   );
 };
-
-// ... end of file
