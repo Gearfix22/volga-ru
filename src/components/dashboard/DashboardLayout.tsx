@@ -92,6 +92,7 @@ const ActualDashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => 
               </div>
             )}
             <SidebarTrigger asChild className="lg:hidden">
+              {/* Button must always have a single child */}
               <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
                 <X className="h-5 w-5" />
               </Button>
@@ -167,7 +168,13 @@ const ActualDashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => 
             <div className="flex items-center">
               <SidebarTrigger asChild>
                 <Button variant="ghost" size="icon" className="text-russian-blue hover:bg-russian-blue/10">
-                  {collapsed ? <Menu className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+                  {/* This was previously: 
+                        {collapsed ? <Menu ... /> : <ChevronLeft ... />}
+                      which is safe, but let's extract to a variable for single-childness */}
+                  {collapsed 
+                    ? <Menu className="h-5 w-5" />
+                    : <ChevronLeft className="h-5 w-5" />
+                  }
                 </Button>
               </SidebarTrigger>
               <Button asChild variant="ghost" size="sm" className="text-russian-blue hover:bg-russian-blue/10 font-medium ml-4 lg:ml-0">
