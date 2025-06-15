@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -78,21 +77,6 @@ const ActualDashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => 
     return user?.email?.split('@')[0] || 'User';
   };
 
-  // Precompute sidebar button icon (for single-childness)
-  const sidebarToggleIcon = collapsed 
-    ? <Menu className="h-5 w-5" />
-    : <ChevronLeft className="h-5 w-5" />;
-
-  // Precompute back to site link
-  const backToSiteLink = (
-    <Link to="/">
-      <span className="flex items-center">
-        <Home className="h-4 w-4 mr-2" />
-        Back to Site
-      </span>
-    </Link>
-  );
-
   return (
     <div className="flex min-h-screen w-full bg-gradient-to-br from-volga-pearl via-russian-cream to-white">
       <Sidebar
@@ -107,7 +91,6 @@ const ActualDashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => 
                 <h2 className="text-xl font-serif font-bold text-white">Dashboard</h2>
               </div>
             )}
-            {/* This button always provides ONE child: the Button */}
             <SidebarTrigger asChild className="lg:hidden">
               <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
                 <X className="h-5 w-5" />
@@ -184,16 +167,19 @@ const ActualDashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => 
         <div className="sticky top-0 z-30 bg-white/90 backdrop-blur-md shadow-sm border-b border-russian-silver/20">
           <div className="flex items-center justify-between h-20 px-6 lg:px-8">
             <div className="flex items-center">
-              {/* This always provides exactly ONE child as required */}
               <SidebarTrigger asChild>
                 <Button variant="ghost" size="icon" className="text-russian-blue hover:bg-russian-blue/10">
-                  {sidebarToggleIcon}
+                  {collapsed ? <Menu className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
                 </Button>
               </SidebarTrigger>
 
-              {/* Back to Site always ONE direct child */}
               <Button asChild variant="ghost" size="sm" className="text-russian-blue hover:bg-russian-blue/10 font-medium ml-4 lg:ml-0">
-                {backToSiteLink}
+                <Link to="/">
+                  <span className="flex items-center">
+                    <Home className="h-4 w-4 mr-2" />
+                    Back to Site
+                  </span>
+                </Link>
               </Button>
             </div>
             
