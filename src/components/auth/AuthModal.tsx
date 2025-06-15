@@ -14,18 +14,24 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [activeTab, setActiveTab] = useState<'sign-in' | 'sign-up' | 'forgot'>('sign-in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
+
+  const resetState = () => {
+    setEmail('');
+    setPassword('');
+    setLoading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (activeTab === 'sign-in') {
         const { error } = await signIn(email, password);
         if (error) {
           toast({
@@ -40,7 +46,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           });
           onClose();
         }
-      } else {
+      } else if (activeTab === 'sign-up') {
         const { error } = await signUp(email, password);
         if (error) {
           toast({
@@ -55,6 +61,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           });
           onClose();
         }
+      } else if (activeTab === 'forgot') {
+        const { error } = await requestPasswordReset(email);
+        if (error) {
+          toast({
+            title: 'Error',
+            description: error.message,
+            variant: 'destructive',
+          });
+        } else {
+          toast({
+            title: 'Success',
+            description: 'Password reset email sent. Please check your inbox.',
+          });
+          onClose();
+        }
       }
     } catch (error) {
       toast({
@@ -64,24 +85,89 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       });
     } finally {
       setLoading(false);
+      resetState();
     }
+  };
+
+  // New: function to handle password reset request
+  const requestPasswordReset = async (email: string) => {
+    // Supabase password reset: send an email to user
+    const { error } = await import('@/lib/supabase').then(({ supabase }) =>
+      supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/dashboard/settings',
+      })
+    );
+    return { error };
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isLogin ? 'Sign In' : 'Sign Up'}</DialogTitle>
+          <DialogTitle>
+            {activeTab === 'sign-in' && 'Sign In'}
+            {activeTab === 'sign-up' && 'Sign Up'}
+            {activeTab === 'forgot' && 'Forgot Password'}
+          </DialogTitle>
           <DialogDescription>
-            {isLogin ? 'Welcome back! Please sign in to your account.' : 'Create a new account to get started.'}
+            {activeTab === 'sign-in' && 'Welcome back! Please sign in to your account.'}
+            {activeTab === 'sign-up' && 'Create a new account to get started.'}
+            {activeTab === 'forgot' && 'Enter your email and we’ll send you a reset link.'}
           </DialogDescription>
         </DialogHeader>
-        
+
+        <div className="flex gap-2 mb-1 text-sm justify-center">
+          <Button
+            type="button"
+            variant={activeTab === 'sign-in' ? 'default' : 'ghost'}
+            size="sm"
+            className="flex-1"
+            onClick={() => {
+              setActiveTab('sign-in');
+              resetState();
+            }}
+          >
+            Sign In
+          </Button>
+          <Button
+            type="button"
+            variant={activeTab === 'sign-up' ? 'default' : 'ghost'}
+            size="sm"
+            className="flex-1"
+            onClick={() => {
+              setActiveTab('sign-up');
+              resetState();
+            }}
+          >
+            Sign Up
+          </Button>
+          <Button
+            type="button"
+            variant={activeTab === 'forgot' ? 'default' : 'ghost'}
+            size="sm"
+            className="flex-1"
+            onClick={() => {
+              setActiveTab('forgot');
+              resetState();
+            }}
+          >
+            Forgot?
+          </Button>
+        </div>
+
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg">{isLogin ? 'Sign In' : 'Create Account'}</CardTitle>
+            <CardTitle className="text-lg">
+              {activeTab === 'sign-in' && 'Sign In'}
+              {activeTab === 'sign-up' && 'Create Account'}
+              {activeTab === 'forgot' && 'Reset Your Password'}
+            </CardTitle>
             <CardDescription>
-              {isLogin ? 'Enter your credentials to access your account' : 'Enter your details to create a new account'}
+              {activeTab === 'sign-in'
+                ? 'Enter your credentials to access your account'
+                : activeTab === 'sign-up'
+                ? 'Enter your details to create a new account'
+                : 'We will email you a password reset link'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -97,32 +183,50 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   required
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  required
-                />
-              </div>
-              
+              {activeTab !== 'forgot' && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    required
+                  />
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Loading...' : (isLogin ? 'Sign In' : 'Sign Up')}
+                {loading
+                  ? 'Loading...'
+                  : (activeTab === 'sign-in'
+                    ? 'Sign In'
+                    : activeTab === 'sign-up'
+                    ? 'Sign Up'
+                    : 'Send Reset Email')}
               </Button>
             </form>
-            
             <div className="mt-4 text-center">
-              <Button
-                variant="link"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm"
-              >
-                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-              </Button>
+              {activeTab === 'sign-in' && (
+                <Button variant="link" onClick={() => { setActiveTab('sign-up'); resetState(); }} className="text-sm">
+                  Don't have an account? Sign up
+                </Button>
+              )}
+              {activeTab === 'sign-up' && (
+                <Button variant="link" onClick={() => { setActiveTab('sign-in'); resetState(); }} className="text-sm">
+                  Already have an account? Sign in
+                </Button>
+              )}
+              {(activeTab === 'sign-in' || activeTab === 'sign-up') && (
+                <Button variant="link" onClick={() => { setActiveTab('forgot'); resetState(); }} className="text-xs">
+                  Forgot password?
+                </Button>
+              )}
+              {activeTab === 'forgot' && (
+                <Button variant="link" onClick={() => { setActiveTab('sign-in'); resetState(); }} className="text-xs">
+                  Back to sign in
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
