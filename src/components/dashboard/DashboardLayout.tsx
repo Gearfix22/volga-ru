@@ -107,14 +107,16 @@ const ActualDashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => 
                   <SidebarMenuButton asChild>
                     <Link
                       to={item.path}
-                      className={`flex items-center w-full px-4 py-3 mt-2 text-sm rounded-xl transition-all duration-200 font-medium ${
+                      className={`block w-full px-4 py-3 mt-2 text-sm rounded-xl transition-all duration-200 font-medium ${
                         active
                           ? 'bg-gradient-to-r from-russian-blue to-volga-logo-blue text-white shadow-lg'
                           : 'text-gray-700 hover:bg-russian-blue/10 hover:text-russian-blue'
-                      } ${collapsed ? 'justify-center' : ''}`}
+                      }`}
                     >
-                      <Icon className={`h-5 w-5 shrink-0 ${collapsed ? '' : 'mr-4'}`} />
-                      <span className={collapsed ? 'hidden' : 'block'}>{item.label}</span>
+                      <span className={`flex items-center ${collapsed ? 'justify-center' : ''}`}>
+                        <Icon className={`h-5 w-5 shrink-0 ${collapsed ? '' : 'mr-4'}`} />
+                        <span className={collapsed ? 'hidden' : 'block'}>{item.label}</span>
+                      </span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
