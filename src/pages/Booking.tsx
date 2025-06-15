@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
@@ -16,12 +15,15 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { ServiceTypeSelector } from '@/components/booking/ServiceTypeSelector';
 import { ServiceDetailsForm } from '@/components/booking/ServiceDetailsForm';
 import { PricingDisplay } from '@/components/booking/PricingDisplay';
+import { BookingFormTracker } from '@/components/booking/BookingFormTracker';
+import { useDataTracking } from '@/hooks/useDataTracking';
 import type { ServiceDetails, UserInfo } from '@/types/booking';
 
 const Booking = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useLanguage();
+  const { trackForm } = useDataTracking();
   const [searchParams] = useSearchParams();
   const [serviceType, setServiceType] = useState('');
   const [serviceDetails, setServiceDetails] = useState<ServiceDetails>({});
@@ -138,6 +140,12 @@ const Booking = () => {
     e.preventDefault();
     
     if (!validateForm()) {
+      trackForm('booking', 'abandoned', {
+        serviceType,
+        serviceDetails,
+        userInfo,
+        reason: 'validation_failed'
+      });
       return;
     }
 
@@ -148,6 +156,13 @@ const Booking = () => {
       userInfo,
       totalPrice
     };
+
+    // Track form submission
+    trackForm('booking', 'submitted', {
+      serviceType,
+      totalPrice,
+      hasAllRequiredFields: true
+    });
 
     // Save to localStorage as backup
     localStorage.setItem('bookingData', JSON.stringify(bookingData));
@@ -185,123 +200,129 @@ const Booking = () => {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Service Type Selection */}
-            <ServiceTypeSelector
-              serviceType={serviceType}
-              onSelectService={setServiceType}
-              preSelected={isPreSelected}
-            />
+          <BookingFormTracker
+            serviceType={serviceType}
+            serviceDetails={serviceDetails}
+            userInfo={userInfo}
+          >
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Service Type Selection */}
+              <ServiceTypeSelector
+                serviceType={serviceType}
+                onSelectService={setServiceType}
+                preSelected={isPreSelected}
+              />
 
-            {/* Service Details Form */}
-            {serviceType && (
-              <>
-                <div>
-                  <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-4">
-                    {serviceType} Details
-                  </h2>
-                  <ServiceDetailsForm
+              {/* Service Details Form */}
+              {serviceType && (
+                <>
+                  <div>
+                    <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-4">
+                      {serviceType} Details
+                    </h2>
+                    <ServiceDetailsForm
+                      serviceType={serviceType}
+                      serviceDetails={serviceDetails}
+                      onUpdateDetail={updateServiceDetail}
+                    />
+                  </div>
+
+                  {/* Pricing Display */}
+                  <PricingDisplay
                     serviceType={serviceType}
                     serviceDetails={serviceDetails}
-                    onUpdateDetail={updateServiceDetail}
                   />
-                </div>
+                </>
+              )}
 
-                {/* Pricing Display */}
-                <PricingDisplay
-                  serviceType={serviceType}
-                  serviceDetails={serviceDetails}
-                />
-              </>
-            )}
+              {/* User Information */}
+              <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    {t('contactInformation')}
+                  </CardTitle>
+                  <CardDescription>{t('contactInfoDesc')}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName" className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        {t('fullName')} *
+                      </Label>
+                      <Input
+                        id="fullName"
+                        value={userInfo.fullName}
+                        onChange={(e) => updateUserInfo('fullName', e.target.value)}
+                        placeholder={t('enterFullName')}
+                        className="focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        {t('emailAddress')} *
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={userInfo.email}
+                        onChange={(e) => updateUserInfo('email', e.target.value)}
+                        placeholder={t('enterEmail')}
+                        className="focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="phone" className="flex items-center gap-2">
+                        <Phone className="h-4 w-4" />
+                        {t('phoneNumber')} *
+                      </Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={userInfo.phone}
+                        onChange={(e) => updateUserInfo('phone', e.target.value)}
+                        placeholder={t('enterPhone')}
+                        className="focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="language" className="flex items-center gap-2">
+                        <Globe className="h-4 w-4" />
+                        {t('preferredLanguage')}
+                      </Label>
+                      <Select value={userInfo.language} onValueChange={(value) => updateUserInfo('language', value)}>
+                        <SelectTrigger className="focus:ring-2 focus:ring-primary">
+                          <SelectValue placeholder={t('selectLanguage')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="english">{t('english')}</SelectItem>
+                          <SelectItem value="arabic">{t('arabic')}</SelectItem>
+                          <SelectItem value="russian">{t('russian')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* User Information */}
-            <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  {t('contactInformation')}
-                </CardTitle>
-                <CardDescription>{t('contactInfoDesc')}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName" className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      {t('fullName')} *
-                    </Label>
-                    <Input
-                      id="fullName"
-                      value={userInfo.fullName}
-                      onChange={(e) => updateUserInfo('fullName', e.target.value)}
-                      placeholder={t('enterFullName')}
-                      className="focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="flex items-center gap-2">
-                      <Mail className="h-4 w-4" />
-                      {t('emailAddress')} *
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={userInfo.email}
-                      onChange={(e) => updateUserInfo('email', e.target.value)}
-                      placeholder={t('enterEmail')}
-                      className="focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className="flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
-                      {t('phoneNumber')} *
-                    </Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={userInfo.phone}
-                      onChange={(e) => updateUserInfo('phone', e.target.value)}
-                      placeholder={t('enterPhone')}
-                      className="focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="language" className="flex items-center gap-2">
-                      <Globe className="h-4 w-4" />
-                      {t('preferredLanguage')}
-                    </Label>
-                    <Select value={userInfo.language} onValueChange={(value) => updateUserInfo('language', value)}>
-                      <SelectTrigger className="focus:ring-2 focus:ring-primary">
-                        <SelectValue placeholder={t('selectLanguage')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="english">{t('english')}</SelectItem>
-                        <SelectItem value="arabic">{t('arabic')}</SelectItem>
-                        <SelectItem value="russian">{t('russian')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Submit Button */}
-            <div className="text-center">
-              <Button 
-                type="submit" 
-                size="lg" 
-                className="px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                disabled={!serviceType || !userInfo.fullName || !userInfo.email || !userInfo.phone}
-              >
-                {t('proceedToPayment')}
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
-          </form>
+              {/* Submit Button */}
+              <div className="text-center">
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  className="px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                  disabled={!serviceType || !userInfo.fullName || !userInfo.email || !userInfo.phone}
+                >
+                  {t('proceedToPayment')}
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </div>
+            </form>
+          </BookingFormTracker>
         </div>
       </div>
 

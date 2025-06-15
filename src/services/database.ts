@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { BookingData } from '@/types/booking';
+import { trackFormInteraction } from './dataTracking';
 
 export interface PaymentInfo {
   paymentMethod: string;
@@ -15,6 +16,13 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
   }
 
   try {
+    // Track booking creation attempt
+    await trackFormInteraction('booking_creation', 'started', {
+      serviceType: bookingData.serviceType,
+      paymentMethod: paymentInfo.paymentMethod,
+      totalPrice: paymentInfo.totalPrice
+    });
+
     // Insert main booking record with enhanced service details
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
@@ -38,6 +46,11 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
 
     if (bookingError) {
       console.error('Error creating booking:', bookingError);
+      // Track booking creation failure
+      await trackFormInteraction('booking_creation', 'abandoned', {
+        serviceType: bookingData.serviceType,
+        error: bookingError.message
+      });
       throw bookingError;
     }
 
@@ -117,11 +130,24 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
       }
     }
 
+    // Track successful booking creation
+    await trackFormInteraction('booking_creation', 'submitted', {
+      serviceType: bookingData.serviceType,
+      bookingId: booking.id,
+      totalPrice: paymentInfo.totalPrice,
+      paymentMethod: paymentInfo.paymentMethod
+    });
+
     console.log('Enhanced booking created successfully:', booking);
     return booking;
 
   } catch (error) {
     console.error('Error in createBooking:', error);
+    // Track booking creation error
+    await trackFormInteraction('booking_creation', 'abandoned', {
+      serviceType: bookingData.serviceType,
+      error: error.message
+    });
     throw error;
   }
 };
