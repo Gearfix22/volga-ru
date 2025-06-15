@@ -34,22 +34,29 @@ export const UserMenu: React.FC = () => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-          <User className="h-4 w-4 mr-2" />
-          {user.email?.split('@')[0]}
+          <span className="flex items-center">
+            <User className="h-4 w-4 mr-2" />
+            {user.email?.split('@')[0]}
+          </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem asChild>
           <Link to="/dashboard" className="w-full">
-            <Settings className="h-4 w-4 mr-2" />
-            Dashboard
+            <span className="flex items-center">
+              <Settings className="h-4 w-4 mr-2" />
+              Dashboard
+            </span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={signOut}>
-          <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
+          <span className="flex items-center">
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 };
+
