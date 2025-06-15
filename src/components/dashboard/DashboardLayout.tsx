@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 import { 
   User, 
   History, 
@@ -10,18 +11,34 @@ import {
   CreditCard,
   Menu,
   X,
-  Home
+  Home,
+  LogOut
 } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, Navigate } from 'react-router-dom';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading } = useAuth();
+  const { toast } = useToast();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Redirect to home if not authenticated and not loading
+  if (!loading && !user) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   const menuItems = [
     { icon: User, label: 'Overview', path: '/dashboard' },
@@ -31,6 +48,34 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully signed out.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getUserInitials = () => {
+    if (!user?.email) return 'U';
+    return user.email.charAt(0).toUpperCase();
+  };
+
+  const getUserDisplayName = () => {
+    if (user?.user_metadata?.display_name) {
+      return user.user_metadata.display_name;
+    }
+    return user?.email?.split('@')[0] || 'User';
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -82,12 +127,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  {user?.email?.charAt(0).toUpperCase()}
+                  {getUserInitials()}
                 </div>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {user?.email?.split('@')[0]}
+                  {getUserDisplayName()}
                 </p>
                 <p className="text-xs text-gray-500 truncate">
                   {user?.email}
@@ -98,8 +143,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               variant="outline"
               size="sm"
               className="w-full mt-3"
-              onClick={signOut}
+              onClick={handleSignOut}
             >
+              <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
           </Card>
@@ -126,6 +172,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                   Back to Site
                 </Button>
               </Link>
+            </div>
+            
+            {/* User info in top bar for larger screens */}
+            <div className="hidden lg:flex items-center space-x-3">
+              <span className="text-sm text-gray-600">Welcome back, {getUserDisplayName()}</span>
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                {getUserInitials()}
+              </div>
             </div>
           </div>
         </div>

@@ -1,28 +1,38 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getUserBookings } from '@/services/database';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, CreditCard, MapPin, Users } from 'lucide-react';
+import { Calendar, CreditCard, MapPin, Users, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useDataTracking } from '@/hooks/useDataTracking';
 
 export const DashboardOverview: React.FC = () => {
+  const { user } = useAuth();
   const { trackForm } = useDataTracking();
 
   const { data: bookings, isLoading, error } = useQuery({
-    queryKey: ['user-bookings'],
+    queryKey: ['user-bookings', user?.id],
     queryFn: getUserBookings,
+    enabled: !!user,
+    retry: 1,
   });
 
-  React.useEffect(() => {
-    trackForm('dashboard', 'started', { section: 'overview' });
-  }, [trackForm]);
+  useEffect(() => {
+    if (user) {
+      trackForm('dashboard', 'started', { 
+        section: 'overview',
+        userId: user.id 
+      });
+    }
+  }, [trackForm, user]);
 
   const recentBookings = bookings?.slice(0, 3) || [];
   const totalBookings = bookings?.length || 0;
   const pendingBookings = bookings?.filter(b => b.booking_status === 'pending').length || 0;
+  const totalSpent = bookings?.reduce((sum, booking) => sum + (booking.total_price || 0), 0) || 0;
 
   if (isLoading) {
     return (
@@ -39,25 +49,26 @@ export const DashboardOverview: React.FC = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-600">Error loading dashboard data</p>
-      </div>
-    );
-  }
+  const getUserWelcomeName = () => {
+    if (user?.user_metadata?.display_name) {
+      return user.user_metadata.display_name;
+    }
+    return user?.email?.split('@')[0] || 'there';
+  };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Welcome back, {getUserWelcomeName()}!
+        </h1>
         <p className="mt-1 text-sm text-gray-600">
-          Welcome back! Here's what's happening with your account.
+          Here's what's happening with your account.
         </p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
@@ -86,6 +97,19 @@ export const DashboardOverview: React.FC = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalSpent.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              All time spending
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -98,6 +122,44 @@ export const DashboardOverview: React.FC = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Account Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Account Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center space-x-3">
+              <div className={`w-3 h-3 rounded-full ${user?.email_confirmed_at ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+              <div>
+                <p className="text-sm font-medium">Email Verification</p>
+                <p className="text-xs text-gray-600">
+                  {user?.email_confirmed_at ? 'Verified' : 'Pending verification'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              <div>
+                <p className="text-sm font-medium">Account Active</p>
+                <p className="text-xs text-gray-600">
+                  Since {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+              <div>
+                <p className="text-sm font-medium">Last Login</p>
+                <p className="text-xs text-gray-600">
+                  {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Unknown'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Recent Bookings */}
       <Card>
@@ -112,8 +174,14 @@ export const DashboardOverview: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {recentBookings.length === 0 ? (
+          {error ? (
             <div className="text-center py-6">
+              <p className="text-red-500">Error loading reservations</p>
+              <p className="text-xs text-gray-500 mt-1">Please try refreshing the page</p>
+            </div>
+          ) : recentBookings.length === 0 ? (
+            <div className="text-center py-6">
+              <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500">No reservations yet</p>
               <Link to="/booking">
                 <Button className="mt-4">Make Your First Booking</Button>

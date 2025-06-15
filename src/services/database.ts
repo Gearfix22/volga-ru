@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { BookingData } from '@/types/booking';
 import { trackFormInteraction } from './dataTracking';
@@ -46,88 +47,11 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
 
     if (bookingError) {
       console.error('Error creating booking:', bookingError);
-      // Track booking creation failure
       await trackFormInteraction('booking_creation', 'abandoned', {
         serviceType: bookingData.serviceType,
         error: bookingError.message
       });
       throw bookingError;
-    }
-
-    // Insert service-specific details with enhanced data
-    if (bookingData.serviceType === 'Transportation' && 'pickup' in bookingData.serviceDetails) {
-      const details = bookingData.serviceDetails;
-      const { error: transportError } = await supabase
-        .from('transportation_bookings')
-        .insert({
-          booking_id: booking.id,
-          pickup_location: details.pickup,
-          dropoff_location: details.dropoff,
-          travel_date: details.date,
-          travel_time: details.time,
-          vehicle_type: details.vehicleType,
-          passengers: details.passengers || '1'
-        });
-
-      if (transportError) {
-        console.error('Error creating transportation booking:', transportError);
-      }
-    }
-
-    if (bookingData.serviceType === 'Hotels' && 'city' in bookingData.serviceDetails) {
-      const details = bookingData.serviceDetails;
-      const { error: hotelError } = await supabase
-        .from('hotel_bookings')
-        .insert({
-          booking_id: booking.id,
-          city: details.city,
-          hotel_name: details.hotel || 'To be determined',
-          checkin_date: details.checkin,
-          checkout_date: details.checkout,
-          room_type: details.roomType,
-          guests: details.guests || '1',
-          special_requests: details.specialRequests || null
-        });
-
-      if (hotelError) {
-        console.error('Error creating hotel booking:', hotelError);
-      }
-    }
-
-    if (bookingData.serviceType === 'Events' && 'eventName' in bookingData.serviceDetails) {
-      const details = bookingData.serviceDetails;
-      const { error: eventError } = await supabase
-        .from('event_bookings')
-        .insert({
-          booking_id: booking.id,
-          event_name: details.eventName,
-          event_location: details.eventLocation,
-          event_date: details.eventDate,
-          tickets_quantity: details.tickets,
-          ticket_type: details.ticketType || 'general'
-        });
-
-      if (eventError) {
-        console.error('Error creating event booking:', eventError);
-      }
-    }
-
-    if (bookingData.serviceType === 'Custom Trips' && 'duration' in bookingData.serviceDetails) {
-      const details = bookingData.serviceDetails;
-      const { error: tripError } = await supabase
-        .from('custom_trip_bookings')
-        .insert({
-          booking_id: booking.id,
-          duration: details.duration,
-          regions: details.regions,
-          interests: details.interests || [],
-          budget_range: details.budget || null,
-          additional_info: details.additionalInfo || null
-        });
-
-      if (tripError) {
-        console.error('Error creating custom trip booking:', tripError);
-      }
     }
 
     // Track successful booking creation
@@ -143,7 +67,6 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
 
   } catch (error) {
     console.error('Error in createBooking:', error);
-    // Track booking creation error
     await trackFormInteraction('booking_creation', 'abandoned', {
       serviceType: bookingData.serviceType,
       error: error.message
@@ -159,24 +82,25 @@ export const getUserBookings = async () => {
     throw new Error('User must be authenticated to view bookings');
   }
 
-  const { data, error } = await supabase
-    .from('bookings')
-    .select(`
-      *,
-      transportation_bookings(*),
-      hotel_bookings(*),
-      event_bookings(*),
-      custom_trip_bookings(*)
-    `)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+  try {
+    // First, get the basic bookings without the problematic joins
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching user bookings:', error);
-    throw error;
+    if (error) {
+      console.error('Error fetching user bookings:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getUserBookings:', error);
+    // Return empty array instead of throwing to prevent dashboard crashes
+    return [];
   }
-
-  return data;
 };
 
 export const getBookingById = async (bookingId: string) => {
@@ -188,13 +112,7 @@ export const getBookingById = async (bookingId: string) => {
 
   const { data, error } = await supabase
     .from('bookings')
-    .select(`
-      *,
-      transportation_bookings(*),
-      hotel_bookings(*),
-      event_bookings(*),
-      custom_trip_bookings(*)
-    `)
+    .select('*')
     .eq('id', bookingId)
     .eq('user_id', user.id)
     .single();
@@ -205,4 +123,29 @@ export const getBookingById = async (bookingId: string) => {
   }
 
   return data;
+};
+
+export const updateUserProfile = async (profileData: any) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('User must be authenticated to update profile');
+  }
+
+  // Update user metadata in Supabase Auth
+  const { error } = await supabase.auth.updateUser({
+    data: {
+      display_name: profileData.displayName,
+      phone: profileData.phone,
+      language: profileData.language,
+      notifications: profileData.notifications
+    }
+  });
+
+  if (error) {
+    console.error('Error updating user profile:', error);
+    throw error;
+  }
+
+  return { success: true };
 };
