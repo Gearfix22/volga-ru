@@ -1,8 +1,12 @@
 
 import { BookingData } from '@/types/booking';
 
-export const sendBookingEmail = async (bookingData: BookingData, transactionId: string, paymentAmount: string) => {
-  console.log('Preparing to send booking email to info@volgaservices.com:', {
+export const sendBookingEmail = async (
+  bookingData: BookingData,
+  transactionId: string,
+  paymentAmount: string
+) => {
+  console.log('Preparing to send booking email to info@volgaservices.com AND to user:', {
     bookingData,
     transactionId,
     paymentAmount
@@ -45,11 +49,9 @@ export const sendBookingEmail = async (bookingData: BookingData, transactionId: 
     }
   };
 
-  const emailContent = {
-    to: 'info@volgaservices.com',
-    subject: `New Booking Confirmation - ${transactionId}`,
-    body: `
-=== NEW BOOKING CONFIRMATION ===
+  // Prepare the shared body content, always including the phone number
+  const sharedBody = `
+=== BOOKING CONFIRMATION RECEIPT ===
 
 Transaction ID: ${transactionId}
 Payment Amount: $${paymentAmount} USD
@@ -77,23 +79,38 @@ Please process this booking and contact the customer to confirm the service arra
 
 ---
 Volga Services Booking System
-    `,
+`;
+
+  // Company email
+  const companyEmailContent = {
+    to: 'info@volgaservices.com',
+    subject: `New Booking Confirmation - ${transactionId}`,
+    body: sharedBody,
     timestamp: new Date().toISOString(),
-    bookingData: bookingData,
-    transactionId: transactionId,
-    paymentAmount: paymentAmount
+    bookingData,
+    transactionId,
+    paymentAmount
+  };
+
+  // User email
+  const userEmailContent = {
+    to: bookingData.userInfo.email,
+    subject: `Your Booking Confirmation - Volga Services - ${transactionId}`,
+    body: sharedBody,
+    timestamp: new Date().toISOString(),
+    bookingData,
+    transactionId,
+    paymentAmount
   };
   
-  // TODO: This will be implemented once Supabase is connected
-  // For now, we're logging the email content that would be sent
-  console.log('Email content prepared for info@volgaservices.com:');
-  console.log('Subject:', emailContent.subject);
-  console.log('Body:', emailContent.body);
+  // Simulate sending both emails (company and user)
+  console.log('Email content prepared for company:', companyEmailContent);
+  localStorage.setItem('lastBookingEmailCompany', JSON.stringify(companyEmailContent));
   
-  // Store email data in localStorage for development purposes
-  localStorage.setItem('lastBookingEmail', JSON.stringify(emailContent));
+  console.log('Email content prepared for user:', userEmailContent);
+  localStorage.setItem('lastBookingEmailUser', JSON.stringify(userEmailContent));
   
-  return emailContent;
+  return { companyEmailContent, userEmailContent };
 };
 
 export const redirectToWhatsApp = (bookingData: BookingData, transactionId: string) => {
@@ -116,3 +133,4 @@ I would like to confirm my booking details. Thank you!`;
   // Open WhatsApp in a new tab
   window.open(whatsappUrl, '_blank');
 };
+
