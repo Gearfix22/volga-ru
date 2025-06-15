@@ -113,12 +113,8 @@ const ActualDashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => 
                           : 'text-gray-700 hover:bg-russian-blue/10 hover:text-russian-blue'
                       } ${collapsed ? 'justify-center' : ''}`}
                     >
-                      {/* This span is necessary to ensure the Link has a single child element,
-                          which is a requirement for components using 'asChild'. */}
-                      <span className="flex items-center">
-                        <Icon className={`h-5 w-5 ${!collapsed ? 'mr-4' : ''}`} />
-                        {!collapsed && item.label}
-                      </span>
+                      <Icon className={`h-5 w-5 shrink-0 ${collapsed ? '' : 'mr-4'}`} />
+                      <span className={collapsed ? 'hidden' : 'block'}>{item.label}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
