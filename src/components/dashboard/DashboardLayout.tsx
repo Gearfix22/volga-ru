@@ -45,7 +45,8 @@ const ActualDashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => 
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const location = useLocation();
-  const { collapsed, setCollapsed } = useSidebar();
+  const { state } = useSidebar();
+  const collapsed = state === 'collapsed';
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -81,7 +82,7 @@ const ActualDashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => 
     <div className="flex min-h-screen w-full bg-gradient-to-br from-volga-pearl via-russian-cream to-white">
       <Sidebar
         className={`border-r border-russian-silver/20 bg-white/95 backdrop-blur-md shadow-2xl transition-all duration-300 ease-in-out ${collapsed ? "w-20" : "w-72"}`}
-        collapsible
+        collapsible="icon"
       >
         <SidebarContent className="flex flex-col">
           <div className="flex items-center justify-between h-20 px-6 border-b border-russian-silver/20 bg-gradient-to-r from-russian-blue to-volga-logo-blue">
