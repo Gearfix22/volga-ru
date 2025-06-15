@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -17,6 +16,10 @@ import Contact from "./pages/Contact";
 import Booking from "./pages/Booking";
 import Payment from "./pages/Payment";
 import BookingConfirmation from "./pages/BookingConfirmation";
+import Dashboard from "./pages/Dashboard";
+import DashboardReservations from "./pages/DashboardReservations";
+import DashboardSettings from "./pages/DashboardSettings";
+import DashboardPayments from "./pages/DashboardPayments";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +51,10 @@ const App = () => {
                 <Route path="/booking" element={<Booking />} />
                 <Route path="/payment" element={<Payment />} />
                 <Route path="/booking-confirmation" element={<BookingConfirmation />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/dashboard/reservations" element={<DashboardReservations />} />
+                <Route path="/dashboard/settings" element={<DashboardSettings />} />
+                <Route path="/dashboard/payments" element={<DashboardPayments />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
