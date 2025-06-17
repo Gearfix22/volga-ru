@@ -17,6 +17,7 @@ import { ServiceDetailsForm } from '@/components/booking/ServiceDetailsForm';
 import { PricingDisplay } from '@/components/booking/PricingDisplay';
 import { BookingFormTracker } from '@/components/booking/BookingFormTracker';
 import { useDataTracking } from '@/hooks/useDataTracking';
+import { createDraftBooking } from '@/services/database';
 import type { ServiceDetails, UserInfo } from '@/types/booking';
 
 const Booking = () => {
@@ -33,6 +34,7 @@ const Booking = () => {
     phone: '',
     language: 'english'
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const serviceFromUrl = searchParams.get('service');
   const isPreSelected = !!serviceFromUrl;
@@ -136,7 +138,7 @@ const Booking = () => {
     return basePrices[serviceType as keyof typeof basePrices] || 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -149,32 +151,65 @@ const Booking = () => {
       return;
     }
 
-    const totalPrice = calculatePrice();
-    const bookingData = {
-      serviceType,
-      serviceDetails,
-      userInfo,
-      totalPrice
-    };
+    setIsSubmitting(true);
 
-    // Track form submission
-    trackForm('booking', 'submitted', {
-      serviceType,
-      totalPrice,
-      hasAllRequiredFields: true
-    });
+    try {
+      const totalPrice = calculatePrice();
+      const bookingData = {
+        serviceType,
+        serviceDetails,
+        userInfo,
+        totalPrice
+      };
 
-    // Save to localStorage as backup
-    localStorage.setItem('bookingData', JSON.stringify(bookingData));
+      // Create draft booking in the database
+      const draftBooking = await createDraftBooking(bookingData);
 
-    toast({
-      title: "Booking Details Saved",
-      description: "Proceeding to payment...",
-    });
+      // Track form submission
+      trackForm('booking', 'submitted', {
+        serviceType,
+        totalPrice,
+        hasAllRequiredFields: true,
+        bookingId: draftBooking.id
+      });
 
-    navigate('/payment', {
-      state: { bookingData }
-    });
+      // Save to localStorage as backup
+      localStorage.setItem('bookingData', JSON.stringify({
+        ...bookingData,
+        draftBookingId: draftBooking.id
+      }));
+
+      toast({
+        title: "Booking Draft Saved",
+        description: "Your booking has been saved. Complete payment to confirm.",
+      });
+
+      navigate('/payment', {
+        state: { 
+          bookingData: {
+            ...bookingData,
+            draftBookingId: draftBooking.id
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('Error creating draft booking:', error);
+      toast({
+        title: "Error Saving Booking",
+        description: "Please try again or contact support.",
+        variant: "destructive"
+      });
+      
+      trackForm('booking', 'abandoned', {
+        serviceType,
+        serviceDetails,
+        userInfo,
+        reason: 'draft_booking_failed'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -315,9 +350,9 @@ const Booking = () => {
                   type="submit" 
                   size="lg" 
                   className="px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                  disabled={!serviceType || !userInfo.fullName || !userInfo.email || !userInfo.phone}
+                  disabled={!serviceType || !userInfo.fullName || !userInfo.email || !userInfo.phone || isSubmitting}
                 >
-                  {t('proceedToPayment')}
+                  {isSubmitting ? "Saving..." : t('proceedToPayment')}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </div>
