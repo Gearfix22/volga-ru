@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { BookingData } from '@/types/booking';
 import { trackFormInteraction } from './dataTracking';
@@ -32,9 +33,6 @@ export const createDraftBooking = async (bookingData: BookingData) => {
         customer_email: bookingData.userInfo.email,
         customer_phone: bookingData.userInfo.phone,
         customer_language: bookingData.userInfo.language,
-        payment_method: null,
-        transaction_id: null,
-        payment_amount: null,
         total_price: bookingData.totalPrice,
         status: 'pending',
         service_details: bookingData.serviceDetails
