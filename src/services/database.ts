@@ -22,7 +22,7 @@ export const createDraftBooking = async (bookingData: BookingData) => {
       totalPrice: bookingData.totalPrice
     });
 
-    // Insert draft booking record
+    // Insert draft booking record with correct column names
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .insert({
@@ -36,8 +36,7 @@ export const createDraftBooking = async (bookingData: BookingData) => {
         transaction_id: null,
         payment_amount: null,
         total_price: bookingData.totalPrice,
-        payment_status: 'pending',
-        booking_status: 'pending',
+        status: 'pending',
         service_details: bookingData.serviceDetails
       })
       .select()
@@ -155,8 +154,7 @@ export const updateBookingPayment = async (bookingId: string, paymentInfo: Payme
         payment_method: paymentInfo.paymentMethod,
         transaction_id: paymentInfo.transactionId,
         payment_amount: paymentInfo.totalPrice,
-        payment_status: 'completed',
-        booking_status: 'confirmed'
+        status: 'confirmed'
       })
       .eq('id', bookingId)
       .eq('user_id', user.id)
@@ -192,7 +190,7 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
       totalPrice: paymentInfo.totalPrice
     });
 
-    // Insert main booking record
+    // Insert main booking record with correct column names
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .insert({
@@ -206,8 +204,7 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
         transaction_id: paymentInfo.transactionId,
         payment_amount: paymentInfo.totalPrice,
         total_price: bookingData.totalPrice || paymentInfo.totalPrice,
-        payment_status: 'completed',
-        booking_status: 'confirmed',
+        status: 'confirmed',
         service_details: bookingData.serviceDetails
       })
       .select()
