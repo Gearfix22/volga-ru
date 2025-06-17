@@ -9,11 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CreditCard, Shield, Lock, DollarSign, MapPin, Calendar, Clock, Users, Car, Building2, Ticket, Globe } from 'lucide-react';
+import { CreditCard, Shield, Lock, DollarSign, MapPin, Calendar, Clock, Users, Car, Building2, Ticket, Globe, Banknote } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { createBooking } from '@/services/database';
 import { useToast } from '@/hooks/use-toast';
+import { BankTransferInfo } from '@/components/payment/BankTransferInfo';
 
 declare global {
   interface Window {
@@ -306,6 +307,43 @@ const Payment = () => {
     }
   };
 
+  const handleBankTransferConfirmation = async () => {
+    const transactionId = `BTR${Date.now()}`;
+    
+    if (user) {
+      await createBooking({
+        ...bookingData,
+        customAmount: finalAmount,
+        totalPrice: finalAmount
+      }, {
+        paymentMethod: 'Bank Transfer',
+        transactionId,
+        totalPrice: finalAmount
+      });
+      
+      toast({
+        title: "Booking saved successfully!",
+        description: "Your booking has been saved to your account.",
+      });
+    }
+    
+    localStorage.setItem('paymentStatus', 'pending');
+    localStorage.setItem('transactionId', transactionId);
+    localStorage.setItem('paymentAmount', finalAmount.toString());
+    
+    navigate('/booking-confirmation', {
+      state: {
+        bookingData: {
+          ...bookingData,
+          paymentMethod: 'Bank Transfer',
+          transactionId,
+          paidAmount: finalAmount,
+          totalPrice: finalAmount
+        }
+      }
+    });
+  };
+
   const paymentMethods = [
     {
       id: 'credit-card',
@@ -318,6 +356,12 @@ const Payment = () => {
       name: 'PayPal',
       icon: Shield,
       description: 'Pay securely with your PayPal account'
+    },
+    {
+      id: 'bank-transfer',
+      name: 'Bank Transfer',
+      icon: Banknote,
+      description: 'Direct bank transfer to our account'
     }
   ];
 
@@ -695,6 +739,23 @@ const Payment = () => {
                         )}
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Bank Transfer Form */}
+                {selectedMethod === 'bank-transfer' && (
+                  <div className="space-y-4">
+                    <BankTransferInfo 
+                      amount={finalAmount} 
+                      transactionId={`BTR${Date.now()}`}
+                    />
+                    <Button
+                      onClick={handleBankTransferConfirmation}
+                      disabled={finalAmount <= 0}
+                      className="w-full bg-russian-gold hover:bg-russian-gold/90 text-white font-semibold py-3"
+                    >
+                      Confirm Bank Transfer Instructions
+                    </Button>
                   </div>
                 )}
               </CardContent>
