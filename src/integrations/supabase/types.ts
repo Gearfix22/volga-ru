@@ -1,0 +1,820 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  public: {
+    Tables: {
+      bookings: {
+        Row: {
+          created_at: string | null
+          id: string
+          payment_method: string | null
+          service_details: Json | null
+          service_type: string
+          status: string | null
+          total_price: number | null
+          transaction_id: string | null
+          updated_at: string | null
+          user_id: string | null
+          user_info: Json
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          payment_method?: string | null
+          service_details?: Json | null
+          service_type: string
+          status?: string | null
+          total_price?: number | null
+          transaction_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          user_info: Json
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          payment_method?: string | null
+          service_details?: Json | null
+          service_type?: string
+          status?: string | null
+          total_price?: number | null
+          transaction_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          user_info?: Json
+        }
+        Relationships: []
+      }
+      contact_submissions: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          message: string
+          name: string
+          phone: string | null
+          status: string | null
+          subject: string | null
+          submitted_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          message: string
+          name: string
+          phone?: string | null
+          status?: string | null
+          subject?: string | null
+          submitted_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          phone?: string | null
+          status?: string | null
+          subject?: string | null
+          submitted_at?: string | null
+        }
+        Relationships: []
+      }
+      custom_trip_bookings: {
+        Row: {
+          additional_info: string | null
+          booking_id: string | null
+          budget_range: string | null
+          created_at: string | null
+          duration: string
+          id: string
+          interests: string[] | null
+          regions: string
+        }
+        Insert: {
+          additional_info?: string | null
+          booking_id?: string | null
+          budget_range?: string | null
+          created_at?: string | null
+          duration: string
+          id?: string
+          interests?: string[] | null
+          regions: string
+        }
+        Update: {
+          additional_info?: string | null
+          booking_id?: string | null
+          budget_range?: string | null
+          created_at?: string | null
+          duration?: string
+          id?: string
+          interests?: string[] | null
+          regions?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_trip_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_trip_packages: {
+        Row: {
+          base_price: number
+          created_at: string | null
+          description: string | null
+          difficulty_level: string | null
+          duration_type: string
+          id: string
+          included_activities: string[] | null
+          is_active: boolean | null
+          max_participants: number | null
+          package_name: string
+          price_per_day: number | null
+          regions: string[]
+          updated_at: string | null
+        }
+        Insert: {
+          base_price: number
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          duration_type: string
+          id?: string
+          included_activities?: string[] | null
+          is_active?: boolean | null
+          max_participants?: number | null
+          package_name: string
+          price_per_day?: number | null
+          regions: string[]
+          updated_at?: string | null
+        }
+        Update: {
+          base_price?: number
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          duration_type?: string
+          id?: string
+          included_activities?: string[] | null
+          is_active?: boolean | null
+          max_participants?: number | null
+          package_name?: string
+          price_per_day?: number | null
+          regions?: string[]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      event_bookings: {
+        Row: {
+          booking_id: string | null
+          created_at: string | null
+          event_date: string
+          event_location: string
+          event_name: string
+          id: string
+          ticket_type: string | null
+          tickets_quantity: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string | null
+          event_date: string
+          event_location: string
+          event_name: string
+          id?: string
+          ticket_type?: string | null
+          tickets_quantity: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string | null
+          event_date?: string
+          event_location?: string
+          event_name?: string
+          id?: string
+          ticket_type?: string | null
+          tickets_quantity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_services: {
+        Row: {
+          available_tickets: number | null
+          city: string
+          created_at: string | null
+          description: string | null
+          event_date: string
+          event_name: string
+          event_time: string | null
+          event_type: string
+          id: string
+          is_active: boolean | null
+          ticket_types: Json
+          updated_at: string | null
+          venue: string
+        }
+        Insert: {
+          available_tickets?: number | null
+          city: string
+          created_at?: string | null
+          description?: string | null
+          event_date: string
+          event_name: string
+          event_time?: string | null
+          event_type: string
+          id?: string
+          is_active?: boolean | null
+          ticket_types: Json
+          updated_at?: string | null
+          venue: string
+        }
+        Update: {
+          available_tickets?: number | null
+          city?: string
+          created_at?: string | null
+          description?: string | null
+          event_date?: string
+          event_name?: string
+          event_time?: string | null
+          event_type?: string
+          id?: string
+          is_active?: boolean | null
+          ticket_types?: Json
+          updated_at?: string | null
+          venue?: string
+        }
+        Relationships: []
+      }
+      form_interactions: {
+        Row: {
+          created_at: string | null
+          field_name: string | null
+          form_data: Json
+          form_type: string
+          id: string
+          interaction_type: string
+          session_id: string | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          field_name?: string | null
+          form_data: Json
+          form_type: string
+          id?: string
+          interaction_type: string
+          session_id?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          field_name?: string | null
+          form_data?: Json
+          form_type?: string
+          id?: string
+          interaction_type?: string
+          session_id?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      hotel_bookings: {
+        Row: {
+          booking_id: string | null
+          checkin_date: string
+          checkout_date: string
+          city: string
+          created_at: string | null
+          guests: string | null
+          hotel_name: string
+          id: string
+          room_type: string
+          special_requests: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          checkin_date: string
+          checkout_date: string
+          city: string
+          created_at?: string | null
+          guests?: string | null
+          hotel_name: string
+          id?: string
+          room_type: string
+          special_requests?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          checkin_date?: string
+          checkout_date?: string
+          city?: string
+          created_at?: string | null
+          guests?: string | null
+          hotel_name?: string
+          id?: string
+          room_type?: string
+          special_requests?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hotel_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hotel_services: {
+        Row: {
+          amenities: string[] | null
+          base_price_per_night: number
+          city: string
+          created_at: string | null
+          description: string | null
+          hotel_name: string
+          id: string
+          is_active: boolean | null
+          max_guests: number | null
+          room_type: string
+          star_rating: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          amenities?: string[] | null
+          base_price_per_night: number
+          city: string
+          created_at?: string | null
+          description?: string | null
+          hotel_name: string
+          id?: string
+          is_active?: boolean | null
+          max_guests?: number | null
+          room_type: string
+          star_rating?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          amenities?: string[] | null
+          base_price_per_night?: number
+          city?: string
+          created_at?: string | null
+          description?: string | null
+          hotel_name?: string
+          id?: string
+          is_active?: boolean | null
+          max_guests?: number | null
+          room_type?: string
+          star_rating?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      newsletter_subscriptions: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string | null
+          subscribed_at: string | null
+          subscription_source: string | null
+          subscription_status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          name?: string | null
+          subscribed_at?: string | null
+          subscription_source?: string | null
+          subscription_status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string | null
+          subscribed_at?: string | null
+          subscription_source?: string | null
+          subscription_status?: string | null
+        }
+        Relationships: []
+      }
+      page_visits: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          page_title: string | null
+          page_url: string
+          referrer: string | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+          visit_timestamp: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          page_title?: string | null
+          page_url: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visit_timestamp?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          page_title?: string | null
+          page_url?: string
+          referrer?: string | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visit_timestamp?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          preferred_language: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          preferred_language?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          preferred_language?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      search_queries: {
+        Row: {
+          created_at: string | null
+          id: string
+          query_text: string
+          results_count: number | null
+          search_type: string | null
+          session_id: string | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          query_text: string
+          results_count?: number | null
+          search_type?: string | null
+          session_id?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          query_text?: string
+          results_count?: number | null
+          search_type?: string | null
+          session_id?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      service_categories: {
+        Row: {
+          category_name: string
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          icon_name: string | null
+          id: string
+          is_active: boolean | null
+        }
+        Insert: {
+          category_name: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+        }
+        Update: {
+          category_name?: string
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon_name?: string | null
+          id?: string
+          is_active?: boolean | null
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          base_price: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          type: string
+        }
+        Insert: {
+          base_price?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          type: string
+        }
+        Update: {
+          base_price?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      transportation_bookings: {
+        Row: {
+          booking_id: string | null
+          created_at: string | null
+          dropoff_location: string
+          id: string
+          passengers: string | null
+          pickup_location: string
+          travel_date: string
+          travel_time: string
+          vehicle_type: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string | null
+          dropoff_location: string
+          id?: string
+          passengers?: string | null
+          pickup_location: string
+          travel_date: string
+          travel_time: string
+          vehicle_type: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string | null
+          dropoff_location?: string
+          id?: string
+          passengers?: string | null
+          pickup_location?: string
+          travel_date?: string
+          travel_time?: string
+          vehicle_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transportation_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transportation_services: {
+        Row: {
+          base_price: number
+          created_at: string | null
+          description: string | null
+          features: string[] | null
+          id: string
+          is_active: boolean | null
+          max_passengers: number | null
+          price_per_km: number | null
+          service_name: string
+          updated_at: string | null
+          vehicle_type: string
+        }
+        Insert: {
+          base_price: number
+          created_at?: string | null
+          description?: string | null
+          features?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          max_passengers?: number | null
+          price_per_km?: number | null
+          service_name: string
+          updated_at?: string | null
+          vehicle_type: string
+        }
+        Update: {
+          base_price?: number
+          created_at?: string | null
+          description?: string | null
+          features?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          max_passengers?: number | null
+          price_per_km?: number | null
+          service_name?: string
+          updated_at?: string | null
+          vehicle_type?: string
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          preference_type: string
+          preference_value: Json
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          preference_type: string
+          preference_value: Json
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          preference_type?: string
+          preference_value?: Json
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DefaultSchema = Database[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof Database },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof Database },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
