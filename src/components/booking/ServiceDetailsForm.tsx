@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Clock, MapPin, Car, Building2, Ticket, Globe, Users } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/contexts/EnhancedLanguageContext';
 import type { ServiceDetails } from '@/types/booking';
 
 interface ServiceDetailsFormProps {
