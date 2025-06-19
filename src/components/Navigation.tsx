@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/contexts/EnhancedLanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { UserMenu } from './auth/UserMenu';
 import { Menu, X } from 'lucide-react';

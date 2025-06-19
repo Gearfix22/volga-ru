@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Languages } from 'lucide-react';
-import { useLanguage, Language } from '@/contexts/LanguageContext';
+import { useLanguage, Language } from '@/contexts/EnhancedLanguageContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
