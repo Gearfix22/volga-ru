@@ -4,7 +4,7 @@ import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { Card, CardContent } from '@/components/ui/card';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/contexts/EnhancedLanguageContext';
 
 const Gallery = () => {
   const { t } = useLanguage();
