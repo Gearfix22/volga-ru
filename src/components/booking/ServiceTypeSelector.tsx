@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Car, Building2, Calendar, MapPin, Plane, Ship, Train, Music } from 'lucide-react';
-import { useLanguage } from '@/contexts/EnhancedLanguageContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ServiceTypeSelectorProps {
   serviceType: string;

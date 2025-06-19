@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useLanguage } from '@/contexts/EnhancedLanguageContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { AnimatedBackground } from '@/components/AnimatedBackground';

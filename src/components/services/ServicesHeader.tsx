@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useLanguage } from '@/contexts/EnhancedLanguageContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const ServicesHeader: React.FC = () => {
   const { t } = useLanguage();
