@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/contexts/EnhancedLanguageContext';
 import { ServiceCard } from './ServiceCard';
 import { Car, Hotel, CalendarDays } from 'lucide-react';
 
