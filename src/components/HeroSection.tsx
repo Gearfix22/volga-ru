@@ -2,7 +2,7 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/contexts/EnhancedLanguageContext';
 import { Button } from '@/components/ui/button';
 
 export const HeroSection: React.FC = () => {
