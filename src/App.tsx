@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/EnhancedLanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { BookingProvider } from "@/contexts/BookingContext";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
 import About from "./pages/About";
@@ -27,27 +28,29 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/services" element={<Services />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/gallery" element={<Gallery />} />
-                <Route path="/booking" element={<Booking />} />
-                <Route path="/payment" element={<Payment />} />
-                <Route path="/booking-confirmation" element={<BookingConfirmation />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/dashboard/reservations" element={<DashboardReservations />} />
-                <Route path="/dashboard/payments" element={<DashboardPayments />} />
-                <Route path="/dashboard/settings" element={<DashboardSettings />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
+          <BookingProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/services" element={<Services />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/gallery" element={<Gallery />} />
+                  <Route path="/booking" element={<Booking />} />
+                  <Route path="/payment" element={<Payment />} />
+                  <Route path="/booking-confirmation" element={<BookingConfirmation />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/dashboard/reservations" element={<DashboardReservations />} />
+                  <Route path="/dashboard/payments" element={<DashboardPayments />} />
+                  <Route path="/dashboard/settings" element={<DashboardSettings />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </BookingProvider>
         </AuthProvider>
       </LanguageProvider>
     </QueryClientProvider>

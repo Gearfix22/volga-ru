@@ -11,6 +11,7 @@ import { PricingDisplay } from './PricingDisplay';
 import { ContactInformationForm } from './ContactInformationForm';
 import { BookingFormTracker } from './BookingFormTracker';
 import { BookingSubmitButton } from './BookingSubmitButton';
+import { BookingSteps } from './BookingSteps';
 import type { ServiceDetails, UserInfo } from '@/types/booking';
 
 interface BookingWizardProps {
@@ -31,7 +32,21 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ preSelectedService
     phone: '',
     language: 'english'
   });
+  const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Update step based on form completion
+  useEffect(() => {
+    if (!serviceType) {
+      setCurrentStep(1);
+    } else if (Object.keys(serviceDetails).length === 0) {
+      setCurrentStep(2);
+    } else if (!userInfo.fullName || !userInfo.email || !userInfo.phone) {
+      setCurrentStep(3);
+    } else {
+      setCurrentStep(4);
+    }
+  }, [serviceType, serviceDetails, userInfo]);
 
   const updateServiceDetail = (key: string, value: string | string[]) => {
     setServiceDetails(prev => ({
@@ -193,44 +208,48 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ preSelectedService
       serviceDetails={serviceDetails}
       userInfo={userInfo}
     >
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <ServiceTypeSelector
-          serviceType={serviceType}
-          onSelectService={setServiceType}
-          preSelected={!!preSelectedService}
-        />
+      <div className="space-y-8">
+        <BookingSteps currentStep={currentStep} serviceType={serviceType} />
+        
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <ServiceTypeSelector
+            serviceType={serviceType}
+            onSelectService={setServiceType}
+            preSelected={!!preSelectedService}
+          />
 
-        {serviceType && (
-          <>
-            <div>
-              <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-4">
-                {serviceType} Details
-              </h2>
-              <ServiceDetailsForm
+          {serviceType && (
+            <>
+              <div>
+                <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-4">
+                  {serviceType} Details
+                </h2>
+                <ServiceDetailsForm
+                  serviceType={serviceType}
+                  serviceDetails={serviceDetails}
+                  onUpdateDetail={updateServiceDetail}
+                />
+              </div>
+
+              <PricingDisplay
                 serviceType={serviceType}
                 serviceDetails={serviceDetails}
-                onUpdateDetail={updateServiceDetail}
               />
-            </div>
+            </>
+          )}
 
-            <PricingDisplay
-              serviceType={serviceType}
-              serviceDetails={serviceDetails}
-            />
-          </>
-        )}
+          <ContactInformationForm
+            userInfo={userInfo}
+            onUpdateUserInfo={updateUserInfo}
+          />
 
-        <ContactInformationForm
-          userInfo={userInfo}
-          onUpdateUserInfo={updateUserInfo}
-        />
-
-        <BookingSubmitButton
-          serviceType={serviceType}
-          userInfo={userInfo}
-          isSubmitting={isSubmitting}
-        />
-      </form>
+          <BookingSubmitButton
+            serviceType={serviceType}
+            userInfo={userInfo}
+            isSubmitting={isSubmitting}
+          />
+        </form>
+      </div>
     </BookingFormTracker>
   );
 };
