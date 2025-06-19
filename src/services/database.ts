@@ -22,7 +22,7 @@ export const createDraftBooking = async (bookingData: BookingData) => {
       totalPrice: bookingData.totalPrice
     });
 
-    // Insert draft booking record with simplified schema
+    // Insert draft booking record with correct schema
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .insert({
@@ -33,7 +33,8 @@ export const createDraftBooking = async (bookingData: BookingData) => {
         service_details: {
           ...bookingData.serviceDetails,
           userInfo: bookingData.userInfo
-        }
+        },
+        user_info: bookingData.userInfo
       })
       .select()
       .single();
@@ -149,7 +150,7 @@ export const updateBookingPayment = async (bookingId: string, paymentInfo: Payme
       .update({
         payment_method: paymentInfo.paymentMethod,
         transaction_id: paymentInfo.transactionId,
-        payment_amount: paymentInfo.totalPrice,
+        total_price: paymentInfo.totalPrice,
         status: 'confirmed'
       })
       .eq('id', bookingId)
@@ -192,16 +193,15 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
       .insert({
         user_id: user.id,
         service_type: bookingData.serviceType,
-        customer_name: bookingData.userInfo.fullName,
-        customer_email: bookingData.userInfo.email,
-        customer_phone: bookingData.userInfo.phone,
-        customer_language: bookingData.userInfo.language,
         payment_method: paymentInfo.paymentMethod,
         transaction_id: paymentInfo.transactionId,
-        payment_amount: paymentInfo.totalPrice,
-        total_price: bookingData.totalPrice || paymentInfo.totalPrice,
+        total_price: paymentInfo.totalPrice,
         status: 'confirmed',
-        service_details: bookingData.serviceDetails
+        service_details: {
+          ...bookingData.serviceDetails,
+          userInfo: bookingData.userInfo
+        },
+        user_info: bookingData.userInfo
       })
       .select()
       .single();
@@ -285,9 +285,7 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
         break;
     }
     if (detailError) {
-      // If this fails, you may want to handle detail insert errors/log as needed
       console.error('Error inserting booking details:', detailError);
-      // Optionally rollback the booking, or just log this error
     }
 
     // Track successful booking creation
@@ -319,7 +317,6 @@ export const getUserBookings = async () => {
   }
 
   try {
-    // First, get the basic bookings without the problematic joins
     const { data, error } = await supabase
       .from('bookings')
       .select('*')
@@ -334,7 +331,6 @@ export const getUserBookings = async () => {
     return data || [];
   } catch (error) {
     console.error('Error in getUserBookings:', error);
-    // Return empty array instead of throwing to prevent dashboard crashes
     return [];
   }
 };
@@ -368,7 +364,6 @@ export const updateUserProfile = async (profileData: any) => {
     throw new Error('User must be authenticated to update profile');
   }
 
-  // Update user metadata in Supabase Auth
   const { error } = await supabase.auth.updateUser({
     data: {
       display_name: profileData.displayName,

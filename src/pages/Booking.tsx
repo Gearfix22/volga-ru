@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
@@ -11,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRight, User, Mail, Phone, Globe } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/contexts/EnhancedLanguageContext';
 import { ServiceTypeSelector } from '@/components/booking/ServiceTypeSelector';
 import { ServiceDetailsForm } from '@/components/booking/ServiceDetailsForm';
 import { PricingDisplay } from '@/components/booking/PricingDisplay';
@@ -162,8 +163,12 @@ const Booking = () => {
         totalPrice
       };
 
+      console.log('Creating draft booking with data:', bookingData);
+
       // Create draft booking in the database
       const draftBooking = await createDraftBooking(bookingData);
+
+      console.log('Draft booking created:', draftBooking);
 
       // Track form submission
       trackForm('booking', 'submitted', {
@@ -205,7 +210,8 @@ const Booking = () => {
         serviceType,
         serviceDetails,
         userInfo,
-        reason: 'draft_booking_failed'
+        reason: 'draft_booking_failed',
+        error: error.message
       });
     } finally {
       setIsSubmitting(false);
