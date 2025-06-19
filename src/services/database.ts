@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { BookingData } from '@/types/booking';
 import { trackFormInteraction } from './dataTracking';
@@ -23,19 +22,18 @@ export const createDraftBooking = async (bookingData: BookingData) => {
       totalPrice: bookingData.totalPrice
     });
 
-    // Insert draft booking record with correct column names
+    // Insert draft booking record with simplified schema
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .insert({
         user_id: user.id,
         service_type: bookingData.serviceType,
-        customer_name: bookingData.userInfo.fullName,
-        customer_email: bookingData.userInfo.email,
-        customer_phone: bookingData.userInfo.phone,
-        customer_language: bookingData.userInfo.language,
         total_price: bookingData.totalPrice,
         status: 'pending',
-        service_details: bookingData.serviceDetails
+        service_details: {
+          ...bookingData.serviceDetails,
+          userInfo: bookingData.userInfo
+        }
       })
       .select()
       .single();
