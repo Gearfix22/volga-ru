@@ -24,12 +24,73 @@ const translations = {
     profile: "Profile",
     settings: "Settings",
     
+    // Contact page
+    contactUs: "Contact Us",
+    phone: "Phone",
+    email: "Email",
+    website: "Website", 
+    address: "Address",
+    
+    // About page
+    aboutUs: "About Us",
+    aboutDescription: "Volga Services is your premier partner for luxury travel and exceptional service experiences in Russia and beyond. With years of expertise in hospitality and transportation, we create unforgettable journeys tailored to your unique preferences.",
+    ourMission: "Our Mission",
+    missionDescription: "To provide world-class travel services that exceed expectations, combining traditional Russian hospitality with modern luxury standards.",
+    ourVision: "Our Vision",
+    visionDescription: "To be the leading provider of premium travel experiences, connecting travelers with the rich culture and beauty of Russia through exceptional service.",
+    
+    // Hero section
+    welcome: "Experience the Excellence of Russian Hospitality",
+    subtitle: "From luxury transportation to premium accommodations, we provide exceptional travel services across Russia with unmatched attention to detail.",
+    exploreServices: "Explore Services",
+    
     // Services
     transportation: "Transportation",
     hotels: "Hotels",
     events: "Events",
     customTrips: "Custom Trips",
     bookService: "Book Service",
+    bookNow: "Book Now",
+    ourServices: "Our Services",
+    servicesSubtitle: "Discover our comprehensive range of premium travel and hospitality services",
+    allServices: "All Services",
+    
+    // Service details
+    luxuryTransport: "Luxury Transportation",
+    luxuryTransportDesc: "Premium vehicles with professional drivers for comfortable and reliable transportation",
+    professionalDrivers: "Professional Drivers",
+    premiumVehicles: "Premium Vehicles",
+    airportTransfers: "Airport Transfers",
+    
+    luxuryHotels: "Luxury Hotels",
+    luxuryHotelsDesc: "Five-star accommodations in prime locations with world-class amenities",
+    fiveStarHotels: "5-Star Hotels",
+    primeLocations: "Prime Locations",
+    conciergeService: "Concierge Service",
+    
+    midrangeHotels: "Mid-range Hotels",
+    midrangeHotelsDesc: "Comfortable and well-appointed hotels offering great value for money",
+    comfortableStay: "Comfortable Stay",
+    greatValue: "Great Value",
+    modernAmenities: "Modern Amenities",
+    
+    culturalEvents: "Cultural Events",
+    culturalEventsDesc: "Exclusive access to Russian cultural performances and events",
+    exclusiveAccess: "Exclusive Access",
+    culturalShows: "Cultural Shows",
+    expertGuides: "Expert Guides",
+    
+    groupTransport: "Group Transportation",
+    groupTransportDesc: "Specialized transportation solutions for large groups and events",
+    largeGroups: "Large Groups",
+    comfortableBuses: "Comfortable Buses",
+    flexibleSchedules: "Flexible Schedules",
+    
+    customTours: "Custom Tours",
+    customToursDesc: "Personalized travel experiences designed around your interests",
+    personalizedItinerary: "Personalized Itinerary",
+    privateGuide: "Private Guide",
+    flexibleDuration: "Flexible Duration",
     
     // Booking Process
     bookYourService: "Book Your Service",
@@ -151,12 +212,73 @@ const translations = {
     profile: "الملف الشخصي",
     settings: "الإعدادات",
     
+    // Contact page
+    contactUs: "اتصل بنا",
+    phone: "الهاتف",
+    email: "البريد الإلكتروني",
+    website: "الموقع الإلكتروني",
+    address: "العنوان",
+    
+    // About page
+    aboutUs: "عن الشركة",
+    aboutDescription: "فولغا سيرفيسز هي شريكك المثالي للسفر الفاخر وتجارب الخدمة الاستثنائية في روسيا وخارجها. مع سنوات من الخبرة في الضيافة والنقل، نصنع رحلات لا تُنسى مصممة حسب تفضيلاتك الفريدة.",
+    ourMission: "مهمتنا",
+    missionDescription: "تقديم خدمات سفر عالمية المستوى تتجاوز التوقعات، مع دمج الضيافة الروسية التقليدية بمعايير الرفاهية الحديثة.",
+    ourVision: "رؤيتنا",
+    visionDescription: "أن نكون المزود الرائد لتجارب السفر المتميزة، نربط المسافرين بالثقافة الغنية وجمال روسيا من خلال خدمة استثنائية.",
+    
+    // Hero section
+    welcome: "اختبر امتياز الضيافة الروسية",
+    subtitle: "من النقل الفاخر إلى الإقامة المتميزة، نقدم خدمات سفر استثنائية في جميع أنحاء روسيا مع اهتمام لا مثيل له بالتفاصيل.",
+    exploreServices: "استكشف الخدمات",
+    
     // Services
     transportation: "النقل",
     hotels: "الفنادق",
     events: "الفعاليات",
     customTrips: "رحلات مخصصة",
     bookService: "احجز الخدمة",
+    bookNow: "احجز الآن",
+    ourServices: "خدماتنا",
+    servicesSubtitle: "اكتشف مجموعتنا الشاملة من خدمات السفر والضيافة المتميزة",
+    allServices: "جميع الخدمات",
+    
+    // Service details
+    luxuryTransport: "النقل الفاخر",
+    luxuryTransportDesc: "مركبات متميزة مع سائقين محترفين لنقل مريح وموثوق",
+    professionalDrivers: "سائقون محترفون",
+    premiumVehicles: "مركبات متميزة",
+    airportTransfers: "نقل المطار",
+    
+    luxuryHotels: "فنادق فاخرة",
+    luxuryHotelsDesc: "إقامة خمس نجوم في مواقع متميزة مع وسائل راحة عالمية المستوى",
+    fiveStarHotels: "فنادق 5 نجوم",
+    primeLocations: "مواقع متميزة",
+    conciergeService: "خدمة الكونسيرج",
+    
+    midrangeHotels: "فنادق متوسطة",
+    midrangeHotelsDesc: "فنادق مريحة ومجهزة جيداً تقدم قيمة ممتازة مقابل المال",
+    comfortableStay: "إقامة مريحة",
+    greatValue: "قيمة ممتازة",
+    modernAmenities: "وسائل راحة حديثة",
+    
+    culturalEvents: "فعاليات ثقافية",
+    culturalEventsDesc: "وصول حصري للعروض والفعاليات الثقافية الروسية",
+    exclusiveAccess: "وصول حصري",
+    culturalShows: "عروض ثقافية",
+    expertGuides: "مرشدون خبراء",
+    
+    groupTransport: "نقل المجموعات",
+    groupTransportDesc: "حلول نقل متخصصة للمجموعات الكبيرة والفعاليات",
+    largeGroups: "مجموعات كبيرة",
+    comfortableBuses: "حافلات مريحة",
+    flexibleSchedules: "جداول مرنة",
+    
+    customTours: "جولات مخصصة",
+    customToursDesc: "تجارب سفر شخصية مصممة حول اهتماماتك",
+    personalizedItinerary: "برنامج شخصي",
+    privateGuide: "مرشد خاص",
+    flexibleDuration: "مدة مرنة",
     
     // Booking Process
     bookYourService: "احجز خدمتك",
@@ -278,12 +400,73 @@ const translations = {
     profile: "Профиль",
     settings: "Настройки",
     
+    // Contact page
+    contactUs: "Связаться с нами",
+    phone: "Телефон",
+    email: "Электронная почта",
+    website: "Веб-сайт",
+    address: "Адрес",
+    
+    // About page
+    aboutUs: "О нас",
+    aboutDescription: "Волга Сервисез - ваш главный партнер для роскошных путешествий и исключительного сервиса в России и за её пределами. С многолетним опытом в сфере гостеприимства и транспорта, мы создаем незабываемые путешествия, адаптированные под ваши уникальные предпочтения.",
+    ourMission: "Наша миссия",
+    missionDescription: "Предоставлять мирового класса туристические услуги, превышающие ожидания, сочетая традиционное русское гостеприимство с современными стандартами роскоши.",
+    ourVision: "Наше видение",
+    visionDescription: "Быть ведущим поставщиком премиальных туристических услуг, соединяя путешественников с богатой культурой и красотой России через исключительный сервис.",
+    
+    // Hero section
+    welcome: "Испытайте превосходство русского гостеприимства",
+    subtitle: "От роскошного транспорта до премиальных размещений, мы предоставляем исключительные туристические услуги по всей России с непревзойденным вниманием к деталям.",
+    exploreServices: "Изучить услуги",
+    
     // Services
     transportation: "Транспорт",
     hotels: "Отели",
     events: "Мероприятия",
     customTrips: "Индивидуальные туры",
     bookService: "Забронировать услугу",
+    bookNow: "Забронировать сейчас",
+    ourServices: "Наши услуги",
+    servicesSubtitle: "Откройте для себя наш комплексный спектр премиальных туристических и гостиничных услуг",
+    allServices: "Все услуги",
+    
+    // Service details
+    luxuryTransport: "Роскошный транспорт",
+    luxuryTransportDesc: "Премиальные автомобили с профессиональными водителями для комфортного и надежного транспорта",
+    professionalDrivers: "Профессиональные водители",
+    premiumVehicles: "Премиальные автомобили",
+    airportTransfers: "Трансферы в аэропорт",
+    
+    luxuryHotels: "Роскошные отели",
+    luxuryHotelsDesc: "Пятизвездочные размещения в первоклассных локациях с мирового уровня удобствами",
+    fiveStarHotels: "5-звездочные отели",
+    primeLocations: "Первоклассные локации",
+    conciergeService: "Консьерж-сервис",
+    
+    midrangeHotels: "Отели среднего класса",
+    midrangeHotelsDesc: "Комфортабельные и хорошо оборудованные отели, предлагающие отличное соотношение цены и качества",
+    comfortableStay: "Комфортное размещение",
+    greatValue: "Отличная ценность",
+    modernAmenities: "Современные удобства",
+    
+    culturalEvents: "Культурные мероприятия",
+    culturalEventsDesc: "Эксклюзивный доступ к русским культурным представлениям и мероприятиям",
+    exclusiveAccess: "Эксклюзивный доступ",
+    culturalShows: "Культурные шоу",
+    expertGuides: "Экспертные гиды",
+    
+    groupTransport: "Групповой транспорт",
+    groupTransportDesc: "Специализированные транспортные решения для больших групп и мероприятий",
+    largeGroups: "Большие группы",
+    comfortableBuses: "Комфортабельные автобусы",
+    flexibleSchedules: "Гибкие расписания",
+    
+    customTours: "Индивидуальные туры",
+    customToursDesc: "Персонализированные путешествия, разработанные в соответствии с вашими интересами",
+    personalizedItinerary: "Персонализированный маршрут",
+    privateGuide: "Частный гид",
+    flexibleDuration: "Гибкая продолжительность",
     
     // Booking Process
     bookYourService: "Забронируйте вашу услугу",
