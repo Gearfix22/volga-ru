@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
@@ -366,47 +365,108 @@ const Payment = () => {
   };
 
   const handleCashPaymentConfirmation = async () => {
-    const transactionId = `CASH${Date.now()}`;
-    
-    if (user) {
-      await createBooking({
-        ...bookingData,
-        customAmount: finalAmount,
-        totalPrice: finalAmount
-      }, {
-        paymentMethod: 'Cash on Arrival',
+    try {
+      const transactionId = `CASH${Date.now()}`;
+      
+      console.log('Starting cash payment confirmation:', {
         transactionId,
-        totalPrice: finalAmount
+        finalAmount,
+        bookingData: bookingData?.serviceType
       });
+      
+      // Validate required data
+      if (!bookingData || !bookingData.userInfo) {
+        toast({
+          title: "Error",
+          description: "Booking data is missing. Please go back and complete the booking form.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (finalAmount <= 0) {
+        toast({
+          title: "Invalid amount",
+          description: "Please enter a valid payment amount greater than $0.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Save booking if user is logged in
+      if (user) {
+        try {
+          await createBooking({
+            ...bookingData,
+            customAmount: finalAmount,
+            totalPrice: finalAmount,
+            paymentMethod: 'Cash on Arrival'
+          }, {
+            paymentMethod: 'Cash on Arrival',
+            transactionId,
+            totalPrice: finalAmount
+          });
+          
+          toast({
+            title: "Booking saved!",
+            description: "Your booking has been saved to your account.",
+          });
+        } catch (error) {
+          console.error('Error saving booking:', error);
+          toast({
+            title: "Warning",
+            description: "Booking confirmed but not saved to account. Please contact support.",
+            variant: "destructive"
+          });
+        }
+      }
+      
+      // Send booking email
+      try {
+        await sendBookingEmail(bookingData, transactionId, finalAmount.toString());
+        console.log('Booking email sent successfully');
+      } catch (error) {
+        console.error('Error sending booking email:', error);
+      }
+      
+      // Store payment information
+      localStorage.setItem('paymentStatus', 'confirmed');
+      localStorage.setItem('transactionId', transactionId);
+      localStorage.setItem('paymentAmount', finalAmount.toString());
       
       toast({
         title: "Booking confirmed!",
-        description: "Your booking has been saved. Redirecting to WhatsApp for arrangements.",
+        description: "Redirecting to WhatsApp for service arrangements...",
+      });
+      
+      // Small delay to show the toast before redirecting
+      setTimeout(() => {
+        // Redirect to WhatsApp
+        const whatsappUrl = redirectToWhatsApp(bookingData, transactionId, finalAmount);
+        console.log('WhatsApp URL generated:', whatsappUrl);
+        
+        // Also navigate to booking confirmation
+        navigate('/booking-confirmation', {
+          state: {
+            bookingData: {
+              ...bookingData,
+              paymentMethod: 'Cash on Arrival',
+              transactionId,
+              paidAmount: finalAmount,
+              totalPrice: finalAmount
+            }
+          }
+        });
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Error in cash payment confirmation:', error);
+      toast({
+        title: "Error",
+        description: "There was an error confirming your booking. Please try again.",
+        variant: "destructive"
       });
     }
-    
-    // Send booking email
-    await sendBookingEmail(bookingData, transactionId, finalAmount.toString());
-    
-    localStorage.setItem('paymentStatus', 'confirmed');
-    localStorage.setItem('transactionId', transactionId);
-    localStorage.setItem('paymentAmount', finalAmount.toString());
-    
-    // Redirect to WhatsApp
-    redirectToWhatsApp(bookingData, transactionId, finalAmount);
-    
-    // Also navigate to booking confirmation
-    navigate('/booking-confirmation', {
-      state: {
-        bookingData: {
-          ...bookingData,
-          paymentMethod: 'Cash on Arrival',
-          transactionId,
-          paidAmount: finalAmount,
-          totalPrice: finalAmount
-        }
-      }
-    });
   };
 
   const paymentMethods = [
@@ -620,7 +680,12 @@ const Payment = () => {
               <CardContent className="p-4">
                 <p className="text-yellow-800 text-sm">
                   <strong>Note:</strong> You're not logged in. Your booking will be processed but not saved to an account. 
-                  Consider signing in to keep track of your bookings.
+                  Consider <button 
+                    onClick={() => navigate('/auth')} 
+                    className="underline text-yellow-900 hover:text-yellow-700"
+                  >
+                    signing in
+                  </button> to keep track of your bookings.
                 </p>
               </CardContent>
             </Card>
@@ -865,12 +930,22 @@ const Payment = () => {
                           </div>
                           <DollarSign className="h-5 w-5 text-green-600" />
                         </div>
+                        
+                        {/* Customer Info Preview */}
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                          <h5 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Contact Information:</h5>
+                          <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                            <p>• Name: {bookingData?.userInfo?.fullName}</p>
+                            <p>• Email: {bookingData?.userInfo?.email}</p>
+                            <p>• Phone: {bookingData?.userInfo?.phone}</p>
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
 
                     <Button
                       onClick={handleCashPaymentConfirmation}
-                      disabled={finalAmount <= 0}
+                      disabled={finalAmount <= 0 || !bookingData?.userInfo}
                       className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 flex items-center gap-2"
                     >
                       <MessageCircle className="h-5 w-5" />

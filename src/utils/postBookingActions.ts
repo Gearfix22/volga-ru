@@ -75,8 +75,8 @@ Phone: ${bookingData.userInfo.phone}
 Preferred Language: ${bookingData.userInfo.language}
 
 === PAYMENT DETAILS ===
-Payment Method: ${bookingData.paymentMethod || 'Not specified'}
-Total Amount Paid: $${paymentAmount} USD
+Payment Method: ${bookingData.paymentMethod || 'Cash on Arrival'}
+Total Amount: $${paymentAmount} USD
 ${bookingData.totalPrice ? `Original Price: $${bookingData.totalPrice}` : ''}
 
 === ADDITIONAL NOTES ===
@@ -121,27 +121,65 @@ Volga Services Booking System
 };
 
 export const redirectToWhatsApp = (bookingData: BookingData, transactionId: string, paymentAmount?: number) => {
-  const phoneNumber = '79522212903'; // Updated WhatsApp number
+  const phoneNumber = '79522212903'; // Updated WhatsApp number without + symbol for URL
   
-  // Create WhatsApp message with booking details
+  // Create a more detailed WhatsApp message
   const message = `Hello! I've just completed a booking with Volga Services.
-  
-*Booking Details:*
-Transaction ID: ${transactionId}
-Service: ${bookingData.serviceType}
-Customer: ${bookingData.userInfo.fullName}
-Email: ${bookingData.userInfo.email}
-Phone: ${bookingData.userInfo.phone}
-${paymentAmount ? `Amount: $${paymentAmount.toFixed(2)}` : ''}
-Payment Method: ${bookingData.paymentMethod || 'Cash on Arrival'}
 
-I would like to arrange the service details${bookingData.paymentMethod === 'Cash on Arrival' ? ' and confirm payment upon arrival' : ''}. Please contact me to confirm the arrangements. Thank you!`;
+*📋 Booking Details:*
+• Transaction ID: ${transactionId}
+• Service: ${bookingData.serviceType}
+• Customer: ${bookingData.userInfo.fullName}
+• Email: ${bookingData.userInfo.email}
+• Phone: ${bookingData.userInfo.phone}
+${paymentAmount ? `• Amount: $${paymentAmount.toFixed(2)} USD` : ''}
+• Payment Method: Cash on Arrival
+
+*🎯 Service Information:*
+${formatWhatsAppServiceDetails(bookingData)}
+
+I would like to arrange the service details and confirm payment upon arrival. Please contact me to confirm the arrangements. Thank you! 🙏`;
 
   const encodedMessage = encodeURIComponent(message);
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
   
+  console.log('Opening WhatsApp with URL:', whatsappUrl);
+  
   // Open WhatsApp in a new tab
   window.open(whatsappUrl, '_blank');
+  
+  return whatsappUrl; // Return the URL for debugging
+};
+
+// Helper function to format service details for WhatsApp
+const formatWhatsAppServiceDetails = (bookingData: BookingData) => {
+  const { serviceType, serviceDetails } = bookingData;
+  
+  switch (serviceType) {
+    case 'Transportation':
+      return `• Pickup: ${serviceDetails.pickup || 'N/A'}
+• Drop-off: ${serviceDetails.dropoff || 'N/A'}
+• Date: ${serviceDetails.date || 'N/A'}
+• Time: ${serviceDetails.time || 'N/A'}
+• Vehicle: ${serviceDetails.vehicleType || 'N/A'}`;
+    case 'Hotels':
+      return `• City: ${serviceDetails.city || 'N/A'}
+• Hotel: ${serviceDetails.hotel || 'N/A'}
+• Check-in: ${serviceDetails.checkin || 'N/A'}
+• Check-out: ${serviceDetails.checkout || 'N/A'}
+• Room: ${serviceDetails.roomType || 'N/A'}`;
+    case 'Events':
+      return `• Event: ${serviceDetails.eventName || 'N/A'}
+• Location: ${serviceDetails.eventLocation || 'N/A'}
+• Date: ${serviceDetails.eventDate || 'N/A'}
+• Tickets: ${serviceDetails.tickets || 'N/A'}`;
+    case 'Custom Trips':
+      return `• Duration: ${serviceDetails.duration || 'N/A'}
+• Regions: ${serviceDetails.regions || 'N/A'}
+• Interests: ${serviceDetails.interests ? serviceDetails.interests.join(', ') : 'N/A'}`;
+    default:
+      return 'Service details not specified';
+  }
 };
 
 // Credit card payment processing function with proper typing
