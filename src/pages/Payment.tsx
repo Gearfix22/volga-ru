@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
@@ -14,6 +15,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { createBooking } from '@/services/database';
 import { useToast } from '@/hooks/use-toast';
+import { sendBookingEmail, redirectToWhatsApp, processCreditCardPayment } from '@/utils/postBookingActions';
 
 declare global {
   interface Window {
@@ -255,13 +257,62 @@ const Payment = () => {
       return;
     }
 
+    // Validate credit card fields
+    if (!cardNumber || !expiryDate || !cvv || !cardholderName) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all credit card details.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Basic card number validation (remove spaces and check length)
+    const cleanCardNumber = cardNumber.replace(/\s/g, '');
+    if (cleanCardNumber.length < 13 || cleanCardNumber.length > 19) {
+      toast({
+        title: "Invalid card number",
+        description: "Please enter a valid credit card number.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Basic expiry date validation (MM/YY format)
+    if (!/^\d{2}\/\d{2}$/.test(expiryDate)) {
+      toast({
+        title: "Invalid expiry date",
+        description: "Please enter expiry date in MM/YY format.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Basic CVV validation
+    if (cvv.length < 3 || cvv.length > 4) {
+      toast({
+        title: "Invalid CVV",
+        description: "Please enter a valid CVV code.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsProcessing(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const cardDetails = {
+        cardNumber: cleanCardNumber,
+        expiryDate,
+        cvv,
+        cardholderName
+      };
+
+      const paymentResult = await processCreditCardPayment(cardDetails, finalAmount, bookingData);
       
-      const transactionId = `TXN${Date.now()}`;
+      const transactionId = paymentResult.transactionId;
       
+      // Save booking if user is logged in
       if (user) {
         await createBooking({
           ...bookingData,
@@ -278,10 +329,18 @@ const Payment = () => {
           description: "Your booking has been saved to your account.",
         });
       }
+
+      // Send booking email
+      await sendBookingEmail(bookingData, transactionId, finalAmount.toString());
       
       localStorage.setItem('paymentStatus', 'completed');
       localStorage.setItem('transactionId', transactionId);
       localStorage.setItem('paymentAmount', finalAmount.toString());
+      
+      toast({
+        title: "Payment successful!",
+        description: `Transaction ID: ${transactionId}`,
+      });
       
       navigate('/booking-confirmation', {
         state: {
@@ -294,11 +353,11 @@ const Payment = () => {
           }
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment failed:', error);
       toast({
         title: "Payment failed",
-        description: "There was an error processing your payment. Please try again.",
+        description: error.message || "There was an error processing your payment. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -326,36 +385,15 @@ const Payment = () => {
       });
     }
     
+    // Send booking email
+    await sendBookingEmail(bookingData, transactionId, finalAmount.toString());
+    
     localStorage.setItem('paymentStatus', 'confirmed');
     localStorage.setItem('transactionId', transactionId);
     localStorage.setItem('paymentAmount', finalAmount.toString());
     
     // Redirect to WhatsApp
-    redirectToWhatsApp(transactionId);
-  };
-
-  const redirectToWhatsApp = (transactionId: string) => {
-    const phoneNumber = '201127374440'; // Replace with your actual WhatsApp business number
-    
-    // Create WhatsApp message with booking details
-    const message = `Hello! I've just confirmed a booking with Volga Services for Cash Payment on Arrival.
-
-*Booking Details:*
-Transaction ID: ${transactionId}
-Service: ${bookingData.serviceType}
-Customer: ${bookingData.userInfo.fullName}
-Email: ${bookingData.userInfo.email}
-Phone: ${bookingData.userInfo.phone}
-Payment Method: Cash on Arrival
-Amount: $${finalAmount.toFixed(2)}
-
-I would like to arrange the service details and payment upon arrival. Please contact me to confirm the arrangements. Thank you!`;
-
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-    
-    // Open WhatsApp in a new tab
-    window.open(whatsappUrl, '_blank');
+    redirectToWhatsApp(bookingData, transactionId, finalAmount);
     
     // Also navigate to booking confirmation
     navigate('/booking-confirmation', {
@@ -683,7 +721,12 @@ I would like to arrange the service details and payment upon arrival. Please con
                       <input
                         type="text"
                         value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value)}
+                        onChange={(e) => {
+                          // Format card number with spaces
+                          const value = e.target.value.replace(/\D/g, '');
+                          const formattedValue = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+                          setCardNumber(formattedValue);
+                        }}
                         className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
                         placeholder="1234 5678 9012 3456"
                         maxLength={19}
@@ -698,7 +741,16 @@ I would like to arrange the service details and payment upon arrival. Please con
                         <input
                           type="text"
                           value={expiryDate}
-                          onChange={(e) => setExpiryDate(e.target.value)}
+                          onChange={(e) => {
+                            // Format as MM/YY
+                            const value = e.target.value.replace(/\D/g, '');
+                            if (value.length >= 2) {
+                              const formattedValue = value.slice(0, 2) + '/' + value.slice(2, 4);
+                              setExpiryDate(formattedValue);
+                            } else {
+                              setExpiryDate(value);
+                            }
+                          }}
                           className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
                           placeholder="MM/YY"
                           maxLength={5}
@@ -712,7 +764,10 @@ I would like to arrange the service details and payment upon arrival. Please con
                         <input
                           type="text"
                           value={cvv}
-                          onChange={(e) => setCvv(e.target.value)}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '');
+                            setCvv(value);
+                          }}
                           className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
                           placeholder="123"
                           maxLength={4}
@@ -721,12 +776,22 @@ I would like to arrange the service details and payment upon arrival. Please con
                       </div>
                     </div>
 
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                      <h4 className="text-blue-800 dark:text-blue-200 font-medium mb-2">Bank Transfer Information</h4>
+                      <p className="text-blue-700 dark:text-blue-300 text-sm mb-2">
+                        Your payment will be processed securely. For bank transfer details, please contact us at:
+                      </p>
+                      <p className="text-blue-800 dark:text-blue-200 text-sm font-mono">
+                        info@volgaservices.com
+                      </p>
+                    </div>
+
                     <Button
                       type="submit"
                       disabled={isProcessing || finalAmount <= 0}
                       className="w-full bg-russian-gold hover:bg-russian-gold/90 text-white font-semibold py-3"
                     >
-                      {isProcessing ? 'Processing...' : `Pay $${finalAmount.toFixed(2)} with Credit Card`}
+                      {isProcessing ? 'Processing Payment...' : `Pay $${finalAmount.toFixed(2)} with Credit Card`}
                     </Button>
                   </form>
                 )}

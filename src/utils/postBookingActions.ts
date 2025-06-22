@@ -114,7 +114,7 @@ Volga Services Booking System
 };
 
 export const redirectToWhatsApp = (bookingData: BookingData, transactionId: string, paymentAmount?: number) => {
-  const phoneNumber = '201127374440'; // Your WhatsApp business number
+  const phoneNumber = '79522212903'; // Updated WhatsApp number
   
   // Create WhatsApp message with booking details
   const message = `Hello! I've just completed a booking with Volga Services.
@@ -135,4 +135,45 @@ I would like to arrange the service details${bookingData.paymentMethod === 'Cash
   
   // Open WhatsApp in a new tab
   window.open(whatsappUrl, '_blank');
+};
+
+// Credit card payment processing function
+export const processCreditCardPayment = async (
+  cardDetails: {
+    cardNumber: string;
+    expiryDate: string;
+    cvv: string;
+    cardholderName: string;
+  },
+  amount: number,
+  bookingData: BookingData
+) => {
+  console.log('Processing credit card payment:', {
+    amount,
+    cardLast4: cardDetails.cardNumber.slice(-4),
+    cardholderName: cardDetails.cardholderName
+  });
+
+  // Simulate payment processing
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      // Simulate payment success/failure
+      const isSuccess = Math.random() > 0.1; // 90% success rate for demo
+      
+      if (isSuccess) {
+        const transactionId = `CC${Date.now()}${Math.floor(Math.random() * 1000)}`;
+        resolve({
+          success: true,
+          transactionId,
+          amount,
+          message: 'Payment processed successfully'
+        });
+      } else {
+        reject({
+          success: false,
+          message: 'Payment failed. Please check your card details and try again.'
+        });
+      }
+    }, 2000); // 2 second delay to simulate processing
+  });
 };
