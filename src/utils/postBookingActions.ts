@@ -1,5 +1,12 @@
-
 import { BookingData } from '@/types/booking';
+
+// Add proper typing for payment result
+interface PaymentResult {
+  success: boolean;
+  transactionId: string;
+  amount: number;
+  message: string;
+}
 
 export const sendBookingEmail = async (
   bookingData: BookingData,
@@ -137,7 +144,7 @@ I would like to arrange the service details${bookingData.paymentMethod === 'Cash
   window.open(whatsappUrl, '_blank');
 };
 
-// Credit card payment processing function
+// Credit card payment processing function with proper typing
 export const processCreditCardPayment = async (
   cardDetails: {
     cardNumber: string;
@@ -147,7 +154,7 @@ export const processCreditCardPayment = async (
   },
   amount: number,
   bookingData: BookingData
-) => {
+): Promise<PaymentResult> => {
   console.log('Processing credit card payment:', {
     amount,
     cardLast4: cardDetails.cardNumber.slice(-4),
