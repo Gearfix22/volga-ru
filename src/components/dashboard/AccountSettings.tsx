@@ -10,11 +10,15 @@ import { useDataTracking } from '@/hooks/useDataTracking';
 import { updateUserProfile } from '@/services/database';
 
 export const AccountSettings: React.FC = () => {
-  const { user } = useAuth();
+  const { user, sendOtp, verifyOtp } = useAuth();
   const { toast } = useToast();
   const { trackForm } = useDataTracking();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [phoneVerification, setPhoneVerification] = useState({
+    step: 'idle', // 'idle', 'sending', 'verifying'
+    otp: '',
+  });
   const [formData, setFormData] = useState({
     displayName: '',
     email: '',
@@ -29,7 +33,7 @@ export const AccountSettings: React.FC = () => {
       setFormData({
         displayName: user.user_metadata?.display_name || user.email?.split('@')[0] || '',
         email: user.email || '',
-        phone: user.user_metadata?.phone || '',
+        phone: user.phone || user.user_metadata?.phone || '',
         language: user.user_metadata?.language || 'English',
         notifications: user.user_metadata?.notifications !== false,
       });
@@ -58,6 +62,80 @@ export const AccountSettings: React.FC = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendPhoneVerification = async () => {
+    if (!formData.phone) {
+      toast({
+        title: "Error",
+        description: "Please enter a phone number first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setPhoneVerification(prev => ({ ...prev, step: 'sending' }));
+    
+    try {
+      const { error } = await sendOtp(formData.phone);
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        setPhoneVerification(prev => ({ ...prev, step: 'idle' }));
+      } else {
+        setPhoneVerification(prev => ({ ...prev, step: 'verifying' }));
+        toast({
+          title: "Verification Code Sent",
+          description: "Please check your phone for the verification code",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send verification code",
+        variant: "destructive",
+      });
+      setPhoneVerification(prev => ({ ...prev, step: 'idle' }));
+    }
+  };
+
+  const handleVerifyPhone = async () => {
+    if (!phoneVerification.otp) {
+      toast({
+        title: "Error",
+        description: "Please enter the verification code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await verifyOtp(formData.phone, phoneVerification.otp, 'phone_change');
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Phone Verified",
+          description: "Your phone number has been verified successfully",
+        });
+        setPhoneVerification({ step: 'idle', otp: '' });
+        // Refresh user data to show verified status
+        window.location.reload();
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to verify phone number",
+        variant: "destructive",
+      });
     }
   };
 
@@ -118,14 +196,61 @@ export const AccountSettings: React.FC = () => {
             </div>
             <div>
               <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                disabled={!isEditing || loading}
-                placeholder="+1 (555) 123-4567"
-              />
+              <div className="space-y-2">
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  disabled={!isEditing || loading}
+                  placeholder="+1 (555) 123-4567"
+                />
+                {isEditing && formData.phone && !user.phone_confirmed_at && (
+                  <div className="space-y-2">
+                    {phoneVerification.step === 'idle' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleSendPhoneVerification}
+                        className="w-full"
+                      >
+                        Verify Phone Number
+                      </Button>
+                    )}
+                    {phoneVerification.step === 'sending' && (
+                      <Button size="sm" disabled className="w-full">
+                        Sending Code...
+                      </Button>
+                    )}
+                    {phoneVerification.step === 'verifying' && (
+                      <div className="space-y-2">
+                        <Input
+                          placeholder="Enter verification code"
+                          value={phoneVerification.otp}
+                          onChange={(e) => setPhoneVerification(prev => ({ ...prev, otp: e.target.value }))}
+                          maxLength={6}
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={handleVerifyPhone} className="flex-1">
+                            Verify
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => setPhoneVerification({ step: 'idle', otp: '' })}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {user.phone_confirmed_at && (
+                  <p className="text-xs text-green-600">✓ Phone number verified</p>
+                )}
+              </div>
             </div>
             <div>
               <Label htmlFor="language">Preferred Language</Label>
@@ -214,6 +339,12 @@ export const AccountSettings: React.FC = () => {
                 <Label>Email Verified</Label>
                 <p className="text-sm text-gray-600">
                   {user.email_confirmed_at ? 'Yes' : 'No'}
+                </p>
+              </div>
+              <div>
+                <Label>Phone Verified</Label>
+                <p className="text-sm text-gray-600">
+                  {user.phone_confirmed_at ? 'Yes' : 'No'}
                 </p>
               </div>
               <div>

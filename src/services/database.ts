@@ -224,3 +224,28 @@ export const updateUserProfile = async (profileData: any) => {
 
   return { success: true };
 };
+
+export const getUserProfile = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    throw new Error('User must be authenticated to get profile');
+  }
+
+  // Get user profile from profiles table
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" error
+    console.error('Error fetching user profile:', error);
+    throw error;
+  }
+
+  return {
+    ...user,
+    profile: profile || null
+  };
+};
