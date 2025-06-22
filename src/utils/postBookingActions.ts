@@ -113,19 +113,22 @@ Volga Services Booking System
   return { companyEmailContent, userEmailContent };
 };
 
-export const redirectToWhatsApp = (bookingData: BookingData, transactionId: string) => {
-  const phoneNumber = '7XXXXXXXXXX'; // Replace with actual WhatsApp business number
+export const redirectToWhatsApp = (bookingData: BookingData, transactionId: string, paymentAmount?: number) => {
+  const phoneNumber = '201127374440'; // Your WhatsApp business number
   
   // Create WhatsApp message with booking details
   const message = `Hello! I've just completed a booking with Volga Services.
   
+*Booking Details:*
 Transaction ID: ${transactionId}
 Service: ${bookingData.serviceType}
 Customer: ${bookingData.userInfo.fullName}
 Email: ${bookingData.userInfo.email}
 Phone: ${bookingData.userInfo.phone}
+${paymentAmount ? `Amount: $${paymentAmount.toFixed(2)}` : ''}
+Payment Method: ${bookingData.paymentMethod || 'Cash on Arrival'}
 
-I would like to confirm my booking details. Thank you!`;
+I would like to arrange the service details${bookingData.paymentMethod === 'Cash on Arrival' ? ' and confirm payment upon arrival' : ''}. Please contact me to confirm the arrangements. Thank you!`;
 
   const encodedMessage = encodeURIComponent(message);
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
@@ -133,4 +136,3 @@ I would like to confirm my booking details. Thank you!`;
   // Open WhatsApp in a new tab
   window.open(whatsappUrl, '_blank');
 };
-

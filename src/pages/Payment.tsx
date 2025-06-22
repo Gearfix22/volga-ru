@@ -9,12 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CreditCard, Shield, Lock, DollarSign, MapPin, Calendar, Clock, Users, Car, Building2, Ticket, Globe, Banknote } from 'lucide-react';
+import { CreditCard, Shield, Lock, DollarSign, MapPin, Calendar, Clock, Users, Car, Building2, Ticket, Globe, Banknote, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { createBooking } from '@/services/database';
 import { useToast } from '@/hooks/use-toast';
-import { BankTransferInfo } from '@/components/payment/BankTransferInfo';
 
 declare global {
   interface Window {
@@ -307,8 +306,8 @@ const Payment = () => {
     }
   };
 
-  const handleBankTransferConfirmation = async () => {
-    const transactionId = `BTR${Date.now()}`;
+  const handleCashPaymentConfirmation = async () => {
+    const transactionId = `CASH${Date.now()}`;
     
     if (user) {
       await createBooking({
@@ -316,26 +315,54 @@ const Payment = () => {
         customAmount: finalAmount,
         totalPrice: finalAmount
       }, {
-        paymentMethod: 'Bank Transfer',
+        paymentMethod: 'Cash on Arrival',
         transactionId,
         totalPrice: finalAmount
       });
       
       toast({
-        title: "Booking saved successfully!",
-        description: "Your booking has been saved to your account.",
+        title: "Booking confirmed!",
+        description: "Your booking has been saved. Redirecting to WhatsApp for arrangements.",
       });
     }
     
-    localStorage.setItem('paymentStatus', 'pending');
+    localStorage.setItem('paymentStatus', 'confirmed');
     localStorage.setItem('transactionId', transactionId);
     localStorage.setItem('paymentAmount', finalAmount.toString());
     
+    // Redirect to WhatsApp
+    redirectToWhatsApp(transactionId);
+  };
+
+  const redirectToWhatsApp = (transactionId: string) => {
+    const phoneNumber = '201127374440'; // Replace with your actual WhatsApp business number
+    
+    // Create WhatsApp message with booking details
+    const message = `Hello! I've just confirmed a booking with Volga Services for Cash Payment on Arrival.
+
+*Booking Details:*
+Transaction ID: ${transactionId}
+Service: ${bookingData.serviceType}
+Customer: ${bookingData.userInfo.fullName}
+Email: ${bookingData.userInfo.email}
+Phone: ${bookingData.userInfo.phone}
+Payment Method: Cash on Arrival
+Amount: $${finalAmount.toFixed(2)}
+
+I would like to arrange the service details and payment upon arrival. Please contact me to confirm the arrangements. Thank you!`;
+
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+    
+    // Open WhatsApp in a new tab
+    window.open(whatsappUrl, '_blank');
+    
+    // Also navigate to booking confirmation
     navigate('/booking-confirmation', {
       state: {
         bookingData: {
           ...bookingData,
-          paymentMethod: 'Bank Transfer',
+          paymentMethod: 'Cash on Arrival',
           transactionId,
           paidAmount: finalAmount,
           totalPrice: finalAmount
@@ -358,10 +385,10 @@ const Payment = () => {
       description: 'Pay securely with your PayPal account'
     },
     {
-      id: 'bank-transfer',
-      name: 'Bank Transfer',
-      icon: Banknote,
-      description: 'Direct bank transfer to our account'
+      id: 'cash-on-arrival',
+      name: 'Payment upon arrival (Cash on hand)',
+      icon: MessageCircle,
+      description: 'Pay cash when service is delivered - Contact via WhatsApp'
     }
   ];
 
@@ -742,19 +769,47 @@ const Payment = () => {
                   </div>
                 )}
 
-                {/* Bank Transfer Form */}
-                {selectedMethod === 'bank-transfer' && (
+                {/* Cash on Arrival Form */}
+                {selectedMethod === 'cash-on-arrival' && (
                   <div className="space-y-4">
-                    <BankTransferInfo 
-                      amount={finalAmount} 
-                      transactionId={`BTR${Date.now()}`}
-                    />
+                    <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-200">
+                          <MessageCircle className="h-5 w-5" />
+                          Payment upon Arrival
+                        </CardTitle>
+                        <CardDescription className="text-green-700 dark:text-green-300">
+                          Confirm your booking and arrange payment details via WhatsApp
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border">
+                          <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">How it works:</h4>
+                          <ul className="text-sm text-slate-700 dark:text-slate-300 space-y-1">
+                            <li>• Confirm your booking by clicking the button below</li>
+                            <li>• You'll be redirected to WhatsApp to contact our team</li>
+                            <li>• Arrange service details and confirm payment upon arrival</li>
+                            <li>• Pay cash when the service is delivered</li>
+                          </ul>
+                        </div>
+                        
+                        <div className="flex justify-between items-center p-3 bg-white dark:bg-slate-800 rounded-lg border">
+                          <div>
+                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Amount to Pay on Arrival</p>
+                            <p className="text-lg font-bold text-slate-900 dark:text-slate-100">${finalAmount.toFixed(2)} USD</p>
+                          </div>
+                          <DollarSign className="h-5 w-5 text-green-600" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
                     <Button
-                      onClick={handleBankTransferConfirmation}
+                      onClick={handleCashPaymentConfirmation}
                       disabled={finalAmount <= 0}
-                      className="w-full bg-russian-gold hover:bg-russian-gold/90 text-white font-semibold py-3"
+                      className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 flex items-center gap-2"
                     >
-                      Confirm Bank Transfer Instructions
+                      <MessageCircle className="h-5 w-5" />
+                      Confirm Booking & Contact via WhatsApp
                     </Button>
                   </div>
                 )}
