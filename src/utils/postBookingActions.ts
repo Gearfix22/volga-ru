@@ -1,4 +1,5 @@
-import { BookingData } from '@/types/booking';
+
+import { BookingData, TransportationDetails, HotelDetails, EventDetails, TripDetails } from '@/types/booking';
 
 // Add proper typing for payment result
 interface PaymentResult {
@@ -151,32 +152,40 @@ I would like to arrange the service details and confirm payment upon arrival. Pl
   return whatsappUrl; // Return the URL for debugging
 };
 
-// Helper function to format service details for WhatsApp
+// Helper function to format service details for WhatsApp with proper typing
 const formatWhatsAppServiceDetails = (bookingData: BookingData) => {
   const { serviceType, serviceDetails } = bookingData;
   
   switch (serviceType) {
-    case 'Transportation':
-      return `• Pickup: ${serviceDetails.pickup || 'N/A'}
-• Drop-off: ${serviceDetails.dropoff || 'N/A'}
-• Date: ${serviceDetails.date || 'N/A'}
-• Time: ${serviceDetails.time || 'N/A'}
-• Vehicle: ${serviceDetails.vehicleType || 'N/A'}`;
-    case 'Hotels':
-      return `• City: ${serviceDetails.city || 'N/A'}
-• Hotel: ${serviceDetails.hotel || 'N/A'}
-• Check-in: ${serviceDetails.checkin || 'N/A'}
-• Check-out: ${serviceDetails.checkout || 'N/A'}
-• Room: ${serviceDetails.roomType || 'N/A'}`;
-    case 'Events':
-      return `• Event: ${serviceDetails.eventName || 'N/A'}
-• Location: ${serviceDetails.eventLocation || 'N/A'}
-• Date: ${serviceDetails.eventDate || 'N/A'}
-• Tickets: ${serviceDetails.tickets || 'N/A'}`;
-    case 'Custom Trips':
-      return `• Duration: ${serviceDetails.duration || 'N/A'}
-• Regions: ${serviceDetails.regions || 'N/A'}
-• Interests: ${serviceDetails.interests ? serviceDetails.interests.join(', ') : 'N/A'}`;
+    case 'Transportation': {
+      const details = serviceDetails as TransportationDetails;
+      return `• Pickup: ${details.pickup || 'N/A'}
+• Drop-off: ${details.dropoff || 'N/A'}
+• Date: ${details.date || 'N/A'}
+• Time: ${details.time || 'N/A'}
+• Vehicle: ${details.vehicleType || 'N/A'}`;
+    }
+    case 'Hotels': {
+      const details = serviceDetails as HotelDetails;
+      return `• City: ${details.city || 'N/A'}
+• Hotel: ${details.hotel || 'N/A'}
+• Check-in: ${details.checkin || 'N/A'}
+• Check-out: ${details.checkout || 'N/A'}
+• Room: ${details.roomType || 'N/A'}`;
+    }
+    case 'Events': {
+      const details = serviceDetails as EventDetails;
+      return `• Event: ${details.eventName || 'N/A'}
+• Location: ${details.eventLocation || 'N/A'}
+• Date: ${details.eventDate || 'N/A'}
+• Tickets: ${details.tickets || 'N/A'}`;
+    }
+    case 'Custom Trips': {
+      const details = serviceDetails as TripDetails;
+      return `• Duration: ${details.duration || 'N/A'}
+• Regions: ${details.regions || 'N/A'}
+• Interests: ${details.interests ? details.interests.join(', ') : 'N/A'}`;
+    }
     default:
       return 'Service details not specified';
   }
