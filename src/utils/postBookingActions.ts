@@ -62,7 +62,7 @@ export const sendBookingEmail = async (
 === BOOKING CONFIRMATION RECEIPT ===
 
 Transaction ID: ${transactionId}
-Payment Amount: ₹${paymentAmount} INR
+Payment Amount: ₽${paymentAmount} RUB
 Booking Date: ${new Date().toLocaleString()}
 
 === SERVICE INFORMATION ===
@@ -77,11 +77,11 @@ Preferred Language: ${bookingData.userInfo.language}
 
 === PAYMENT DETAILS ===
 Payment Method: ${bookingData.paymentMethod || 'Cash on Arrival'}
-Total Amount: ₹${paymentAmount} INR
-${bookingData.totalPrice ? `Original Price: ₹${bookingData.totalPrice}` : ''}
+Total Amount: ₽${paymentAmount} RUB
+${bookingData.totalPrice ? `Original Price: ₽${bookingData.totalPrice}` : ''}
 
 === ADDITIONAL NOTES ===
-${bookingData.customAmount ? `Custom amount was entered: ₹${bookingData.customAmount}` : ''}
+${bookingData.customAmount ? `Custom amount was entered: ₽${bookingData.customAmount}` : ''}
 
 Please process this booking and contact the customer to confirm the service arrangements.
 
@@ -133,7 +133,7 @@ export const redirectToWhatsApp = (bookingData: BookingData, transactionId: stri
 • Customer: ${bookingData.userInfo.fullName}
 • Email: ${bookingData.userInfo.email}
 • Phone: ${bookingData.userInfo.phone}
-${paymentAmount ? `• Amount: ₹${paymentAmount.toLocaleString('en-IN')} INR` : ''}
+${paymentAmount ? `• Amount: ₽${paymentAmount.toLocaleString('ru-RU')} RUB` : ''}
 • Payment Method: Cash on Arrival
 
 *🎯 Service Information:*
