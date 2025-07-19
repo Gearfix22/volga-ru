@@ -15,43 +15,43 @@ export const PricingDisplay: React.FC<PricingDisplayProps> = ({
 }) => {
   const calculateEstimatedPrice = () => {
     const basePrices = {
-      'Transportation': 50,
-      'Hotels': 100,
-      'Events': 75,
-      'Custom Trips': 200
+      'Transportation': 4000,  // ₹4,000
+      'Hotels': 8000,         // ₹8,000
+      'Events': 6000,         // ₹6,000
+      'Custom Trips': 16000   // ₹16,000
     };
     
-    let basePrice = basePrices[serviceType as keyof typeof basePrices] || 50;
+    let basePrice = basePrices[serviceType as keyof typeof basePrices] || 4000;
     
     // Add modifiers based on service details
     if (serviceType === 'Transportation') {
-      if (serviceDetails.vehicleType === 'business') basePrice += 50;
-      if (serviceDetails.vehicleType === 'minivan') basePrice += 30;
-      if (serviceDetails.vehicleType === 'bus') basePrice += 100;
+      if (serviceDetails.vehicleType === 'business') basePrice += 4000;
+      if (serviceDetails.vehicleType === 'minivan') basePrice += 2400;
+      if (serviceDetails.vehicleType === 'bus') basePrice += 8000;
     }
     
     if (serviceType === 'Hotels') {
-      if (serviceDetails.roomType === 'suite') basePrice += 100;
-      if (serviceDetails.roomType === 'presidential') basePrice += 300;
-      if (serviceDetails.roomType === 'deluxe') basePrice += 50;
+      if (serviceDetails.roomType === 'suite') basePrice += 8000;
+      if (serviceDetails.roomType === 'presidential') basePrice += 24000;
+      if (serviceDetails.roomType === 'deluxe') basePrice += 4000;
     }
     
     if (serviceType === 'Events') {
       const ticketCount = parseInt(serviceDetails.tickets) || 1;
       basePrice *= ticketCount;
-      if (serviceDetails.ticketType === 'vip') basePrice += 50;
-      if (serviceDetails.ticketType === 'premium') basePrice += 30;
-      if (serviceDetails.ticketType === 'backstage') basePrice += 100;
+      if (serviceDetails.ticketType === 'vip') basePrice += 4000;
+      if (serviceDetails.ticketType === 'premium') basePrice += 2400;
+      if (serviceDetails.ticketType === 'backstage') basePrice += 8000;
     }
     
     if (serviceType === 'Custom Trips') {
-      if (serviceDetails.duration?.includes('1-2-weeks')) basePrice += 200;
-      if (serviceDetails.duration?.includes('3-4-weeks')) basePrice += 500;
-      if (serviceDetails.duration?.includes('1-month+')) basePrice += 1000;
-      if (serviceDetails.interests?.length > 5) basePrice += 100;
+      if (serviceDetails.duration?.includes('1-2-weeks')) basePrice += 16000;
+      if (serviceDetails.duration?.includes('3-4-weeks')) basePrice += 40000;
+      if (serviceDetails.duration?.includes('1-month+')) basePrice += 80000;
+      if (serviceDetails.interests?.length > 5) basePrice += 8000;
     }
     
-    return Math.max(basePrice, 25); // Minimum $25
+    return Math.max(basePrice, 2000); // Minimum ₹2,000
   };
 
   if (!serviceType) return null;
@@ -73,9 +73,9 @@ export const PricingDisplay: React.FC<PricingDisplayProps> = ({
         
         <div className="flex items-baseline gap-2 mb-3">
           <span className="text-3xl font-bold text-primary">
-            ${estimatedPrice}
+            ₹{estimatedPrice.toLocaleString('en-IN')}
           </span>
-          <span className="text-sm text-slate-600 dark:text-slate-400">USD</span>
+          <span className="text-sm text-slate-600 dark:text-slate-400">INR</span>
         </div>
         
         <div className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400">
