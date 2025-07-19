@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DollarSign, Info } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PricingDisplayProps {
   serviceType: string;
@@ -13,6 +14,7 @@ export const PricingDisplay: React.FC<PricingDisplayProps> = ({
   serviceType,
   serviceDetails
 }) => {
+  const { t } = useLanguage();
   const calculateEstimatedPrice = () => {
     const basePrices = {
       'Transportation': 3000,  // ₽3,000
@@ -64,7 +66,7 @@ export const PricingDisplay: React.FC<PricingDisplayProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-primary" />
-            <span className="font-semibold text-lg">Estimated Price</span>
+            <span className="font-semibold text-lg">{t('estimatedPrice')}</span>
           </div>
           <Badge variant="secondary" className="bg-primary/20 text-primary">
             {serviceType}
@@ -81,8 +83,7 @@ export const PricingDisplay: React.FC<PricingDisplayProps> = ({
         <div className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400">
           <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
           <span>
-            This is an estimated price. Final cost will be confirmed after consultation with our team.
-            Price may vary based on availability, season, and specific requirements.
+            {t('estimatedPriceDisclaimer')}
           </span>
         </div>
       </CardContent>
