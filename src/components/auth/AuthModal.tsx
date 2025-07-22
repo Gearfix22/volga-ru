@@ -20,6 +20,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
+  const { t } = useLanguage();
 
   const resetState = () => {
     setEmail('');
@@ -37,22 +38,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         const { error } = await signIn(email, password);
         if (error) {
           toast({
-            title: 'Error',
+            title: t('auth.error'),
             description: error.message,
             variant: 'destructive',
           });
         } else {
           toast({
-            title: 'Success',
-            description: 'Logged in successfully!',
+            title: t('auth.success'),
+            description: t('auth.loggedInSuccessfully'),
           });
           onClose();
         }
       } else if (activeTab === 'sign-up') {
         if (!phone.trim()) {
           toast({
-            title: 'Error',
-            description: 'Phone number is required.',
+            title: t('auth.error'),
+            description: t('auth.phoneNumberRequired'),
             variant: 'destructive',
           });
           setLoading(false);
@@ -61,14 +62,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         const { error } = await signUp(email, password, phone);
         if (error) {
           toast({
-            title: 'Error',
+            title: t('auth.error'),
             description: error.message,
             variant: 'destructive',
           });
         } else {
           toast({
-            title: 'Success',
-            description: 'Please check your email to verify your account.',
+            title: t('auth.success'),
+            description: t('auth.checkEmailVerify'),
           });
           onClose();
         }
@@ -76,22 +77,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         const { error } = await requestPasswordReset(email);
         if (error) {
           toast({
-            title: 'Error',
+            title: t('auth.error'),
             description: error.message,
             variant: 'destructive',
           });
         } else {
           toast({
-            title: 'Success',
-            description: 'Password reset email sent. Please check your inbox.',
+            title: t('auth.success'),
+            description: t('auth.passwordResetSent'),
           });
           onClose();
         }
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred.',
+        title: t('auth.error'),
+        description: t('auth.unexpectedError'),
         variant: 'destructive',
       });
     } finally {
@@ -100,9 +101,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // New: function to handle password reset request
   const requestPasswordReset = async (email: string) => {
-    // Supabase password reset: send an email to user
     const { error } = await import('@/lib/supabase').then(({ supabase }) =>
       supabase.auth.resetPasswordForEmail(email, {
         redirectTo: window.location.origin + '/dashboard/settings',
@@ -116,14 +115,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {activeTab === 'sign-in' && 'Sign In'}
-            {activeTab === 'sign-up' && 'Sign Up'}
-            {activeTab === 'forgot' && 'Forgot Password'}
+            {activeTab === 'sign-in' && t('auth.signIn')}
+            {activeTab === 'sign-up' && t('auth.signUp')}
+            {activeTab === 'forgot' && t('auth.forgotPassword')}
           </DialogTitle>
           <DialogDescription>
-            {activeTab === 'sign-in' && 'Welcome back! Please sign in to your account.'}
-            {activeTab === 'sign-up' && 'Create a new account to get started.'}
-            {activeTab === 'forgot' && 'Enter your email and we’ll send you a reset link.'}
+            {activeTab === 'sign-in' && t('auth.signInWelcome')}
+            {activeTab === 'sign-up' && t('auth.signUpWelcome')}
+            {activeTab === 'forgot' && t('auth.forgotPasswordWelcome')}
           </DialogDescription>
         </DialogHeader>
 
@@ -138,7 +137,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               resetState();
             }}
           >
-            Sign In
+            {t('auth.signIn')}
           </Button>
           <Button
             type="button"
@@ -150,7 +149,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               resetState();
             }}
           >
-            Sign Up
+            {t('auth.signUp')}
           </Button>
           <Button
             type="button"
@@ -162,93 +161,93 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               resetState();
             }}
           >
-            Forgot?
+            {t('auth.forgotPassword')}
           </Button>
         </div>
 
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">
-              {activeTab === 'sign-in' && 'Sign In'}
-              {activeTab === 'sign-up' && 'Create Account'}
-              {activeTab === 'forgot' && 'Reset Your Password'}
+              {activeTab === 'sign-in' && t('auth.signIn')}
+              {activeTab === 'sign-up' && t('auth.createAccount')}
+              {activeTab === 'forgot' && t('auth.resetYourPassword')}
             </CardTitle>
             <CardDescription>
               {activeTab === 'sign-in'
-                ? 'Enter your credentials to access your account'
+                ? t('auth.enterCredentials')
                 : activeTab === 'sign-up'
-                ? 'Enter your details to create a new account'
-                : 'We will email you a password reset link'}
+                ? t('auth.enterDetails')
+                : t('auth.emailResetLink')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('footer.email')}</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  placeholder={t('auth.enterEmailPlaceholder')}
                   required
                 />
               </div>
               {activeTab === 'sign-up' && (
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">{t('booking.phoneNumber')}</Label>
                   <Input
                     id="phone"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Enter your phone number"
+                    placeholder={t('auth.enterPhoneNumber')}
                     required
                   />
                 </div>
               )}
               {activeTab !== 'forgot' && (
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{t('auth.password')}</Label>
                   <Input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
+                    placeholder={t('auth.enterPassword')}
                     required
                   />
                 </div>
               )}
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading
-                  ? 'Loading...'
+                  ? t('auth.loading')
                   : (activeTab === 'sign-in'
-                    ? 'Sign In'
+                    ? t('auth.signIn')
                     : activeTab === 'sign-up'
-                    ? 'Sign Up'
-                    : 'Send Reset Email')}
+                    ? t('auth.signUp')
+                    : t('auth.sendResetEmail'))}
               </Button>
             </form>
             <div className="mt-4 text-center">
               {activeTab === 'sign-in' && (
                 <Button variant="link" onClick={() => { setActiveTab('sign-up'); resetState(); }} className="text-sm">
-                  Don't have an account? Sign up
+                  {t('auth.dontHaveAccount')}
                 </Button>
               )}
               {activeTab === 'sign-up' && (
                 <Button variant="link" onClick={() => { setActiveTab('sign-in'); resetState(); }} className="text-sm">
-                  Already have an account? Sign in
+                  {t('auth.alreadyHaveAccount')}
                 </Button>
               )}
               {(activeTab === 'sign-in' || activeTab === 'sign-up') && (
                 <Button variant="link" onClick={() => { setActiveTab('forgot'); resetState(); }} className="text-xs">
-                  Forgot password?
+                  {t('auth.forgotPasswordLink')}
                 </Button>
               )}
               {activeTab === 'forgot' && (
                 <Button variant="link" onClick={() => { setActiveTab('sign-in'); resetState(); }} className="text-xs">
-                  Back to sign in
+                  {t('auth.backToSignIn')}
                 </Button>
               )}
             </div>
