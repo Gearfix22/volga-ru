@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/contexts/NewLanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { UserMenu } from './auth/UserMenu';
 import { Menu, X } from 'lucide-react';
@@ -15,11 +15,11 @@ export const Navigation: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   const navigationItems = [
-    { key: 'home', path: '/', label: t('home') },
-    { key: 'services', path: '/services', label: t('services') },
-    { key: 'gallery', path: '/gallery', label: 'Gallery' },
-    { key: 'about', path: '/about', label: t('about') },
-    { key: 'contact', path: '/contact', label: t('contact') },
+    { key: 'home', path: '/', label: t('navbar.home') },
+    { key: 'services', path: '/services', label: t('navbar.services') },
+    { key: 'gallery', path: '/gallery', label: t('navbar.gallery') },
+    { key: 'about', path: '/about', label: t('navbar.about') },
+    { key: 'contact', path: '/contact', label: t('navbar.contact') },
   ];
 
   return (

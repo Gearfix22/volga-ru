@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLanguage } from '@/contexts/NewLanguageContext';
 import { Phone, Mail, MapPin, Globe, Facebook, Instagram } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -12,25 +12,25 @@ export const Footer: React.FC = () => {
   const contactInfo = [
     {
       icon: Phone,
-      label: t('phone'),
+      label: t('footer.phone'),
       value: '+7 952 221 29 03',
       href: `tel:${whatsappNumber}`,
     },
     {
       icon: Mail,
-      label: t('email'),
+      label: t('footer.email'),
       value: 'info@volgaservices.com',
       href: 'mailto:info@volgaservices.com',
     },
     {
       icon: Globe,
-      label: t('website'),
+      label: t('footer.website'),
       value: 'www.volgaservices.com',
       href: 'https://www.volgaservices.com',
     },
     {
       icon: MapPin,
-      label: t('address'),
+      label: t('footer.address'),
       value: language === 'ru' 
         ? 'обл. Ленинградская, р-н. Всеволожский, г. Мурино, ул. Шувалова, д. 11, кв.'
         : 'Leningrad Region, Vsevolozhsky District, Murino, Shuvalov St., 11',
@@ -62,7 +62,7 @@ export const Footer: React.FC = () => {
                 <span className="seaside-text">Volga Services</span>
               </h3>
               <p className="text-coastal-pearl text-sm leading-relaxed">
-                {t('footerDescription')}
+                {t('footer.description')}
               </p>
             </div>
             
@@ -73,14 +73,14 @@ export const Footer: React.FC = () => {
             >
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
                 <Phone className="h-4 w-4 mr-2" />
-                {t('whatsapp')}
+                {t('footer.whatsapp')}
               </a>
             </Button>
           </div>
 
           {/* Contact Information */}
           <div className="space-y-4 sm:space-y-6">
-            <h3 className="text-white font-bold text-lg sm:text-xl">{t('contactInfo')}</h3>
+            <h3 className="text-white font-bold text-lg sm:text-xl">{t('footer.contactInfo')}</h3>
             <div className="space-y-3 sm:space-y-4">
               {contactInfo.map((item, index) => (
                 <div key={index} className="flex items-start space-x-3">
@@ -107,14 +107,14 @@ export const Footer: React.FC = () => {
 
           {/* Business Information */}
           <div className="space-y-4 sm:space-y-6">
-            <h3 className="text-white font-bold text-lg sm:text-xl">{t('businessInfo')}</h3>
+            <h3 className="text-white font-bold text-lg sm:text-xl">{t('footer.businessInfo')}</h3>
             <div className="space-y-3 sm:space-y-4">
               <div>
-                <p className="text-coastal-sage text-xs font-medium uppercase">{t('taxNumber')}</p>
+                <p className="text-coastal-sage text-xs font-medium uppercase">{t('footer.taxNumber')}</p>
                 <p className="text-coastal-blue font-mono text-base sm:text-lg font-semibold">4706086543</p>
               </div>
               <div>
-                <p className="text-coastal-sage text-xs font-medium uppercase">{t('registrationNumber')}</p>
+                <p className="text-coastal-sage text-xs font-medium uppercase">{t('footer.registrationNumber')}</p>
                 <p className="text-coastal-blue font-mono text-base sm:text-lg font-semibold">1254700002831</p>
               </div>
             </div>
@@ -122,7 +122,7 @@ export const Footer: React.FC = () => {
 
           {/* Social Media */}
           <div className="space-y-4 sm:space-y-6">
-            <h3 className="text-white font-bold text-lg sm:text-xl">{t('followUs')}</h3>
+            <h3 className="text-white font-bold text-lg sm:text-xl">{t('footer.followUs')}</h3>
             <div className="flex space-x-3 sm:space-x-4">
               {socialLinks.map((social, index) => (
                 <a
@@ -143,7 +143,7 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="border-t border-white/10 mt-8 sm:mt-12 pt-6 sm:pt-8 text-center">
           <p className="text-coastal-pearl text-sm">
-            © 2024 <span className="text-coastal-blue font-medium">Volga Services</span>. {t('allRightsReserved')}
+            © 2024 <span className="text-coastal-blue font-medium">Volga Services</span>. {t('footer.allRightsReserved')}
           </p>
         </div>
       </div>
