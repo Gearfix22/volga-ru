@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLanguage } from '@/contexts/NewLanguageContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Phone, Mail, MapPin, Globe, Facebook, Instagram } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
