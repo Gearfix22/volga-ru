@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getUserBookings } from '@/services/database';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, CreditCard, MapPin, Users, TrendingUp } from 'lucide-react';
@@ -11,6 +12,7 @@ import { useDataTracking } from '@/hooks/useDataTracking';
 
 export const DashboardOverview: React.FC = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { trackForm } = useDataTracking();
 
   const { data: bookings, isLoading, error } = useQuery({
@@ -60,10 +62,10 @@ export const DashboardOverview: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Welcome back, {getUserWelcomeName()}!
+          {t('dashboard.welcomeBack')}, {getUserWelcomeName()}!
         </h1>
         <p className="mt-1 text-sm text-gray-600">
-          Here's what's happening with your account.
+          {t('dashboard.accountOverview')}
         </p>
       </div>
 
@@ -71,52 +73,52 @@ export const DashboardOverview: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.totalBookings')}</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalBookings}</div>
             <p className="text-xs text-muted-foreground">
-              Lifetime reservations
+              {t('dashboard.lifetimeReservations')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.pending')}</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{pendingBookings}</div>
             <p className="text-xs text-muted-foreground">
-              Awaiting confirmation
+              {t('dashboard.awaitingConfirmation')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.totalSpent')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${totalSpent.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              All time spending
+              {t('dashboard.allTimeSpending')}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('dashboard.quickActions')}</CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <Link to="/booking">
               <Button className="w-full" size="sm">
-                New Booking
+                {t('dashboard.newBooking')}
               </Button>
             </Link>
           </CardContent>
@@ -126,34 +128,34 @@ export const DashboardOverview: React.FC = () => {
       {/* Account Status */}
       <Card>
         <CardHeader>
-          <CardTitle>Account Status</CardTitle>
+          <CardTitle>{t('dashboard.accountStatus')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center space-x-3">
               <div className={`w-3 h-3 rounded-full ${user?.email_confirmed_at ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
               <div>
-                <p className="text-sm font-medium">Email Verification</p>
+                <p className="text-sm font-medium">{t('dashboard.emailVerification')}</p>
                 <p className="text-xs text-gray-600">
-                  {user?.email_confirmed_at ? 'Verified' : 'Pending verification'}
+                  {user?.email_confirmed_at ? t('dashboard.verified') : t('dashboard.pendingVerification')}
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <div className="w-3 h-3 rounded-full bg-green-500"></div>
               <div>
-                <p className="text-sm font-medium">Account Active</p>
+                <p className="text-sm font-medium">{t('dashboard.accountActive')}</p>
                 <p className="text-xs text-gray-600">
-                  Since {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
+                  {t('dashboard.since')} {user?.created_at ? new Date(user.created_at).toLocaleDateString() : t('common.unknown')}
                 </p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
               <div className="w-3 h-3 rounded-full bg-blue-500"></div>
               <div>
-                <p className="text-sm font-medium">Last Login</p>
+                <p className="text-sm font-medium">{t('dashboard.lastLogin')}</p>
                 <p className="text-xs text-gray-600">
-                  {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Unknown'}
+                  {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : t('common.unknown')}
                 </p>
               </div>
             </div>
@@ -165,10 +167,10 @@ export const DashboardOverview: React.FC = () => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Recent Reservations</CardTitle>
+            <CardTitle>{t('dashboard.recentReservations')}</CardTitle>
             <Link to="/dashboard/reservations">
               <Button variant="outline" size="sm">
-                View All
+                {t('dashboard.viewAll')}
               </Button>
             </Link>
           </div>
@@ -176,15 +178,15 @@ export const DashboardOverview: React.FC = () => {
         <CardContent>
           {error ? (
             <div className="text-center py-6">
-              <p className="text-red-500">Error loading reservations</p>
-              <p className="text-xs text-gray-500 mt-1">Please try refreshing the page</p>
+              <p className="text-red-500">{t('dashboard.errorLoadingReservations')}</p>
+              <p className="text-xs text-gray-500 mt-1">{t('dashboard.refreshPage')}</p>
             </div>
           ) : recentBookings.length === 0 ? (
             <div className="text-center py-6">
               <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No reservations yet</p>
+              <p className="text-gray-500">{t('dashboard.noReservations')}</p>
               <Link to="/booking">
-                <Button className="mt-4">Make Your First Booking</Button>
+                <Button className="mt-4">{t('dashboard.firstBooking')}</Button>
               </Link>
             </div>
           ) : (

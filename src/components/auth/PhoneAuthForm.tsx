@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +20,7 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
   onSwitchMode 
 }) => {
   const { signUpWithPhone, signInWithPhone, verifyOtp } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'phone' | 'verify'>('phone');
@@ -39,8 +41,8 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
   const handlePhoneAuth = async () => {
     if (!formData.phone || !formData.password) {
       toast({
-        title: "Error",
-        description: "Please fill in all fields",
+        title: t('common.error'),
+        description: t('auth.fillAllFields'),
         variant: "destructive",
       });
       return;
@@ -61,27 +63,27 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
         if (result.error.message.includes('Signup requires email verification')) {
           setStep('verify');
           toast({
-            title: "Verification Required",
-            description: "Please enter the verification code sent to your phone",
+            title: t('auth.verificationRequired'),
+            description: t('auth.enterVerificationCode'),
           });
         } else {
           toast({
-            title: "Error",
+            title: t('common.error'),
             description: result.error.message,
             variant: "destructive",
           });
         }
       } else {
         toast({
-          title: "Success",
-          description: mode === 'signup' ? "Account created successfully!" : "Signed in successfully!",
+          title: t('common.success'),
+          description: mode === 'signup' ? t('auth.accountCreated') : t('auth.signedInSuccess'),
         });
         onSuccess?.();
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: t('common.error'),
+        description: t('auth.unexpectedError'),
         variant: "destructive",
       });
     } finally {
@@ -92,8 +94,8 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
   const handleVerifyOtp = async () => {
     if (!formData.otp) {
       toast({
-        title: "Error",
-        description: "Please enter the verification code",
+        title: t('common.error'),
+        description: t('auth.enterVerificationCode'),
         variant: "destructive",
       });
       return;
@@ -107,21 +109,21 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
       
       if (error) {
         toast({
-          title: "Error",
+          title: t('common.error'),
           description: error.message,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Success",
-          description: "Phone number verified successfully!",
+          title: t('common.success'),
+          description: t('auth.phoneVerified'),
         });
         onSuccess?.();
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: t('common.error'),
+        description: t('auth.unexpectedError'),
         variant: "destructive",
       });
     } finally {
@@ -137,17 +139,17 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
     return (
       <Card className="w-full max-w-md mx-auto">
         <CardHeader>
-          <CardTitle>Verify Phone Number</CardTitle>
+          <CardTitle>{t('auth.verifyPhoneNumber')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="otp">Verification Code</Label>
+            <Label htmlFor="otp">{t('auth.verificationCode')}</Label>
             <Input
               id="otp"
               type="text"
               value={formData.otp}
               onChange={(e) => handleInputChange('otp', e.target.value)}
-              placeholder="Enter 6-digit code"
+              placeholder={t('auth.enterSixDigitCode')}
               maxLength={6}
             />
           </div>
@@ -158,7 +160,7 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
               disabled={loading}
               className="w-full"
             >
-              {loading ? 'Verifying...' : 'Verify Code'}
+              {loading ? t('auth.verifying') : t('auth.verifyCode')}
             </Button>
             
             <Button 
@@ -166,7 +168,7 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
               onClick={() => setStep('phone')}
               className="w-full"
             >
-              Back to Phone Entry
+              {t('auth.backToPhoneEntry')}
             </Button>
           </div>
         </CardContent>
@@ -178,12 +180,12 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle>
-          {mode === 'signup' ? 'Sign Up with Phone' : 'Sign In with Phone'}
+          {mode === 'signup' ? t('auth.signUpWithPhone') : t('auth.signInWithPhone')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <Label htmlFor="phone">Phone Number</Label>
+          <Label htmlFor="phone">{t('booking.phoneNumber')}</Label>
           <Input
             id="phone"
             type="tel"
@@ -194,13 +196,13 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
         </div>
         
         <div>
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t('auth.password')}</Label>
           <Input
             id="password"
             type="password"
             value={formData.password}
             onChange={(e) => handleInputChange('password', e.target.value)}
-            placeholder="Enter your password"
+            placeholder={t('auth.enterPassword')}
           />
         </div>
         
@@ -210,7 +212,7 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
             disabled={loading}
             className="w-full"
           >
-            {loading ? 'Processing...' : (mode === 'signup' ? 'Sign Up' : 'Sign In')}
+            {loading ? t('auth.processing') : (mode === 'signup' ? t('auth.signUp') : t('auth.signIn'))}
           </Button>
           
           {onSwitchMode && (
@@ -219,7 +221,7 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
               onClick={onSwitchMode}
               className="w-full"
             >
-              {mode === 'signup' ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
+              {mode === 'signup' ? t('auth.alreadyHaveAccount') : t('auth.needAccount')}
             </Button>
           )}
         </div>
