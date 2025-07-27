@@ -255,6 +255,86 @@
     "firstBooking": "Make Your First Booking",
     "backToSite": "Back to Site"
   },
+  "services": {
+    "ourServices": "Our Services",
+    "servicesSubtitle": "Discover our comprehensive range of premium services designed to make your Russian experience unforgettable.",
+    "allServices": "All Services",
+    "transportation": "Transportation",
+    "hotels": "Hotels",
+    "events": "Events",
+    "customTrips": "Custom Trips",
+    "luxuryTransport": "Luxury Transportation",
+    "luxuryTransportDesc": "Premium vehicles with professional drivers for your comfort and safety.",
+    "luxuryHotels": "Luxury Hotels",
+    "luxuryHotelsDesc": "Five-star accommodations in prime locations across Russia.",
+    "midrangeHotels": "Mid-Range Hotels",
+    "midrangeHotelsDesc": "Comfortable and affordable stays without compromising quality.",
+    "culturalEvents": "Cultural Events",
+    "culturalEventsDesc": "Exclusive access to concerts, festivals, and cultural shows.",
+    "groupTransport": "Group Transportation",
+    "groupTransportDesc": "Spacious buses and vans for group travel with flexible scheduling.",
+    "customTours": "Custom Tours",
+    "customToursDesc": "Personalized itineraries crafted to your interests and preferences.",
+    "professionalDrivers": "Professional Drivers",
+    "premiumVehicles": "Premium Vehicles",
+    "airportTransfers": "Airport Transfers",
+    "fiveStarHotels": "Five-Star Hotels",
+    "primeLocations": "Prime Locations",
+    "conciergeService": "Concierge Service",
+    "comfortableStay": "Comfortable Stay",
+    "greatValue": "Great Value",
+    "modernAmenities": "Modern Amenities",
+    "exclusiveAccess": "Exclusive Access",
+    "culturalShows": "Cultural Shows",
+    "expertGuides": "Expert Guides",
+    "largeGroups": "Large Groups",
+    "comfortableBuses": "Comfortable Buses",
+    "flexibleSchedules": "Flexible Schedules",
+    "personalizedItinerary": "Personalized Itinerary",
+    "privateGuide": "Private Guide",
+    "flexibleDuration": "Flexible Duration"
+  },
+  "gallery": {
+    "title": "GALLERY",
+    "subtitle": "Discover the magnificent landmarks and architectural wonders of Russia",
+    "landmarks": {
+      "redSquare": {
+        "name": "Red Square",
+        "location": "Moscow",
+        "description": "The iconic heart of Moscow and Russia"
+      },
+      "stBasils": {
+        "name": "St. Basil's Cathedral",
+        "location": "Moscow",
+        "description": "Colorful onion domes and unique architecture"
+      },
+      "kremlin": {
+        "name": "Kremlin Palace",
+        "location": "Moscow",
+        "description": "The historic fortress and seat of power"
+      },
+      "hermitage": {
+        "name": "Hermitage Museum",
+        "location": "St. Petersburg",
+        "description": "One of the world's largest art galleries"
+      },
+      "peterhof": {
+        "name": "Peterhof Palace",
+        "location": "St. Petersburg",
+        "description": "The Russian Versailles with magnificent fountains"
+      },
+      "goldenRing": {
+        "name": "Golden Ring Churches",
+        "location": "Moscow Region",
+        "description": "Ancient towns with traditional Russian architecture"
+      }
+    },
+    "cta": {
+      "title": "Experience These Landmarks",
+      "description": "Book our guided tours to visit these incredible Russian landmarks with expert local guides",
+      "button": "Explore Our Tours"
+    }
+  },
   "messages": {
     "serviceRequired": "Service required",
     "pleaseSelectService": "Please select a service type.",

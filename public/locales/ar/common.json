@@ -100,24 +100,83 @@
   },
   "services": {
     "ourServices": "خدماتنا",
-    "servicesSubtitle": "اكتشف مجموعتنا الشاملة من الخدمات المميزة المصممة لجعل تجربتك الروسية لا تُنسى.",
+    "servicesSubtitle": "اكتشف مجموعتنا الشاملة من الخدمات المتميزة المصممة لجعل تجربتك الروسية لا تُنسى.",
     "allServices": "جميع الخدمات",
     "transportation": "النقل",
     "hotels": "الفنادق",
     "events": "الفعاليات",
     "customTrips": "رحلات مخصصة",
-    "luxuryTransport": "النقل الفاخر",
-    "luxuryTransportDesc": "مركبات فاخرة مع سائقين محترفين لراحتك وأمانك.",
+    "luxuryTransport": "نقل فاخر",
+    "luxuryTransportDesc": "مركبات متميزة مع سائقين محترفين لراحتك وأمانك.",
     "luxuryHotels": "فنادق فاخرة",
-    "luxuryHotelsDesc": "إقامة خمس نجوم في أفضل المواقع عبر روسيا.",
+    "luxuryHotelsDesc": "إقامة خمس نجوم في مواقع رئيسية عبر روسيا.",
     "midrangeHotels": "فنادق متوسطة",
     "midrangeHotelsDesc": "إقامة مريحة وبأسعار معقولة دون التنازل عن الجودة.",
     "culturalEvents": "فعاليات ثقافية",
     "culturalEventsDesc": "وصول حصري للحفلات والمهرجانات والعروض الثقافية.",
     "groupTransport": "نقل جماعي",
-    "groupTransportDesc": "حافلات وشاحنات واسعة للسفر الجماعي مع جداول مرنة.",
+    "groupTransportDesc": "حافلات وعربات واسعة للسفر الجماعي مع جداول مرنة.",
     "customTours": "جولات مخصصة",
-    "customToursDesc": "برامج شخصية مصممة حسب اهتماماتك وتفضيلاتك."
+    "customToursDesc": "برامج سياحية شخصية مصممة حسب اهتماماتك وتفضيلاتك.",
+    "professionalDrivers": "سائقين محترفين",
+    "premiumVehicles": "مركبات متميزة",
+    "airportTransfers": "نقل المطار",
+    "fiveStarHotels": "فنادق خمس نجوم",
+    "primeLocations": "مواقع رئيسية",
+    "conciergeService": "خدمة الكونسيرج",
+    "comfortableStay": "إقامة مريحة",
+    "greatValue": "قيمة رائعة",
+    "modernAmenities": "وسائل راحة حديثة",
+    "exclusiveAccess": "وصول حصري",
+    "culturalShows": "عروض ثقافية",
+    "expertGuides": "مرشدين خبراء",
+    "largeGroups": "مجموعات كبيرة",
+    "comfortableBuses": "حافلات مريحة",
+    "flexibleSchedules": "جداول مرنة",
+    "personalizedItinerary": "برنامج شخصي",
+    "privateGuide": "مرشد خاص",
+    "flexibleDuration": "مدة مرنة"
+  },
+  "gallery": {
+    "title": "المعرض",
+    "subtitle": "اكتشف المعالم الرائعة والعجائب المعمارية في روسيا",
+    "landmarks": {
+      "redSquare": {
+        "name": "الساحة الحمراء",
+        "location": "موسكو",
+        "description": "قلب موسكو وروسيا الأيقوني"
+      },
+      "stBasils": {
+        "name": "كاتدرائية القديس باسيل",
+        "location": "موسكو",
+        "description": "قباب البصل الملونة والهندسة المعمارية الفريدة"
+      },
+      "kremlin": {
+        "name": "قصر الكرملين",
+        "location": "موسكو",
+        "description": "القلعة التاريخية ومقر السلطة"
+      },
+      "hermitage": {
+        "name": "متحف الهرميتاج",
+        "location": "سانت بطرسبرغ",
+        "description": "واحد من أكبر معارض الفن في العالم"
+      },
+      "peterhof": {
+        "name": "قصر بيترهوف",
+        "location": "سانت بطرسبرغ",
+        "description": "فرساي الروسية بنوافيرها الرائعة"
+      },
+      "goldenRing": {
+        "name": "كنائس الحلقة الذهبية",
+        "location": "منطقة موسكو",
+        "description": "مدن قديمة بالهندسة المعمارية الروسية التقليدية"
+      }
+    },
+    "cta": {
+      "title": "اختبر هذه المعالم",
+      "description": "احجز جولاتنا المصحوبة بمرشدين لزيارة هذه المعالم الروسية المذهلة مع مرشدين محليين خبراء",
+      "button": "استكشف جولاتنا"
+    }
   },
   "booking": {
     "bookYourService": "احجز خدمتك",

@@ -12,45 +12,45 @@ const Gallery = () => {
   const landmarks = [
     {
       id: 1,
-      name: 'Red Square',
-      location: 'Moscow',
+      name: t('gallery.landmarks.redSquare.name'),
+      location: t('gallery.landmarks.redSquare.location'),
       image: 'https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=800&h=600&fit=crop',
-      description: 'The iconic heart of Moscow and Russia'
+      description: t('gallery.landmarks.redSquare.description')
     },
     {
       id: 2,
-      name: 'St. Basil\'s Cathedral',
-      location: 'Moscow',
+      name: t('gallery.landmarks.stBasils.name'),
+      location: t('gallery.landmarks.stBasils.location'),
       image: 'https://images.unsplash.com/photo-1466442929976-97f336a657be?w=800&h=600&fit=crop',
-      description: 'Colorful onion domes and unique architecture'
+      description: t('gallery.landmarks.stBasils.description')
     },
     {
       id: 3,
-      name: 'Kremlin Palace',
-      location: 'Moscow',
+      name: t('gallery.landmarks.kremlin.name'),
+      location: t('gallery.landmarks.kremlin.location'),
       image: 'https://images.unsplash.com/photo-1492321936769-b49830bc1d1e?w=800&h=600&fit=crop',
-      description: 'The historic fortress and seat of power'
+      description: t('gallery.landmarks.kremlin.description')
     },
     {
       id: 4,
-      name: 'Hermitage Museum',
-      location: 'St. Petersburg',
+      name: t('gallery.landmarks.hermitage.name'),
+      location: t('gallery.landmarks.hermitage.location'),
       image: 'https://images.unsplash.com/photo-1426604966848-d7adac402bff?w=800&h=600&fit=crop',
-      description: 'One of the world\'s largest art galleries'
+      description: t('gallery.landmarks.hermitage.description')
     },
     {
       id: 5,
-      name: 'Peterhof Palace',
-      location: 'St. Petersburg',
+      name: t('gallery.landmarks.peterhof.name'),
+      location: t('gallery.landmarks.peterhof.location'),
       image: 'https://images.unsplash.com/photo-1466442929976-97f336a657be?w=800&h=600&fit=crop',
-      description: 'The Russian Versailles with magnificent fountains'
+      description: t('gallery.landmarks.peterhof.description')
     },
     {
       id: 6,
-      name: 'Golden Ring Churches',
-      location: 'Moscow Region',
+      name: t('gallery.landmarks.goldenRing.name'),
+      location: t('gallery.landmarks.goldenRing.location'),
       image: 'https://images.unsplash.com/photo-1492321936769-b49830bc1d1e?w=800&h=600&fit=crop',
-      description: 'Ancient towns with traditional Russian architecture'
+      description: t('gallery.landmarks.goldenRing.description')
     }
   ];
 
@@ -68,10 +68,10 @@ const Gallery = () => {
           {/* Header */}
           <div className="text-center mb-6 sm:mb-8 lg:mb-10">
             <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 sm:mb-4 font-serif leading-tight px-1">
-              <span className="kremlin-text">GALLERY</span>
+              <span className="kremlin-text">{t('gallery.title')}</span>
             </h1>
             <p className="text-xs sm:text-sm md:text-base lg:text-lg text-russian-cream max-w-3xl mx-auto px-1 leading-relaxed">
-              Discover the magnificent landmarks and architectural wonders of Russia
+              {t('gallery.subtitle')}
             </p>
           </div>
 
@@ -105,16 +105,16 @@ const Gallery = () => {
           <div className="text-center mt-6 sm:mt-8 lg:mt-10">
             <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-3 sm:p-5 lg:p-6 max-w-3xl mx-auto">
               <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-white mb-2 sm:mb-3 font-serif leading-tight">
-                Experience These Landmarks
+                {t('gallery.cta.title')}
               </h2>
               <p className="text-russian-cream mb-3 sm:mb-4 text-xs sm:text-sm lg:text-base leading-relaxed px-1">
-                Book our guided tours to visit these incredible Russian landmarks with expert local guides
+                {t('gallery.cta.description')}
               </p>
               <button
                 onClick={() => window.location.href = '/services'}
                 className="bg-russian-gold hover:bg-russian-gold/90 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-md font-semibold transition-colors text-sm sm:text-base"
               >
-                Explore Our Tours
+                {t('gallery.cta.button')}
               </button>
             </div>
           </div>
