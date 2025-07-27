@@ -15,56 +15,56 @@ export const ServicesGrid: React.FC<ServicesGridProps> = ({ activeCategory }) =>
     {
       id: 'luxury-transport',
       category: 'transportation',
-      title: t('luxuryTransport'),
-      description: t('luxuryTransportDesc'),
+      title: t('services.luxuryTransport'),
+      description: t('services.luxuryTransportDesc'),
       icon: Car,
       image: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop',
-      features: [t('professionalDrivers'), t('premiumVehicles'), t('airportTransfers')]
+      features: [t('services.professionalDrivers'), t('services.premiumVehicles'), t('services.airportTransfers')]
     },
     {
       id: 'luxury-hotels',
       category: 'hotels',
-      title: t('luxuryHotels'),
-      description: t('luxuryHotelsDesc'),
+      title: t('services.luxuryHotels'),
+      description: t('services.luxuryHotelsDesc'),
       icon: Hotel,
       image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
-      features: [t('fiveStarHotels'), t('primeLocations'), t('conciergeService')]
+      features: [t('services.fiveStarHotels'), t('services.primeLocations'), t('services.conciergeService')]
     },
     {
       id: 'midrange-hotels',
       category: 'hotels',
-      title: t('midrangeHotels'),
-      description: t('midrangeHotelsDesc'),
+      title: t('services.midrangeHotels'),
+      description: t('services.midrangeHotelsDesc'),
       icon: Hotel,
       image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
-      features: [t('comfortableStay'), t('greatValue'), t('modernAmenities')]
+      features: [t('services.comfortableStay'), t('services.greatValue'), t('services.modernAmenities')]
     },
     {
       id: 'cultural-events',
       category: 'events',
-      title: t('culturalEvents'),
-      description: t('culturalEventsDesc'),
+      title: t('services.culturalEvents'),
+      description: t('services.culturalEventsDesc'),
       icon: CalendarDays,
       image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=300&fit=crop',
-      features: [t('exclusiveAccess'), t('culturalShows'), t('expertGuides')]
+      features: [t('services.exclusiveAccess'), t('services.culturalShows'), t('services.expertGuides')]
     },
     {
       id: 'group-transport',
       category: 'transportation',
-      title: t('groupTransport'),
-      description: t('groupTransportDesc'),
+      title: t('services.groupTransport'),
+      description: t('services.groupTransportDesc'),
       icon: Car,
       image: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400&h=300&fit=crop',
-      features: [t('largeGroups'), t('comfortableBuses'), t('flexibleSchedules')]
+      features: [t('services.largeGroups'), t('services.comfortableBuses'), t('services.flexibleSchedules')]
     },
     {
       id: 'custom-tours',
       category: 'customTrips',
-      title: t('customTours'),
-      description: t('customToursDesc'),
+      title: t('services.customTours'),
+      description: t('services.customToursDesc'),
       icon: CalendarDays,
       image: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=300&fit=crop',
-      features: [t('personalizedItinerary'), t('privateGuide'), t('flexibleDuration')]
+      features: [t('services.personalizedItinerary'), t('services.privateGuide'), t('services.flexibleDuration')]
     }
   ];
 

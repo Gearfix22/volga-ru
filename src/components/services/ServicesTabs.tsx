@@ -12,11 +12,11 @@ export const ServicesTabs: React.FC<ServicesTabsProps> = ({ activeCategory, setA
   const { t } = useLanguage();
 
   const categories = [
-    { id: 'all', label: t('allServices') },
-    { id: 'transportation', label: t('transportation') },
-    { id: 'hotels', label: t('hotels') },
-    { id: 'events', label: t('events') },
-    { id: 'customTrips', label: t('customTrips') }
+    { id: 'all', label: t('services.allServices') },
+    { id: 'transportation', label: t('services.transportation') },
+    { id: 'hotels', label: t('services.hotels') },
+    { id: 'events', label: t('services.events') },
+    { id: 'customTrips', label: t('services.customTrips') }
   ];
 
   return (

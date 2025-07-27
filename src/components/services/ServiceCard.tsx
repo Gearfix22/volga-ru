@@ -91,7 +91,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
             onClick={handleBookNow}
             className="w-full bg-volga-logo-red hover:bg-red-700 text-white text-xs sm:text-sm lg:text-base py-2 sm:py-2.5"
           >
-            {t('bookNow')}
+            {t('common.bookNow')}
           </Button>
         </div>
       </CardContent>
