@@ -94,11 +94,11 @@ const Booking = () => {
     const missing = requiredFields[serviceType]?.filter(field => !details[field]) || [];
     
     if (missing.length > 0) {
-      toast({
-        title: "Missing Required Information",
-        description: `Please fill in: ${missing.join(', ')}`,
-        variant: "destructive"
-      });
+        toast({
+          title: t('missingRequiredInfo'),
+          description: `${t('pleaseFillIn')}: ${missing.join(', ')}`,
+          variant: "destructive"
+        });
       return false;
     }
 
@@ -114,11 +114,11 @@ const Booking = () => {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userInfo.email)) {
-      toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address",
-        variant: "destructive"
-      });
+        toast({
+          title: t('invalidEmail'),
+          description: t('pleaseEnterValidEmail'),
+          variant: "destructive"
+        });
       return false;
     }
 
@@ -168,8 +168,8 @@ const Booking = () => {
     localStorage.setItem('bookingData', JSON.stringify(bookingData));
 
     toast({
-      title: "Booking Details Saved",
-      description: "Proceeding to payment...",
+      title: t('bookingDetailsSaved'),
+      description: t('proceedingToPayment'),
     });
 
     navigate('/payment', {
@@ -194,7 +194,7 @@ const Booking = () => {
             </h1>
             <p className="text-xl text-slate-600 dark:text-slate-400">
               {isPreSelected 
-                ? `Complete your ${serviceType} booking details`
+                ? t('completeBookingDetails', { serviceType })
                 : t('chooseServiceDetails')
               }
             </p>
@@ -218,7 +218,7 @@ const Booking = () => {
                 <>
                   <div>
                     <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-4">
-                      {serviceType} Details
+                      {t('serviceTypeDetails', { serviceType })}
                     </h2>
                     <ServiceDetailsForm
                       serviceType={serviceType}

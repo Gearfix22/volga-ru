@@ -95,11 +95,11 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
             <SelectValue placeholder={t('selectVehicleType')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="economy">Economy Car</SelectItem>
-            <SelectItem value="comfort">Comfort Car</SelectItem>
-            <SelectItem value="business">Business Car</SelectItem>
-            <SelectItem value="minivan">Minivan (6-8 seats)</SelectItem>
-            <SelectItem value="bus">Bus (20+ seats)</SelectItem>
+            <SelectItem value="economy">{t('economyCar')}</SelectItem>
+            <SelectItem value="comfort">{t('comfortCar')}</SelectItem>
+            <SelectItem value="business">{t('businessCar')}</SelectItem>
+            <SelectItem value="minivan">{t('minivan')}</SelectItem>
+            <SelectItem value="bus">{t('bus')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -107,15 +107,15 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
       <div className="space-y-2">
         <Label htmlFor="passengers" className="flex items-center gap-2">
           <Users className="h-4 w-4" />
-          Number of Passengers
+          {t('numberOfPassengers')}
         </Label>
         <Select value={details.passengers || ''} onValueChange={(value) => onUpdateDetail('passengers', value)}>
           <SelectTrigger>
-            <SelectValue placeholder="Select number of passengers" />
+            <SelectValue placeholder={t('selectNumberOfPassengers')} />
           </SelectTrigger>
           <SelectContent>
             {[1,2,3,4,5,6,7,8,10,15,20,25,30].map(num => (
-              <SelectItem key={num} value={num.toString()}>{num} passenger{num > 1 ? 's' : ''}</SelectItem>
+              <SelectItem key={num} value={num.toString()}>{num} {num > 1 ? t('passengers') : t('passenger')}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -196,39 +196,39 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
               <SelectValue placeholder={t('selectRoomType')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="standard">Standard Room</SelectItem>
-              <SelectItem value="deluxe">Deluxe Room</SelectItem>
-              <SelectItem value="suite">Suite</SelectItem>
-              <SelectItem value="family">Family Room</SelectItem>
-              <SelectItem value="presidential">Presidential Suite</SelectItem>
+            <SelectItem value="standard">{t('standardRoom')}</SelectItem>
+            <SelectItem value="deluxe">{t('deluxeRoom')}</SelectItem>
+            <SelectItem value="suite">{t('suite')}</SelectItem>
+            <SelectItem value="family">{t('familyRoom')}</SelectItem>
+            <SelectItem value="presidential">{t('presidentialSuite')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="guests" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Number of Guests
-          </Label>
-          <Select value={details.guests || ''} onValueChange={(value) => onUpdateDetail('guests', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select number of guests" />
-            </SelectTrigger>
+        <Label htmlFor="guests" className="flex items-center gap-2">
+          <Users className="h-4 w-4" />
+          {t('numberOfGuests')}
+        </Label>
+        <Select value={details.guests || ''} onValueChange={(value) => onUpdateDetail('guests', value)}>
+          <SelectTrigger>
+            <SelectValue placeholder={t('selectNumberOfGuests')} />
+          </SelectTrigger>
             <SelectContent>
-              {[1,2,3,4,5,6].map(num => (
-                <SelectItem key={num} value={num.toString()}>{num} guest{num > 1 ? 's' : ''}</SelectItem>
-              ))}
+            {[1,2,3,4,5,6].map(num => (
+              <SelectItem key={num} value={num.toString()}>{num} {num > 1 ? t('guests') : t('guest')}</SelectItem>
+            ))}
             </SelectContent>
           </Select>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="specialRequests">Special Requests</Label>
+        <Label htmlFor="specialRequests">{t('specialRequests')}</Label>
         <Textarea
           id="specialRequests"
           value={details.specialRequests || ''}
           onChange={(e) => onUpdateDetail('specialRequests', e.target.value)}
-          placeholder="Any special requests or preferences..."
+          placeholder={t('specialRequestsPlaceholder')}
           rows={3}
           className="focus:ring-2 focus:ring-primary"
         />
@@ -288,28 +288,28 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
           </Label>
           <Select value={details.tickets || ''} onValueChange={(value) => onUpdateDetail('tickets', value)}>
             <SelectTrigger className="focus:ring-2 focus:ring-primary">
-              <SelectValue placeholder="Select number of tickets" />
+              <SelectValue placeholder={t('selectNumberOfTickets')} />
             </SelectTrigger>
             <SelectContent>
-              {[1,2,3,4,5,6,7,8,9,10,15,20,25,30].map(num => (
-                <SelectItem key={num} value={num.toString()}>{num} ticket{num > 1 ? 's' : ''}</SelectItem>
-              ))}
+            {[1,2,3,4,5,6,7,8,9,10,15,20,25,30].map(num => (
+              <SelectItem key={num} value={num.toString()}>{num} {num > 1 ? t('tickets') : t('ticket')}</SelectItem>
+            ))}
             </SelectContent>
           </Select>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="ticketType">Ticket Type Preference</Label>
+        <Label htmlFor="ticketType">{t('ticketTypePreference')}</Label>
         <Select value={details.ticketType || ''} onValueChange={(value) => onUpdateDetail('ticketType', value)}>
           <SelectTrigger>
-            <SelectValue placeholder="Select ticket type" />
+            <SelectValue placeholder={t('selectTicketType')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="general">General Admission</SelectItem>
-            <SelectItem value="vip">VIP</SelectItem>
-            <SelectItem value="premium">Premium</SelectItem>
-            <SelectItem value="backstage">Backstage Pass</SelectItem>
+            <SelectItem value="general">{t('generalAdmission')}</SelectItem>
+            <SelectItem value="vip">{t('vip')}</SelectItem>
+            <SelectItem value="premium">{t('premium')}</SelectItem>
+            <SelectItem value="backstage">{t('backstagePass')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -331,11 +331,11 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
               <SelectValue placeholder={t('selectDuration')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1-3-days">1-3 Days</SelectItem>
-              <SelectItem value="4-7-days">4-7 Days (1 Week)</SelectItem>
-              <SelectItem value="1-2-weeks">1-2 Weeks</SelectItem>
-              <SelectItem value="3-4-weeks">3-4 Weeks (1 Month)</SelectItem>
-              <SelectItem value="1-month+">1 Month+</SelectItem>
+            <SelectItem value="1-3-days">{t('1to3Days')}</SelectItem>
+            <SelectItem value="4-7-days">{t('4to7Days')}</SelectItem>
+            <SelectItem value="1-2-weeks">{t('1to2Weeks')}</SelectItem>
+            <SelectItem value="3-4-weeks">{t('3to4Weeks')}</SelectItem>
+            <SelectItem value="1-month+">{t('1MonthPlus')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -356,10 +356,10 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="budget">Budget Range (USD)</Label>
+          <Label htmlFor="budget">{t('budgetRange')}</Label>
           <Select value={details.budget || ''} onValueChange={(value) => onUpdateDetail('budget', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select your budget range" />
+              <SelectValue placeholder={t('selectBudgetRange')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="500-1000">$500 - $1,000</SelectItem>
@@ -409,12 +409,12 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="additionalInfo">Additional Information</Label>
+          <Label htmlFor="additionalInfo">{t('additionalInformation')}</Label>
           <Textarea
             id="additionalInfo"
             value={details.additionalInfo || ''}
             onChange={(e) => onUpdateDetail('additionalInfo', e.target.value)}
-            placeholder="Any additional preferences, accessibility needs, or special requests..."
+            placeholder={t('additionalInfoPlaceholder')}
             rows={3}
             className="focus:ring-2 focus:ring-primary"
           />

@@ -136,7 +136,7 @@ const BookingConfirmation = () => {
                     <div className="flex justify-between items-center">
                       <span className="font-semibold flex items-center gap-2">
                         <DollarSign className="h-4 w-4" />
-                        Payment Amount:
+                        {t('paymentAmount')}:
                       </span>
                       <span className="text-lg font-bold text-primary">
                         ${paymentAmount} USD
@@ -153,10 +153,10 @@ const BookingConfirmation = () => {
                     <Mail className="h-5 w-5 text-green-600" />
                     <div>
                       <p className="font-medium text-green-800 dark:text-green-200">
-                        Booking Details Sent
+                        {t('bookingDetailsSentTitle')}
                       </p>
                       <p className="text-sm text-green-700 dark:text-green-300">
-                        Your booking details have been sent to our team at info@volgaservices.com for processing.
+                        {t('bookingDetailsSentDesc')}
                       </p>
                     </div>
                   </div>
@@ -171,9 +171,9 @@ const BookingConfirmation = () => {
                       <div className="flex items-start gap-3">
                         <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
                         <div>
-                          <p className="font-medium">Booking Details Forwarded</p>
+                          <p className="font-medium">{t('bookingDetailsForwarded')}</p>
                           <p className="text-sm text-slate-600 dark:text-slate-400">
-                            Your complete booking information has been sent to our service team
+                            {t('bookingDetailsForwardedDesc')}
                           </p>
                         </div>
                       </div>
@@ -229,7 +229,7 @@ const BookingConfirmation = () => {
                     className="w-full bg-green-600 hover:bg-green-700 text-white"
                   >
                     <MessageCircle className="mr-2 h-4 w-4" />
-                    Continue on WhatsApp
+                    {t('continueOnWhatsApp')}
                   </Button>
                 )}
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -239,7 +239,7 @@ const BookingConfirmation = () => {
                     className="flex-1"
                   >
                     <Home className="mr-2 h-4 w-4" />
-                    Go to Dashboard
+                    {t('goToDashboard')}
                   </Button>
                   <Button 
                     onClick={() => navigate('/')}
