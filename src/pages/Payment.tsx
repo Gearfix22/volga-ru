@@ -497,7 +497,7 @@ const Payment = () => {
       <div className="space-y-4">
         <div className="flex items-center gap-2 mb-4">
           <Badge variant="secondary" className="bg-russian-gold/20 text-russian-gold">
-            {serviceType}
+            {t(serviceType.toLowerCase())}
           </Badge>
         </div>
         
@@ -506,28 +506,28 @@ const Payment = () => {
             <div className="flex items-start gap-3">
               <MapPin className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Pickup Location</p>
+                <p className="text-white/70 text-sm">{t('pickupLocation')}</p>
                 <p className="text-white font-medium">{serviceDetails.pickup}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <MapPin className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Drop-off Location</p>
+                <p className="text-white/70 text-sm">{t('dropoffLocation')}</p>
                 <p className="text-white font-medium">{serviceDetails.dropoff}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Calendar className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Date & Time</p>
+                <p className="text-white/70 text-sm">{t('dateAndTime')}</p>
                 <p className="text-white font-medium">{serviceDetails.date} at {serviceDetails.time}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Car className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Vehicle Type</p>
+                <p className="text-white/70 text-sm">{t('vehicleType')}</p>
                 <p className="text-white font-medium">{serviceDetails.vehicleType}</p>
               </div>
             </div>
@@ -539,28 +539,28 @@ const Payment = () => {
             <div className="flex items-start gap-3">
               <MapPin className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">City</p>
+                <p className="text-white/70 text-sm">{t('city')}</p>
                 <p className="text-white font-medium">{serviceDetails.city}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Building2 className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Hotel</p>
+                <p className="text-white/70 text-sm">{t('hotel')}</p>
                 <p className="text-white font-medium">{serviceDetails.hotel}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Calendar className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Check-in / Check-out</p>
+                <p className="text-white/70 text-sm">{t('checkinCheckout')}</p>
                 <p className="text-white font-medium">{serviceDetails.checkin} - {serviceDetails.checkout}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Users className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Room Type</p>
+                <p className="text-white/70 text-sm">{t('roomType')}</p>
                 <p className="text-white font-medium">{serviceDetails.roomType}</p>
               </div>
             </div>
@@ -572,28 +572,28 @@ const Payment = () => {
             <div className="flex items-start gap-3">
               <Ticket className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Event Name</p>
+                <p className="text-white/70 text-sm">{t('eventName')}</p>
                 <p className="text-white font-medium">{serviceDetails.eventName}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <MapPin className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Location</p>
+                <p className="text-white/70 text-sm">{t('location')}</p>
                 <p className="text-white font-medium">{serviceDetails.eventLocation}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Calendar className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Event Date</p>
+                <p className="text-white/70 text-sm">{t('eventDate')}</p>
                 <p className="text-white font-medium">{serviceDetails.eventDate}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Users className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Tickets</p>
+                <p className="text-white/70 text-sm">{t('numberOfTickets')}</p>
                 <p className="text-white font-medium">{serviceDetails.tickets}</p>
               </div>
             </div>
@@ -605,14 +605,14 @@ const Payment = () => {
             <div className="flex items-start gap-3">
               <Clock className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Duration</p>
+                <p className="text-white/70 text-sm">{t('tripDuration')}</p>
                 <p className="text-white font-medium">{serviceDetails.duration}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Globe className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Regions</p>
+                <p className="text-white/70 text-sm">{t('regionsToVisit')}</p>
                 <p className="text-white font-medium">{serviceDetails.regions}</p>
               </div>
             </div>

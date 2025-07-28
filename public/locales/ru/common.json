@@ -379,6 +379,14 @@
     "bookingDetailsForwarded": "Детали бронирования переданы",
     "bookingDetailsForwardedDesc": "Полная информация о вашем бронировании была отправлена нашей команде обслуживания",
     "continueOnWhatsApp": "Продолжить в WhatsApp",
-    "goToDashboard": "Перейти в панель управления"
+    "goToDashboard": "Перейти в панель управления",
+    "transportation": "Транспорт",
+    "hotels": "Отели",
+    "events": "Мероприятия",
+    "custom trips": "Индивидуальные поездки", 
+    "dateAndTime": "Дата и время",
+    "checkinCheckout": "Заезд / Выезд",
+    "location": "Местоположение",
+    "serviceDetails": "Детали услуги"
   }
 }

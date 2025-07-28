@@ -379,6 +379,14 @@
     "bookingDetailsForwarded": "تم توجيه تفاصيل الحجز",
     "bookingDetailsForwardedDesc": "تم إرسال معلومات حجزك الكاملة إلى فريق خدماتنا",
     "continueOnWhatsApp": "المتابعة على واتساب",
-    "goToDashboard": "الذهاب إلى لوحة التحكم"
+    "goToDashboard": "الذهاب إلى لوحة التحكم",
+    "transportation": "النقل",
+    "hotels": "الفنادق",
+    "events": "الفعاليات", 
+    "custom trips": "الرحلات المخصصة",
+    "dateAndTime": "التاريخ والوقت",
+    "checkinCheckout": "تسجيل الوصول / المغادرة",
+    "location": "الموقع",
+    "serviceDetails": "تفاصيل الخدمة"
   }
 }

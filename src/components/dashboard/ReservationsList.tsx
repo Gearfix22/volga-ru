@@ -14,6 +14,7 @@ import {
 import { Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Booking {
   id: string;
@@ -38,6 +39,7 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   if (isLoading) {
     return (
@@ -87,7 +89,7 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
       case 'Custom Trips':
         return `${details.duration} in ${details.regions}`;
       default:
-        return 'Service details';
+        return t('serviceDetails');
     }
   };
 

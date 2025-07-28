@@ -401,6 +401,14 @@
     "bookingDetailsForwardedDesc": "Your complete booking information has been sent to our service team",
     "continueOnWhatsApp": "Continue on WhatsApp",
     "goToDashboard": "Go to Dashboard",
-    "bookingSavedDesc": "Your booking has been saved to your account."
+    "bookingSavedDesc": "Your booking has been saved to your account.",
+    "transportation": "Transportation",
+    "hotels": "Hotels", 
+    "events": "Events",
+    "custom trips": "Custom Trips",
+    "dateAndTime": "Date & Time",
+    "checkinCheckout": "Check-in / Check-out",
+    "location": "Location",
+    "serviceDetails": "Service details"
   }
 }

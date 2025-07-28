@@ -69,7 +69,7 @@ export const PricingDisplay: React.FC<PricingDisplayProps> = ({
             <span className="font-semibold text-lg">{t('estimatedPrice')}</span>
           </div>
           <Badge variant="secondary" className="bg-primary/20 text-primary">
-            {serviceType}
+            {t(serviceType.toLowerCase())}
           </Badge>
         </div>
         
