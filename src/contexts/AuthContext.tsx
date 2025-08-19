@@ -2,7 +2,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
-import { trackUserAction } from '@/services/userActivityService';
 
 interface AuthContextType {
   user: User | null;
@@ -46,15 +45,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Track auth events
+      // Track auth events (delayed to avoid circular dependency)
       if (event === 'SIGNED_IN' && session?.user) {
-        await trackUserAction('login', {
-          userId: session.user.id,
-          email: session.user.email,
-          loginMethod: session.user.app_metadata?.provider || 'email'
-        });
+        setTimeout(async () => {
+          try {
+            await supabase
+              .from('user_activities')
+              .insert({
+                user_id: session.user.id,
+                activity_type: 'login',
+                activity_data: {
+                  userId: session.user.id,
+                  email: session.user.email,
+                  loginMethod: session.user.app_metadata?.provider || 'email'
+                },
+                activity_description: 'Logged into the platform'
+              });
+          } catch (error) {
+            console.error('Error logging login activity:', error);
+          }
+        }, 100);
       } else if (event === 'SIGNED_OUT') {
-        await trackUserAction('logout');
+        setTimeout(async () => {
+          try {
+            await supabase
+              .from('user_activities')
+              .insert({
+                user_id: user?.id,
+                activity_type: 'logout',
+                activity_data: {},
+                activity_description: 'Logged out of the platform'
+              });
+          } catch (error) {
+            console.error('Error logging logout activity:', error);
+          }
+        }, 100);
       }
     });
 
@@ -119,9 +144,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    if (user) {
-      await trackUserAction('logout', { userId: user.id });
-    }
     await supabase.auth.signOut();
   };
 
