@@ -33,7 +33,7 @@ export const DashboardOverview: React.FC = () => {
 
   const recentBookings = bookings?.slice(0, 3) || [];
   const totalBookings = bookings?.length || 0;
-  const pendingBookings = bookings?.filter(b => b.booking_status === 'pending').length || 0;
+  const pendingBookings = bookings?.filter(b => b.status === 'pending').length || 0;
   const totalSpent = bookings?.reduce((sum, booking) => sum + (booking.total_price || 0), 0) || 0;
 
   if (isLoading) {
@@ -205,13 +205,13 @@ export const DashboardOverview: React.FC = () => {
                   <div className="text-right">
                     <p className="font-medium">${booking.total_price}</p>
                     <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                      booking.booking_status === 'confirmed' 
+                      booking.status === 'confirmed' 
                         ? 'bg-green-100 text-green-800'
-                        : booking.booking_status === 'pending'
+                        : booking.status === 'pending'
                         ? 'bg-yellow-100 text-yellow-800'
                         : 'bg-red-100 text-red-800'
                     }`}>
-                      {booking.booking_status}
+                      {booking.status}
                     </span>
                   </div>
                 </div>

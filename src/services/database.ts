@@ -1,5 +1,5 @@
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { BookingData } from '@/types/booking';
 import { trackFormInteraction } from './dataTracking';
 
@@ -30,17 +30,12 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
       .insert({
         user_id: user.id,
         service_type: bookingData.serviceType,
-        customer_name: bookingData.userInfo.fullName,
-        customer_email: bookingData.userInfo.email,
-        customer_phone: bookingData.userInfo.phone,
-        customer_language: bookingData.userInfo.language,
+        user_info: bookingData.userInfo as any,
         payment_method: paymentInfo.paymentMethod,
         transaction_id: paymentInfo.transactionId,
-        payment_amount: paymentInfo.totalPrice,
         total_price: bookingData.totalPrice || paymentInfo.totalPrice,
-        payment_status: 'completed',
-        booking_status: 'confirmed',
-        service_details: bookingData.serviceDetails
+        status: 'confirmed',
+        service_details: bookingData.serviceDetails as any
       })
       .select()
       .single();

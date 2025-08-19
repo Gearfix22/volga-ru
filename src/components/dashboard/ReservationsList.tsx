@@ -19,11 +19,11 @@ import { useLanguage } from '@/contexts/LanguageContext';
 interface Booking {
   id: string;
   service_type: string;
-  booking_status: string;
-  payment_status: string;
+  status: string;
   total_price: number;
   created_at: string;
   service_details: any;
+  payment_method?: string;
 }
 
 interface ReservationsListProps {
@@ -145,15 +145,15 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(booking.booking_status)}>
-                        {booking.booking_status}
+                      <Badge className={getStatusColor(booking.status)}>
+                        {booking.status}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="font-medium">${booking.total_price}</div>
                     </TableCell>
                     <TableCell>
-                      {booking.payment_status !== "completed" ? (
+                      {booking.status === "pending" ? (
                         <Button 
                           variant="default"
                           size="sm"
@@ -163,7 +163,7 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                         </Button>
                       ) : (
                         <Button variant="outline" size="sm" disabled>
-                          Paid
+                          {booking.status === "confirmed" ? "Confirmed" : "Completed"}
                         </Button>
                       )}
                     </TableCell>
