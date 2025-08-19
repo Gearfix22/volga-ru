@@ -295,6 +295,8 @@
     "pending": "قيد الانتظار",
     "awaitingConfirmation": "في انتظار التأكيد",
     "totalSpent": "إجمالي المصاريف",
+    "activityHistory": "سجل النشاطات",
+    "activityHistoryDescription": "تتبع جميع أنشطتك وتفاعلاتك على المنصة",
     "allTimeSpending": "إجمالي الإنفاق",
     "quickActions": "إجراءات سريعة",
     "newBooking": "حجز جديد",

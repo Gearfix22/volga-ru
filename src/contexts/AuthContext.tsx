@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
+import { trackUserAction } from '@/services/userActivityService';
 
 interface AuthContextType {
   user: User | null;
@@ -40,10 +41,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Track auth events
+      if (event === 'SIGNED_IN' && session?.user) {
+        await trackUserAction('login', {
+          userId: session.user.id,
+          email: session.user.email,
+          loginMethod: session.user.app_metadata?.provider || 'email'
+        });
+      } else if (event === 'SIGNED_OUT') {
+        await trackUserAction('logout');
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -107,6 +119,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    if (user) {
+      await trackUserAction('logout', { userId: user.id });
+    }
     await supabase.auth.signOut();
   };
 

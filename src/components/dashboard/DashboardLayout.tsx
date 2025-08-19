@@ -14,6 +14,7 @@ import {
   X,
   Home,
   LogOut,
+  Activity,
 } from 'lucide-react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 
@@ -45,6 +46,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const menuItems = [
     { icon: User, label: t('dashboard.overview'), path: '/dashboard' },
     { icon: History, label: t('dashboard.reservations'), path: '/dashboard/reservations' },
+    { icon: Activity, label: t('dashboard.activityHistory'), path: '/dashboard/activity' },
     { icon: Settings, label: t('dashboard.accountSettings'), path: '/dashboard/settings' },
     { icon: CreditCard, label: t('dashboard.paymentMethods'), path: '/dashboard/payments' },
   ];

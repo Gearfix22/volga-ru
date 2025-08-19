@@ -295,6 +295,8 @@
     "pending": "В ожидании",
     "awaitingConfirmation": "Ожидает подтверждения",
     "totalSpent": "Всего потрачено",
+    "activityHistory": "История активности", 
+    "activityHistoryDescription": "Отслеживайте все ваши действия и взаимодействия на платформе",
     "allTimeSpending": "Общие расходы",
     "quickActions": "Быстрые действия",
     "newBooking": "Новое бронирование",

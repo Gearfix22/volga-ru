@@ -16,6 +16,7 @@ import Contact from "./pages/Contact";
 import Booking from "./pages/Booking";
 import Payment from "./pages/Payment";
 import BookingConfirmation from "./pages/BookingConfirmation";
+import DashboardActivity from "./pages/DashboardActivity";
 import Dashboard from "./pages/Dashboard";
 import DashboardReservations from "./pages/DashboardReservations";
 import DashboardSettings from "./pages/DashboardSettings";
@@ -53,6 +54,7 @@ const App = () => {
                 <Route path="/booking-confirmation" element={<BookingConfirmation />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/reservations" element={<DashboardReservations />} />
+                <Route path="/dashboard/activity" element={<DashboardActivity />} />
                 <Route path="/dashboard/settings" element={<DashboardSettings />} />
                 <Route path="/dashboard/payments" element={<DashboardPayments />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

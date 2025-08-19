@@ -237,6 +237,8 @@
     "pending": "Pending",
     "awaitingConfirmation": "Awaiting confirmation",
     "totalSpent": "Total Spent",
+    "activityHistory": "Activity History",
+    "activityHistoryDescription": "Track all your activities and interactions on the platform",
     "allTimeSpending": "All time spending",
     "quickActions": "Quick Actions",
     "newBooking": "New Booking",
