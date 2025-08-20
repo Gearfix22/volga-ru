@@ -21,36 +21,36 @@ export const ServiceTypeSelector: React.FC<ServiceTypeSelectorProps> = ({
     return null;
   }
 
-  const services = [
-    {
-      id: 'Transportation',
-      label: t('transportation'),
-      icon: Car,
-      description: 'Airport transfers, city tours, private drivers',
-      features: ['Airport Pickup/Drop-off', 'City Transportation', 'Private Drivers', 'Group Transport']
-    },
-    {
-      id: 'Hotels',
-      label: t('hotelReservation'),
-      icon: Building2,
-      description: 'Hotel bookings, accommodation assistance',
-      features: ['Hotel Reservations', 'Room Selection', 'Special Requests', 'Group Bookings']
-    },
-    {
-      id: 'Events',
-      label: t('eventBooking'),
-      icon: Calendar,
-      description: 'Event tickets, cultural experiences',
-      features: ['Concert Tickets', 'Cultural Events', 'Sports Events', 'VIP Access']
-    },
-    {
-      id: 'Custom Trips',
-      label: t('customTrip'),
-      icon: MapPin,
-      description: 'Personalized travel experiences',
-      features: ['Custom Itineraries', 'Multi-destination', 'Local Experiences', 'Adventure Tours']
-    }
-  ];
+   const services = [
+     {
+       id: 'Transportation',
+       label: t('transportation'),
+       icon: Car,
+       description: t('transportationDescription'),
+       features: [t('airportPickup'), t('cityTransportation'), t('privateDrivers'), t('groupTransport')]
+     },
+     {
+       id: 'Hotels',
+       label: t('hotelReservation'),
+       icon: Building2,
+       description: t('hotelsDescription'),
+       features: [t('hotelReservations'), t('roomSelection'), t('specialRequests'), t('groupBookings')]
+     },
+     {
+       id: 'Events',
+       label: t('eventBooking'),
+       icon: Calendar,
+       description: t('eventsDescription'),
+       features: [t('concertTickets'), t('culturalEvents'), t('sportsEvents'), t('vipAccess')]
+     },
+     {
+       id: 'Custom Trips',
+       label: t('customTrip'),
+       icon: MapPin,
+       description: t('customTripsDescription'),
+       features: [t('customItineraries'), t('multiDestination'), t('localExperiences'), t('adventureTours')]
+     }
+   ];
 
   return (
     <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">

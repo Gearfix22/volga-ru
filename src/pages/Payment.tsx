@@ -469,26 +469,26 @@ const Payment = () => {
     }
   };
 
-  const paymentMethods = [
-    {
-      id: 'credit-card',
-      name: 'Credit Card',
-      icon: CreditCard,
-      description: 'Secure payment with your credit or debit card'
-    },
-    {
-      id: 'paypal',
-      name: 'PayPal',
-      icon: Shield,
-      description: 'Pay securely with your PayPal account'
-    },
-    {
-      id: 'cash-on-arrival',
-      name: 'Payment upon arrival (Cash on hand)',
-      icon: MessageCircle,
-      description: 'Pay cash when service is delivered - Contact via WhatsApp'
-    }
-  ];
+   const paymentMethods = [
+     {
+       id: 'credit-card',
+       name: t('creditCard'),
+       icon: CreditCard,
+       description: t('creditCardDescription')
+     },
+     {
+       id: 'paypal',
+       name: t('paypal'),
+       icon: Shield,
+       description: t('paypalDescription')
+     },
+     {
+       id: 'cash-on-arrival',
+       name: t('cashOnArrival'),
+       icon: MessageCircle,
+       description: t('cashOnArrivalDescription')
+     }
+   ];
 
   const renderBookingDetails = () => {
     const { serviceType, serviceDetails } = bookingData;
@@ -620,7 +620,7 @@ const Payment = () => {
               <div className="flex items-start gap-3">
                 <Users className="h-4 w-4 text-white/70 mt-1" />
                 <div>
-                  <p className="text-white/70 text-sm">Interests</p>
+                  <p className="text-white/70 text-sm">{t('interests')}</p>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {serviceDetails.interests.map((interest, index) => (
                       <Badge key={index} variant="outline" className="text-xs">
@@ -635,27 +635,27 @@ const Payment = () => {
         )}
 
         {/* Customer Information */}
-        <div className="border-t border-white/20 pt-4 mt-6">
-          <h4 className="text-white font-medium mb-3">Customer Information</h4>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-white/70">Name:</span>
-              <span className="text-white">{bookingData.userInfo.fullName}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-white/70">Email:</span>
-              <span className="text-white">{bookingData.userInfo.email}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-white/70">Phone:</span>
-              <span className="text-white">{bookingData.userInfo.phone}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-white/70">Language:</span>
-              <span className="text-white">{bookingData.userInfo.language}</span>
-            </div>
-          </div>
-        </div>
+                         <div className="border-t border-white/20 pt-4 mt-6">
+                           <h4 className="text-white font-medium mb-3">{t('customerInformation')}</h4>
+                           <div className="space-y-2">
+                             <div className="flex justify-between text-sm">
+                               <span className="text-white/70">{t('name')}:</span>
+                               <span className="text-white">{bookingData.userInfo.fullName}</span>
+                             </div>
+                             <div className="flex justify-between text-sm">
+                               <span className="text-white/70">{t('email')}:</span>
+                               <span className="text-white">{bookingData.userInfo.email}</span>
+                             </div>
+                             <div className="flex justify-between text-sm">
+                               <span className="text-white/70">{t('phone')}:</span>
+                               <span className="text-white">{bookingData.userInfo.phone}</span>
+                             </div>
+                             <div className="flex justify-between text-sm">
+                               <span className="text-white/70">{t('language')}:</span>
+                               <span className="text-white">{bookingData.userInfo.language}</span>
+                             </div>
+                           </div>
+                         </div>
       </div>
     );
   };
@@ -694,47 +694,47 @@ const Payment = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Payment Form */}
             <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Lock className="h-5 w-5" />
-                  Secure Payment
-                </CardTitle>
-                <CardDescription className="text-white/70">
-                  Complete your booking with secure payment
-                </CardDescription>
-              </CardHeader>
+               <CardHeader>
+                 <CardTitle className="text-white flex items-center gap-2">
+                   <Lock className="h-5 w-5" />
+                   {t('securePayment')}
+                 </CardTitle>
+                 <CardDescription className="text-white/70">
+                   {t('completeBookingSecure')}
+                 </CardDescription>
+               </CardHeader>
               <CardContent>
                 {/* Payment Amount */}
-                <div className="space-y-4 mb-6">
-                  <h3 className="text-white font-medium flex items-center gap-2">
-                    <DollarSign className="h-5 w-5" />
-                    Payment Amount
-                  </h3>
-                  <div>
-                    <Label htmlFor="amount" className="block text-white text-sm font-medium mb-2">
-                      Amount (USD)
-                    </Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70">$</span>
-                      <Input
-                        id="amount"
-                        type="text"
-                        value={customAmount}
-                        onChange={handleAmountChange}
-                        className="pl-8 bg-white/10 border-white/20 text-white placeholder-white/50 focus:ring-russian-gold"
-                        placeholder="0.00"
-                        required
-                      />
-                    </div>
-                    <p className="text-white/60 text-xs mt-1">
-                      Enter the amount you wish to pay
-                    </p>
-                  </div>
-                </div>
+                 <div className="space-y-4 mb-6">
+                   <h3 className="text-white font-medium flex items-center gap-2">
+                     <DollarSign className="h-5 w-5" />
+                     {t('paymentAmount')}
+                   </h3>
+                   <div>
+                     <Label htmlFor="amount" className="block text-white text-sm font-medium mb-2">
+                       {t('amountUSD')}
+                     </Label>
+                     <div className="relative">
+                       <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70">$</span>
+                       <Input
+                         id="amount"
+                         type="text"
+                         value={customAmount}
+                         onChange={handleAmountChange}
+                         className="pl-8 bg-white/10 border-white/20 text-white placeholder-white/50 focus:ring-russian-gold"
+                         placeholder="0.00"
+                         required
+                       />
+                     </div>
+                     <p className="text-white/60 text-xs mt-1">
+                       {t('enterAmountToPay')}
+                     </p>
+                   </div>
+                 </div>
 
-                {/* Payment Method Selection */}
-                <div className="space-y-4 mb-6">
-                  <h3 className="text-white font-medium">Payment Method</h3>
+                 {/* Payment Method Selection */}
+                 <div className="space-y-4 mb-6">
+                   <h3 className="text-white font-medium">{t('paymentMethod')}</h3>
                   <div className="grid grid-cols-1 gap-3">
                     {paymentMethods.map((method) => (
                       <div
@@ -766,23 +766,23 @@ const Payment = () => {
                 {/* Credit Card Form */}
                 {selectedMethod === 'credit-card' && (
                   <form onSubmit={handleCreditCardPayment} className="space-y-4">
-                    <div>
-                      <label className="block text-white text-sm font-medium mb-2">
-                        Cardholder Name
-                      </label>
-                      <input
-                        type="text"
-                        value={cardholderName}
-                        onChange={(e) => setCardholderName(e.target.value)}
-                        className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
-                        placeholder="Enter cardholder name"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-white text-sm font-medium mb-2">
-                        Card Number
-                      </label>
+                     <div>
+                       <label className="block text-white text-sm font-medium mb-2">
+                         {t('cardholderName')}
+                       </label>
+                       <input
+                         type="text"
+                         value={cardholderName}
+                         onChange={(e) => setCardholderName(e.target.value)}
+                         className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
+                         placeholder={t('enterCardholderName')}
+                         required
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-white text-sm font-medium mb-2">
+                         {t('cardNumber')}
+                       </label>
                       <input
                         type="text"
                         value={cardNumber}
@@ -799,10 +799,10 @@ const Payment = () => {
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          Expiry Date
-                        </label>
+                       <div>
+                         <label className="block text-white text-sm font-medium mb-2">
+                           {t('expiryDate')}
+                         </label>
                         <input
                           type="text"
                           value={expiryDate}
@@ -822,10 +822,10 @@ const Payment = () => {
                           required
                         />
                       </div>
-                      <div>
-                        <label className="block text-white text-sm font-medium mb-2">
-                          CVV
-                        </label>
+                       <div>
+                         <label className="block text-white text-sm font-medium mb-2">
+                           {t('cvv')}
+                         </label>
                         <input
                           type="text"
                           value={cvv}
@@ -841,23 +841,23 @@ const Payment = () => {
                       </div>
                     </div>
 
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                      <h4 className="text-blue-800 dark:text-blue-200 font-medium mb-2">Bank Transfer Information</h4>
-                      <p className="text-blue-700 dark:text-blue-300 text-sm mb-2">
-                        Your payment will be processed securely. For bank transfer details, please contact us at:
-                      </p>
-                      <p className="text-blue-800 dark:text-blue-200 text-sm font-mono">
-                        info@volgaservices.com
-                      </p>
-                    </div>
+                     <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                       <h4 className="text-blue-800 dark:text-blue-200 font-medium mb-2">{t('bankTransferInfo')}</h4>
+                       <p className="text-blue-700 dark:text-blue-300 text-sm mb-2">
+                         {t('bankTransferDescription')}
+                       </p>
+                       <p className="text-blue-800 dark:text-blue-200 text-sm font-mono">
+                         info@volgaservices.com
+                       </p>
+                     </div>
 
-                    <Button
-                      type="submit"
-                      disabled={isProcessing || finalAmount <= 0}
-                      className="w-full bg-russian-gold hover:bg-russian-gold/90 text-white font-semibold py-3"
-                    >
-                      {isProcessing ? 'Processing Payment...' : `Pay $${finalAmount.toFixed(2)} with Credit Card`}
-                    </Button>
+                     <Button
+                       type="submit"
+                       disabled={isProcessing || finalAmount <= 0}
+                       className="w-full bg-russian-gold hover:bg-russian-gold/90 text-white font-semibold py-3"
+                     >
+                       {isProcessing ? t('processingPayment') : t('payWithCreditCard', { amount: finalAmount.toFixed(2) })}
+                     </Button>
                   </form>
                 )}
 
