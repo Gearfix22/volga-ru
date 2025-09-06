@@ -14,11 +14,53 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_status_history: {
+        Row: {
+          booking_id: string | null
+          changed_by: string | null
+          created_at: string
+          id: string
+          new_status: string
+          notes: string | null
+          old_status: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          new_status: string
+          notes?: string | null
+          old_status?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          new_status?: string
+          notes?: string | null
+          old_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_status_history_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
+          admin_notes: string | null
           created_at: string | null
+          customer_notes: string | null
           id: string
           payment_method: string | null
+          payment_status: string | null
+          requires_verification: boolean | null
           service_details: Json | null
           service_type: string
           status: string | null
@@ -29,9 +71,13 @@ export type Database = {
           user_info: Json
         }
         Insert: {
+          admin_notes?: string | null
           created_at?: string | null
+          customer_notes?: string | null
           id?: string
           payment_method?: string | null
+          payment_status?: string | null
+          requires_verification?: boolean | null
           service_details?: Json | null
           service_type: string
           status?: string | null
@@ -42,9 +88,13 @@ export type Database = {
           user_info: Json
         }
         Update: {
+          admin_notes?: string | null
           created_at?: string | null
+          customer_notes?: string | null
           id?: string
           payment_method?: string | null
+          payment_status?: string | null
+          requires_verification?: boolean | null
           service_details?: Json | null
           service_type?: string
           status?: string | null
@@ -178,6 +228,42 @@ export type Database = {
           price_per_day?: number | null
           regions?: string[]
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      draft_bookings: {
+        Row: {
+          booking_progress: string | null
+          created_at: string
+          id: string
+          service_details: Json | null
+          service_type: string
+          total_price: number | null
+          updated_at: string
+          user_id: string | null
+          user_info: Json | null
+        }
+        Insert: {
+          booking_progress?: string | null
+          created_at?: string
+          id?: string
+          service_details?: Json | null
+          service_type: string
+          total_price?: number | null
+          updated_at?: string
+          user_id?: string | null
+          user_info?: Json | null
+        }
+        Update: {
+          booking_progress?: string | null
+          created_at?: string
+          id?: string
+          service_details?: Json | null
+          service_type?: string
+          total_price?: number | null
+          updated_at?: string
+          user_id?: string | null
+          user_info?: Json | null
         }
         Relationships: []
       }
@@ -466,6 +552,50 @@ export type Database = {
           visit_timestamp?: string | null
         }
         Relationships: []
+      }
+      payment_receipts: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          file_name: string
+          file_url: string
+          id: string
+          upload_date: string
+          verification_notes: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          file_name: string
+          file_url: string
+          id?: string
+          upload_date?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          upload_date?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_receipts_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
