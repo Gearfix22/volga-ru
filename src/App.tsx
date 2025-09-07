@@ -22,6 +22,7 @@ import DashboardReservations from "./pages/DashboardReservations";
 import DashboardSettings from "./pages/DashboardSettings";
 import DashboardPayments from "./pages/DashboardPayments";
 import EnhancedBooking from "./pages/EnhancedBooking";
+import EnhancedPayment from "./pages/EnhancedPayment";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => {
                 <Route path="/payment" element={<Payment />} />
                 <Route path="/booking-confirmation" element={<BookingConfirmation />} />
                 <Route path="/enhanced-booking" element={<EnhancedBooking />} />
+                <Route path="/enhanced-payment" element={<EnhancedPayment />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/dashboard/reservations" element={<DashboardReservations />} />
                 <Route path="/dashboard/activity" element={<DashboardActivity />} />

@@ -355,3 +355,8 @@ export const getEnhancedBookings = async (filters?: {
   if (error) throw error;
   return data || [];
 };
+
+// Complete draft booking by deleting it (after successful booking creation)
+export const completeDraftBooking = async (draftId: string): Promise<void> => {
+  await deleteDraftBooking(draftId);
+};
