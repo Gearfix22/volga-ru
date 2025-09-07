@@ -99,7 +99,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signUpData.options.data.phone = phone;
     }
 
-    const { error } = await supabase.auth.signUp(signUpData);
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${window.location.origin}/`,
+      data: {}
+    }
+  });
     return { error };
   };
 
