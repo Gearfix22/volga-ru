@@ -42,8 +42,8 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
 
   const handleBookNow = () => {
     const serviceType = getServiceTypeFromCategory(service.category);
-    console.log(`Navigating to booking page for service: ${service.id} with type: ${serviceType}`);
-    navigate(`/booking?service=${serviceType}`);
+    console.log(`Navigating to enhanced booking page for service: ${service.id} with type: ${serviceType}`);
+    navigate(`/enhanced-booking?service=${serviceType}`);
   };
 
   return (

@@ -36,10 +36,10 @@ export const UserMenu: React.FC = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem asChild>
-          <Link to="/dashboard" className="w-full">
-            <Settings className="h-4 w-4 mr-2" />
-            {t('nav.dashboard')}
-          </Link>
+              <Link to="/enhanced-dashboard" className="w-full">
+                <Settings className="h-4 w-4 mr-2" />
+                {t('nav.dashboard')}
+              </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={signOut}>
           <LogOut className="h-4 w-4 mr-2" />

@@ -122,7 +122,7 @@ const EnhancedPayment = () => {
         description: t('cashPaymentConfirmed'),
       });
 
-      navigate('/booking-confirmation', {
+              navigate('/enhanced-confirmation', {
         state: {
           bookingData: {
             ...bookingData,
@@ -190,7 +190,7 @@ const EnhancedPayment = () => {
         description: `Transaction ID: ${transactionId}`,
       });
 
-      navigate('/booking-confirmation', {
+      navigate('/enhanced-confirmation', {
         state: {
           bookingData: {
             ...bookingData,
@@ -246,7 +246,7 @@ const EnhancedPayment = () => {
         description: t('bankTransferSubmitted'),
       });
 
-      navigate('/booking-confirmation', {
+      navigate('/enhanced-confirmation', {
         state: {
           bookingData: {
             ...bookingData,
