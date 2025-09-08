@@ -14,6 +14,7 @@ interface AuthContextType {
   verifyOtp: (phone: string, token: string, type: 'sms' | 'phone_change') => Promise<{ error: any }>;
   sendOtp: (phone: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  hasRole: (role: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,12 +31,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userRoles, setUserRoles] = useState<string[]>([]);
 
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserRoles(session.user.id);
+      }
       setLoading(false);
     });
 
@@ -43,6 +48,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserRoles(session.user.id);
+      } else {
+        setUserRoles([]);
+      }
       setLoading(false);
       
       // Track auth events (delayed to avoid circular dependency)
@@ -85,6 +95,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchUserRoles = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+      
+      if (!error && data) {
+        setUserRoles(data.map(r => r.role));
+      }
+    } catch (error) {
+      console.error('Error fetching user roles:', error);
+    }
+  };
+
+  const hasRole = (role: string) => {
+    return userRoles.includes(role);
+  };
 
   const signUp = async (email: string, password: string, phone?: string) => {
     const signUpData: any = {
@@ -165,6 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     verifyOtp,
     sendOtp,
     signOut,
+    hasRole,
   };
 
   return (
