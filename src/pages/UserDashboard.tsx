@@ -151,7 +151,7 @@ const UserDashboard = () => {
                   <p className="text-sm font-medium text-muted-foreground">{t('totalBookings')}</p>
                   <p className="text-2xl font-bold">{stats.total}</p>
                 </div>
-                <FileText className="h-8 w-8 text-blue-600" />
+                <FileText className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
@@ -161,7 +161,7 @@ const UserDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{t('confirmed')}</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.confirmed}</p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
@@ -173,7 +173,7 @@ const UserDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{t('pending')}</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                  <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.pending}</p>
                 </div>
                 <Clock className="h-8 w-8 text-yellow-600" />
               </div>
@@ -185,9 +185,9 @@ const UserDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{t('inProgress')}</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.inProgress}</p>
+                  <p className="text-2xl font-bold text-primary">{stats.inProgress}</p>
                 </div>
-                <RotateCcw className="h-8 w-8 text-blue-600" />
+                <RotateCcw className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>

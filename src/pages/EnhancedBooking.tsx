@@ -98,7 +98,7 @@ const EnhancedBooking = () => {
     if (user && serviceType && (Object.keys(serviceDetails).length > 0 || userInfo.fullName)) {
       const timer = setTimeout(() => {
         autoSave();
-      }, 2000); // Auto-save after 2 seconds of inactivity
+      }, 10000); // Auto-save after 10 seconds of inactivity
 
       return () => clearTimeout(timer);
     }
@@ -225,6 +225,17 @@ const EnhancedBooking = () => {
       toast({
         title: t('invalidEmail'),
         description: t('pleaseEnterValidEmail'),
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    // Validate phone number format
+    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+    if (!phoneRegex.test(userInfo.phone.replace(/[\s\-\(\)]/g, ''))) {
+      toast({
+        title: t('invalidPhone'),
+        description: t('pleaseEnterValidPhone'),
         variant: "destructive"
       });
       return false;

@@ -27,6 +27,9 @@ import EnhancedDashboard from "./pages/EnhancedDashboard";
 import EnhancedConfirmation from "./pages/EnhancedConfirmation";
 import Auth from "./pages/Auth";
 import UserDashboard from "./pages/UserDashboard";
+import ProfileSettings from "./pages/ProfileSettings";
+import Support from "./pages/Support";
+import PaymentsHistory from "./pages/PaymentsHistory";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import BookingsManagement from "./components/admin/BookingsManagement";
 
@@ -65,6 +68,9 @@ const App = () => {
                 <Route path="/enhanced-payment" element={<EnhancedPayment />} />
                 <Route path="/enhanced-dashboard" element={<UserDashboard />} />
                 <Route path="/enhanced-confirmation" element={<EnhancedConfirmation />} />
+                <Route path="/profile-settings" element={<ProfileSettings />} />
+                <Route path="/support" element={<Support />} />
+                <Route path="/payments-history" element={<PaymentsHistory />} />
                 
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminDashboard />} />

@@ -31,6 +31,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ResponsiveTable } from '@/components/ui/responsive-table';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 
 interface Booking {
@@ -243,92 +244,84 @@ const BookingsManagement = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Service</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Payment</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
-                        Loading bookings...
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredBookings.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">
-                        No bookings found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredBookings.map((booking) => (
-                      <TableRow key={booking.id}>
-                        <TableCell className="font-mono text-sm">
-                          {booking.id.slice(0, 8)}...
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {booking.service_type}
-                        </TableCell>
-                        <TableCell>
-                          {booking.user_info?.fullName || booking.user_info?.email || 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          ${booking.total_price?.toFixed(2) || '0.00'}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(booking.status)}>
-                            {booking.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(booking.payment_status)}>
-                            {booking.payment_status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(booking.created_at).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {booking.status === 'pending' && (
-                              <>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => updateBookingStatus(booking.id, 'confirmed')}
-                                >
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => updateBookingStatus(booking.id, 'cancelled')}
-                                >
-                                  <XCircle className="h-4 w-4 text-red-600" />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+            <ResponsiveTable
+              data={filteredBookings}
+              loading={loading}
+              columns={[
+                {
+                  key: 'id',
+                  label: 'ID',
+                  render: (value) => (
+                    <span className="font-mono text-sm">{value.slice(0, 8)}...</span>
+                  )
+                },
+                {
+                  key: 'service_type',
+                  label: 'Service',
+                  className: 'font-medium'
+                },
+                {
+                  key: 'user_info',
+                  label: 'Customer',
+                  render: (value) => value?.fullName || value?.email || 'N/A'
+                },
+                {
+                  key: 'total_price',
+                  label: 'Amount',
+                  render: (value) => `$${value?.toFixed(2) || '0.00'}`
+                },
+                {
+                  key: 'status',
+                  label: 'Status',
+                  render: (value) => (
+                    <Badge className={getStatusColor(value)}>{value}</Badge>
+                  )
+                },
+                {
+                  key: 'payment_status',
+                  label: 'Payment',
+                  render: (value) => (
+                    <Badge className={getStatusColor(value)}>{value}</Badge>
+                  )
+                },
+                {
+                  key: 'created_at',
+                  label: 'Date',
+                  render: (value) => new Date(value).toLocaleDateString()
+                }
+              ]}
+              actions={(booking) => (
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm">
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  {booking.status === 'pending' && (
+                    <>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => updateBookingStatus(booking.id, 'confirmed')}
+                      >
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => updateBookingStatus(booking.id, 'cancelled')}
+                      >
+                        <XCircle className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </>
                   )}
-                </TableBody>
-              </Table>
-            </div>
+                </div>
+              )}
+              emptyState={
+                <div className="text-center py-8">
+                  <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No bookings found</p>
+                </div>
+              }
+            />
           </CardContent>
         </Card>
       </div>

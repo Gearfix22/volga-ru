@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -37,6 +37,7 @@ const AppSidebar = () => {
   const { user, hasRole } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   const { state } = useSidebar();
 
   const userMenuItems = [

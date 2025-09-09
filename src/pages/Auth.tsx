@@ -49,7 +49,13 @@ const Auth = () => {
   };
 
   const validatePassword = (password: string) => {
-    return password.length >= 6;
+    // Stronger password requirements
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasMinLength = password.length >= 8;
+    
+    return hasUppercase && hasLowercase && hasNumbers && hasMinLength;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -130,7 +136,7 @@ const Auth = () => {
     if (!validatePassword(signupPassword)) {
       toast({
         title: t('error'),
-        description: t('passwordTooShort'),
+        description: t('passwordTooWeak'),
         variant: 'destructive'
       });
       return;
@@ -373,6 +379,9 @@ const Auth = () => {
                           )}
                         </Button>
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        Password must be 8+ characters with uppercase, lowercase, and numbers
+                      </p>
                     </div>
 
                     <div className="space-y-2">
