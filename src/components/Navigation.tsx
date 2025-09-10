@@ -23,43 +23,43 @@ export const Navigation: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 russian-glass border-b border-russian-gold/20">
-      <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8">
-        <div className="flex items-center justify-between h-11 sm:h-12 lg:h-14">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-surface-glass backdrop-blur-xl border-b border-border/50">
+      <div className="container mx-auto px-4 lg:px-6">
+        <div className="flex items-center justify-between h-14 lg:h-16">
           {/* Logo with Company Name */}
-          <div className="flex items-center space-x-1 sm:space-x-2 lg:space-x-3 cursor-pointer" onClick={() => navigate('/')}>
+          <div className="flex items-center space-x-3 cursor-pointer group" onClick={() => navigate('/')}>
             <img 
               src="/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png"
               alt="Volga Services Logo"
-              className="w-5 h-5 sm:w-7 sm:h-7 lg:w-9 lg:h-9"
+              className="w-8 h-8 lg:w-10 lg:h-10 transition-transform group-hover:scale-105"
             />
-            <span className="text-white font-bold text-xs sm:text-sm lg:text-lg font-serif">
-              <span className="kremlin-text">VOLGA</span>
-              <span className="ml-1 text-russian-cream">SERVICES</span>
-            </span>
-          </div>
-
-          {/* Desktop Navigation */}
-          <div className="hidden lg:block">
-            <div className="flex items-center space-x-1 xl:space-x-4">
-              {navigationItems.map((item) => (
-                <button
-                  key={item.key}
-                  onClick={() => navigate(item.path)}
-                  className={`px-2 xl:px-3 py-2 text-sm lg:text-base font-medium transition-colors ${
-                    isActive(item.path) 
-                      ? 'text-russian-gold' 
-                      : 'text-white hover:text-russian-gold'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
+            <div className="font-bold text-lg lg:text-xl font-serif">
+              <span className="bg-gradient-to-r from-brand-accent to-brand-primary bg-clip-text text-transparent">
+                VOLGA
+              </span>
+              <span className="ml-1 text-foreground">SERVICES</span>
             </div>
           </div>
 
+          {/* Desktop Navigation */}
+          <div className="hidden lg:flex items-center space-x-1">
+            {navigationItems.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => navigate(item.path)}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                  isActive(item.path) 
+                    ? 'text-brand-accent bg-brand-accent/10' 
+                    : 'text-foreground hover:text-brand-accent hover:bg-brand-accent/5'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
           {/* Right side items */}
-          <div className="flex items-center space-x-1 sm:space-x-2">
+          <div className="flex items-center space-x-2">
             {/* Language Switcher */}
             <div className="hidden sm:block">
               <LanguageSwitcher />
@@ -69,20 +69,19 @@ export const Navigation: React.FC = () => {
             <UserMenu />
 
             {/* Mobile menu button */}
-            <div className="lg:hidden">
-              <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="text-white p-1"
-              >
-                {isOpen ? <X size={16} /> : <Menu size={16} />}
-              </button>
-            </div>
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="lg:hidden text-foreground hover:text-brand-accent p-2 rounded-md hover:bg-brand-accent/10 transition-colors"
+              aria-label="Toggle menu"
+            >
+              {isOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
         </div>
 
         {/* Mobile Navigation */}
         {isOpen && (
-          <div className="lg:hidden pb-2 sm:pb-3">
+          <div className="lg:hidden border-t border-border/50 py-2">
             <div className="space-y-1">
               {navigationItems.map((item) => (
                 <button
@@ -91,17 +90,17 @@ export const Navigation: React.FC = () => {
                     navigate(item.path);
                     setIsOpen(false);
                   }}
-                  className={`block w-full text-left px-2 sm:px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`block w-full text-left px-4 py-3 text-sm font-medium rounded-md transition-colors ${
                     isActive(item.path)
-                      ? 'text-russian-gold'
-                      : 'text-white hover:text-russian-gold'
+                      ? 'text-brand-accent bg-brand-accent/10'
+                      : 'text-foreground hover:text-brand-accent hover:bg-brand-accent/5'
                   }`}
                 >
                   {item.label}
                 </button>
               ))}
               {/* Language Switcher in mobile menu */}
-              <div className="px-2 sm:px-3 py-1 sm:hidden">
+              <div className="px-4 py-2 sm:hidden">
                 <LanguageSwitcher />
               </div>
             </div>

@@ -48,52 +48,48 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
 
   return (
     <Card 
-      className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/15 transition-all duration-300 transform hover:scale-[1.02] sm:hover:scale-105 overflow-hidden group h-full flex flex-col"
+      className="bg-card/80 backdrop-blur-sm border hover:bg-card/90 transition-all duration-500 transform hover:scale-105 overflow-hidden group h-full flex flex-col shadow-lg hover:shadow-2xl"
       style={{ animationDelay: `${index * 100}ms` }}
     >
-      <div className="relative h-32 sm:h-40 lg:h-48 overflow-hidden">
+      <div className="relative h-40 lg:h-48 overflow-hidden">
         <img 
           src={service.image} 
           alt={service.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
         />
-        <div className="absolute top-2 sm:top-3 lg:top-4 left-2 sm:left-3 lg:left-4">
-          <div className="bg-volga-logo-blue/80 backdrop-blur-sm rounded-full p-1.5 sm:p-2">
-            <Icon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <div className="absolute top-4 left-4">
+          <div className="bg-brand-primary/90 backdrop-blur-sm rounded-full p-2">
+            <Icon className="h-5 w-5 lg:h-6 lg:w-6 text-brand-primary-foreground" />
           </div>
         </div>
       </div>
       
-      <CardHeader className="p-3 sm:p-4 lg:p-6 flex-grow">
-        <CardTitle className="text-base sm:text-lg lg:text-xl font-bold text-white leading-tight">
+      <CardHeader className="p-4 lg:p-6 flex-grow">
+        <CardTitle className="text-lg lg:text-xl font-bold text-foreground leading-tight group-hover:text-brand-primary transition-colors">
           {service.title}
         </CardTitle>
-        <CardDescription className="text-gray-200 text-xs sm:text-sm lg:text-base leading-relaxed">
+        <CardDescription className="text-muted-foreground text-sm lg:text-base leading-relaxed">
           {service.description}
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 lg:p-6 pt-0 mt-auto">
-        <div className="flex flex-wrap gap-1 sm:gap-2">
-          {service.features.map((feature, featureIndex) => (
-            <Badge 
-              key={featureIndex}
-              variant="outline" 
-              className="border-volga-logo-red/50 text-white bg-volga-logo-red/20 text-xs leading-tight px-2 py-1"
-            >
+      <CardContent className="space-y-4 p-4 lg:p-6 pt-0 mt-auto">
+        <div className="space-y-2">
+          {service.features.slice(0, 3).map((feature, featureIndex) => (
+            <div key={featureIndex} className="flex items-center text-sm text-muted-foreground">
+              <div className="w-1.5 h-1.5 bg-brand-accent rounded-full mr-2 flex-shrink-0" />
               {feature}
-            </Badge>
+            </div>
           ))}
         </div>
         
-        <div className="pt-2 sm:pt-4">
-          <Button
-            onClick={handleBookNow}
-            className="w-full bg-volga-logo-red hover:bg-red-700 text-white text-xs sm:text-sm lg:text-base py-2 sm:py-2.5"
-          >
-            {t('common.bookNow')}
-          </Button>
-        </div>
+        <Button
+          onClick={handleBookNow}
+          className="w-full bg-brand-secondary hover:bg-brand-secondary/90 text-brand-secondary-foreground text-sm lg:text-base py-2.5 shadow-lg hover:shadow-xl transition-all group-hover:scale-105"
+        >
+          {t('common.bookNow')}
+        </Button>
       </CardContent>
     </Card>
   );

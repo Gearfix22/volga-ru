@@ -65,6 +65,18 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				brand: {
+					primary: 'hsl(var(--brand-primary))',
+					'primary-foreground': 'hsl(var(--brand-primary-foreground))',
+					secondary: 'hsl(var(--brand-secondary))',
+					'secondary-foreground': 'hsl(var(--brand-secondary-foreground))',
+					accent: 'hsl(var(--brand-accent))',
+					'accent-foreground': 'hsl(var(--brand-accent-foreground))'
+				},
+				surface: {
+					glass: 'hsl(var(--surface-glass))',
+					overlay: 'hsl(var(--surface-overlay))'
+				},
 				// Russian landmarks luxury theme colors
 				russian: {
 					blue: '#1e3a8a',

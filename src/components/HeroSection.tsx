@@ -10,36 +10,58 @@ export const HeroSection: React.FC = () => {
   const navigate = useNavigate();
 
   const handleExploreServices = () => {
-    console.log('Navigating to services page...');
     navigate('/services');
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-center px-3 sm:px-6 lg:px-8 xl:px-12 relative">
+    <main className="flex flex-col items-center justify-center min-h-screen text-center px-4 sm:px-6 lg:px-8 relative">
       {/* Hero content */}
-      <div className="max-w-6xl mx-auto mb-6 sm:mb-8 lg:mb-12 space-y-3 sm:space-y-4 lg:space-y-6 fade-in-up">
-        <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 sm:mb-4 lg:mb-6 text-shadow-elegant font-serif leading-tight px-1 sm:px-2">
+      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 animate-fade-in">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 text-shadow-elegant font-serif leading-tight">
           {t('common.welcome')}
-        </h2>
+        </h1>
         
-        <p className={`text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl text-russian-cream leading-relaxed max-w-3xl mx-auto px-1 sm:px-2 ${
+        <p className={`text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground leading-relaxed max-w-2xl mx-auto ${
           language === 'ar' ? 'font-medium' : ''
         }`}>
           {t('common.subtitle')}
         </p>
+        
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
+          <Button
+            onClick={handleExploreServices}
+            size="lg"
+            className="bg-brand-secondary hover:bg-brand-secondary/90 text-brand-secondary-foreground px-8 py-4 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+          >
+            {t('common.exploreServices')}
+            <ArrowRight className={`h-5 w-5 ${language === 'ar' ? 'mr-3 rotate-180' : 'ml-3'}`} />
+          </Button>
+          
+          <Button
+            onClick={() => navigate('/enhanced-booking')}
+            variant="outline"
+            size="lg"
+            className="border-brand-accent text-brand-accent hover:bg-brand-accent hover:text-brand-accent-foreground px-8 py-4 text-lg font-semibold rounded-lg transition-all duration-300"
+          >
+            {t('common.bookNow')}
+          </Button>
+        </div>
       </div>
       
-      {/* CTA Button */}
-      <div className="fade-in-up" style={{ animationDelay: '0.4s' }}>
-        <Button
-          onClick={handleExploreServices}
-          size="lg"
-          className="bg-russian-red hover:bg-red-800 text-white px-6 sm:px-8 lg:px-10 py-3 sm:py-3.5 text-sm sm:text-base lg:text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 w-auto min-w-[180px] sm:min-w-[220px]"
-        >
-          {t('common.exploreServices')}
-          <ArrowRight className={`h-4 w-4 sm:h-5 sm:w-5 ${language === 'ar' ? 'mr-2 sm:mr-3 rotate-180' : 'ml-2 sm:ml-3'}`} />
-        </Button>
+      {/* Features highlight */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-fade-in" style={{ animationDelay: '0.6s' }}>
+        <div className="flex items-center space-x-6 text-muted-foreground text-sm">
+          <span className="flex items-center">
+            ✓ {t('common.premiumService')}
+          </span>
+          <span className="flex items-center">
+            ✓ {t('common.multilingualSupport')}
+          </span>
+          <span className="flex items-center">
+            ✓ {t('common.secureBooking')}
+          </span>
+        </div>
       </div>
-    </div>
+    </main>
   );
 };

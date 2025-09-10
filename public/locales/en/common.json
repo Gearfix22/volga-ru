@@ -73,8 +73,12 @@
   },
   "common": {
     "welcome": "Welcome to Volga Services",
-    "subtitle": "Russia's premium tourist experience. We provide VIP transportation, seamless hotel bookings, curated event access, and unforgettable Russian adventures.",
+    "subtitle": "Discover premium travel services across Russia's most magnificent destinations. From luxury accommodations to exclusive cultural experiences.",
     "exploreServices": "Explore Services",
+    "bookNow": "Book Now",
+    "premiumService": "Premium Service",
+    "multilingualSupport": "Multilingual Support",
+    "secureBooking": "Secure Booking",
     "languageSelector": "Language",
     "backToHome": "Back to Home",
     "bookNow": "Book Now",
