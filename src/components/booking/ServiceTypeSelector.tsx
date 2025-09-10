@@ -53,44 +53,55 @@ export const ServiceTypeSelector: React.FC<ServiceTypeSelectorProps> = ({
    ];
 
   return (
-    <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
+    <Card className="coastal-glass border border-white/20">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Plane className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 text-white">
+          <Plane className="h-5 w-5 text-coastal-blue" />
           {t('selectServiceType')}
         </CardTitle>
-        <CardDescription>{t('chooseServiceYouNeed')}</CardDescription>
+        <CardDescription className="text-coastal-pearl">
+          {t('chooseServiceYouNeed')}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {services.map(({ id, label, icon: Icon, description, features }) => (
             <Card
               key={id}
-              className={`cursor-pointer transition-all hover:shadow-lg hover:scale-105 ${
+              className={`cursor-pointer transition-all duration-300 hover:shadow-glow hover:scale-105 ${
                 serviceType === id 
-                  ? 'ring-2 ring-primary bg-primary/5 shadow-lg' 
-                  : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                  ? 'ring-2 ring-brand-primary bg-brand-primary/10 shadow-glow border-brand-primary/50' 
+                  : 'coastal-glass hover:bg-white/10 border-white/10'
               }`}
               onClick={() => onSelectService(id)}
+              role="button"
+              tabIndex={0}
+              aria-label={`Select ${label} service`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelectService(id);
+                }
+              }}
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${
+                  <div className={`p-2 rounded-lg transition-colors ${
                     serviceType === id 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-slate-100 dark:bg-slate-800'
+                      ? 'bg-brand-primary text-white' 
+                      : 'bg-white/10 text-coastal-blue'
                   }`}>
                     <Icon className="h-6 w-6" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-1">{label}</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                    <h3 className="font-semibold text-lg mb-1 text-white">{label}</h3>
+                    <p className="text-sm text-coastal-pearl mb-3 leading-relaxed">
                       {description}
                     </p>
                     <div className="space-y-1">
                       {features.map((feature, index) => (
-                        <div key={index} className="flex items-center gap-2 text-xs text-slate-500">
-                          <div className="w-1 h-1 bg-slate-400 rounded-full" />
+                        <div key={index} className="flex items-center gap-2 text-xs text-coastal-sage">
+                          <div className="w-1.5 h-1.5 bg-coastal-blue rounded-full" />
                           {feature}
                         </div>
                       ))}

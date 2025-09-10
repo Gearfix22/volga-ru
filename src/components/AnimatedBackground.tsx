@@ -18,27 +18,27 @@ export const AnimatedBackground: React.FC = () => {
       {/* Russian flag colors gradient overlay */}
       <div className="absolute inset-0 russia-gradient opacity-60" />
       
-      {/* Animated floating elements overlay */}
-      <div className="absolute inset-0">
+      {/* Optimized floating elements overlay */}
+      <div className="absolute inset-0" aria-hidden="true">
         <div 
-          className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl"
+          className="absolute top-1/4 left-1/4 w-80 h-80 bg-white/8 rounded-full blur-3xl will-change-transform"
           style={{
-            animation: 'float 12s ease-in-out infinite',
+            animation: 'float 15s ease-in-out infinite',
             animationDelay: '0s'
           }}
         />
         <div 
-          className="absolute top-3/4 right-1/4 w-80 h-80 bg-russian-gold/20 rounded-full blur-3xl"
+          className="absolute top-3/4 right-1/4 w-64 h-64 bg-coastal-blue/15 rounded-full blur-3xl will-change-transform"
           style={{
-            animation: 'float 15s ease-in-out infinite',
-            animationDelay: '5s'
+            animation: 'float 20s ease-in-out infinite',
+            animationDelay: '7s'
           }}
         />
         <div 
-          className="absolute bottom-1/4 left-1/2 w-64 h-64 bg-russian-red/20 rounded-full blur-3xl"
+          className="absolute bottom-1/4 left-1/2 w-48 h-48 bg-brand-primary/10 rounded-full blur-3xl will-change-transform"
           style={{
-            animation: 'float 18s ease-in-out infinite',
-            animationDelay: '8s'
+            animation: 'float 25s ease-in-out infinite',
+            animationDelay: '12s'
           }}
         />
       </div>

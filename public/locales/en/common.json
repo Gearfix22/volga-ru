@@ -95,13 +95,13 @@
     "unknown": "Unknown"
   },
   "pages": {
-    "aboutUs": "About Us",
-    "contactUs": "Contact Us",
-    "aboutDescription": "Volga Services is Russia's premier tourism company, dedicated to providing exceptional travel experiences across the vast and beautiful landscapes of Russia. From the historic streets of Moscow and St. Petersburg to the pristine wilderness of Siberia, we offer comprehensive tourism solutions.",
+    "aboutUs": "About Volga Services",
+    "contactUs": "Contact Us", 
+    "aboutDescription": "Volga Services is your trusted partner for premium travel experiences in Russia and beyond. We specialize in creating personalized journeys that showcase the rich culture, stunning landscapes, and warm hospitality of Russia while ensuring comfort, safety, and unforgettable memories.",
     "ourMission": "Our Mission",
-    "missionDescription": "To provide world-class tourism services that showcase the beauty, culture, and heritage of Russia while ensuring comfort, safety, and unforgettable experiences for our guests.",
-    "ourVision": "Our Vision",
-    "visionDescription": "To be the leading tourism company in Russia, recognized globally for excellence in service, innovation in travel solutions, and commitment to sustainable tourism practices."
+    "missionDescription": "To provide exceptional, personalized travel services that connect travelers with authentic Russian experiences while maintaining the highest standards of quality, safety, and customer satisfaction.",
+    "ourVision": "Our Vision", 
+    "visionDescription": "To be the premier gateway for discovering Russia's beauty and culture, making every journey a transformative experience that creates lifelong connections and memories."
   },
   "services": {
     "ourServices": "Our Services",
