@@ -132,7 +132,6 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
       paymentMethod: paymentInfo.paymentMethod
     });
 
-    console.log('Enhanced booking created successfully:', booking);
     return booking;
 
   } catch (error) {

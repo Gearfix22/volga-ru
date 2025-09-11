@@ -54,7 +54,6 @@ const Booking = () => {
                            serviceFromUrl.charAt(0).toUpperCase() + serviceFromUrl.slice(1);
       
       setServiceType(mappedService);
-      console.log(`Pre-selecting service type: ${mappedService}`);
     }
   }, [serviceFromUrl]);
 

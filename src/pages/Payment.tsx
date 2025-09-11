@@ -51,14 +51,13 @@ const Payment = () => {
 
   // Clean up PayPal when component unmounts or method changes
   const cleanupPayPal = () => {
-    console.log('Cleaning up PayPal...');
     if (paypalButtonsInstance.current) {
       try {
         if (typeof paypalButtonsInstance.current.close === 'function') {
           paypalButtonsInstance.current.close();
         }
       } catch (error) {
-        console.log('PayPal cleanup error (safe to ignore):', error);
+        // PayPal cleanup error (safe to ignore)
       }
       paypalButtonsInstance.current = null;
     }
@@ -112,7 +111,6 @@ const Payment = () => {
       }
 
       const amount = parseFloat(customAmount) || 50;
-      console.log('Rendering PayPal buttons with amount:', amount);
 
       try {
         paypalButtonsInstance.current = window.paypal.Buttons({
@@ -196,9 +194,7 @@ const Payment = () => {
         if (paypalContainerRef.current) {
           paypalButtonsInstance.current.render(paypalContainerRef.current).then(() => {
             isPaypalMounted.current = true;
-            console.log('PayPal buttons rendered successfully');
           }).catch((error: any) => {
-            console.error('PayPal render error:', error);
             setPaypalError('Failed to render PayPal buttons');
           });
         }
@@ -368,12 +364,6 @@ const Payment = () => {
     try {
       const transactionId = `CASH${Date.now()}`;
       
-      console.log('Starting cash payment confirmation:', {
-        transactionId,
-        finalAmount,
-        bookingData: bookingData?.serviceType
-      });
-      
       // Validate required data
       if (!bookingData || !bookingData.userInfo) {
         toast({
@@ -424,9 +414,8 @@ const Payment = () => {
       // Send booking email
       try {
         await sendBookingEmail(bookingData, transactionId, finalAmount.toString());
-        console.log('Booking email sent successfully');
       } catch (error) {
-        console.error('Error sending booking email:', error);
+        // Error handled gracefully
       }
       
       // Store payment information
@@ -443,7 +432,6 @@ const Payment = () => {
       setTimeout(() => {
         // Redirect to WhatsApp
         const whatsappUrl = redirectToWhatsApp(bookingData, transactionId, finalAmount);
-        console.log('WhatsApp URL generated:', whatsappUrl);
         
         // Also navigate to booking confirmation
         navigate('/booking-confirmation', {
@@ -460,7 +448,6 @@ const Payment = () => {
       }, 1500);
       
     } catch (error) {
-      console.error('Error in cash payment confirmation:', error);
       toast({
         title: "Error",
         description: "There was an error confirming your booking. Please try again.",

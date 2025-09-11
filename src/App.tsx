@@ -3,9 +3,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { SplashScreen } from "@/components/SplashScreen";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
@@ -53,7 +54,8 @@ const App = () => {
         <Sonner />
         <AuthProvider>
           <LanguageProvider>
-            <BrowserRouter>
+            <ErrorBoundary>
+              <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
@@ -66,7 +68,7 @@ const App = () => {
                 <Route path="/booking-confirmation" element={<BookingConfirmation />} />
                 <Route path="/enhanced-booking" element={<EnhancedBooking />} />
                 <Route path="/enhanced-payment" element={<EnhancedPayment />} />
-                <Route path="/enhanced-dashboard" element={<UserDashboard />} />
+                <Route path="/user-dashboard" element={<UserDashboard />} />
                 <Route path="/enhanced-confirmation" element={<EnhancedConfirmation />} />
                 <Route path="/profile-settings" element={<ProfileSettings />} />
                 <Route path="/support" element={<Support />} />
@@ -76,7 +78,9 @@ const App = () => {
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/bookings" element={<BookingsManagement />} />
                 
+                {/* Legacy Dashboard Routes - Redirect to user dashboard */}
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/enhanced-dashboard" element={<Navigate to="/user-dashboard" replace />} />
                 <Route path="/dashboard/reservations" element={<DashboardReservations />} />
                 <Route path="/dashboard/activity" element={<DashboardActivity />} />
                 <Route path="/dashboard/settings" element={<DashboardSettings />} />
@@ -84,7 +88,8 @@ const App = () => {
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </BrowserRouter>
+              </BrowserRouter>
+            </ErrorBoundary>
           </LanguageProvider>
         </AuthProvider>
       </TooltipProvider>

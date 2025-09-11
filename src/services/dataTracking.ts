@@ -90,7 +90,7 @@ export const saveUserPreference = async (preferenceType: string, preferenceValue
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      console.log('User not authenticated, saving preference to localStorage');
+      // User not authenticated, saving preference to localStorage
       localStorage.setItem(`pref_${preferenceType}`, JSON.stringify(preferenceValue));
       return;
     }

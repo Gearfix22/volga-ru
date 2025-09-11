@@ -83,7 +83,6 @@ const EnhancedConfirmation = () => {
         console.error('Error sending booking email:', error);
       } else {
         setEmailSent(true);
-        console.log('Booking confirmation email sent successfully');
       }
     } catch (error) {
       console.error('Error sending booking email:', error);

@@ -49,7 +49,6 @@ const BookingConfirmation = () => {
         sendBookingEmail(dataToUse, txId, amount || '0')
           .then(() => {
             setEmailSent(true);
-            console.log('Booking email sent successfully');
           })
           .catch((error) => {
             console.error('Error sending booking email:', error);

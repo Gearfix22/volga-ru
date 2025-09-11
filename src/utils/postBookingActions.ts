@@ -14,11 +14,6 @@ export const sendBookingEmail = async (
   transactionId: string,
   paymentAmount: string
 ) => {
-  console.log('Preparing to send booking email to info@volgaservices.com AND to user:', {
-    bookingData,
-    transactionId,
-    paymentAmount
-  });
   
   // Format service details for email
   const formatServiceDetails = (serviceType: string, serviceDetails: any) => {
@@ -111,11 +106,8 @@ Volga Services Booking System
     paymentAmount
   };
   
-  // Simulate sending both emails (company and user)
-  console.log('Email content prepared for company:', companyEmailContent);
+  // Store email content for demo purposes
   localStorage.setItem('lastBookingEmailCompany', JSON.stringify(companyEmailContent));
-  
-  console.log('Email content prepared for user:', userEmailContent);
   localStorage.setItem('lastBookingEmailUser', JSON.stringify(userEmailContent));
   
   return { companyEmailContent, userEmailContent };
@@ -143,8 +135,6 @@ I would like to arrange the service details and confirm payment upon arrival. Pl
 
   const encodedMessage = encodeURIComponent(message);
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-  
-  console.log('Opening WhatsApp with URL:', whatsappUrl);
   
   // Open WhatsApp in a new tab
   window.open(whatsappUrl, '_blank');
@@ -202,11 +192,6 @@ export const processCreditCardPayment = async (
   amount: number,
   bookingData: BookingData
 ): Promise<PaymentResult> => {
-  console.log('Processing credit card payment:', {
-    amount,
-    cardLast4: cardDetails.cardNumber.slice(-4),
-    cardholderName: cardDetails.cardholderName
-  });
 
   // Simulate payment processing
   return new Promise((resolve, reject) => {
