@@ -602,7 +602,7 @@ export type Database = {
           created_at: string | null
           full_name: string | null
           id: string
-          phone: string | null
+          phone: string
           phone_verified: boolean | null
           preferred_language: string | null
           updated_at: string | null
@@ -611,7 +611,7 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id: string
-          phone?: string | null
+          phone: string
           phone_verified?: boolean | null
           preferred_language?: string | null
           updated_at?: string | null
@@ -620,7 +620,7 @@ export type Database = {
           created_at?: string | null
           full_name?: string | null
           id?: string
-          phone?: string | null
+          phone?: string
           phone_verified?: boolean | null
           preferred_language?: string | null
           updated_at?: string | null

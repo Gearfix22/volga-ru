@@ -33,6 +33,7 @@ import Support from "./pages/Support";
 import PaymentsHistory from "./pages/PaymentsHistory";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import BookingsManagement from "./components/admin/BookingsManagement";
+import AdminPanel from "./pages/AdminPanel";
 
 const queryClient = new QueryClient();
 
@@ -75,7 +76,8 @@ const App = () => {
                 <Route path="/payments-history" element={<PaymentsHistory />} />
                 
                 {/* Admin Routes */}
-                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin" element={<AdminPanel />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/bookings" element={<BookingsManagement />} />
                 
                 {/* Legacy Dashboard Routes - Redirect to user dashboard */}

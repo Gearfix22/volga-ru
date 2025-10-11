@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, phone?: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, phone: string, fullName: string, role?: string) => Promise<{ error: any }>;
   signUpWithPhone: (phone: string, password: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithPhone: (phone: string, password: string) => Promise<{ error: any }>;
@@ -115,27 +115,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return userRoles.includes(role);
   };
 
-  const signUp = async (email: string, password: string, phone?: string) => {
-    const signUpData: any = {
+  const signUp = async (email: string, password: string, phone: string, fullName: string, role: string = 'user') => {
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {}
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          phone,
+          full_name: fullName,
+          role
+        }
       }
-    };
-
-    if (phone) {
-      signUpData.options.data.phone = phone;
-    }
-
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: `${window.location.origin}/`,
-      data: {}
-    }
-  });
+    });
     return { error };
   };
 

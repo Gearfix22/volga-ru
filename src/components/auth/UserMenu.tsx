@@ -1,14 +1,14 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { User, LogOut, Settings } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { User, LogOut, Settings, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 
 export const UserMenu: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, hasRole } = useAuth();
   const { t } = useLanguage();
 
   if (!user) {
@@ -36,11 +36,23 @@ export const UserMenu: React.FC = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem asChild>
-              <Link to="/enhanced-dashboard" className="w-full">
-                <Settings className="h-4 w-4 mr-2" />
-                {t('nav.dashboard')}
-              </Link>
+          <Link to="/user-dashboard" className="w-full">
+            <Settings className="h-4 w-4 mr-2" />
+            {t('dashboard.dashboard')}
+          </Link>
         </DropdownMenuItem>
+        {hasRole('admin') && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/admin" className="w-full">
+                <Shield className="h-4 w-4 mr-2" />
+                {t('dashboard.adminPanel')}
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={signOut}>
           <LogOut className="h-4 w-4 mr-2" />
           {t('auth.signOut')}

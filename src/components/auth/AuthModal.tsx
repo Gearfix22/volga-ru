@@ -59,7 +59,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           setLoading(false);
           return;
         }
-        const { error } = await signUp(email, password, phone);
+        const { error } = await signUp(email, password, phone, '', 'user');
         if (error) {
           toast({
             title: t('auth.error'),

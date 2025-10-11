@@ -35,6 +35,7 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [selectedRole, setSelectedRole] = useState<'user' | 'admin'>('user');
 
   // Redirect authenticated users
   useEffect(() => {
@@ -160,9 +161,28 @@ const Auth = () => {
       return;
     }
 
+    if (!phone.trim()) {
+      toast({
+        title: t('error'),
+        description: t('phoneNumberRequired'),
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validate phone format (basic check)
+    if (!/^\+?[1-9]\d{7,14}$/.test(phone.replace(/[\s\-()]/g, ''))) {
+      toast({
+        title: t('error'),
+        description: t('invalidPhoneFormat'),
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const { error } = await signUp(signupEmail, signupPassword, phone);
+      const { error } = await signUp(signupEmail, signupPassword, phone, fullName, selectedRole);
       
       if (error) {
         if (error.message === 'User already registered') {
@@ -338,16 +358,48 @@ const Auth = () => {
                     <div className="space-y-2">
                       <Label htmlFor="signup-phone" className="flex items-center gap-2">
                         <Phone className="h-4 w-4" />
-                        {t('phoneNumber')} ({t('optional')})
+                        {t('phoneNumber')} *
                       </Label>
                       <Input
                         id="signup-phone"
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder={t('enterPhone')}
+                        placeholder="+1234567890"
+                        required
                         className="focus:ring-2 focus:ring-primary"
                       />
+                      <p className="text-xs text-muted-foreground">
+                        {t('phoneFormatHint')}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-role" className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        {t('accountType')} *
+                      </Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <Button
+                          type="button"
+                          variant={selectedRole === 'user' ? 'default' : 'outline'}
+                          onClick={() => setSelectedRole('user')}
+                          className="w-full"
+                        >
+                          {t('customer')}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={selectedRole === 'admin' ? 'default' : 'outline'}
+                          onClick={() => setSelectedRole('admin')}
+                          className="w-full"
+                        >
+                          {t('admin')}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {t('roleSelectionHint')}
+                      </p>
                     </div>
 
                     <div className="space-y-2">
