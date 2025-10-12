@@ -35,7 +35,7 @@ const EnhancedConfirmation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const { toast } = useToast();
   
   const bookingData = location.state?.bookingData as BookingData & {
@@ -43,10 +43,12 @@ const EnhancedConfirmation = () => {
     transactionId?: string;
     paidAmount?: number;
     status?: string;
+    receiptUrl?: string;
   };
 
   const [showWhatsAppButton, setShowWhatsAppButton] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const isAdmin = hasRole('admin');
 
   useEffect(() => {
     if (!bookingData) {
@@ -344,10 +346,17 @@ const EnhancedConfirmation = () => {
                       <Mail className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm">{bookingData.userInfo.email}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">{bookingData.userInfo.phone}</span>
-                    </div>
+                    {isAdmin && (
+                      <div className="flex items-center gap-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded border border-amber-200 dark:border-amber-800">
+                        <Phone className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                          {bookingData.userInfo.phone}
+                        </span>
+                        <Badge variant="outline" className="ml-auto text-xs bg-amber-100 dark:bg-amber-900/40">
+                          {t('adminOnly')}
+                        </Badge>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>

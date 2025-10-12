@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { createBooking } from '@/services/database';
 import { completeDraftBooking, createEnhancedBooking } from '@/services/bookingService';
 import type { BookingData } from '@/types/booking';
@@ -44,7 +44,6 @@ const EnhancedPayment = () => {
   const [selectedMethod, setSelectedMethod] = useState<'cash' | 'stripe' | 'bank-transfer'>('cash');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(bookingData?.totalPrice?.toString() || '');
-  const [showBankTransferForm, setShowBankTransferForm] = useState(false);
 
   // Stripe payment form fields
   const [cardNumber, setCardNumber] = useState('');
@@ -214,7 +213,12 @@ const EnhancedPayment = () => {
     }
   };
 
-  const handleBankTransferSubmit = async () => {
+  const handleBankTransferSubmit = async (transferDetails: {
+    referenceNumber: string;
+    transferDate: string;
+    notes?: string;
+    receiptFile?: File;
+  }) => {
     if (finalAmount <= 0) {
       toast({
         title: t('invalidAmount'),
@@ -226,15 +230,51 @@ const EnhancedPayment = () => {
 
     setIsProcessing(true);
     try {
-      const transactionId = `BANK-${Date.now()}`;
+      const transactionId = `BANK-${Date.now()}-${transferDetails.referenceNumber}`;
+      let receiptUrl = '';
+      
+      // Upload receipt file if provided
+      if (transferDetails.receiptFile) {
+        const fileExt = transferDetails.receiptFile.name.split('.').pop();
+        const fileName = `${user?.id}/${transactionId}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('payment-receipts')
+          .upload(fileName, transferDetails.receiptFile);
+        
+        if (uploadError) {
+          console.error('Receipt upload error:', uploadError);
+          toast({
+            title: t('warning'),
+            description: t('payment.receiptUploadFailed'),
+            variant: 'destructive'
+          });
+        } else if (uploadData) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('payment-receipts')
+            .getPublicUrl(fileName);
+          receiptUrl = publicUrl;
+        }
+      }
       
       // Create the booking with pending verification status
-      await createEnhancedBooking(bookingData, {
+      const booking = await createEnhancedBooking(bookingData, {
         paymentMethod: 'Bank Transfer',
         transactionId,
         totalPrice: finalAmount,
-        requiresVerification: true
+        requiresVerification: true,
+        adminNotes: `Reference: ${transferDetails.referenceNumber}, Date: ${transferDetails.transferDate}`,
+        customerNotes: transferDetails.notes
       });
+
+      // Save payment receipt record if file was uploaded
+      if (receiptUrl && booking) {
+        await supabase.from('payment_receipts').insert({
+          booking_id: booking.id,
+          file_url: receiptUrl,
+          file_name: transferDetails.receiptFile?.name || ''
+        });
+      }
 
       // Complete draft if exists
       if (draftId) {
@@ -254,7 +294,8 @@ const EnhancedPayment = () => {
             transactionId,
             paidAmount: 0,
             totalPrice: finalAmount,
-            status: 'pending_verification'
+            status: 'pending_verification',
+            receiptUrl
           }
         }
       });
@@ -490,56 +531,11 @@ const EnhancedPayment = () => {
 
       case 'bank-transfer':
         return (
-          <div className="space-y-6">
-            <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  {t('bankTransferPayment')}
-                </CardTitle>
-                <CardDescription>{t('bankTransferDescription')}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="amount">{t('transferAmount')}</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="text-lg font-semibold"
-                  />
-                </div>
-
-                {!showBankTransferForm ? (
-                  <Button 
-                    onClick={() => setShowBankTransferForm(true)}
-                    disabled={finalAmount <= 0}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {t('showBankDetails')}
-                  </Button>
-                ) : (
-                  <div className="space-y-4">
-                    <BankTransferInfo 
-                      amount={finalAmount} 
-                      transactionId={`BANK-${Date.now()}`}
-                    />
-                    <BankTransferForm
-                      amount={finalAmount}
-                      onConfirm={async () => {
-                        await handleBankTransferSubmit();
-                      }}
-                      loading={isProcessing}
-                    />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+          <BankTransferForm
+            amount={finalAmount}
+            onConfirm={handleBankTransferSubmit}
+            loading={isProcessing}
+          />
         );
 
       default:

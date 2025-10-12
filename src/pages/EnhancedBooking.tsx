@@ -41,6 +41,7 @@ const EnhancedBooking = () => {
     phone: '',
     language: 'english'
   });
+  const [profileLoaded, setProfileLoaded] = useState(false);
   
   const [showResumeDialog, setShowResumeDialog] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
@@ -49,6 +50,40 @@ const EnhancedBooking = () => {
 
   const serviceFromUrl = searchParams.get('service');
   const isPreSelected = !!serviceFromUrl;
+
+  // Fetch user profile and auto-populate phone number
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user || profileLoaded) return;
+      
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('phone, full_name, preferred_language')
+          .eq('id', user.id)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching profile:', error);
+          return;
+        }
+        
+        if (profile) {
+          setUserInfo(prev => ({
+            ...prev,
+            phone: profile.phone || prev.phone,
+            fullName: profile.full_name || prev.fullName,
+            language: profile.preferred_language || prev.language
+          }));
+          setProfileLoaded(true);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+    
+    fetchUserProfile();
+  }, [user, profileLoaded]);
 
   // Handle resume booking from state
   useEffect(() => {
