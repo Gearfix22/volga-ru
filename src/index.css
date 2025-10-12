@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Tajawal:wght@300;400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -8,48 +8,48 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 174 72% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 174 72% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 174 72% 15%;
 
-    --primary: 222 47% 11%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 174 72% 31%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 84% 5%;
+    --secondary: 14 86% 64%;
+    --secondary-foreground: 0 0% 100%;
 
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
+    --success: 152 69% 51%;
+    --success-foreground: 174 72% 15%;
     
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 0%;
+    --warning-foreground: 174 72% 15%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 174 15% 95%;
+    --muted-foreground: 174 20% 45%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
+    --accent: 152 69% 51%;
+    --accent-foreground: 174 72% 15%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 174 20% 88%;
+    --input: 174 20% 88%;
+    --ring: 174 72% 31%;
 
     --radius: 0.5rem;
 
-    /* Brand Colors - Russian Theme */
-    --brand-primary: 30 95% 55%;
+    /* Brand Colors - Modern Teal & Coral Theme */
+    --brand-primary: 174 72% 31%;
     --brand-primary-foreground: 0 0% 100%;
-    --brand-secondary: 354 70% 54%;
+    --brand-secondary: 14 86% 64%;
     --brand-secondary-foreground: 0 0% 100%;
-    --brand-accent: 45 93% 47%;
-    --brand-accent-foreground: 0 0% 0%;
+    --brand-accent: 152 69% 51%;
+    --brand-accent-foreground: 174 72% 15%;
 
     /* Surface Colors */
     --surface-glass: 0 0% 100% / 0.1;
@@ -65,8 +65,8 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
     /* Typography */
-    --font-heading: 'Inter', system-ui, sans-serif;
-    --font-body: 'Inter', system-ui, sans-serif;
+    --font-heading: 'Inter', 'Tajawal', system-ui, sans-serif;
+    --font-body: 'Inter', 'Tajawal', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
     /* Animations */
@@ -76,47 +76,47 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 174 72% 8%;
+    --foreground: 174 15% 95%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 174 50% 12%;
+    --card-foreground: 174 15% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 174 50% 12%;
+    --popover-foreground: 174 15% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 174 72% 45%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217 33% 18%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 14 86% 58%;
+    --secondary-foreground: 0 0% 100%;
 
-    --success: 142 70% 45%;
-    --success-foreground: 0 0% 0%;
+    --success: 152 69% 51%;
+    --success-foreground: 174 72% 8%;
     
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 0%;
+    --warning-foreground: 174 72% 8%;
 
-    --muted: 217 33% 18%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 174 30% 18%;
+    --muted-foreground: 174 15% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 152 69% 51%;
+    --accent-foreground: 174 72% 8%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 174 30% 18%;
+    --input: 174 30% 18%;
+    --ring: 174 72% 45%;
 
     /* Dark mode brand colors */
-    --brand-primary: 30 95% 65%;
-    --brand-primary-foreground: 0 0% 0%;
-    --brand-secondary: 354 70% 64%;
-    --brand-secondary-foreground: 0 0% 0%;
-    --brand-accent: 45 93% 57%;
-    --brand-accent-foreground: 0 0% 0%;
+    --brand-primary: 174 72% 45%;
+    --brand-primary-foreground: 0 0% 100%;
+    --brand-secondary: 14 86% 58%;
+    --brand-secondary-foreground: 0 0% 100%;
+    --brand-accent: 152 69% 51%;
+    --brand-accent-foreground: 174 72% 8%;
 
     /* Sidebar dark mode */
     --sidebar: 240 5.9% 10%;
@@ -136,6 +136,15 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+  
+  [dir="rtl"] {
+    font-family: 'Tajawal', 'Inter', system-ui, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
   }
 }
 
