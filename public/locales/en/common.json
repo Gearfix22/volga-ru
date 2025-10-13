@@ -492,6 +492,34 @@
     "customItineraries": "Custom Itineraries",
     "multiDestination": "Multi-destination",
     "localExperiences": "Local Experiences",
-    "adventureTours": "Adventure Tours"
+    "adventureTours": "Adventure Tours",
+    "adminOnly": "Admin Only"
+  },
+  "common": {
+    "optional": "Optional"
+  },
+  "payment": {
+    "invalidFileType": "Please upload a JPG, PNG, or PDF file",
+    "fileTooLarge": "File size must be less than 5MB",
+    "fileUploaded": "File uploaded successfully",
+    "referenceNumberRequired": "Reference number is required",
+    "transferDateRequired": "Transfer date is required",
+    "confirmTransfer": "Confirm Your Transfer",
+    "confirmTransferDescription": "Please provide the transfer details to verify your payment",
+    "transferAmount": "Transfer Amount",
+    "referenceNumber": "Bank Reference Number",
+    "referenceNumberPlaceholder": "Enter transaction reference number",
+    "referenceNumberHelp": "This is the unique reference number from your bank",
+    "transferDate": "Transfer Date",
+    "uploadReceipt": "Upload Payment Receipt",
+    "clickToUpload": "Click to upload",
+    "supportedFormats": "JPG, PNG, or PDF (max 5MB)",
+    "receiptUploadHelp": "Upload a screenshot or photo of your payment confirmation",
+    "additionalNotes": "Additional Notes",
+    "notesPlaceholder": "Any additional information about the transfer...",
+    "processing": "Processing...",
+    "confirmBankTransfer": "Confirm Bank Transfer",
+    "bankTransferNote": "Your booking will be confirmed after admin verification",
+    "receiptUploadFailed": "Receipt upload failed, but booking was created"
   }
 }

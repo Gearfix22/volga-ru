@@ -466,6 +466,34 @@
     "customItineraries": "برامج مخصصة",
     "multiDestination": "متعدد الوجهات",
     "localExperiences": "تجارب محلية",
-    "adventureTours": "جولات مغامرة"
+    "adventureTours": "جولات مغامرة",
+    "adminOnly": "للمسؤولين فقط"
+  },
+  "common": {
+    "optional": "اختياري"
+  },
+  "payment": {
+    "invalidFileType": "الرجاء تحميل ملف JPG أو PNG أو PDF",
+    "fileTooLarge": "يجب أن يكون حجم الملف أقل من 5 ميجابايت",
+    "fileUploaded": "تم رفع الملف بنجاح",
+    "referenceNumberRequired": "رقم المرجع مطلوب",
+    "transferDateRequired": "تاريخ التحويل مطلوب",
+    "confirmTransfer": "تأكيد التحويل",
+    "confirmTransferDescription": "يرجى تقديم تفاصيل التحويل للتحقق من الدفع",
+    "transferAmount": "مبلغ التحويل",
+    "referenceNumber": "رقم مرجع البنك",
+    "referenceNumberPlaceholder": "أدخل رقم المرجع",
+    "referenceNumberHelp": "هذا هو الرقم المرجعي الفريد من بنكك",
+    "transferDate": "تاريخ التحويل",
+    "uploadReceipt": "رفع إيصال الدفع",
+    "clickToUpload": "انقر للرفع",
+    "supportedFormats": "JPG أو PNG أو PDF (بحد أقصى 5 ميجابايت)",
+    "receiptUploadHelp": "قم برفع لقطة شاشة أو صورة لتأكيد الدفع",
+    "additionalNotes": "ملاحظات إضافية",
+    "notesPlaceholder": "أي معلومات إضافية حول التحويل...",
+    "processing": "جاري المعالجة...",
+    "confirmBankTransfer": "تأكيد التحويل البنكي",
+    "bankTransferNote": "سيتم تأكيد حجزك بعد التحقق من المسؤول",
+    "receiptUploadFailed": "فشل رفع الإيصال، ولكن تم إنشاء الحجز"
   }
 }

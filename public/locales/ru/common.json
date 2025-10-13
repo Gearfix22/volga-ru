@@ -433,6 +433,34 @@
     "customItineraries": "Индивидуальные маршруты",
     "multiDestination": "Мультидестинация",
     "localExperiences": "Местные впечатления",
-    "adventureTours": "Приключенческие туры"
+    "adventureTours": "Приключенческие туры",
+    "adminOnly": "Только для администраторов"
+  },
+  "common": {
+    "optional": "Необязательно"
+  },
+  "payment": {
+    "invalidFileType": "Пожалуйста, загрузите файл JPG, PNG или PDF",
+    "fileTooLarge": "Размер файла должен быть менее 5 МБ",
+    "fileUploaded": "Файл успешно загружен",
+    "referenceNumberRequired": "Требуется номер ссылки",
+    "transferDateRequired": "Требуется дата перевода",
+    "confirmTransfer": "Подтвердите перевод",
+    "confirmTransferDescription": "Пожалуйста, предоставьте данные перевода для подтверждения платежа",
+    "transferAmount": "Сумма перевода",
+    "referenceNumber": "Номер банковской ссылки",
+    "referenceNumberPlaceholder": "Введите номер транзакции",
+    "referenceNumberHelp": "Это уникальный номер ссылки из вашего банка",
+    "transferDate": "Дата перевода",
+    "uploadReceipt": "Загрузить квитанцию об оплате",
+    "clickToUpload": "Нажмите для загрузки",
+    "supportedFormats": "JPG, PNG или PDF (макс. 5 МБ)",
+    "receiptUploadHelp": "Загрузите скриншот или фото подтверждения платежа",
+    "additionalNotes": "Дополнительные заметки",
+    "notesPlaceholder": "Любая дополнительная информация о переводе...",
+    "processing": "Обработка...",
+    "confirmBankTransfer": "Подтвердить банковский перевод",
+    "bankTransferNote": "Ваше бронирование будет подтверждено после проверки администратором",
+    "receiptUploadFailed": "Не удалось загрузить квитанцию, но бронирование создано"
   }
 }

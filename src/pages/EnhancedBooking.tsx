@@ -22,6 +22,7 @@ import { PricingDisplay } from '@/components/booking/PricingDisplay';
 import { BookingFormTracker } from '@/components/booking/BookingFormTracker';
 import { useDataTracking } from '@/hooks/useDataTracking';
 import { saveDraftBooking, getDraftBookings, DraftBooking } from '@/services/bookingService';
+import { supabase } from '@/integrations/supabase/client';
 import type { ServiceDetails, UserInfo } from '@/types/booking';
 
 const EnhancedBooking = () => {
