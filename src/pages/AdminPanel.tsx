@@ -1,133 +1,75 @@
-import React, { useState } from 'react';
-import { AnimatedBackground } from '@/components/AnimatedBackground';
-import { Navigation } from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
+import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Button } from '@/components/ui/button';
-import { 
-  LayoutDashboard,
-  Calendar,
-  CreditCard,
-  Users,
-  FileText,
-  Settings,
-  Menu,
-  X
-} from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CreditCard, FileText } from 'lucide-react';
+import AdminSidebar from '@/components/layout/AdminSidebar';
 import AdminDashboard from '@/components/admin/AdminDashboard';
 import { EnhancedBookingsManagement } from '@/components/admin/EnhancedBookingsManagement';
 import { UsersManagement } from '@/components/admin/UsersManagement';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { cn } from '@/lib/utils';
 
-type TabType = 'overview' | 'bookings' | 'payments' | 'users' | 'logs' | 'settings';
+type TabType = 'overview' | 'bookings' | 'payments' | 'users' | 'logs';
 
 const AdminPanel = () => {
   const { hasRole } = useAuth();
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const activeTab = (searchParams.get('tab') as TabType) || 'overview';
+
+  useEffect(() => {
+    if (!searchParams.get('tab')) {
+      navigate('/admin?tab=overview', { replace: true });
+    }
+  }, [searchParams, navigate]);
 
   if (!hasRole('admin')) {
     return (
-      <div className="relative min-h-screen overflow-hidden">
-        <AnimatedBackground />
-        <Navigation />
-        <div className="relative z-10 pt-24 pb-12">
-          <div className="container mx-auto px-4 max-w-2xl">
-            <Alert variant="destructive">
-              <AlertDescription>
-                {t('accessDenied')}
-              </AlertDescription>
-            </Alert>
-          </div>
-        </div>
-        <Footer />
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertDescription>
+            {t('accessDenied')}
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
 
-  const menuItems = [
-    { id: 'overview', label: t('overview'), icon: LayoutDashboard },
-    { id: 'bookings', label: t('bookings'), icon: Calendar },
-    { id: 'payments', label: t('payments'), icon: CreditCard },
-    { id: 'users', label: t('users'), icon: Users },
-    { id: 'logs', label: t('logs'), icon: FileText },
-    { id: 'settings', label: t('settings'), icon: Settings },
-  ];
+  const getTitleForTab = (tab: TabType) => {
+    const titles = {
+      overview: t('overview'),
+      bookings: t('bookings'),
+      payments: t('payments'),
+      users: t('users'),
+      logs: t('logs'),
+    };
+    return titles[tab] || t('adminPanel');
+  };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
-      <AnimatedBackground />
-      <Navigation />
-      
-      <div className="relative z-10 pt-20">
-        <div className="flex h-[calc(100vh-80px)]">
-          {/* Sidebar */}
-          <aside
-            className={cn(
-              "fixed lg:static top-20 left-0 h-[calc(100vh-80px)] bg-card border-r transition-transform duration-300 z-40",
-              sidebarOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0 lg:w-20"
-            )}
-          >
-            <div className="flex flex-col h-full p-4">
-              <div className="flex items-center justify-between mb-6">
-                {sidebarOpen && (
-                  <h2 className="text-lg font-semibold">{t('adminPanel')}</h2>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="lg:hidden"
-                >
-                  {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-                </Button>
-              </div>
-
-              <nav className="space-y-2 flex-1">
-                {menuItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Button
-                      key={item.id}
-                      variant={activeTab === item.id ? 'default' : 'ghost'}
-                      className={cn(
-                        "w-full justify-start",
-                        !sidebarOpen && "lg:justify-center lg:px-2"
-                      )}
-                      onClick={() => setActiveTab(item.id as TabType)}
-                    >
-                      <Icon className={cn("h-5 w-5", sidebarOpen && "mr-2")} />
-                      {sidebarOpen && <span>{item.label}</span>}
-                    </Button>
-                  );
-                })}
-              </nav>
-            </div>
-          </aside>
-
-          {/* Mobile overlay */}
-          {sidebarOpen && (
-            <div
-              className="fixed inset-0 bg-black/50 lg:hidden z-30"
-              onClick={() => setSidebarOpen(false)}
-            />
-          )}
-
-          {/* Main content */}
-          <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="mb-4 lg:hidden"
-            >
-              <Menu className="h-4 w-4 mr-2" />
-              {t('menu')}
-            </Button>
-
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <AdminSidebar />
+        <SidebarInset className="flex-1">
+          <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="font-semibold">
+                    {getTitleForTab(activeTab)}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </header>
+          
+          <main className="flex-1 p-4 md:p-6 lg:p-8">
             {activeTab === 'overview' && <AdminDashboard />}
             {activeTab === 'bookings' && <EnhancedBookingsManagement />}
             {activeTab === 'users' && <UsersManagement />}
@@ -145,17 +87,10 @@ const AdminPanel = () => {
                 <p className="text-muted-foreground">{t('featureInDevelopment')}</p>
               </div>
             )}
-            {activeTab === 'settings' && (
-              <div className="text-center py-12">
-                <Settings className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">{t('settingsComingSoon')}</h3>
-                <p className="text-muted-foreground">{t('featureInDevelopment')}</p>
-              </div>
-            )}
           </main>
-        </div>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 

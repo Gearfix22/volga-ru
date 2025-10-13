@@ -25,13 +25,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { BookingDetailsDialog } from './BookingDetailsDialog';
 
 interface Booking {
   id: string;
@@ -268,47 +262,11 @@ export const EnhancedBookingsManagement = () => {
         </CardContent>
       </Card>
 
-      <Dialog open={showDetails} onOpenChange={setShowDetails}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Booking Details</DialogTitle>
-            <DialogDescription>
-              Complete information about this booking
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedBooking && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Customer Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <p><strong>Name:</strong> {selectedBooking.user_info?.fullName}</p>
-                    <p><strong>Email:</strong> {selectedBooking.user_info?.email}</p>
-                    <p><strong>Phone:</strong> {selectedBooking.user_info?.phone}</p>
-                  </div>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">Booking Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <p><strong>Service:</strong> {selectedBooking.service_type}</p>
-                    <p><strong>Status:</strong> {selectedBooking.status}</p>
-                    <p><strong>Payment:</strong> {selectedBooking.payment_status}</p>
-                    <p><strong>Price:</strong> ${selectedBooking.total_price?.toFixed(2)}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="font-semibold mb-2">Service Details</h4>
-                <pre className="text-xs bg-muted p-4 rounded overflow-x-auto">
-                  {JSON.stringify(selectedBooking.service_details, null, 2)}
-                </pre>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <BookingDetailsDialog
+        booking={selectedBooking}
+        open={showDetails}
+        onOpenChange={setShowDetails}
+      />
     </>
   );
 };
