@@ -27,6 +27,7 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
   const [formData, setFormData] = useState({
     phone: '',
     password: '',
+    fullName: '',
     otp: '',
   });
 
@@ -48,13 +49,22 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
       return;
     }
 
+    if (mode === 'signup' && !formData.fullName) {
+      toast({
+        title: t('common.error'),
+        description: t('auth.fullNameRequired'),
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     const formattedPhone = formatPhoneNumber(formData.phone);
 
     try {
       let result;
       if (mode === 'signup') {
-        result = await signUpWithPhone(formattedPhone, formData.password);
+        result = await signUpWithPhone(formattedPhone, formData.password, formData.fullName);
       } else {
         result = await signInWithPhone(formattedPhone, formData.password);
       }
@@ -184,6 +194,19 @@ export const PhoneAuthForm: React.FC<PhoneAuthFormProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {mode === 'signup' && (
+          <div>
+            <Label htmlFor="fullName">{t('booking.fullName')}</Label>
+            <Input
+              id="fullName"
+              type="text"
+              value={formData.fullName}
+              onChange={(e) => handleInputChange('fullName', e.target.value)}
+              placeholder={t('auth.enterFullName')}
+            />
+          </div>
+        )}
+        
         <div>
           <Label htmlFor="phone">{t('booking.phoneNumber')}</Label>
           <Input

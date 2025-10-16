@@ -62,7 +62,9 @@
     "signedInSuccess": "Signed in successfully!",
     "phoneVerified": "Phone number verified successfully!",
     "processing": "Processing...",
-    "needAccount": "Need an account? Sign Up"
+    "needAccount": "Need an account? Sign Up",
+    "fullNameRequired": "Full name is required",
+    "enterFullName": "Enter your full name"
   },
   "footer": {
     "description": "Russia's premium tourist experience. VIP transportation, seamless hotel bookings, curated event access, and unforgettable Russian adventures.",

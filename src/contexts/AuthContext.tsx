@@ -8,7 +8,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signUp: (email: string, password: string, phone: string, fullName: string, role?: string) => Promise<{ error: any }>;
-  signUpWithPhone: (phone: string, password: string) => Promise<{ error: any }>;
+  signUpWithPhone: (phone: string, password: string, fullName: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithPhone: (phone: string, password: string) => Promise<{ error: any }>;
   verifyOtp: (phone: string, token: string, type: 'sms' | 'phone_change') => Promise<{ error: any }>;
@@ -131,10 +131,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const signUpWithPhone = async (phone: string, password: string) => {
+  const signUpWithPhone = async (phone: string, password: string, fullName: string) => {
     const { error } = await supabase.auth.signUp({
       phone,
       password,
+      options: {
+        data: {
+          full_name: fullName,
+          phone: phone
+        }
+      }
     });
     return { error };
   };
