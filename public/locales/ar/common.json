@@ -498,5 +498,13 @@
     "confirmBankTransfer": "تأكيد التحويل البنكي",
     "bankTransferNote": "سيتم تأكيد حجزك بعد التحقق من المسؤول",
     "receiptUploadFailed": "فشل رفع الإيصال، ولكن تم إنشاء الحجز"
+  },
+  "theme": {
+    "selectTheme": "اختر سمة اللون",
+    "colorTheme": "سمة اللون",
+    "modernTeal": "التصميم الحديث المحترف",
+    "modernTealDesc": "تصميم عصري معاصر",
+    "russianElegance": "الأناقة الروسية",
+    "russianEleganceDesc": "أسلوب فاخر كلاسيكي"
   }
 }

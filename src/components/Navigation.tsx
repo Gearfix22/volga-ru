@@ -3,6 +3,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { ThemeSwitcher } from './ThemeSwitcher';
 import { UserMenu } from './auth/UserMenu';
 import { Menu, X } from 'lucide-react';
 
@@ -60,6 +61,11 @@ export const Navigation: React.FC = () => {
 
           {/* Right side items */}
           <div className="flex items-center space-x-2">
+            {/* Theme Switcher */}
+            <div className="hidden sm:block">
+              <ThemeSwitcher />
+            </div>
+
             {/* Language Switcher */}
             <div className="hidden sm:block">
               <LanguageSwitcher />

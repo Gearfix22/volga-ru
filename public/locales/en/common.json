@@ -524,5 +524,13 @@
     "confirmBankTransfer": "Confirm Bank Transfer",
     "bankTransferNote": "Your booking will be confirmed after admin verification",
     "receiptUploadFailed": "Receipt upload failed, but booking was created"
+  },
+  "theme": {
+    "selectTheme": "Select color theme",
+    "colorTheme": "Color Theme",
+    "modernTeal": "Modern Teal Professional",
+    "modernTealDesc": "Fresh, contemporary design",
+    "russianElegance": "Russian Elegance",
+    "russianEleganceDesc": "Classic luxury style"
   }
 }
