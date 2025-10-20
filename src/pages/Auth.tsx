@@ -35,7 +35,6 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [selectedRole, setSelectedRole] = useState<'user' | 'admin'>('user');
 
   // Redirect authenticated users
   useEffect(() => {
@@ -182,7 +181,7 @@ const Auth = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await signUp(signupEmail, signupPassword, phone, fullName, selectedRole);
+      const { error } = await signUp(signupEmail, signupPassword, phone, fullName);
       
       if (error) {
         if (error.message === 'User already registered') {
@@ -365,40 +364,12 @@ const Auth = () => {
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+1234567890"
+                        placeholder="+7 (999) 123-45-67"
                         required
                         className="focus:ring-2 focus:ring-primary"
                       />
                       <p className="text-xs text-muted-foreground">
                         {t('phoneFormatHint')}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-role" className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        {t('accountType')} *
-                      </Label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <Button
-                          type="button"
-                          variant={selectedRole === 'user' ? 'default' : 'outline'}
-                          onClick={() => setSelectedRole('user')}
-                          className="w-full"
-                        >
-                          {t('customer')}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={selectedRole === 'admin' ? 'default' : 'outline'}
-                          onClick={() => setSelectedRole('admin')}
-                          className="w-full"
-                        >
-                          {t('admin')}
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {t('roleSelectionHint')}
                       </p>
                     </div>
 
@@ -432,7 +403,7 @@ const Auth = () => {
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Password must be 8+ characters with uppercase, lowercase, and numbers
+                        {t('passwordRequirements')}
                       </p>
                     </div>
 
@@ -479,11 +450,18 @@ const Auth = () => {
                 </TabsContent>
               </Tabs>
 
-              <div className="mt-6 pt-6 border-t">
+              <div className="mt-6 pt-6 border-t space-y-3">
                 <Alert>
                   <CheckCircle className="h-4 w-4" />
                   <AlertDescription>
                     {t('authenticationSecure')}
+                  </AlertDescription>
+                </Alert>
+                
+                <Alert variant="default" className="border-primary/30 bg-primary/5">
+                  <AlertTriangle className="h-4 w-4 text-primary" />
+                  <AlertDescription className="text-sm">
+                    {t('adminAccountNote')}
                   </AlertDescription>
                 </Alert>
               </div>
