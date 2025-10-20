@@ -67,7 +67,7 @@ export const EnhancedBookingsManagement = () => {
       console.error('Error fetching bookings:', error);
       toast({
         title: t('error'),
-        description: 'Failed to load bookings',
+        description: t('failedToLoadBookings'),
         variant: 'destructive'
       });
     } finally {
@@ -86,7 +86,31 @@ export const EnhancedBookingsManagement = () => {
 
       toast({
         title: t('success'),
-        description: `Booking status updated to ${newStatus}`,
+        description: t('bookingStatusUpdated'),
+      });
+
+      fetchBookings();
+    } catch (error: any) {
+      toast({
+        title: t('error'),
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const updatePaymentStatus = async (bookingId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ payment_status: newStatus })
+        .eq('id', bookingId);
+
+      if (error) throw error;
+
+      toast({
+        title: t('success'),
+        description: t('paymentStatusUpdated'),
       });
 
       fetchBookings();
@@ -107,20 +131,21 @@ export const EnhancedBookingsManagement = () => {
   );
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: any; icon: any }> = {
-      pending: { variant: 'secondary', icon: Clock },
-      confirmed: { variant: 'default', icon: CheckCircle },
-      paid: { variant: 'default', icon: CheckCircle },
-      cancelled: { variant: 'destructive', icon: XCircle },
+    const variants: Record<string, { variant: any; icon: any; label: string }> = {
+      pending: { variant: 'secondary', icon: Clock, label: t('statusPending') },
+      confirmed: { variant: 'default', icon: CheckCircle, label: t('statusConfirmed') },
+      completed: { variant: 'success', icon: CheckCircle, label: t('statusCompleted') },
+      paid: { variant: 'success', icon: CheckCircle, label: t('statusPaid') },
+      cancelled: { variant: 'destructive', icon: XCircle, label: t('statusCancelled') },
     };
 
-    const config = variants[status] || variants.pending;
+    const config = variants[status] || { variant: 'secondary', icon: Clock, label: status };
     const Icon = config.icon;
 
     return (
       <Badge variant={config.variant as any}>
         <Icon className="h-3 w-3 mr-1" />
-        {status}
+        {config.label}
       </Badge>
     );
   };
@@ -221,7 +246,7 @@ export const EnhancedBookingsManagement = () => {
                           {new Date(booking.created_at).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
+                          <div className="flex flex-wrap gap-2">
                             <Button
                               size="sm"
                               variant="outline"
@@ -239,16 +264,25 @@ export const EnhancedBookingsManagement = () => {
                                   variant="default"
                                   onClick={() => updateBookingStatus(booking.id, 'confirmed')}
                                 >
-                                  Confirm
+                                  {t('confirmBooking')}
                                 </Button>
                                 <Button
                                   size="sm"
                                   variant="destructive"
                                   onClick={() => updateBookingStatus(booking.id, 'cancelled')}
                                 >
-                                  Reject
+                                  {t('rejectBooking')}
                                 </Button>
                               </>
+                            )}
+                            {booking.status === 'confirmed' && (
+                              <Button
+                                size="sm"
+                                variant="success"
+                                onClick={() => updateBookingStatus(booking.id, 'completed')}
+                              >
+                                {t('markCompleted')}
+                              </Button>
                             )}
                           </div>
                         </TableCell>

@@ -351,7 +351,22 @@
     "refreshPage": "يرجى تحديث الصفحة",
     "noReservations": "لا توجد حجوزات بعد",
     "firstBooking": "قم بأول حجز لك",
-    "backToSite": "العودة للموقع"
+    "backToSite": "العودة للموقع",
+    "confirmBooking": "تأكيد",
+    "rejectBooking": "رفض",
+    "markCompleted": "تعليم كمكتمل",
+    "bookingStatusUpdated": "تم تحديث حالة الحجز بنجاح",
+    "paymentStatusUpdated": "تم تحديث حالة الدفع بنجاح",
+    "failedToLoadBookings": "فشل في تحميل الحجوزات",
+    "failedToLoadUsers": "فشل في تحميل المستخدمين",
+    "statusPending": "قيد الانتظار",
+    "statusConfirmed": "مؤكد",
+    "statusCompleted": "مكتمل",
+    "statusPaid": "مدفوع",
+    "statusCancelled": "ملغي",
+    "moderator": "مشرف",
+    "date": "التاريخ",
+    "bookings": "الحجوزات"
   },
   "messages": {
     "serviceRequired": "الخدمة مطلوبة",

@@ -88,7 +88,7 @@ export const UsersManagement = () => {
       console.error('Error fetching users:', error);
       toast({
         title: t('error'),
-        description: 'Failed to load users',
+        description: t('failedToLoadUsers'),
         variant: 'destructive'
       });
     } finally {
@@ -104,12 +104,12 @@ export const UsersManagement = () => {
 
   const getRoleBadge = (roles: string[]) => {
     if (roles.includes('admin')) {
-      return <Badge variant="destructive"><Shield className="h-3 w-3 mr-1" />Admin</Badge>;
+      return <Badge variant="destructive"><Shield className="h-3 w-3 mr-1" />{t('admin')}</Badge>;
     }
     if (roles.includes('moderator')) {
-      return <Badge variant="default"><Shield className="h-3 w-3 mr-1" />Moderator</Badge>;
+      return <Badge variant="default"><Shield className="h-3 w-3 mr-1" />{t('moderator')}</Badge>;
     }
-    return <Badge variant="secondary">Customer</Badge>;
+    return <Badge variant="secondary">{t('customer')}</Badge>;
   };
 
   return (

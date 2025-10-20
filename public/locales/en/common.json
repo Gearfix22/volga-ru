@@ -297,7 +297,22 @@
     "refreshPage": "Please try refreshing the page",
     "noReservations": "No reservations yet",
     "firstBooking": "Make Your First Booking",
-    "backToSite": "Back to Site"
+    "backToSite": "Back to Site",
+    "confirmBooking": "Confirm",
+    "rejectBooking": "Reject",
+    "markCompleted": "Mark Complete",
+    "bookingStatusUpdated": "Booking status updated successfully",
+    "paymentStatusUpdated": "Payment status updated successfully",
+    "failedToLoadBookings": "Failed to load bookings",
+    "failedToLoadUsers": "Failed to load users",
+    "statusPending": "Pending",
+    "statusConfirmed": "Confirmed",
+    "statusCompleted": "Completed",
+    "statusPaid": "Paid",
+    "statusCancelled": "Cancelled",
+    "moderator": "Moderator",
+    "date": "Date",
+    "bookings": "Bookings"
   },
   "services": {
     "ourServices": "Our Services",
