@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Navigation } from '@/components/Navigation';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowRight, User, Mail, Phone, Globe } from 'lucide-react';
+import { ArrowRight, User, Mail, Phone, Globe, Save, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ServiceTypeSelector } from '@/components/booking/ServiceTypeSelector';
@@ -17,6 +17,10 @@ import { ServiceDetailsForm } from '@/components/booking/ServiceDetailsForm';
 import { PricingDisplay } from '@/components/booking/PricingDisplay';
 import { BookingFormTracker } from '@/components/booking/BookingFormTracker';
 import { useDataTracking } from '@/hooks/useDataTracking';
+import { saveDraftBooking, getDraftBooking } from '@/services/bookingService';
+import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ServiceDetails, UserInfo } from '@/types/booking';
 
 const Booking = () => {
@@ -24,6 +28,7 @@ const Booking = () => {
   const { toast } = useToast();
   const { t } = useLanguage();
   const { trackForm } = useDataTracking();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const [serviceType, setServiceType] = useState('');
   const [serviceDetails, setServiceDetails] = useState<ServiceDetails>({});
@@ -33,13 +38,42 @@ const Booking = () => {
     phone: '',
     language: 'english'
   });
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   const serviceFromUrl = searchParams.get('service');
+  const draftIdFromUrl = searchParams.get('draft');
   const isPreSelected = !!serviceFromUrl;
+
+  // Load draft booking if draft ID is provided or check for existing drafts
+  useEffect(() => {
+    const loadDraft = async () => {
+      if (user && draftIdFromUrl) {
+        try {
+          const draft = await getDraftBooking(draftIdFromUrl);
+          if (draft) {
+            setServiceType(draft.service_type);
+            setServiceDetails(draft.service_details || {});
+            setUserInfo(draft.user_info || { fullName: '', email: '', phone: '', language: 'english' });
+            setDraftId(draft.id);
+            setLastSaved(new Date(draft.updated_at));
+            toast({
+              title: t('draftLoaded'),
+              description: t('continueWhereYouLeftOff'),
+            });
+          }
+        } catch (error) {
+          console.error('Failed to load draft:', error);
+        }
+      }
+    };
+    loadDraft();
+  }, [user, draftIdFromUrl, t, toast]);
 
   // Pre-select service type from URL parameters
   useEffect(() => {
-    if (serviceFromUrl) {
+    if (serviceFromUrl && !draftIdFromUrl) {
       const serviceMap: { [key: string]: string } = {
         'transportation': 'Transportation',
         'hotel': 'Hotels',
@@ -55,7 +89,43 @@ const Booking = () => {
       
       setServiceType(mappedService);
     }
-  }, [serviceFromUrl]);
+  }, [serviceFromUrl, draftIdFromUrl]);
+
+  // Auto-save draft to database
+  const saveCurrentDraft = useCallback(async () => {
+    if (!user || !serviceType) return;
+    
+    setIsSavingDraft(true);
+    try {
+      const savedDraft = await saveDraftBooking(
+        serviceType,
+        serviceDetails,
+        userInfo,
+        'in_progress',
+        calculatePrice()
+      );
+      
+      if (savedDraft) {
+        setDraftId(savedDraft.id);
+        setLastSaved(new Date());
+      }
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [user, serviceType, serviceDetails, userInfo]);
+
+  // Auto-save every 30 seconds
+  useEffect(() => {
+    if (!user || !serviceType) return;
+    
+    const autoSaveInterval = setInterval(() => {
+      saveCurrentDraft();
+    }, 30000);
+
+    return () => clearInterval(autoSaveInterval);
+  }, [user, serviceType, saveCurrentDraft]);
 
   const updateServiceDetail = (key: string, value: string | string[]) => {
     setServiceDetails(prev => ({
@@ -118,6 +188,17 @@ const Booking = () => {
           description: t('pleaseEnterValidEmail'),
           variant: "destructive"
         });
+      return false;
+    }
+
+    // Validate phone format (Russian format)
+    const phoneRegex = /^[\+]?[7,8]?[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/;
+    if (!phoneRegex.test(userInfo.phone.replace(/[\s\-\(\)]/g, ''))) {
+      toast({
+        title: t('invalidPhone'),
+        description: t('phoneFormatHint'),
+        variant: "destructive"
+      });
       return false;
     }
 
@@ -197,6 +278,26 @@ const Booking = () => {
                 : t('chooseServiceDetails')
               }
             </p>
+            
+            {/* Draft auto-save status */}
+            {user && lastSaved && (
+              <Alert className="mt-4 bg-primary/5 border-primary/20">
+                <Save className="h-4 w-4 text-primary" />
+                <AlertDescription className="text-sm text-slate-700 dark:text-slate-300">
+                  {t('draftAutoSaved')} {new Date(lastSaved).toLocaleTimeString()}
+                  {isSavingDraft && ` - ${t('saving')}...`}
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {!user && (
+              <Alert className="mt-4 bg-accent/5 border-accent/20">
+                <AlertCircle className="h-4 w-4 text-accent" />
+                <AlertDescription className="text-sm text-slate-700 dark:text-slate-300">
+                  {t('loginToSaveDraft')}
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
 
           <BookingFormTracker
@@ -309,7 +410,30 @@ const Booking = () => {
               </Card>
 
               {/* Submit Button */}
-              <div className="text-center">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                {user && serviceType && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          type="button"
+                          variant="outline"
+                          size="lg"
+                          onClick={saveCurrentDraft}
+                          disabled={isSavingDraft}
+                          className="px-6"
+                        >
+                          <Save className="mr-2 h-5 w-5" />
+                          {isSavingDraft ? t('saving') : t('saveDraft')}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t('saveDraftTooltip')}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                
                 <Button 
                   type="submit" 
                   size="lg" 

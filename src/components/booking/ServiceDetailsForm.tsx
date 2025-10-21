@@ -378,31 +378,31 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
           </Label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[
-              'History & Heritage',
-              'Culture & Arts', 
-              'Nature & Wildlife',
-              'Adventure Sports',
-              'Local Cuisine',
-              'Shopping',
-              'Nightlife',
-              'Architecture',
-              'Museums & Galleries',
-              'Religious Sites',
-              'Beach & Water Sports',
-              'Photography'
-            ].map((interest) => (
-              <div key={interest} className="flex items-center space-x-2">
+              { key: 'historyHeritage', label: t('historyHeritage') },
+              { key: 'cultureArts', label: t('cultureArts') },
+              { key: 'natureWildlife', label: t('natureWildlife') },
+              { key: 'adventureSports', label: t('adventureSports') },
+              { key: 'localCuisine', label: t('localCuisine') },
+              { key: 'shopping', label: t('shopping') },
+              { key: 'nightlife', label: t('nightlife') },
+              { key: 'architecture', label: t('architecture') },
+              { key: 'museumsGalleries', label: t('museumsGalleries') },
+              { key: 'religiousSites', label: t('religiousSites') },
+              { key: 'beachWaterSports', label: t('beachWaterSports') },
+              { key: 'photography', label: t('photography') }
+            ].map(({ key, label }) => (
+              <div key={key} className="flex items-center space-x-2">
                 <Checkbox
-                  id={interest}
-                  checked={interests.includes(interest)}
+                  id={key}
+                  checked={interests.includes(label)}
                   onCheckedChange={(checked) => {
                     const newInterests = checked
-                      ? [...interests, interest]
-                      : interests.filter((i: string) => i !== interest);
+                      ? [...interests, label]
+                      : interests.filter((i: string) => i !== label);
                     onUpdateDetail('interests', newInterests);
                   }}
                 />
-                <Label htmlFor={interest} className="text-sm cursor-pointer">{interest}</Label>
+                <Label htmlFor={key} className="text-sm cursor-pointer">{label}</Label>
               </div>
             ))}
           </div>
