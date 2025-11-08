@@ -33,10 +33,10 @@ export const BankTransferInfo: React.FC<BankTransferInfoProps> = ({ amount, tran
 
   return (
     <div className="space-y-6">
-      <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
-            <Building2 className="h-5 w-5" />
+      <Card className="backdrop-blur-sm bg-blue-50/90 dark:bg-blue-900/30 border-2 border-blue-200 dark:border-blue-800">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-200 text-xl">
+            <Building2 className="h-6 w-6" />
             Bank Transfer Instructions
           </CardTitle>
           <CardDescription className="text-blue-700 dark:text-blue-300">
@@ -141,15 +141,33 @@ export const BankTransferInfo: React.FC<BankTransferInfoProps> = ({ amount, tran
         </CardContent>
       </Card>
 
-      <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
-        <CardContent className="p-4">
-          <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">Important Instructions:</h4>
-          <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-1">
-            <li>• Include the reference number in your transfer notes</li>
-            <li>• Bank transfers may take 1-3 business days to process</li>
-            <li>• Keep your transfer receipt for your records</li>
-            <li>• Contact us at info@volgaservices.com after completing the transfer</li>
-            <li>• Currency conversion fees may apply through your bank</li>
+      <Card className="backdrop-blur-sm bg-amber-50/90 dark:bg-amber-900/30 border-2 border-amber-200 dark:border-amber-800">
+        <CardContent className="p-5">
+          <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-3 text-lg flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Important Instructions:
+          </h4>
+          <ul className="text-sm text-amber-700 dark:text-amber-300 space-y-2">
+            <li className="flex gap-2">
+              <span className="font-bold">•</span>
+              <span>Include the reference number in your transfer notes</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold">•</span>
+              <span>Bank transfers may take 1-3 business days to process</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold">•</span>
+              <span>Keep your transfer receipt for your records</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold">•</span>
+              <span>Contact us at info@volgaservices.com after completing the transfer</span>
+            </li>
+            <li className="flex gap-2">
+              <span className="font-bold">•</span>
+              <span>Currency conversion fees may apply through your bank</span>
+            </li>
           </ul>
         </CardContent>
       </Card>

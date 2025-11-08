@@ -72,22 +72,22 @@ const EnhancedPayment = () => {
   const paymentMethods = [
     {
       id: 'cash' as const,
-      name: t('cashOnArrival'),
+      name: 'Cash on Arrival',
       icon: Banknote,
-      description: t('payInCash'),
+      description: 'Pay when you receive the service',
       recommended: true
     },
     {
       id: 'stripe' as const,
-      name: t('creditCard'),
+      name: 'Visa / Credit Card',
       icon: CreditCard,
-      description: t('secureCardPayment')
+      description: 'Secure payment with Visa, Mastercard, or Amex'
     },
     {
       id: 'bank-transfer' as const,
-      name: t('bankTransfer'),
+      name: 'Bank Transfer',
       icon: Building2,
-      description: t('directBankTransfer')
+      description: 'Direct bank transfer with verification'
     }
   ];
 
@@ -313,84 +313,95 @@ const EnhancedPayment = () => {
   };
 
   const renderBookingDetails = () => (
-    <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CheckCircle className="h-5 w-5 text-green-600" />
-          {t('bookingSummary')}
+    <Card className="backdrop-blur-sm bg-white/90 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-700 sticky top-24">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <CheckCircle className="h-6 w-6 text-green-600" />
+          Booking Summary
         </CardTitle>
-        <CardDescription>{t('reviewBookingDetails')}</CardDescription>
+        <CardDescription>Review your booking details</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="font-medium">{t('service')}:</span>
-          <Badge variant="secondary">{bookingData.serviceType}</Badge>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="font-medium">{t('customer')}:</span>
-          <span>{bookingData.userInfo.fullName}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="font-medium">{t('email')}:</span>
-          <span>{bookingData.userInfo.email}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="font-medium">{t('phone')}:</span>
-          <span>{bookingData.userInfo.phone}</span>
-        </div>
-        <div className="border-t pt-4">
-          <div className="flex items-center justify-between font-semibold text-lg">
-            <span>{t('totalAmount')}:</span>
-            <span className="text-primary">${finalAmount.toFixed(2)}</span>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b">
+            <span className="text-muted-foreground">Service:</span>
+            <Badge variant="secondary" className="font-semibold">{bookingData.serviceType}</Badge>
+          </div>
+          <div className="flex items-center justify-between pb-2 border-b">
+            <span className="text-muted-foreground">Customer:</span>
+            <span className="font-medium">{bookingData.userInfo.fullName}</span>
+          </div>
+          <div className="flex items-center justify-between pb-2 border-b">
+            <span className="text-muted-foreground">Email:</span>
+            <span className="text-sm">{bookingData.userInfo.email}</span>
+          </div>
+          <div className="flex items-center justify-between pb-2 border-b">
+            <span className="text-muted-foreground">Phone:</span>
+            <span className="text-sm">{bookingData.userInfo.phone}</span>
           </div>
         </div>
+        <div className="border-t-2 pt-4 mt-4">
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-semibold">Total Amount:</span>
+            <span className="text-2xl font-bold text-primary">${finalAmount.toFixed(2)}</span>
+          </div>
+        </div>
+        <Alert className="mt-4">
+          <Shield className="h-4 w-4" />
+          <AlertDescription className="text-xs">
+            Your information is secure and will only be used to process this booking.
+          </AlertDescription>
+        </Alert>
       </CardContent>
     </Card>
   );
 
   const renderPaymentMethodSelector = () => (
-    <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <DollarSign className="h-5 w-5" />
-          {t('selectPaymentMethod')}
+    <Card className="backdrop-blur-sm bg-white/90 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-700">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <DollarSign className="h-6 w-6 text-primary" />
+          Select Payment Method
         </CardTitle>
-        <CardDescription>{t('choosePreferredPayment')}</CardDescription>
+        <CardDescription>Choose your preferred payment option</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         {paymentMethods.map((method) => {
           const Icon = method.icon;
+          const isSelected = selectedMethod === method.id;
           return (
             <div
               key={method.id}
-              className={`relative flex items-center p-4 border rounded-lg cursor-pointer transition-all ${
-                selectedMethod === method.id
-                  ? 'border-primary bg-primary/5'
-                  : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+              className={`relative flex items-center p-5 border-2 rounded-xl cursor-pointer transition-all hover:shadow-md ${
+                isSelected
+                  ? 'border-primary bg-primary/10 shadow-lg'
+                  : 'border-slate-200 dark:border-slate-700 hover:border-primary/50'
               }`}
               onClick={() => setSelectedMethod(method.id)}
             >
-              <div className="flex items-center space-x-3 flex-1">
-                <Icon className="h-6 w-6" />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{method.name}</span>
+              <div className="flex items-start space-x-4 flex-1">
+                <div className={`p-3 rounded-lg ${isSelected ? 'bg-primary/20' : 'bg-slate-100 dark:bg-slate-800'}`}>
+                  <Icon className={`h-6 w-6 ${isSelected ? 'text-primary' : 'text-slate-600 dark:text-slate-400'}`} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`font-semibold ${isSelected ? 'text-primary' : ''}`}>{method.name}</span>
                     {method.recommended && (
-                      <Badge variant="default" className="text-xs">
-                        {t('recommended')}
+                      <Badge variant="default" className="text-xs bg-green-600">
+                        Recommended
                       </Badge>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">{method.description}</p>
                 </div>
               </div>
-              <div className={`w-4 h-4 border-2 rounded-full ${
-                selectedMethod === method.id 
+              <div className={`w-6 h-6 border-2 rounded-full flex items-center justify-center ${
+                isSelected 
                   ? 'border-primary bg-primary' 
                   : 'border-slate-300 dark:border-slate-600'
               }`}>
-                {selectedMethod === method.id && (
-                  <div className="w-2 h-2 bg-white rounded-full mx-auto mt-0.5" />
+                {isSelected && (
+                  <CheckCircle className="h-4 w-4 text-white" />
                 )}
               </div>
             </div>
@@ -404,64 +415,26 @@ const EnhancedPayment = () => {
     switch (selectedMethod) {
       case 'cash':
         return (
-          <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Banknote className="h-5 w-5" />
-                {t('cashPayment')}
+          <Card className="backdrop-blur-sm bg-white/90 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-700">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Banknote className="h-6 w-6 text-primary" />
+                Cash on Arrival
               </CardTitle>
-              <CardDescription>{t('payInCashDescription')}</CardDescription>
+              <CardDescription>Pay in cash when you receive the service</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert>
-                <MessageCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {t('cashPaymentInfo')}
+            <CardContent className="space-y-5">
+              <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+                <MessageCircle className="h-5 w-5 text-blue-600" />
+                <AlertDescription className="text-blue-900 dark:text-blue-100">
+                  You will pay the full amount in cash upon service delivery. Our team will contact you via WhatsApp to confirm the booking details.
                 </AlertDescription>
               </Alert>
               
               <div className="space-y-2">
-                <Label htmlFor="amount">{t('confirmAmount')}</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="text-lg font-semibold"
-                />
-              </div>
-
-              <Button 
-                onClick={handleCashPayment}
-                disabled={isProcessing || finalAmount <= 0}
-                className="w-full"
-                size="lg"
-              >
-                {isProcessing ? t('processing') : t('confirmCashBooking')}
-              </Button>
-            </CardContent>
-          </Card>
-        );
-
-      case 'stripe':
-        return (
-          <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                {t('creditCardPayment')}
-              </CardTitle>
-              <CardDescription className="flex items-center gap-2">
-                <Lock className="h-4 w-4" />
-                {t('securePayment')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleStripePayment} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="amount">{t('paymentAmount')}</Label>
+                <Label htmlFor="amount" className="text-base font-semibold">Total Amount</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="amount"
                     type="number"
@@ -469,61 +442,122 @@ const EnhancedPayment = () => {
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value)}
                     placeholder="0.00"
-                    className="text-lg font-semibold"
+                    className="text-xl font-bold pl-10 h-14"
+                    readOnly
                   />
+                </div>
+              </div>
+
+              <Button 
+                onClick={handleCashPayment}
+                disabled={isProcessing || finalAmount <= 0}
+                className="w-full h-12 text-base font-semibold"
+                size="lg"
+              >
+                {isProcessing ? 'Processing Booking...' : 'Confirm Cash Payment Booking'}
+              </Button>
+            </CardContent>
+          </Card>
+        );
+
+      case 'stripe':
+        return (
+          <Card className="backdrop-blur-sm bg-white/90 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-700">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <CreditCard className="h-6 w-6 text-primary" />
+                Visa / Credit Card Payment
+              </CardTitle>
+              <CardDescription className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-green-600" />
+                Secure SSL encrypted payment
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleStripePayment} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="amount" className="text-base font-semibold">Payment Amount</Label>
+                  <div className="relative">
+                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="text-xl font-bold pl-10 h-14"
+                      readOnly
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="cardNumber">{t('cardNumber')}</Label>
+                  <Label htmlFor="cardNumber" className="text-base">Card Number</Label>
                   <Input
                     id="cardNumber"
                     value={cardNumber}
                     onChange={(e) => setCardNumber(e.target.value)}
                     placeholder="1234 5678 9012 3456"
                     maxLength={19}
+                    className="h-12 text-base"
+                    required
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="expiry">{t('expiryDate')}</Label>
+                    <Label htmlFor="expiry" className="text-base">Expiry Date</Label>
                     <Input
                       id="expiry"
                       value={expiryDate}
                       onChange={(e) => setExpiryDate(e.target.value)}
                       placeholder="MM/YY"
                       maxLength={5}
+                      className="h-12 text-base"
+                      required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="cvv">{t('cvv')}</Label>
+                    <Label htmlFor="cvv" className="text-base">CVV</Label>
                     <Input
                       id="cvv"
                       value={cvv}
                       onChange={(e) => setCvv(e.target.value)}
                       placeholder="123"
                       maxLength={4}
+                      className="h-12 text-base"
+                      required
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="cardholderName">{t('cardholderName')}</Label>
+                  <Label htmlFor="cardholderName" className="text-base">Cardholder Name</Label>
                   <Input
                     id="cardholderName"
                     value={cardholderName}
                     onChange={(e) => setCardholderName(e.target.value)}
-                    placeholder={t('enterCardholderName')}
+                    placeholder="John Doe"
+                    className="h-12 text-base"
+                    required
                   />
                 </div>
+
+                <Alert className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
+                  <Shield className="h-5 w-5 text-green-600" />
+                  <AlertDescription className="text-green-900 dark:text-green-100">
+                    Your payment information is encrypted and secure. We accept Visa, Mastercard, and American Express.
+                  </AlertDescription>
+                </Alert>
 
                 <Button 
                   type="submit"
                   disabled={isProcessing || finalAmount <= 0}
-                  className="w-full"
+                  className="w-full h-12 text-base font-semibold"
                   size="lg"
                 >
-                  {isProcessing ? t('processing') : `${t('payNow')} $${finalAmount.toFixed(2)}`}
+                  {isProcessing ? 'Processing Payment...' : `Pay $${finalAmount.toFixed(2)} Now`}
                 </Button>
               </form>
             </CardContent>
@@ -556,30 +590,30 @@ const EnhancedPayment = () => {
               <BackButton className="text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800" />
             </div>
             
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-                {t('completePayment')}
+            <div className="text-center mb-10">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                Complete Your Payment
               </h1>
-              <p className="text-xl text-slate-600 dark:text-slate-400">
-                {t('choosePaymentMethod')}
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Choose your preferred payment method to finalize your booking
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Left Column - Booking Details */}
-              <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left Column - Booking Details (Sticky Sidebar) */}
+              <div className="lg:col-span-1">
                 {renderBookingDetails()}
-                {renderPaymentMethodSelector()}
               </div>
 
-              {/* Right Column - Payment Form */}
-              <div>
+              {/* Right Column - Payment Methods and Forms */}
+              <div className="lg:col-span-2 space-y-6">
+                {renderPaymentMethodSelector()}
                 {renderPaymentForm()}
               </div>
             </div>
           </div>
         </div>
-
+        
         <Footer />
       </div>
     </AuthRequiredWrapper>

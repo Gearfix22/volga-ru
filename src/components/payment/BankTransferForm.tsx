@@ -103,47 +103,48 @@ export const BankTransferForm: React.FC<BankTransferFormProps> = ({
       <BankTransferInfo amount={amount} />
 
       {/* Transfer Confirmation Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5" />
-            {t('payment.confirmTransfer')}
+      <Card className="backdrop-blur-sm bg-white/90 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-700">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <CheckCircle className="h-6 w-6 text-primary" />
+            Confirm Bank Transfer
           </CardTitle>
           <CardDescription>
-            {t('payment.confirmTransferDescription')}
+            Please provide your transfer details after completing the bank transfer
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Amount Display */}
-            <Alert>
-              <Info className="h-4 w-4" />
+            <Alert className="border-primary/50 bg-primary/5">
+              <Info className="h-5 w-5 text-primary" />
               <AlertDescription>
-                <strong>{t('payment.transferAmount')}:</strong> ${amount.toFixed(2)}
+                <strong>Transfer Amount:</strong> ${amount.toFixed(2)}
               </AlertDescription>
             </Alert>
 
             {/* Reference Number */}
             <div className="space-y-2">
-              <Label htmlFor="referenceNumber">
-                {t('payment.referenceNumber')} *
+              <Label htmlFor="referenceNumber" className="text-base font-semibold">
+                Bank Reference Number *
               </Label>
               <Input
                 id="referenceNumber"
                 value={referenceNumber}
                 onChange={(e) => setReferenceNumber(e.target.value)}
-                placeholder={t('payment.referenceNumberPlaceholder')}
+                placeholder="Enter transaction reference number"
+                className="h-12 text-base"
                 required
               />
               <p className="text-sm text-muted-foreground">
-                {t('payment.referenceNumberHelp')}
+                The unique reference number from your bank transfer receipt
               </p>
             </div>
 
             {/* Transfer Date */}
             <div className="space-y-2">
-              <Label htmlFor="transferDate">
-                {t('payment.transferDate')} *
+              <Label htmlFor="transferDate" className="text-base font-semibold">
+                Transfer Date *
               </Label>
               <Input
                 id="transferDate"
@@ -151,16 +152,17 @@ export const BankTransferForm: React.FC<BankTransferFormProps> = ({
                 value={transferDate}
                 onChange={(e) => setTransferDate(e.target.value)}
                 max={new Date().toISOString().split('T')[0]}
+                className="h-12 text-base"
                 required
               />
             </div>
 
             {/* Receipt Upload */}
             <div className="space-y-2">
-              <Label htmlFor="receipt">
-                {t('payment.uploadReceipt')} ({t('common.optional')})
+              <Label htmlFor="receipt" className="text-base font-semibold">
+                Upload Receipt (Optional)
               </Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-gray-400 transition-colors">
+              <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-6 hover:border-primary/50 transition-colors bg-slate-50 dark:bg-slate-800/50">
                 <input
                   id="receipt"
                   type="file"
@@ -172,16 +174,19 @@ export const BankTransferForm: React.FC<BankTransferFormProps> = ({
                   <div className="text-center">
                     {receiptFile ? (
                       <div className="flex items-center justify-center gap-2 text-green-600">
-                        <FileText className="h-5 w-5" />
-                        <span className="text-sm">{receiptFile.name}</span>
+                        <FileText className="h-6 w-6" />
+                        <span className="font-medium">{receiptFile.name}</span>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-center gap-2">
-                        <Upload className="h-8 w-8 text-gray-400" />
-                        <div className="text-sm text-gray-600">
-                          <span className="font-medium text-blue-600">{t('payment.clickToUpload')}</span>
+                      <div className="flex flex-col items-center gap-3">
+                        <Upload className="h-10 w-10 text-slate-400" />
+                        <div className="text-sm text-slate-600 dark:text-slate-400">
+                          <span className="font-medium text-primary cursor-pointer hover:underline">
+                            Click to upload
+                          </span>
+                          {' '}or drag and drop
                           <br />
-                          {t('payment.supportedFormats')}
+                          <span className="text-xs">PNG, JPG, PDF up to 5MB</span>
                         </div>
                       </div>
                     )}
@@ -189,38 +194,39 @@ export const BankTransferForm: React.FC<BankTransferFormProps> = ({
                 </label>
               </div>
               <p className="text-xs text-muted-foreground">
-                {t('payment.receiptUploadHelp')}
+                Uploading your receipt helps us verify your payment faster
               </p>
             </div>
 
             {/* Additional Notes */}
             <div className="space-y-2">
-              <Label htmlFor="notes">
-                {t('payment.additionalNotes')} ({t('common.optional')})
+              <Label htmlFor="notes" className="text-base font-semibold">
+                Additional Notes (Optional)
               </Label>
               <Textarea
                 id="notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder={t('payment.notesPlaceholder')}
+                placeholder="Any additional information about your transfer..."
                 rows={3}
+                className="resize-none text-base"
               />
             </div>
 
             {/* Submit Button */}
             <Button 
               type="submit" 
-              className="w-full"
+              className="w-full h-12 text-base font-semibold"
               disabled={loading || isUploading}
               size="lg"
             >
-              {loading ? t('payment.processing') : t('payment.confirmBankTransfer')}
+              {loading ? 'Submitting Transfer Details...' : 'Confirm Bank Transfer'}
             </Button>
 
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription className="text-sm">
-                {t('payment.bankTransferNote')}
+            <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+              <Info className="h-5 w-5 text-blue-600" />
+              <AlertDescription className="text-sm text-blue-900 dark:text-blue-100">
+                Your booking will be confirmed once our team verifies your bank transfer. This usually takes 1-2 business days.
               </AlertDescription>
             </Alert>
           </form>
