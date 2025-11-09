@@ -83,12 +83,12 @@
     "whatsapp": "واتساب"
   },
   "common": {
-    "welcome": "مرحباً بكم في فولجا فوياج",
-    "subtitle": "اكتشف خدمات السفر المتميزة مع التميز الشخصي",
-    "exploreServices": "عرض خدماتنا",
+    "welcome": "مرحباً بكم في فولجا للخدمات",
+    "subtitle": "بوابتك المتميزة لتجارب سفر روسية لا تُنسى",
+    "exploreServices": "استكشف الخدمات",
     "languageSelector": "اللغة",
     "backToHome": "العودة للرئيسية",
-    "bookNow": "حجز موعد",
+    "bookNow": "احجز الآن",
     "learnMore": "اعرف المزيد",
     "loading": "جارِ التحميل...",
     "error": "خطأ",
@@ -98,7 +98,11 @@
     "total": "المجموع",
     "english": "الإنجليزية",
     "arabic": "العربية",
-    "russian": "الروسية"
+    "russian": "الروسية",
+    "premiumService": "خدمة مميزة",
+    "multilingualSupport": "دعم متعدد اللغات",
+    "secureBooking": "حجز آمن",
+    "unknown": "غير معروف"
   },
   "pages": {
     "aboutUs": "من نحن",
