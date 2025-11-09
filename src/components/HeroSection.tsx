@@ -4,6 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/Logo';
 
 export const HeroSection: React.FC = () => {
   const { t, language } = useLanguage();
@@ -16,12 +17,19 @@ export const HeroSection: React.FC = () => {
   return (
     <main className="flex flex-col items-center justify-center min-h-screen text-center px-4 sm:px-6 lg:px-8 relative">
       {/* Hero content */}
-      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 animate-fade-in">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 text-shadow-elegant font-serif leading-tight">
+      <div className="max-w-4xl mx-auto space-y-8 sm:space-y-10 animate-fade-in">
+        {/* Logo */}
+        <div className="mb-4">
+          <Logo size="medium" />
+        </div>
+
+        {/* Main Heading */}
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground mb-6 font-serif leading-tight">
           {t('common.welcome')}
         </h1>
         
-        <p className={`text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground leading-relaxed max-w-2xl mx-auto ${
+        {/* Subtitle */}
+        <p className={`text-lg sm:text-xl md:text-2xl lg:text-3xl text-foreground/80 leading-relaxed max-w-3xl mx-auto ${
           language === 'ar' ? 'font-medium' : ''
         }`}>
           {t('common.subtitle')}
@@ -49,16 +57,19 @@ export const HeroSection: React.FC = () => {
       </div>
       
       {/* Features highlight */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-fade-in" style={{ animationDelay: '0.6s' }}>
-        <div className="flex items-center space-x-6 text-muted-foreground text-sm">
-          <span className="flex items-center">
-            ✓ {t('common.premiumService')}
+      <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 animate-fade-in hidden md:block" style={{ animationDelay: '0.6s' }}>
+        <div className="flex items-center gap-8 text-foreground/70 text-base font-medium">
+          <span className="flex items-center gap-2">
+            <span className="text-brand-accent text-xl">✓</span>
+            {t('common.premiumService')}
           </span>
-          <span className="flex items-center">
-            ✓ {t('common.multilingualSupport')}
+          <span className="flex items-center gap-2">
+            <span className="text-brand-accent text-xl">✓</span>
+            {t('common.multilingualSupport')}
           </span>
-          <span className="flex items-center">
-            ✓ {t('common.secureBooking')}
+          <span className="flex items-center gap-2">
+            <span className="text-brand-accent text-xl">✓</span>
+            {t('common.secureBooking')}
           </span>
         </div>
       </div>

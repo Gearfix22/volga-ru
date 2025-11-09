@@ -11,8 +11,8 @@ export const Logo: React.FC<LogoProps> = ({
   size = 'medium' 
 }) => {
   const sizeClasses = {
-    small: 'w-8 h-8',
-    medium: 'w-32 h-32 md:w-40 md:h-40',
+    small: 'w-12 h-12',
+    medium: 'w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36',
     large: 'w-40 h-40 md:w-48 md:h-48'
   };
 
