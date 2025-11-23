@@ -35,6 +35,7 @@ import AdminDashboard from "./components/admin/AdminDashboard";
 import BookingsManagement from "./components/admin/BookingsManagement";
 import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
+import { FloatingWhatsAppButton } from "./components/FloatingWhatsAppButton";
 
 const queryClient = new QueryClient();
 
@@ -92,6 +93,7 @@ const App = () => {
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              <FloatingWhatsAppButton />
               </BrowserRouter>
             </ErrorBoundary>
           </LanguageProvider>
