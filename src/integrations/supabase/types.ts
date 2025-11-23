@@ -518,7 +518,7 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           page_title: string | null
           page_url: string
           referrer: string | null
@@ -530,7 +530,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           page_title?: string | null
           page_url: string
           referrer?: string | null
@@ -542,7 +542,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           page_title?: string | null
           page_url?: string
           referrer?: string | null
