@@ -26,14 +26,16 @@ export const HeroSection: React.FC = () => {
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 font-serif leading-tight drop-shadow-lg">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 font-serif leading-tight" 
+              style={{ textShadow: '0 4px 20px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.9)' }}>
             {t('common.welcome')}
           </h1>
           
           {/* Subtitle */}
-          <p className={`text-xl sm:text-2xl md:text-3xl text-white/90 leading-relaxed max-w-3xl mx-auto mb-8 drop-shadow-md ${
+          <p className={`text-xl sm:text-2xl md:text-3xl text-white leading-relaxed max-w-3xl mx-auto mb-8 ${
             language === 'ar' ? 'font-medium' : ''
-          }`}>
+          }`}
+             style={{ textShadow: '0 2px 12px rgba(0, 0, 0, 0.9), 0 1px 6px rgba(0, 0, 0, 1)' }}>
             {t('common.subtitle')}
           </p>
           
@@ -60,17 +62,17 @@ export const HeroSection: React.FC = () => {
           {/* Feature Highlights */}
           <div className="pt-12 hidden md:block">
             <div className="flex items-center justify-center gap-8 lg:gap-12">
-              <div className="flex items-center gap-2 text-white/90">
+              <div className="flex items-center gap-2 text-white">
                 <span className="text-brand-accent bg-white rounded-full p-1 text-xl">✓</span>
-                <span className="text-base lg:text-lg font-medium">{t('common.premiumService')}</span>
+                <span className="text-base lg:text-lg font-semibold" style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>{t('common.premiumService')}</span>
               </div>
-              <div className="flex items-center gap-2 text-white/90">
+              <div className="flex items-center gap-2 text-white">
                 <span className="text-brand-accent bg-white rounded-full p-1 text-xl">✓</span>
-                <span className="text-base lg:text-lg font-medium">{t('common.multilingualSupport')}</span>
+                <span className="text-base lg:text-lg font-semibold" style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>{t('common.multilingualSupport')}</span>
               </div>
-              <div className="flex items-center gap-2 text-white/90">
+              <div className="flex items-center gap-2 text-white">
                 <span className="text-brand-accent bg-white rounded-full p-1 text-xl">✓</span>
-                <span className="text-base lg:text-lg font-medium">{t('common.secureBooking')}</span>
+                <span className="text-base lg:text-lg font-semibold" style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>{t('common.secureBooking')}</span>
               </div>
             </div>
           </div>
