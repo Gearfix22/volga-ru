@@ -5,7 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 export const FloatingWhatsAppButton: React.FC = () => {
   const { t } = useLanguage();
-  const whatsappNumber = '79999999999';
+  const whatsappNumber = '79522212903';
   const whatsappUrl = `https://wa.me/${whatsappNumber}`;
 
   return (
