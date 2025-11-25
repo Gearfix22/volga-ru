@@ -52,8 +52,11 @@ export const Footer: React.FC = () => {
   ];
 
   return (
-    <footer className="relative overflow-hidden bg-ocean-900/90 coastal-glass border-t border-white/10">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
+    <footer className="relative overflow-hidden bg-gradient-to-b from-slate-900 to-slate-950 border-t border-white/10">
+      {/* Dark overlay for better text visibility */}
+      <div className="absolute inset-0 bg-black/40"></div>
+      
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {/* Company Info */}
           <div className="space-y-4 sm:space-y-6">

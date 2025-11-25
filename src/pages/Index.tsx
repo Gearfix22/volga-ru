@@ -18,7 +18,7 @@ const Index = () => {
       <HeroSection />
       
       {/* Services Preview Section */}
-      <section className="relative py-16 lg:py-24 bg-background/95 backdrop-blur-sm">
+      <section className="relative py-16 lg:py-24 bg-background/98 backdrop-blur-sm">
         <div className="container mx-auto px-4 lg:px-6">
           <div className="text-center mb-12">
             <h2 className="text-2xl lg:text-3xl font-bold text-foreground mb-4">
