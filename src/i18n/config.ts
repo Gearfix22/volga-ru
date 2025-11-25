@@ -26,6 +26,8 @@ i18n
     resources,
     fallbackLng: 'en',
     defaultNS: 'common',
+    ns: ['common'],
+    debug: true,
     
     interpolation: {
       escapeValue: false, // React already does escaping
