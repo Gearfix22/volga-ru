@@ -16,8 +16,11 @@ export const HeroSection: React.FC = () => {
 
   return (
     <main className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
+      {/* Dark Overlay for Text Visibility */}
+      <div className="absolute inset-0 bg-black/50"></div>
+      
       {/* Main Content Container */}
-      <div className="w-full max-w-5xl mx-auto">
+      <div className="relative z-10 w-full max-w-5xl mx-auto">
         {/* Hero Content */}
         <div className="text-center space-y-8 animate-fade-in">
           {/* Logo */}
@@ -27,16 +30,16 @@ export const HeroSection: React.FC = () => {
 
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 font-serif leading-tight" 
-              style={{ textShadow: '0 4px 20px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.9)' }}>
-            {t('common.welcome')}
+              style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.9), 0 4px 12px rgba(0, 0, 0, 0.7)' }}>
+            Welcome to Volga Voyage
           </h1>
           
           {/* Subtitle */}
           <p className={`text-xl sm:text-2xl md:text-3xl text-white leading-relaxed max-w-3xl mx-auto mb-8 ${
             language === 'ar' ? 'font-medium' : ''
           }`}
-             style={{ textShadow: '0 2px 12px rgba(0, 0, 0, 0.9), 0 1px 6px rgba(0, 0, 0, 1)' }}>
-            {t('common.subtitle')}
+             style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.9), 0 4px 12px rgba(0, 0, 0, 0.7)' }}>
+            Discover Premium Travel Services with Personalized Excellence
           </p>
           
           {/* CTA Buttons */}
@@ -46,7 +49,7 @@ export const HeroSection: React.FC = () => {
               size="lg"
               className="bg-white text-brand-primary hover:bg-white/90 px-8 py-6 text-lg font-semibold rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105"
             >
-              {t('common.exploreServices')}
+              View Our Services
               <ArrowRight className={`h-5 w-5 ${language === 'ar' ? 'mr-3 rotate-180' : 'ml-3'}`} />
             </Button>
             
@@ -55,7 +58,7 @@ export const HeroSection: React.FC = () => {
               size="lg"
               className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-brand-primary px-8 py-6 text-lg font-semibold rounded-xl transition-all duration-300 hover:scale-105"
             >
-              {t('common.bookNow')}
+              Book Appointment
             </Button>
           </div>
 
@@ -64,15 +67,15 @@ export const HeroSection: React.FC = () => {
             <div className="flex items-center justify-center gap-8 lg:gap-12">
               <div className="flex items-center gap-2 text-white">
                 <span className="text-brand-accent bg-white rounded-full p-1 text-xl">✓</span>
-                <span className="text-base lg:text-lg font-semibold" style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>{t('common.premiumService')}</span>
+                <span className="text-base lg:text-lg font-semibold" style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.9)' }}>Premium Service</span>
               </div>
               <div className="flex items-center gap-2 text-white">
                 <span className="text-brand-accent bg-white rounded-full p-1 text-xl">✓</span>
-                <span className="text-base lg:text-lg font-semibold" style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>{t('common.multilingualSupport')}</span>
+                <span className="text-base lg:text-lg font-semibold" style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.9)' }}>Multilingual Support</span>
               </div>
               <div className="flex items-center gap-2 text-white">
                 <span className="text-brand-accent bg-white rounded-full p-1 text-xl">✓</span>
-                <span className="text-base lg:text-lg font-semibold" style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>{t('common.secureBooking')}</span>
+                <span className="text-base lg:text-lg font-semibold" style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.9)' }}>Secure Booking</span>
               </div>
             </div>
           </div>
