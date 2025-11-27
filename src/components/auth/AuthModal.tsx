@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
 
 interface AuthModalProps {
@@ -20,7 +19,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
-  const { t } = useLanguage();
 
   const resetState = () => {
     setEmail('');
@@ -38,22 +36,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         const { error } = await signIn(email, password);
         if (error) {
           toast({
-            title: t('auth.error'),
+            title: 'Error',
             description: error.message,
             variant: 'destructive',
           });
         } else {
           toast({
-            title: t('auth.success'),
-            description: t('auth.loggedInSuccessfully'),
+            title: 'Success',
+            description: 'Logged in successfully!',
           });
           onClose();
         }
       } else if (activeTab === 'sign-up') {
         if (!phone.trim()) {
           toast({
-            title: t('auth.error'),
-            description: t('auth.phoneNumberRequired'),
+            title: 'Error',
+            description: 'Phone number is required.',
             variant: 'destructive',
           });
           setLoading(false);
@@ -62,14 +60,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         const { error } = await signUp(email, password, phone, '', 'user');
         if (error) {
           toast({
-            title: t('auth.error'),
+            title: 'Error',
             description: error.message,
             variant: 'destructive',
           });
         } else {
           toast({
-            title: t('auth.success'),
-            description: t('auth.checkEmailVerify'),
+            title: 'Success',
+            description: 'Please check your email to verify your account.',
           });
           onClose();
         }
@@ -77,22 +75,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         const { error } = await requestPasswordReset(email);
         if (error) {
           toast({
-            title: t('auth.error'),
+            title: 'Error',
             description: error.message,
             variant: 'destructive',
           });
         } else {
           toast({
-            title: t('auth.success'),
-            description: t('auth.passwordResetSent'),
+            title: 'Success',
+            description: 'Password reset email sent. Please check your inbox.',
           });
           onClose();
         }
       }
     } catch (error) {
       toast({
-        title: t('auth.error'),
-        description: t('auth.unexpectedError'),
+        title: 'Error',
+        description: 'An unexpected error occurred.',
         variant: 'destructive',
       });
     } finally {
@@ -115,14 +113,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {activeTab === 'sign-in' && t('auth.signIn')}
-            {activeTab === 'sign-up' && t('auth.signUp')}
-            {activeTab === 'forgot' && t('auth.forgotPassword')}
+            {activeTab === 'sign-in' && 'Sign In'}
+            {activeTab === 'sign-up' && 'Sign Up'}
+            {activeTab === 'forgot' && 'Forgot Password'}
           </DialogTitle>
           <DialogDescription>
-            {activeTab === 'sign-in' && t('auth.signInWelcome')}
-            {activeTab === 'sign-up' && t('auth.signUpWelcome')}
-            {activeTab === 'forgot' && t('auth.forgotPasswordWelcome')}
+            {activeTab === 'sign-in' && 'Welcome back! Please sign in to your account.'}
+            {activeTab === 'sign-up' && 'Create a new account to get started.'}
+            {activeTab === 'forgot' && 'Enter your email and we\'ll send you a reset link.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -137,7 +135,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               resetState();
             }}
           >
-            {t('auth.signIn')}
+            Sign In
           </Button>
           <Button
             type="button"
@@ -149,7 +147,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               resetState();
             }}
           >
-            {t('auth.signUp')}
+            Sign Up
           </Button>
           <Button
             type="button"
@@ -161,93 +159,93 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               resetState();
             }}
           >
-            {t('auth.forgotPassword')}
+            Forgot Password
           </Button>
         </div>
 
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">
-              {activeTab === 'sign-in' && t('auth.signIn')}
-              {activeTab === 'sign-up' && t('auth.createAccount')}
-              {activeTab === 'forgot' && t('auth.resetYourPassword')}
+              {activeTab === 'sign-in' && 'Sign In'}
+              {activeTab === 'sign-up' && 'Create Account'}
+              {activeTab === 'forgot' && 'Reset Your Password'}
             </CardTitle>
             <CardDescription>
               {activeTab === 'sign-in'
-                ? t('auth.enterCredentials')
+                ? 'Enter your credentials to access your account'
                 : activeTab === 'sign-up'
-                ? t('auth.enterDetails')
-                : t('auth.emailResetLink')}
+                ? 'Enter your details to create a new account'
+                : 'We will email you a password reset link'}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">{t('footer.email')}</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t('auth.enterEmailPlaceholder')}
+                  placeholder="Enter your email"
                   required
                 />
               </div>
               {activeTab === 'sign-up' && (
                 <div className="space-y-2">
-                  <Label htmlFor="phone">{t('booking.phoneNumber')}</Label>
+                  <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder={t('auth.enterPhoneNumber')}
+                    placeholder="+7 (999) 123-45-67"
                     required
                   />
                 </div>
               )}
               {activeTab !== 'forgot' && (
                 <div className="space-y-2">
-                  <Label htmlFor="password">{t('auth.password')}</Label>
+                  <Label htmlFor="password">Password</Label>
                   <Input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('auth.enterPassword')}
+                    placeholder="Enter your password"
                     required
                   />
                 </div>
               )}
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading
-                  ? t('auth.loading')
+                  ? 'Loading...'
                   : (activeTab === 'sign-in'
-                    ? t('auth.signIn')
+                    ? 'Sign In'
                     : activeTab === 'sign-up'
-                    ? t('auth.signUp')
-                    : t('auth.sendResetEmail'))}
+                    ? 'Sign Up'
+                    : 'Send Reset Email')}
               </Button>
             </form>
             <div className="mt-4 text-center">
               {activeTab === 'sign-in' && (
                 <Button variant="link" onClick={() => { setActiveTab('sign-up'); resetState(); }} className="text-sm">
-                  {t('auth.dontHaveAccount')}
+                  Don't have an account? Sign up
                 </Button>
               )}
               {activeTab === 'sign-up' && (
                 <Button variant="link" onClick={() => { setActiveTab('sign-in'); resetState(); }} className="text-sm">
-                  {t('auth.alreadyHaveAccount')}
+                  Already have an account? Sign in
                 </Button>
               )}
               {(activeTab === 'sign-in' || activeTab === 'sign-up') && (
                 <Button variant="link" onClick={() => { setActiveTab('forgot'); resetState(); }} className="text-xs">
-                  {t('auth.forgotPasswordLink')}
+                  Forgot password?
                 </Button>
               )}
               {activeTab === 'forgot' && (
                 <Button variant="link" onClick={() => { setActiveTab('sign-in'); resetState(); }} className="text-xs">
-                  {t('auth.backToSignIn')}
+                  Back to sign in
                 </Button>
               )}
             </div>

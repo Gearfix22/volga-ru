@@ -15,8 +15,8 @@ const DashboardReservations: React.FC = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Reservations</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="text-2xl font-bold text-foreground">My Reservations</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage and view all your bookings
           </p>
         </div>

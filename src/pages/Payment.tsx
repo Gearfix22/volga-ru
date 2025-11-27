@@ -459,21 +459,21 @@ const Payment = () => {
    const paymentMethods = [
      {
        id: 'credit-card',
-       name: t('creditCard'),
+       name: 'Credit Card',
        icon: CreditCard,
-       description: t('creditCardDescription')
+       description: 'Secure payment with your credit or debit card'
      },
      {
        id: 'paypal',
-       name: t('paypal'),
+       name: 'PayPal',
        icon: Shield,
-       description: t('paypalDescription')
+       description: 'Pay securely with your PayPal account'
      },
      {
        id: 'cash-on-arrival',
-       name: t('cashOnArrival'),
+       name: 'Cash on Arrival',
        icon: MessageCircle,
-       description: t('cashOnArrivalDescription')
+       description: 'Pay cash when service is delivered'
      }
    ];
 
@@ -484,7 +484,7 @@ const Payment = () => {
       <div className="space-y-4">
         <div className="flex items-center gap-2 mb-4">
           <Badge variant="secondary" className="bg-russian-gold/20 text-russian-gold">
-            {t(serviceType.toLowerCase())}
+            {serviceType}
           </Badge>
         </div>
         
@@ -493,28 +493,28 @@ const Payment = () => {
             <div className="flex items-start gap-3">
               <MapPin className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">{t('pickupLocation')}</p>
+                <p className="text-white/70 text-sm">Pickup Location</p>
                 <p className="text-white font-medium">{serviceDetails.pickup}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <MapPin className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">{t('dropoffLocation')}</p>
+                <p className="text-white/70 text-sm">Drop-off Location</p>
                 <p className="text-white font-medium">{serviceDetails.dropoff}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Calendar className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">{t('dateAndTime')}</p>
+                <p className="text-white/70 text-sm">Date & Time</p>
                 <p className="text-white font-medium">{serviceDetails.date} at {serviceDetails.time}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Car className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">{t('vehicleType')}</p>
+                <p className="text-white/70 text-sm">Vehicle Type</p>
                 <p className="text-white font-medium">{serviceDetails.vehicleType}</p>
               </div>
             </div>
@@ -526,28 +526,28 @@ const Payment = () => {
             <div className="flex items-start gap-3">
               <MapPin className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">{t('city')}</p>
+                <p className="text-white/70 text-sm">City</p>
                 <p className="text-white font-medium">{serviceDetails.city}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Building2 className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">{t('hotel')}</p>
+                <p className="text-white/70 text-sm">Hotel</p>
                 <p className="text-white font-medium">{serviceDetails.hotel}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Calendar className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">{t('checkinCheckout')}</p>
+                <p className="text-white/70 text-sm">Check-in / Check-out</p>
                 <p className="text-white font-medium">{serviceDetails.checkin} - {serviceDetails.checkout}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Users className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">{t('roomType')}</p>
+                <p className="text-white/70 text-sm">Room Type</p>
                 <p className="text-white font-medium">{serviceDetails.roomType}</p>
               </div>
             </div>
@@ -559,28 +559,28 @@ const Payment = () => {
             <div className="flex items-start gap-3">
               <Ticket className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">{t('eventName')}</p>
+                <p className="text-white/70 text-sm">Event Name</p>
                 <p className="text-white font-medium">{serviceDetails.eventName}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <MapPin className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">{t('location')}</p>
+                <p className="text-white/70 text-sm">Location</p>
                 <p className="text-white font-medium">{serviceDetails.eventLocation}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Calendar className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">{t('eventDate')}</p>
+                <p className="text-white/70 text-sm">Event Date</p>
                 <p className="text-white font-medium">{serviceDetails.eventDate}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Users className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">{t('numberOfTickets')}</p>
+                <p className="text-white/70 text-sm">Number of Tickets</p>
                 <p className="text-white font-medium">{serviceDetails.tickets}</p>
               </div>
             </div>
@@ -592,14 +592,14 @@ const Payment = () => {
             <div className="flex items-start gap-3">
               <Clock className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">{t('tripDuration')}</p>
+                <p className="text-white/70 text-sm">Trip Duration</p>
                 <p className="text-white font-medium">{serviceDetails.duration}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <Globe className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">{t('regionsToVisit')}</p>
+                <p className="text-white/70 text-sm">Regions to Visit</p>
                 <p className="text-white font-medium">{serviceDetails.regions}</p>
               </div>
             </div>
@@ -607,7 +607,7 @@ const Payment = () => {
               <div className="flex items-start gap-3">
                 <Users className="h-4 w-4 text-white/70 mt-1" />
                 <div>
-                  <p className="text-white/70 text-sm">{t('interests')}</p>
+                  <p className="text-white/70 text-sm">Interests</p>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {serviceDetails.interests.map((interest, index) => (
                       <Badge key={index} variant="outline" className="text-xs">
@@ -623,22 +623,22 @@ const Payment = () => {
 
         {/* Customer Information */}
                          <div className="border-t border-white/20 pt-4 mt-6">
-                           <h4 className="text-white font-medium mb-3">{t('customerInformation')}</h4>
+                           <h4 className="text-white font-medium mb-3">Customer Information</h4>
                            <div className="space-y-2">
                              <div className="flex justify-between text-sm">
-                               <span className="text-white/70">{t('name')}:</span>
+                               <span className="text-white/70">Name:</span>
                                <span className="text-white">{bookingData.userInfo.fullName}</span>
                              </div>
                              <div className="flex justify-between text-sm">
-                               <span className="text-white/70">{t('email')}:</span>
+                               <span className="text-white/70">Email:</span>
                                <span className="text-white">{bookingData.userInfo.email}</span>
                              </div>
                              <div className="flex justify-between text-sm">
-                               <span className="text-white/70">{t('phone')}:</span>
+                               <span className="text-white/70">Phone:</span>
                                <span className="text-white">{bookingData.userInfo.phone}</span>
                              </div>
                              <div className="flex justify-between text-sm">
-                               <span className="text-white/70">{t('language')}:</span>
+                               <span className="text-white/70">Language:</span>
                                <span className="text-white">{bookingData.userInfo.language}</span>
                              </div>
                            </div>
@@ -684,10 +684,10 @@ const Payment = () => {
                <CardHeader>
                  <CardTitle className="text-white flex items-center gap-2">
                    <Lock className="h-5 w-5" />
-                   {t('securePayment')}
+                   Secure Payment
                  </CardTitle>
                  <CardDescription className="text-white/70">
-                   {t('completeBookingSecure')}
+                   Complete your booking securely
                  </CardDescription>
                </CardHeader>
               <CardContent>
@@ -695,7 +695,7 @@ const Payment = () => {
                  <div className="space-y-4 mb-6">
                    <h3 className="text-white font-medium flex items-center gap-2">
                      <DollarSign className="h-5 w-5" />
-                     {t('paymentAmount')}
+                     Payment Amount
                    </h3>
                    <div>
                      <Label htmlFor="amount" className="block text-white text-sm font-medium mb-2">
