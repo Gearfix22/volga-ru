@@ -44,11 +44,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   }
 
   const menuItems = [
-    { icon: User, label: t('dashboard.overview'), path: '/dashboard' },
-    { icon: History, label: t('dashboard.reservations'), path: '/dashboard/reservations' },
-    { icon: Activity, label: t('dashboard.activityHistory'), path: '/dashboard/activity' },
-    { icon: Settings, label: t('dashboard.accountSettings'), path: '/dashboard/settings' },
-    { icon: CreditCard, label: t('dashboard.paymentMethods'), path: '/dashboard/payments' },
+    { icon: User, label: 'Overview', path: '/dashboard' },
+    { icon: History, label: 'Reservations', path: '/dashboard/reservations' },
+    { icon: Activity, label: 'Activity History', path: '/dashboard/activity' },
+    { icon: Settings, label: 'Account Settings', path: '/dashboard/settings' },
+    { icon: CreditCard, label: 'Payment Methods', path: '/dashboard/payments' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -57,13 +57,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     try {
       await signOut();
       toast({
-        title: t('auth.signedOut'),
-        description: t('auth.signedOutSuccessfully'),
+        title: 'Signed Out',
+        description: 'You have been successfully signed out.',
       });
     } catch (error) {
       toast({
-        title: t('common.error'),
-        description: t('auth.signOutError'),
+        title: 'Error',
+        description: 'Failed to sign out. Please try again.',
         variant: 'destructive',
       });
     }
@@ -104,7 +104,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         aria-label="Sidebar"
       >
         <div className="flex items-center justify-between h-14 md:h-16 px-4 md:px-5 border-b border-silver bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-          <h2 className="text-lg md:text-xl font-bold text-volga-logo-blue tracking-tight select-none">{t('nav.dashboard')}</h2>
+          <h2 className="text-lg md:text-xl font-bold text-volga-logo-blue tracking-tight select-none">Dashboard</h2>
           <Button
             variant="ghost"
             size="icon"
@@ -161,7 +161,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
               onClick={handleSignOut}
             >
               <LogOut className="h-4 w-4 mr-2" />
-              {t('auth.signOut')}
+              Sign Out
             </Button>
           </Card>
         </div>
@@ -182,13 +182,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
           <Link to="/" className="shrink-0">
             <Button variant="ghost" size="sm" className="gap-2 px-2 sm:px-4 rounded">
               <Home className="h-4 w-4 mr-2" />
-              <span className="hidden xs:inline font-medium text-volga-logo-blue">{t('dashboard.backToSite')}</span>
+              <span className="hidden xs:inline font-medium text-volga-logo-blue">Back to Site</span>
             </Button>
           </Link>
           {/* Welcome / avatar on larger screens */}
           <div className="ml-auto hidden lg:flex items-center space-x-3">
             <span className="text-sm text-gray-600 font-medium">
-              {t('dashboard.welcomeBack')}, {getUserDisplayName()}
+              Welcome back, {getUserDisplayName()}
             </span>
             <div className="w-8 h-8 bg-volga-logo-blue rounded-full flex items-center justify-center text-white text-sm font-semibold border border-silver shadow">
               {getUserInitials()}

@@ -11,13 +11,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 
 const Auth = () => {
   const navigate = useNavigate();
   const { signUp, signIn, user, loading } = useAuth();
-  const { t } = useLanguage();
   const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState('login');
@@ -49,7 +47,6 @@ const Auth = () => {
   };
 
   const validatePassword = (password: string) => {
-    // Stronger password requirements
     const hasUppercase = /[A-Z]/.test(password);
     const hasLowercase = /[a-z]/.test(password);
     const hasNumbers = /\d/.test(password);
@@ -63,8 +60,8 @@ const Auth = () => {
     
     if (!validateEmail(loginEmail)) {
       toast({
-        title: t('error'),
-        description: t('invalidEmail'),
+        title: 'Error',
+        description: 'Please enter a valid email address.',
         variant: 'destructive'
       });
       return;
@@ -72,8 +69,8 @@ const Auth = () => {
 
     if (!validatePassword(loginPassword)) {
       toast({
-        title: t('error'),
-        description: t('passwordTooShort'),
+        title: 'Error',
+        description: 'Password must be at least 8 characters with uppercase, lowercase, and numbers.',
         variant: 'destructive'
       });
       return;
@@ -86,34 +83,34 @@ const Auth = () => {
       if (error) {
         if (error.message === 'Invalid login credentials') {
           toast({
-            title: t('loginFailed'),
-            description: t('invalidCredentials'),
+            title: 'Login Failed',
+            description: 'Invalid email or password. Please try again.',
             variant: 'destructive'
           });
         } else if (error.message === 'Email not confirmed') {
           toast({
-            title: t('emailNotConfirmed'),
-            description: t('checkEmailForConfirmation'),
+            title: 'Email Not Confirmed',
+            description: 'Please check your email for the confirmation link.',
             variant: 'destructive'
           });
         } else {
           toast({
-            title: t('loginFailed'),
+            title: 'Login Failed',
             description: error.message,
             variant: 'destructive'
           });
         }
       } else {
         toast({
-          title: t('loginSuccessful'),
-          description: t('welcomeBack'),
+          title: 'Login Successful',
+          description: 'Welcome back!',
         });
         navigate('/');
       }
     } catch (error: any) {
       toast({
-        title: t('error'),
-        description: error.message || t('unknownError'),
+        title: 'Error',
+        description: error.message || 'An unexpected error occurred.',
         variant: 'destructive'
       });
     } finally {
@@ -126,8 +123,8 @@ const Auth = () => {
     
     if (!validateEmail(signupEmail)) {
       toast({
-        title: t('error'),
-        description: t('invalidEmail'),
+        title: 'Error',
+        description: 'Please enter a valid email address.',
         variant: 'destructive'
       });
       return;
@@ -135,8 +132,8 @@ const Auth = () => {
 
     if (!validatePassword(signupPassword)) {
       toast({
-        title: t('error'),
-        description: t('passwordTooWeak'),
+        title: 'Error',
+        description: 'Password must be at least 8 characters with uppercase, lowercase, and numbers.',
         variant: 'destructive'
       });
       return;
@@ -144,8 +141,8 @@ const Auth = () => {
 
     if (signupPassword !== confirmPassword) {
       toast({
-        title: t('error'),
-        description: t('passwordsDoNotMatch'),
+        title: 'Error',
+        description: 'Passwords do not match.',
         variant: 'destructive'
       });
       return;
@@ -153,8 +150,8 @@ const Auth = () => {
 
     if (!fullName.trim()) {
       toast({
-        title: t('error'),
-        description: t('fullNameRequired'),
+        title: 'Error',
+        description: 'Full name is required.',
         variant: 'destructive'
       });
       return;
@@ -162,8 +159,8 @@ const Auth = () => {
 
     if (!phone.trim()) {
       toast({
-        title: t('error'),
-        description: t('phoneNumberRequired'),
+        title: 'Error',
+        description: 'Phone number is required.',
         variant: 'destructive'
       });
       return;
@@ -172,8 +169,8 @@ const Auth = () => {
     // Validate phone format (basic check)
     if (!/^\+?[1-9]\d{7,14}$/.test(phone.replace(/[\s\-()]/g, ''))) {
       toast({
-        title: t('error'),
-        description: t('invalidPhoneFormat'),
+        title: 'Error',
+        description: 'Please enter a valid phone number with country code.',
         variant: 'destructive'
       });
       return;
@@ -186,21 +183,21 @@ const Auth = () => {
       if (error) {
         if (error.message === 'User already registered') {
           toast({
-            title: t('signupFailed'),
-            description: t('userAlreadyExists'),
+            title: 'Sign Up Failed',
+            description: 'This email is already registered.',
             variant: 'destructive'
           });
         } else {
           toast({
-            title: t('signupFailed'),
+            title: 'Sign Up Failed',
             description: error.message,
             variant: 'destructive'
           });
         }
       } else {
         toast({
-          title: t('signupSuccessful'),
-          description: t('accountCreated'),
+          title: 'Account Created',
+          description: 'Please check your email to verify your account.',
         });
         
         // Switch to login tab after successful signup
@@ -209,8 +206,8 @@ const Auth = () => {
       }
     } catch (error: any) {
       toast({
-        title: t('error'),
-        description: error.message || t('unknownError'),
+        title: 'Error',
+        description: error.message || 'An unexpected error occurred.',
         variant: 'destructive'
       });
     } finally {
@@ -224,7 +221,7 @@ const Auth = () => {
         <AnimatedBackground />
         <div className="relative z-10 text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-lg">{t('loading')}</p>
+          <p className="mt-4 text-lg">Loading...</p>
         </div>
       </div>
     );
@@ -239,25 +236,25 @@ const Auth = () => {
         <div className="container mx-auto px-4 max-w-md">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-              {t('welcomeToVolgaServices')}
+              Welcome to Volga Services
             </h1>
             <p className="text-xl text-slate-600 dark:text-slate-400">
-              {t('signInOrCreateAccount')}
+              Sign in or create an account to continue
             </p>
           </div>
 
           <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
             <CardHeader>
-              <CardTitle className="text-center">{t('authentication')}</CardTitle>
+              <CardTitle className="text-center">Authentication</CardTitle>
               <CardDescription className="text-center">
-                {t('chooseLoginOrSignup')}
+                Choose to sign in or create a new account
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">{t('login')}</TabsTrigger>
-                  <TabsTrigger value="signup">{t('signup')}</TabsTrigger>
+                  <TabsTrigger value="login">Sign In</TabsTrigger>
+                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="login" className="space-y-4">
@@ -265,14 +262,14 @@ const Auth = () => {
                     <div className="space-y-2">
                       <Label htmlFor="login-email" className="flex items-center gap-2">
                         <Mail className="h-4 w-4" />
-                        {t('emailAddress')} *
+                        Email Address *
                       </Label>
                       <Input
                         id="login-email"
                         type="email"
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder={t('enterEmail')}
+                        placeholder="Enter your email"
                         required
                         className="focus:ring-2 focus:ring-primary"
                       />
@@ -281,7 +278,7 @@ const Auth = () => {
                     <div className="space-y-2">
                       <Label htmlFor="login-password" className="flex items-center gap-2">
                         <Lock className="h-4 w-4" />
-                        {t('password')} *
+                        Password *
                       </Label>
                       <div className="relative">
                         <Input
@@ -289,7 +286,7 @@ const Auth = () => {
                           type={showPassword ? 'text' : 'password'}
                           value={loginPassword}
                           onChange={(e) => setLoginPassword(e.target.value)}
-                          placeholder={t('enterPassword')}
+                          placeholder="Enter your password"
                           required
                           className="focus:ring-2 focus:ring-primary pr-10"
                         />
@@ -315,7 +312,7 @@ const Auth = () => {
                       disabled={isLoading}
                       size="lg"
                     >
-                      {isLoading ? t('signingIn') : t('signIn')}
+                      {isLoading ? 'Signing In...' : 'Sign In'}
                     </Button>
                   </form>
                 </TabsContent>
@@ -325,14 +322,14 @@ const Auth = () => {
                     <div className="space-y-2">
                       <Label htmlFor="signup-name" className="flex items-center gap-2">
                         <User className="h-4 w-4" />
-                        {t('fullName')} *
+                        Full Name *
                       </Label>
                       <Input
                         id="signup-name"
                         type="text"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        placeholder={t('enterFullName')}
+                        placeholder="Enter your full name"
                         required
                         className="focus:ring-2 focus:ring-primary"
                       />
@@ -341,14 +338,14 @@ const Auth = () => {
                     <div className="space-y-2">
                       <Label htmlFor="signup-email" className="flex items-center gap-2">
                         <Mail className="h-4 w-4" />
-                        {t('emailAddress')} *
+                        Email Address *
                       </Label>
                       <Input
                         id="signup-email"
                         type="email"
                         value={signupEmail}
                         onChange={(e) => setSignupEmail(e.target.value)}
-                        placeholder={t('enterEmail')}
+                        placeholder="Enter your email"
                         required
                         className="focus:ring-2 focus:ring-primary"
                       />
@@ -357,7 +354,7 @@ const Auth = () => {
                     <div className="space-y-2">
                       <Label htmlFor="signup-phone" className="flex items-center gap-2">
                         <Phone className="h-4 w-4" />
-                        {t('phoneNumber')} *
+                        Phone Number *
                       </Label>
                       <Input
                         id="signup-phone"
@@ -369,14 +366,14 @@ const Auth = () => {
                         className="focus:ring-2 focus:ring-primary"
                       />
                       <p className="text-xs text-muted-foreground">
-                        {t('phoneFormatHint')}
+                        International format with country code (e.g., +7 999 123-45-67)
                       </p>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="signup-password" className="flex items-center gap-2">
                         <Lock className="h-4 w-4" />
-                        {t('password')} *
+                        Password *
                       </Label>
                       <div className="relative">
                         <Input
@@ -384,7 +381,7 @@ const Auth = () => {
                           type={showPassword ? 'text' : 'password'}
                           value={signupPassword}
                           onChange={(e) => setSignupPassword(e.target.value)}
-                          placeholder={t('enterPassword')}
+                          placeholder="Enter your password"
                           required
                           className="focus:ring-2 focus:ring-primary pr-10"
                         />
@@ -403,14 +400,14 @@ const Auth = () => {
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {t('passwordRequirements')}
+                        Must be 8+ characters with uppercase, lowercase, and numbers
                       </p>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="confirm-password" className="flex items-center gap-2">
                         <Lock className="h-4 w-4" />
-                        {t('confirmPassword')} *
+                        Confirm Password *
                       </Label>
                       <div className="relative">
                         <Input
@@ -418,7 +415,7 @@ const Auth = () => {
                           type={showConfirmPassword ? 'text' : 'password'}
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder={t('confirmPassword')}
+                          placeholder="Confirm your password"
                           required
                           className="focus:ring-2 focus:ring-primary pr-10"
                         />
@@ -444,7 +441,7 @@ const Auth = () => {
                       disabled={isLoading}
                       size="lg"
                     >
-                      {isLoading ? t('creatingAccount') : t('createAccount')}
+                      {isLoading ? 'Creating Account...' : 'Create Account'}
                     </Button>
                   </form>
                 </TabsContent>
@@ -454,14 +451,14 @@ const Auth = () => {
                 <Alert>
                   <CheckCircle className="h-4 w-4" />
                   <AlertDescription>
-                    {t('authenticationSecure')}
+                    Your information is encrypted and secure.
                   </AlertDescription>
                 </Alert>
                 
                 <Alert variant="default" className="border-primary/30 bg-primary/5">
                   <AlertTriangle className="h-4 w-4 text-primary" />
                   <AlertDescription className="text-sm">
-                    {t('adminAccountNote')}
+                    Admin accounts are created and managed separately by the system administrator.
                   </AlertDescription>
                 </Alert>
               </div>
