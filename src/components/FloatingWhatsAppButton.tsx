@@ -1,10 +1,8 @@
 import React from 'react';
 import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 export const FloatingWhatsAppButton: React.FC = () => {
-  const { t } = useLanguage();
   const whatsappNumber = '79522212903';
   const whatsappUrl = `https://wa.me/${whatsappNumber}`;
 
@@ -14,7 +12,7 @@ export const FloatingWhatsAppButton: React.FC = () => {
       target="_blank"
       rel="noopener noreferrer"
       className="fixed bottom-6 right-6 z-50 group"
-      aria-label={t('footer.whatsapp')}
+      aria-label="Chat on WhatsApp"
     >
       <Button
         size="lg"
@@ -23,7 +21,7 @@ export const FloatingWhatsAppButton: React.FC = () => {
         <MessageCircle className="w-6 h-6" />
       </Button>
       <span className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-foreground text-background text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap pointer-events-none">
-        {t('footer.whatsapp')}
+        Chat on WhatsApp
       </span>
     </a>
   );

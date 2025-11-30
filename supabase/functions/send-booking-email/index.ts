@@ -149,9 +149,9 @@ const handler = async (req: Request): Promise<Response> => {
 
           <div style="text-align: center; padding: 20px; background: #f8fafc; border-radius: 8px;">
             <p style="margin-bottom: 16px;"><strong>Need help or have questions?</strong></p>
-            <p style="margin: 8px 0;">📞 Phone: +201030905969</p>
+            <p style="margin: 8px 0;">📞 Phone: +7 952 221-29-03</p>
             <p style="margin: 8px 0;">✉️ Email: info@volgaservices.com</p>
-            <p style="margin: 8px 0;">💬 WhatsApp: <a href="https://wa.me/201030905969" style="color: #16a34a; text-decoration: none;">Click to chat</a></p>
+            <p style="margin: 8px 0;">💬 WhatsApp: <a href="https://wa.me/79522212903" target="_blank" rel="noopener noreferrer" style="color: #16a34a; text-decoration: none;">Click to chat</a></p>
           </div>
 
           <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #64748b; font-size: 14px;">
