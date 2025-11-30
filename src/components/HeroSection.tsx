@@ -47,7 +47,7 @@ export const HeroSection: React.FC = () => {
             <Button
               onClick={handleExploreServices}
               size="lg"
-              className="bg-white text-brand-primary hover:bg-white/90 px-8 py-6 text-lg font-semibold rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105"
+              className="bg-white text-brand-primary hover:bg-white/90 px-8 py-6 text-lg font-bold rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105"
             >
               View Our Services
               <ArrowRight className={`h-5 w-5 ${language === 'ar' ? 'mr-3 rotate-180' : 'ml-3'}`} />
@@ -56,7 +56,7 @@ export const HeroSection: React.FC = () => {
             <Button
               onClick={() => navigate('/enhanced-booking')}
               size="lg"
-              className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-brand-primary px-8 py-6 text-lg font-semibold rounded-xl transition-all duration-300 hover:scale-105"
+              className="bg-white/10 backdrop-blur-sm border-2 border-white text-white hover:bg-white hover:text-brand-primary px-8 py-6 text-lg font-bold rounded-xl transition-all duration-300 hover:scale-105"
             >
               Book Appointment
             </Button>
