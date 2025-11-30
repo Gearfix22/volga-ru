@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Sidebar,
@@ -35,17 +34,16 @@ interface AdminMenuItem {
 
 const AdminSidebar = () => {
   const { user } = useAuth();
-  const { t } = useLanguage();
   const navigate = useNavigate();
   const { state } = useSidebar();
   const isCollapsed = state === 'collapsed';
 
   const menuItems: AdminMenuItem[] = [
-    { title: t('overview'), url: '/admin?tab=overview', icon: LayoutDashboard },
-    { title: t('bookings'), url: '/admin?tab=bookings', icon: Calendar },
-    { title: t('payments'), url: '/admin?tab=payments', icon: CreditCard },
-    { title: t('users'), url: '/admin?tab=users', icon: Users },
-    { title: t('logs'), url: '/admin?tab=logs', icon: FileText },
+    { title: 'Overview', url: '/admin?tab=overview', icon: LayoutDashboard },
+    { title: 'Bookings', url: '/admin?tab=bookings', icon: Calendar },
+    { title: 'Payments', url: '/admin?tab=payments', icon: CreditCard },
+    { title: 'Users', url: '/admin?tab=users', icon: Users },
+    { title: 'Logs', url: '/admin?tab=logs', icon: FileText },
   ];
 
   const handleSignOut = async () => {
@@ -61,13 +59,13 @@ const AdminSidebar = () => {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b px-6 py-4">
         {!isCollapsed && (
-          <h2 className="text-lg font-semibold">{t('adminPanel')}</h2>
+          <h2 className="text-lg font-semibold">Admin Panel</h2>
         )}
       </SidebarHeader>
       
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>{t('management')}</SidebarGroupLabel>
+          <SidebarGroupLabel>Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
@@ -103,7 +101,7 @@ const AdminSidebar = () => {
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{user?.email}</p>
-              <p className="text-xs text-muted-foreground">{t('admin')}</p>
+              <p className="text-xs text-muted-foreground">Admin</p>
             </div>
           )}
         </div>
@@ -115,7 +113,7 @@ const AdminSidebar = () => {
             className="w-full justify-start mt-2"
           >
             <LogOut className="h-4 w-4 mr-2" />
-            {t('signOut')}
+            Sign Out
           </Button>
         )}
       </SidebarFooter>

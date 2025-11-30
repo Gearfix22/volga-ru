@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb';
@@ -16,7 +15,6 @@ type TabType = 'overview' | 'bookings' | 'payments' | 'users' | 'logs';
 
 const AdminPanel = () => {
   const { hasRole } = useAuth();
-  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const activeTab = (searchParams.get('tab') as TabType) || 'overview';
@@ -32,7 +30,7 @@ const AdminPanel = () => {
       <div className="flex items-center justify-center min-h-screen p-4">
         <Alert variant="destructive" className="max-w-md">
           <AlertDescription>
-            {t('accessDenied')}
+            Access Denied. You do not have permission to view this page.
           </AlertDescription>
         </Alert>
       </div>
@@ -40,14 +38,14 @@ const AdminPanel = () => {
   }
 
   const getTitleForTab = (tab: TabType) => {
-    const titles = {
-      overview: t('overview'),
-      bookings: t('bookings'),
-      payments: t('payments'),
-      users: t('users'),
-      logs: t('logs'),
+    const titles: Record<TabType, string> = {
+      overview: 'Overview',
+      bookings: 'Bookings',
+      payments: 'Payments',
+      users: 'Users',
+      logs: 'Logs',
     };
-    return titles[tab] || t('adminPanel');
+    return titles[tab] || 'Admin Panel';
   };
 
   return (
@@ -76,15 +74,15 @@ const AdminPanel = () => {
             {activeTab === 'payments' && (
               <div className="text-center py-12">
                 <CreditCard className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">{t('paymentsComingSoon')}</h3>
-                <p className="text-muted-foreground">{t('featureInDevelopment')}</p>
+                <h3 className="text-xl font-semibold mb-2">Payments Coming Soon</h3>
+                <p className="text-muted-foreground">This feature is currently in development</p>
               </div>
             )}
             {activeTab === 'logs' && (
               <div className="text-center py-12">
                 <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">{t('logsComingSoon')}</h3>
-                <p className="text-muted-foreground">{t('featureInDevelopment')}</p>
+                <h3 className="text-xl font-semibold mb-2">Logs Coming Soon</h3>
+                <p className="text-muted-foreground">This feature is currently in development</p>
               </div>
             )}
           </main>
