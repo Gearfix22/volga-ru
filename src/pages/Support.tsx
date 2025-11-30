@@ -92,7 +92,7 @@ const Support = () => {
               </div>
               <Button 
                 className="w-full mt-4 bg-green-600 hover:bg-green-700" 
-                onClick={() => window.open('https://wa.me/1234567890', '_blank')}
+                onClick={() => window.open('https://wa.me/79522212903', '_blank')}
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Open WhatsApp
