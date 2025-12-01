@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Navigation } from '@/components/Navigation';
-import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -217,68 +216,73 @@ const Auth = () => {
 
   if (loading) {
     return (
-      <div className="relative min-h-screen overflow-hidden flex items-center justify-center">
+      <div className="relative min-h-screen overflow-hidden flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5">
         <AnimatedBackground />
         <div className="relative z-10 text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-lg">Loading...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-lg text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
       <AnimatedBackground />
       <Navigation />
       
-      <div className="relative z-10 pt-24 pb-12">
-        <div className="container mx-auto px-4 max-w-md">
+      <div className="relative z-10 pt-20 pb-12 px-4">
+        <div className="container mx-auto max-w-lg">
+          {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground mb-4 shadow-lg">
+              <Sparkles className="h-8 w-8" />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
               Welcome to Volga Services
             </h1>
-            <p className="text-xl text-slate-600 dark:text-slate-400">
+            <p className="text-lg text-muted-foreground">
               Sign in or create an account to continue
             </p>
           </div>
 
-          <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
-            <CardHeader>
-              <CardTitle className="text-center">Authentication</CardTitle>
+          <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur-xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl text-center">Account Access</CardTitle>
               <CardDescription className="text-center">
                 Choose to sign in or create a new account
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Sign In</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="login" className="text-sm font-medium">Sign In</TabsTrigger>
+                  <TabsTrigger value="signup" className="text-sm font-medium">Sign Up</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="login" className="space-y-4">
+                {/* Login Form */}
+                <TabsContent value="login" className="space-y-4 mt-0">
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-email" className="flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        Email Address *
+                      <Label htmlFor="login-email" className="flex items-center gap-2 text-sm font-medium">
+                        <Mail className="h-4 w-4 text-primary" />
+                        Email Address
                       </Label>
                       <Input
                         id="login-email"
                         type="email"
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder="Enter your email"
+                        placeholder="you@example.com"
                         required
-                        className="focus:ring-2 focus:ring-primary"
+                        className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="login-password" className="flex items-center gap-2">
-                        <Lock className="h-4 w-4" />
-                        Password *
+                      <Label htmlFor="login-password" className="flex items-center gap-2 text-sm font-medium">
+                        <Lock className="h-4 w-4 text-primary" />
+                        Password
                       </Label>
                       <div className="relative">
                         <Input
@@ -288,92 +292,89 @@ const Auth = () => {
                           onChange={(e) => setLoginPassword(e.target.value)}
                           placeholder="Enter your password"
                           required
-                          className="focus:ring-2 focus:ring-primary pr-10"
+                          className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
                           onClick={() => setShowPassword(!showPassword)}
                         >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
                       </div>
                     </div>
 
                     <Button 
                       type="submit" 
-                      className="w-full" 
+                      className="w-full h-11 text-base font-semibold" 
                       disabled={isLoading}
-                      size="lg"
                     >
                       {isLoading ? 'Signing In...' : 'Sign In'}
                     </Button>
                   </form>
                 </TabsContent>
                 
-                <TabsContent value="signup" className="space-y-4">
+                {/* Signup Form */}
+                <TabsContent value="signup" className="space-y-4 mt-0">
                   <form onSubmit={handleSignup} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="signup-name" className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        Full Name *
+                      <Label htmlFor="signup-name" className="flex items-center gap-2 text-sm font-medium">
+                        <User className="h-4 w-4 text-primary" />
+                        Full Name
                       </Label>
                       <Input
                         id="signup-name"
                         type="text"
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Enter your full name"
+                        placeholder="John Doe"
                         required
-                        className="focus:ring-2 focus:ring-primary"
+                        className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-email" className="flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        Email Address *
+                      <Label htmlFor="signup-email" className="flex items-center gap-2 text-sm font-medium">
+                        <Mail className="h-4 w-4 text-primary" />
+                        Email Address
                       </Label>
                       <Input
                         id="signup-email"
                         type="email"
                         value={signupEmail}
                         onChange={(e) => setSignupEmail(e.target.value)}
-                        placeholder="Enter your email"
+                        placeholder="you@example.com"
                         required
-                        className="focus:ring-2 focus:ring-primary"
+                        className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-phone" className="flex items-center gap-2">
-                        <Phone className="h-4 w-4" />
-                        Phone Number *
+                      <Label htmlFor="signup-phone" className="flex items-center gap-2 text-sm font-medium">
+                        <Phone className="h-4 w-4 text-primary" />
+                        Phone Number
+                        <span className="text-destructive">*</span>
                       </Label>
                       <Input
                         id="signup-phone"
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+7 (999) 123-45-67"
+                        placeholder="+7 999 123 45 67"
                         required
-                        className="focus:ring-2 focus:ring-primary"
+                        className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
                       />
                       <p className="text-xs text-muted-foreground">
-                        International format with country code (e.g., +7 999 123-45-67)
+                        Include country code (e.g., +7 for Russia)
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-password" className="flex items-center gap-2">
-                        <Lock className="h-4 w-4" />
-                        Password *
+                      <Label htmlFor="signup-password" className="flex items-center gap-2 text-sm font-medium">
+                        <Lock className="h-4 w-4 text-primary" />
+                        Password
                       </Label>
                       <div className="relative">
                         <Input
@@ -381,33 +382,29 @@ const Auth = () => {
                           type={showPassword ? 'text' : 'password'}
                           value={signupPassword}
                           onChange={(e) => setSignupPassword(e.target.value)}
-                          placeholder="Enter your password"
+                          placeholder="Create a strong password"
                           required
-                          className="focus:ring-2 focus:ring-primary pr-10"
+                          className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
                           onClick={() => setShowPassword(!showPassword)}
                         >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Must be 8+ characters with uppercase, lowercase, and numbers
+                        Min 8 characters with uppercase, lowercase & numbers
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="confirm-password" className="flex items-center gap-2">
-                        <Lock className="h-4 w-4" />
-                        Confirm Password *
+                      <Label htmlFor="confirm-password" className="flex items-center gap-2 text-sm font-medium">
+                        <Lock className="h-4 w-4 text-primary" />
+                        Confirm Password
                       </Label>
                       <div className="relative">
                         <Input
@@ -417,29 +414,24 @@ const Auth = () => {
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="Confirm your password"
                           required
-                          className="focus:ring-2 focus:ring-primary pr-10"
+                          className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         >
-                          {showConfirmPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
                       </div>
                     </div>
 
                     <Button 
                       type="submit" 
-                      className="w-full" 
+                      className="w-full h-11 text-base font-semibold" 
                       disabled={isLoading}
-                      size="lg"
                     >
                       {isLoading ? 'Creating Account...' : 'Create Account'}
                     </Button>
@@ -447,18 +439,12 @@ const Auth = () => {
                 </TabsContent>
               </Tabs>
 
-              <div className="mt-6 pt-6 border-t space-y-3">
-                <Alert>
-                  <CheckCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Your information is encrypted and secure.
-                  </AlertDescription>
-                </Alert>
-                
-                <Alert variant="default" className="border-primary/30 bg-primary/5">
-                  <AlertTriangle className="h-4 w-4 text-primary" />
-                  <AlertDescription className="text-sm">
-                    Admin accounts are created and managed separately by the system administrator.
+              {/* Security Note */}
+              <div className="mt-6 pt-6 border-t border-border/50">
+                <Alert className="bg-primary/5 border-primary/20">
+                  <CheckCircle className="h-4 w-4 text-primary" />
+                  <AlertDescription className="text-sm text-muted-foreground">
+                    Your data is encrypted and secure. We never share your information.
                   </AlertDescription>
                 </Alert>
               </div>
@@ -466,8 +452,6 @@ const Auth = () => {
           </Card>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 };

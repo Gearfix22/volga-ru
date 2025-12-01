@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Eye, EyeOff, Shield } from 'lucide-react';
+import { Eye, EyeOff, Shield, Lock, Mail, AlertTriangle } from 'lucide-react';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Logo } from '@/components/Logo';
 
@@ -41,7 +42,6 @@ const AdminLogin = () => {
       });
 
       if (error) {
-        console.error('Admin login error:', error);
         toast({
           title: 'Login Failed',
           description: 'Invalid credentials. Please try again.',
@@ -71,7 +71,6 @@ const AdminLogin = () => {
         });
       }
     } catch (error) {
-      console.error('Login error:', error);
       toast({
         title: 'Error',
         description: 'An error occurred during login',
@@ -83,30 +82,41 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <AnimatedBackground />
       
+      {/* Decorative elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl"></div>
+      </div>
+      
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-2xl">
-          <CardHeader className="space-y-4 text-center">
+        <Card className="w-full max-w-md shadow-2xl border-0 bg-card/95 backdrop-blur-xl">
+          <CardHeader className="space-y-4 text-center pb-2">
             <div className="flex justify-center mb-2">
               <Logo />
             </div>
             <div className="flex justify-center">
-              <div className="p-3 bg-primary/10 rounded-full">
-                <Shield className="h-8 w-8 text-primary" />
+              <div className="p-4 bg-gradient-to-br from-primary to-primary/80 rounded-2xl shadow-lg">
+                <Shield className="h-10 w-10 text-primary-foreground" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold">Admin Access</CardTitle>
-            <CardDescription>
-              Secure login for administrators only
-            </CardDescription>
+            <div>
+              <CardTitle className="text-2xl font-bold">Admin Portal</CardTitle>
+              <CardDescription className="mt-2">
+                Secure access for administrators only
+              </CardDescription>
+            </div>
           </CardHeader>
           
-          <CardContent>
+          <CardContent className="pt-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium">
+                  <Mail className="h-4 w-4 text-primary" />
+                  Admin Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -115,11 +125,15 @@ const AdminLogin = () => {
                   placeholder="admin@example.com"
                   required
                   autoComplete="email"
+                  className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="flex items-center gap-2 text-sm font-medium">
+                  <Lock className="h-4 w-4 text-primary" />
+                  Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -129,33 +143,41 @@ const AdminLogin = () => {
                     placeholder="Enter admin password"
                     required
                     autoComplete="current-password"
-                    className="pr-10"
+                    className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
 
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full h-11 text-base font-semibold"
                 disabled={loading}
               >
-                {loading ? 'Signing in...' : 'Sign In as Admin'}
+                {loading ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent"></div>
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In as Admin'
+                )}
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              <p>This page is restricted to authorized administrators only.</p>
+            <div className="mt-6 pt-6 border-t border-border/50">
+              <Alert variant="destructive" className="bg-destructive/10 border-destructive/20">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  This page is restricted. Unauthorized access attempts are logged.
+                </AlertDescription>
+              </Alert>
             </div>
           </CardContent>
         </Card>
