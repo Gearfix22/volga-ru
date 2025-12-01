@@ -1,165 +1,109 @@
 import React from 'react';
-import { Phone, Mail, MapPin, Globe, Facebook, Instagram } from 'lucide-react';
+import { Phone, Mail, MapPin, Globe, Facebook, Instagram, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 export const Footer: React.FC = () => {
-  const { language } = useLanguage();
-
-  const whatsappNumber = '+79522212903';
-  const whatsappUrl = `https://wa.me/${whatsappNumber.replace(/\+/g, '')}`;
+  const whatsappUrl = 'https://wa.me/79522212903';
 
   const contactInfo = [
-    {
-      icon: Phone,
-      label: 'Phone',
-      value: '+7 952 221 29 03',
-      href: `tel:${whatsappNumber}`,
-    },
-    {
-      icon: Mail,
-      label: 'Email',
-      value: 'info@volgaservices.com',
-      href: 'mailto:info@volgaservices.com',
-    },
-    {
-      icon: Globe,
-      label: 'Website',
-      value: 'www.volgaservices.com',
-      href: 'https://www.volgaservices.com',
-    },
-    {
-      icon: MapPin,
-      label: 'Address',
-      value: language === 'ru' 
-        ? 'обл. Ленинградская, р-н. Всеволожский, г. Мурино, ул. Шувалова, д. 11, кв.'
-        : 'Leningrad Region, Vsevolozhsky District, Murino, Shuvalov St., 11',
-      href: '#',
-    },
+    { icon: Phone, label: 'Phone', value: '+7 952 221 29 03', href: 'tel:+79522212903' },
+    { icon: Mail, label: 'Email', value: 'info@volgaservices.com', href: 'mailto:info@volgaservices.com' },
+    { icon: Globe, label: 'Website', value: 'volgaservices.com', href: 'https://www.volgaservices.com' },
+    { icon: MapPin, label: 'Location', value: 'St. Petersburg, Russia', href: '#' },
   ];
 
   const socialLinks = [
-    {
-      icon: Facebook,
-      label: 'Facebook',
-      href: 'https://www.facebook.com/profile.php?id=61574150824169',
-    },
-    {
-      icon: Instagram,
-      label: 'Instagram',
-      href: 'https://www.instagram.com/volga.services/',
-    },
+    { icon: Facebook, label: 'Facebook', href: 'https://www.facebook.com/profile.php?id=61574150824169' },
+    { icon: Instagram, label: 'Instagram', href: 'https://www.instagram.com/volga.services/' },
   ];
 
   return (
-    <footer className="relative overflow-hidden bg-gradient-to-b from-slate-900 to-slate-950 border-t border-white/10">
-      {/* Dark overlay for better text visibility */}
-      <div className="absolute inset-0 bg-black/60"></div>
-      
-      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-          {/* Company Info */}
-          <div className="space-y-4 sm:space-y-6">
-            <div>
-              <h3 className="text-white font-bold text-xl sm:text-2xl mb-3 sm:mb-4 font-serif"
-                  style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)' }}>
-                Volga Services
-              </h3>
-              <p className="text-white/90 text-sm leading-relaxed"
-                 style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}>
-                Premium travel and tourism services in Russia. Your trusted partner for unforgettable experiences.
-              </p>
+    <footer className="bg-foreground text-background">
+      <div className="container mx-auto px-4 lg:px-8 py-12 lg:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
+          
+          {/* Brand */}
+          <div className="space-y-5">
+            <div className="flex items-center gap-3">
+              <img 
+                src="/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png"
+                alt="Volga Services"
+                className="w-12 h-12"
+              />
+              <div>
+                <h3 className="font-serif font-bold text-xl text-background">Volga Services</h3>
+                <p className="text-background/60 text-xs uppercase tracking-wider">Premium Tourism</p>
+              </div>
             </div>
-            
-            {/* WhatsApp Button */}
-            <Button
-              asChild
-              className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
-            >
-              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
-                <Phone className="h-4 w-4 mr-2" />
+            <p className="text-background/70 text-sm leading-relaxed">
+              Your trusted partner for premium travel experiences across Russia. Unforgettable journeys, exceptional service.
+            </p>
+            <Button asChild size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" />
                 Chat on WhatsApp
               </a>
             </Button>
           </div>
 
-          {/* Contact Information */}
-          <div className="space-y-4 sm:space-y-6">
-            <h3 className="text-white font-bold text-lg sm:text-xl"
-                style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)' }}>Contact Information</h3>
-            <div className="space-y-3 sm:space-y-4">
-              {contactInfo.map((item, index) => (
-                <div key={index} className="flex items-start space-x-3">
-                  <item.icon className="h-4 w-4 sm:h-5 sm:w-5 text-white mt-1 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-white/70 text-xs font-medium uppercase"
-                       style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)' }}>{item.label}</p>
-                    {item.href === '#' ? (
-                      <p className="text-white text-sm break-words"
-                         style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}>{item.value}</p>
-                    ) : (
-                      <a 
-                        href={item.href}
-                        className="text-white hover:text-white/80 text-sm transition-colors break-words"
-                        style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}
-                        target={item.href.startsWith('http') ? '_blank' : undefined}
-                        rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                      >
-                        {item.value}
-                      </a>
-                    )}
-                  </div>
-                </div>
+          {/* Contact */}
+          <div className="space-y-5">
+            <h4 className="font-semibold text-background text-base">Contact</h4>
+            <ul className="space-y-3">
+              {contactInfo.map((item, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <item.icon className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                  {item.href !== '#' ? (
+                    <a href={item.href} className="text-background/80 text-sm hover:text-background transition-colors">
+                      {item.value}
+                    </a>
+                  ) : (
+                    <span className="text-background/80 text-sm">{item.value}</span>
+                  )}
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
-          {/* Business Information */}
-          <div className="space-y-4 sm:space-y-6">
-            <h3 className="text-white font-bold text-lg sm:text-xl"
-                style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)' }}>Business Information</h3>
-            <div className="space-y-3 sm:space-y-4">
+          {/* Business Info */}
+          <div className="space-y-5">
+            <h4 className="font-semibold text-background text-base">Business Info</h4>
+            <div className="space-y-4">
               <div>
-                <p className="text-white/70 text-xs font-medium uppercase"
-                   style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)' }}>Tax Number</p>
-                <p className="text-white font-mono text-base sm:text-lg font-semibold"
-                   style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}>4706086543</p>
+                <p className="text-background/50 text-xs uppercase tracking-wide mb-1">Tax Number (INN)</p>
+                <p className="text-background font-mono text-sm">4706086543</p>
               </div>
               <div>
-                <p className="text-white/70 text-xs font-medium uppercase"
-                   style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)' }}>Registration Number</p>
-                <p className="text-white font-mono text-base sm:text-lg font-semibold"
-                   style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}>1254700002831</p>
+                <p className="text-background/50 text-xs uppercase tracking-wide mb-1">Registration (OGRN)</p>
+                <p className="text-background font-mono text-sm">1254700002831</p>
               </div>
             </div>
           </div>
 
-          {/* Social Media */}
-          <div className="space-y-4 sm:space-y-6">
-            <h3 className="text-white font-bold text-lg sm:text-xl"
-                style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)' }}>Follow Us</h3>
-            <div className="flex space-x-3 sm:space-x-4">
-              {socialLinks.map((social, index) => (
+          {/* Social */}
+          <div className="space-y-5">
+            <h4 className="font-semibold text-background text-base">Follow Us</h4>
+            <div className="flex gap-3">
+              {socialLinks.map((social, i) => (
                 <a
-                  key={index}
+                  key={i}
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-white/10 backdrop-blur-sm p-2 sm:p-3 rounded-xl hover:bg-white/20 transition-colors border border-white/20"
+                  className="w-10 h-10 rounded-lg bg-background/10 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
+                  aria-label={social.label}
                 >
-                  <social.icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                  <span className="sr-only">{social.label}</span>
+                  <social.icon className="h-5 w-5" />
                 </a>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="border-t border-white/20 mt-8 sm:mt-12 pt-6 sm:pt-8 text-center">
-          <p className="text-white/90 text-sm"
-             style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}>
-            © 2024 <span className="text-white font-semibold">Volga Services</span>. All Rights Reserved.
+        {/* Bottom */}
+        <div className="border-t border-background/10 mt-10 pt-6 text-center">
+          <p className="text-background/60 text-sm">
+            © {new Date().getFullYear()} <span className="text-background font-medium">Volga Services</span>. All rights reserved.
           </p>
         </div>
       </div>
