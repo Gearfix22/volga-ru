@@ -20,11 +20,9 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'sans': ['Inter', 'system-ui', 'sans-serif'],
+				'sans': ['Inter', 'Tajawal', 'system-ui', 'sans-serif'],
 				'serif': ['Playfair Display', 'Georgia', 'serif'],
 				'arabic': ['Tajawal', 'system-ui', 'sans-serif'],
-				'body': ['Inter', 'system-ui', 'sans-serif'],
-				'heading': ['Playfair Display', 'Georgia', 'serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
