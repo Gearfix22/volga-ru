@@ -9,6 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { BankTransferInfo } from '@/components/payment/BankTransferInfo';
 import { Upload, FileText, CheckCircle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { bankTransferSchema } from '@/lib/validationSchemas';
 
 interface BankTransferFormProps {
   amount: number;
@@ -69,28 +70,27 @@ export const BankTransferForm: React.FC<BankTransferFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!referenceNumber.trim()) {
-      toast({
-        title: t('error'),
-        description: t('payment.referenceNumberRequired'),
-        variant: 'destructive'
-      });
-      return;
-    }
+    // Validate with zod schema
+    const validation = bankTransferSchema.safeParse({
+      referenceNumber: referenceNumber,
+      transferDate: transferDate,
+      notes: notes,
+    });
 
-    if (!transferDate) {
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
       toast({
-        title: t('error'),
-        description: t('payment.transferDateRequired'),
+        title: 'Validation Error',
+        description: firstError.message,
         variant: 'destructive'
       });
       return;
     }
 
     const transferDetails = {
-      referenceNumber: referenceNumber.trim(),
-      transferDate,
-      notes: notes.trim() || undefined,
+      referenceNumber: validation.data.referenceNumber,
+      transferDate: validation.data.transferDate,
+      notes: validation.data.notes,
       receiptFile: receiptFile || undefined
     };
 
@@ -131,13 +131,15 @@ export const BankTransferForm: React.FC<BankTransferFormProps> = ({
               <Input
                 id="referenceNumber"
                 value={referenceNumber}
-                onChange={(e) => setReferenceNumber(e.target.value)}
+                onChange={(e) => setReferenceNumber(e.target.value.toUpperCase())}
                 placeholder="Enter transaction reference number"
                 className="h-12 text-base"
+                maxLength={100}
+                pattern="[A-Z0-9\-]+"
                 required
               />
               <p className="text-sm text-muted-foreground">
-                The unique reference number from your bank transfer receipt
+                The unique reference number from your bank transfer receipt ({referenceNumber.length}/100)
               </p>
             </div>
 
@@ -209,8 +211,12 @@ export const BankTransferForm: React.FC<BankTransferFormProps> = ({
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Any additional information about your transfer..."
                 rows={3}
+                maxLength={500}
                 className="resize-none text-base"
               />
+              <p className="text-xs text-muted-foreground">
+                {notes.length}/500 characters
+              </p>
             </div>
 
             {/* Submit Button */}

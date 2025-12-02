@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { loginSchema, signupSchema } from '@/lib/validationSchemas';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -40,36 +41,20 @@ const Auth = () => {
     }
   }, [user, loading, navigate]);
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const validatePassword = (password: string) => {
-    const hasUppercase = /[A-Z]/.test(password);
-    const hasLowercase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasMinLength = password.length >= 8;
-    
-    return hasUppercase && hasLowercase && hasNumbers && hasMinLength;
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateEmail(loginEmail)) {
-      toast({
-        title: 'Error',
-        description: 'Please enter a valid email address.',
-        variant: 'destructive'
-      });
-      return;
-    }
+    // Validate with zod schema
+    const validation = loginSchema.safeParse({
+      email: loginEmail,
+      password: loginPassword,
+    });
 
-    if (!validatePassword(loginPassword)) {
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
       toast({
-        title: 'Error',
-        description: 'Password must be at least 8 characters with uppercase, lowercase, and numbers.',
+        title: 'Validation Error',
+        description: firstError.message,
         variant: 'destructive'
       });
       return;
@@ -77,7 +62,7 @@ const Auth = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await signIn(loginEmail, loginPassword);
+      const { error } = await signIn(validation.data.email, validation.data.password);
       
       if (error) {
         if (error.message === 'Invalid login credentials') {
@@ -120,56 +105,20 @@ const Auth = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateEmail(signupEmail)) {
-      toast({
-        title: 'Error',
-        description: 'Please enter a valid email address.',
-        variant: 'destructive'
-      });
-      return;
-    }
+    // Validate with zod schema
+    const validation = signupSchema.safeParse({
+      email: signupEmail,
+      password: signupPassword,
+      confirmPassword: confirmPassword,
+      fullName: fullName,
+      phone: phone.replace(/[\s\-()]/g, ''), // Remove formatting for validation
+    });
 
-    if (!validatePassword(signupPassword)) {
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
       toast({
-        title: 'Error',
-        description: 'Password must be at least 8 characters with uppercase, lowercase, and numbers.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (signupPassword !== confirmPassword) {
-      toast({
-        title: 'Error',
-        description: 'Passwords do not match.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (!fullName.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Full name is required.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (!phone.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Phone number is required.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    // Validate phone format (basic check)
-    if (!/^\+?[1-9]\d{7,14}$/.test(phone.replace(/[\s\-()]/g, ''))) {
-      toast({
-        title: 'Error',
-        description: 'Please enter a valid phone number with country code.',
+        title: 'Validation Error',
+        description: firstError.message,
         variant: 'destructive'
       });
       return;
@@ -177,7 +126,12 @@ const Auth = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await signUp(signupEmail, signupPassword, phone, fullName);
+      const { error } = await signUp(
+        validation.data.email, 
+        validation.data.password, 
+        validation.data.phone, 
+        validation.data.fullName
+      );
       
       if (error) {
         if (error.message === 'User already registered') {
@@ -330,6 +284,7 @@ const Auth = () => {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="John Doe"
+                        maxLength={100}
                         required
                         className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
                       />
@@ -346,6 +301,7 @@ const Auth = () => {
                         value={signupEmail}
                         onChange={(e) => setSignupEmail(e.target.value)}
                         placeholder="you@example.com"
+                        maxLength={255}
                         required
                         className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
                       />
@@ -363,6 +319,7 @@ const Auth = () => {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="+7 999 123 45 67"
+                        maxLength={20}
                         required
                         className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
                       />

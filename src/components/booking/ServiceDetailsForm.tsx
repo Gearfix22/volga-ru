@@ -37,6 +37,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
             value={details.pickup || ''}
             onChange={(e) => onUpdateDetail('pickup', e.target.value)}
             placeholder={t('enterPickupLocation')}
+            maxLength={200}
             className="focus:ring-2 focus:ring-primary"
           />
         </div>
@@ -50,6 +51,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
             value={details.dropoff || ''}
             onChange={(e) => onUpdateDetail('dropoff', e.target.value)}
             placeholder={t('enterDropoffLocation')}
+            maxLength={200}
             className="focus:ring-2 focus:ring-primary"
           />
         </div>
@@ -136,6 +138,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
             value={details.city || ''}
             onChange={(e) => onUpdateDetail('city', e.target.value)}
             placeholder={t('enterCityName')}
+            maxLength={100}
             className="focus:ring-2 focus:ring-primary"
           />
         </div>
@@ -149,6 +152,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
             value={details.hotel || ''}
             onChange={(e) => onUpdateDetail('hotel', e.target.value)}
             placeholder={t('preferredHotel')}
+            maxLength={200}
             className="focus:ring-2 focus:ring-primary"
           />
         </div>
@@ -230,6 +234,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
           onChange={(e) => onUpdateDetail('specialRequests', e.target.value)}
           placeholder={t('specialRequestsPlaceholder')}
           rows={3}
+          maxLength={500}
           className="focus:ring-2 focus:ring-primary"
         />
       </div>
@@ -248,6 +253,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
           value={details.eventName || ''}
           onChange={(e) => onUpdateDetail('eventName', e.target.value)}
           placeholder={t('enterEventName')}
+          maxLength={200}
           className="focus:ring-2 focus:ring-primary"
         />
       </div>
@@ -262,6 +268,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
           value={details.eventLocation || ''}
           onChange={(e) => onUpdateDetail('eventLocation', e.target.value)}
           placeholder={t('enterEventLocation')}
+          maxLength={200}
           className="focus:ring-2 focus:ring-primary"
         />
       </div>
@@ -351,6 +358,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
             onChange={(e) => onUpdateDetail('regions', e.target.value)}
             placeholder={t('describeRegions')}
             rows={3}
+            maxLength={1000}
             className="focus:ring-2 focus:ring-primary"
           />
         </div>
@@ -416,6 +424,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
             onChange={(e) => onUpdateDetail('additionalInfo', e.target.value)}
             placeholder={t('additionalInfoPlaceholder')}
             rows={3}
+            maxLength={1000}
             className="focus:ring-2 focus:ring-primary"
           />
         </div>

@@ -23,6 +23,7 @@ import { BookingFormTracker } from '@/components/booking/BookingFormTracker';
 import { useDataTracking } from '@/hooks/useDataTracking';
 import { saveDraftBooking, getDraftBookings, DraftBooking } from '@/services/bookingService';
 import { supabase } from '@/integrations/supabase/client';
+import { useServiceValidation } from '@/hooks/useServiceValidation';
 import type { ServiceDetails, UserInfo } from '@/types/booking';
 
 const EnhancedBooking = () => {
@@ -32,6 +33,7 @@ const EnhancedBooking = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const { trackForm } = useDataTracking();
+  const { validateServiceDetails: validateServiceSchema } = useServiceValidation();
   const [searchParams] = useSearchParams();
   
   const [serviceType, setServiceType] = useState('');
@@ -178,10 +180,23 @@ const EnhancedBooking = () => {
     }
   };
 
+  const checkRequiredFields = (): boolean => {
+    const details = serviceDetails as any;
+    const requiredFields: { [key: string]: string[] } = {
+      'Transportation': ['pickup', 'dropoff', 'date', 'time', 'vehicleType'],
+      'Hotels': ['city', 'checkin', 'checkout', 'roomType'],
+      'Events': ['eventName', 'eventLocation', 'eventDate', 'tickets'],
+      'Custom Trips': ['duration', 'regions']
+    };
+
+    const missing = requiredFields[serviceType]?.filter(field => !details[field]) || [];
+    return missing.length === 0;
+  };
+
   const determineProgress = (): DraftBooking['booking_progress'] => {
     if (!serviceType) return 'service_selection';
     
-    const hasRequiredDetails = validateServiceDetails();
+    const hasRequiredDetails = checkRequiredFields();
     if (!hasRequiredDetails) return 'details_filled';
     
     const hasUserInfo = userInfo.fullName && userInfo.email && userInfo.phone;
@@ -204,52 +219,25 @@ const EnhancedBooking = () => {
     }));
   };
 
-  const validateServiceDetails = (): boolean => {
-    const details = serviceDetails as any;
-    const requiredFields: { [key: string]: string[] } = {
-      'Transportation': ['pickup', 'dropoff', 'date', 'time', 'vehicleType'],
-      'Hotels': ['city', 'checkin', 'checkout', 'roomType'],
-      'Events': ['eventName', 'eventLocation', 'eventDate', 'tickets'],
-      'Custom Trips': ['duration', 'regions']
-    };
-
-    const missing = requiredFields[serviceType]?.filter(field => !details[field]) || [];
-    return missing.length === 0;
-  };
-
   const validateForm = (): boolean => {
     if (!serviceType) {
       toast({
-        title: t('serviceRequired'),
-        description: t('pleaseSelectService'),
+        title: 'Service Required',
+        description: 'Please select a service type',
         variant: "destructive"
       });
       return false;
     }
 
-    if (!validateServiceDetails()) {
-      const details = serviceDetails as any;
-      const requiredFields: { [key: string]: string[] } = {
-        'Transportation': ['pickup', 'dropoff', 'date', 'time', 'vehicleType'],
-        'Hotels': ['city', 'checkin', 'checkout', 'roomType'],
-        'Events': ['eventName', 'eventLocation', 'eventDate', 'tickets'],
-        'Custom Trips': ['duration', 'regions']
-      };
-
-      const missing = requiredFields[serviceType]?.filter(field => !details[field]) || [];
-      
-      toast({
-        title: t('missingRequiredInfo'),
-        description: `${t('pleaseFillIn')}: ${missing.join(', ')}`,
-        variant: "destructive"
-      });
+    // Use zod schema validation for service details
+    if (!validateServiceSchema(serviceType, serviceDetails)) {
       return false;
     }
 
     if (!userInfo.fullName || !userInfo.email || !userInfo.phone) {
       toast({
-        title: t('contactInfoRequired'),
-        description: t('fillRequiredFields'),
+        title: 'Contact Information Required',
+        description: 'Please fill in all required contact fields',
         variant: "destructive"
       });
       return false;
@@ -259,8 +247,8 @@ const EnhancedBooking = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userInfo.email)) {
       toast({
-        title: t('invalidEmail'),
-        description: t('pleaseEnterValidEmail'),
+        title: 'Invalid Email',
+        description: 'Please enter a valid email address',
         variant: "destructive"
       });
       return false;
@@ -270,8 +258,8 @@ const EnhancedBooking = () => {
     const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
     if (!phoneRegex.test(userInfo.phone.replace(/[\s\-\(\)]/g, ''))) {
       toast({
-        title: t('invalidPhone'),
-        description: t('pleaseEnterValidPhone'),
+        title: 'Invalid Phone Number',
+        description: 'Please enter a valid phone number',
         variant: "destructive"
       });
       return false;
@@ -502,6 +490,7 @@ const EnhancedBooking = () => {
                           value={userInfo.fullName}
                           onChange={(e) => updateUserInfo('fullName', e.target.value)}
                           placeholder={t('enterFullName')}
+                          maxLength={100}
                           className="focus:ring-2 focus:ring-primary"
                         />
                       </div>
@@ -516,6 +505,7 @@ const EnhancedBooking = () => {
                           value={userInfo.email}
                           onChange={(e) => updateUserInfo('email', e.target.value)}
                           placeholder={t('enterEmail')}
+                          maxLength={255}
                           className="focus:ring-2 focus:ring-primary"
                         />
                       </div>
@@ -532,6 +522,7 @@ const EnhancedBooking = () => {
                           value={userInfo.phone}
                           onChange={(e) => updateUserInfo('phone', e.target.value)}
                           placeholder={t('enterPhone')}
+                          maxLength={20}
                           className="focus:ring-2 focus:ring-primary"
                         />
                       </div>
