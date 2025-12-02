@@ -20,6 +20,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { supportRequestSchema } from '@/lib/validationSchemas';
 
 const Support = () => {
   const { user } = useAuth();
@@ -35,6 +36,23 @@ const Support = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate with zod schema
+    const validation = supportRequestSchema.safeParse({
+      subject: formData.subject,
+      message: formData.message,
+    });
+
+    if (!validation.success) {
+      const firstError = validation.error.errors[0];
+      toast({
+        title: 'Validation Error',
+        description: firstError.message,
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -43,8 +61,8 @@ const Support = () => {
         .insert({
           name: user?.email || 'User',
           email: user?.email || '',
-          subject: formData.subject,
-          message: formData.message,
+          subject: validation.data.subject,
+          message: validation.data.message,
           status: 'pending'
         });
 
@@ -63,7 +81,7 @@ const Support = () => {
     } catch (error) {
       console.error('Error submitting support request:', error);
       toast({
-        title: t('error'),
+        title: 'Error',
         description: 'Failed to send support request. Please try again.',
         variant: 'destructive'
       });
@@ -165,8 +183,12 @@ const Support = () => {
                     subject: e.target.value
                   }))}
                   placeholder="Brief description of your issue"
+                  maxLength={200}
                   required
                 />
+                <p className="text-xs text-muted-foreground">
+                  {formData.subject.length}/200 characters
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -180,8 +202,12 @@ const Support = () => {
                   }))}
                   placeholder="Provide detailed information about your issue, including any error messages..."
                   rows={6}
+                  maxLength={2000}
                   required
                 />
+                <p className="text-xs text-muted-foreground">
+                  {formData.message.length}/2000 characters
+                </p>
               </div>
 
               <div className="flex justify-end">
