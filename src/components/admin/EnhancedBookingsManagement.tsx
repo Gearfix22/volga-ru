@@ -26,11 +26,13 @@ import {
   Edit,
   Save,
   FileEdit,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { BookingDetailsDialog } from './BookingDetailsDialog';
+import { RejectBookingModal } from './RejectBookingModal';
 import {
   Select,
   SelectContent,
@@ -38,6 +40,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  getAdminBookings,
+  confirmBooking,
+  rejectBooking,
+  updateBooking,
+  updatePaymentStatus,
+} from '@/services/adminService';
 
 interface Booking {
   id: string;
@@ -70,6 +79,7 @@ export const EnhancedBookingsManagement = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [draftBookings, setDraftBookings] = useState<DraftBooking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
@@ -78,12 +88,16 @@ export const EnhancedBookingsManagement = () => {
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [noteText, setNoteText] = useState('');
   const [activeTab, setActiveTab] = useState('completed');
+  
+  // Rejection modal state
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [bookingToReject, setBookingToReject] = useState<Booking | null>(null);
 
   useEffect(() => {
     fetchBookings();
     fetchDraftBookings();
 
-    // Real-time subscription
+    // Real-time subscription for UI updates
     const channel = supabase
       .channel('admin-bookings-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
@@ -102,18 +116,16 @@ export const EnhancedBookingsManagement = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const data = await getAdminBookings({
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        payment_status: paymentFilter !== 'all' ? paymentFilter : undefined,
+      });
       setBookings(data || []);
     } catch (error: any) {
       console.error('Error fetching bookings:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load bookings',
+        description: error.message || 'Failed to load bookings',
         variant: 'destructive'
       });
     } finally {
@@ -135,74 +147,153 @@ export const EnhancedBookingsManagement = () => {
     }
   };
 
-  const updateBookingStatus = async (bookingId: string, newStatus: string) => {
+  // Refetch when filters change
+  useEffect(() => {
+    if (!loading) {
+      fetchBookings();
+    }
+  }, [statusFilter, paymentFilter]);
+
+  const handleConfirmBooking = async (booking: Booking) => {
     try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', bookingId);
-
-      if (error) throw error;
-
+      setActionLoading(booking.id);
+      await confirmBooking(booking.id);
+      
+      // Optimistic update
+      setBookings(prev => prev.map(b => 
+        b.id === booking.id ? { ...b, status: 'confirmed' } : b
+      ));
+      
       toast({
         title: 'Success',
-        description: `Booking ${newStatus} successfully`,
+        description: `Booking confirmed successfully`,
       });
-      fetchBookings();
     } catch (error: any) {
       toast({
         title: 'Error',
         description: error.message,
         variant: 'destructive'
       });
+      fetchBookings(); // Refresh on error
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  const updatePaymentStatus = async (bookingId: string, newStatus: string) => {
+  const openRejectModal = (booking: Booking) => {
+    setBookingToReject(booking);
+    setRejectModalOpen(true);
+  };
+
+  const handleRejectBooking = async (reason: string) => {
+    if (!bookingToReject) return;
+    
     try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ payment_status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', bookingId);
+      setActionLoading(bookingToReject.id);
+      await rejectBooking(bookingToReject.id, reason);
+      
+      // Optimistic update
+      setBookings(prev => prev.map(b => 
+        b.id === bookingToReject.id 
+          ? { ...b, status: 'cancelled', admin_notes: `Rejected: ${reason}` } 
+          : b
+      ));
+      
+      toast({
+        title: 'Booking Rejected',
+        description: `Booking has been rejected and customer will be notified`,
+      });
+      
+      setRejectModalOpen(false);
+      setBookingToReject(null);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+      fetchBookings();
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
-      if (error) throw error;
+  const handleUpdateStatus = async (bookingId: string, newStatus: string) => {
+    try {
+      setActionLoading(bookingId);
+      await updateBooking(bookingId, { status: newStatus });
+      
+      // Optimistic update
+      setBookings(prev => prev.map(b => 
+        b.id === bookingId ? { ...b, status: newStatus } : b
+      ));
+      
+      toast({
+        title: 'Success',
+        description: `Booking status updated to ${newStatus}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+      fetchBookings();
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
+  const handleUpdatePaymentStatus = async (bookingId: string, newStatus: string) => {
+    try {
+      setActionLoading(bookingId);
+      await updatePaymentStatus(bookingId, newStatus);
+      
+      // Optimistic update
+      setBookings(prev => prev.map(b => 
+        b.id === bookingId ? { ...b, payment_status: newStatus } : b
+      ));
+      
       toast({
         title: 'Success',
         description: 'Payment status updated',
       });
-      fetchBookings();
     } catch (error: any) {
       toast({
         title: 'Error',
         description: error.message,
         variant: 'destructive'
       });
+      fetchBookings();
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const saveAdminNote = async (bookingId: string) => {
     try {
-      const { error } = await supabase
-        .from('bookings')
-        .update({ admin_notes: noteText, updated_at: new Date().toISOString() })
-        .eq('id', bookingId);
-
-      if (error) throw error;
-
+      setActionLoading(bookingId);
+      await updateBooking(bookingId, { admin_notes: noteText });
+      
+      // Optimistic update
+      setBookings(prev => prev.map(b => 
+        b.id === bookingId ? { ...b, admin_notes: noteText } : b
+      ));
+      
       toast({
         title: 'Success',
         description: 'Note saved successfully',
       });
       setEditingNotes(null);
       setNoteText('');
-      fetchBookings();
     } catch (error: any) {
       toast({
         title: 'Error',
         description: error.message,
         variant: 'destructive'
       });
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -213,10 +304,7 @@ export const EnhancedBookingsManagement = () => {
       booking.user_info?.phone?.includes(searchQuery) ||
       booking.id.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
-    const matchesPayment = paymentFilter === 'all' || booking.payment_status === paymentFilter;
-
-    return matchesSearch && matchesStatus && matchesPayment;
+    return matchesSearch;
   });
 
   const getStatusBadge = (status: string) => {
@@ -265,9 +353,20 @@ export const EnhancedBookingsManagement = () => {
                     View and manage all customer bookings
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="text-lg px-4 py-2 self-start">
-                  {filteredBookings.length} Bookings
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => fetchBookings()}
+                    disabled={loading}
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                    Refresh
+                  </Button>
+                  <Badge variant="outline" className="text-lg px-4 py-2">
+                    {filteredBookings.length} Bookings
+                  </Badge>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -336,7 +435,7 @@ export const EnhancedBookingsManagement = () => {
                         </TableRow>
                       ) : (
                         filteredBookings.map((booking) => (
-                          <TableRow key={booking.id}>
+                          <TableRow key={booking.id} className={actionLoading === booking.id ? 'opacity-50' : ''}>
                             <TableCell className="font-medium">
                               <div className="flex items-center gap-2">
                                 <User className="h-4 w-4 text-muted-foreground" />
@@ -354,7 +453,7 @@ export const EnhancedBookingsManagement = () => {
                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Phone className="h-3 w-3 text-muted-foreground" />
-                                  <span className="font-mono text-primary">{booking.user_info?.phone || 'N/A'}</span>
+                                  <span className="font-mono text-primary font-semibold">{booking.user_info?.phone || 'N/A'}</span>
                                 </div>
                               </div>
                             </TableCell>
@@ -367,7 +466,8 @@ export const EnhancedBookingsManagement = () => {
                             <TableCell>
                               <Select
                                 value={booking.status}
-                                onValueChange={(value) => updateBookingStatus(booking.id, value)}
+                                onValueChange={(value) => handleUpdateStatus(booking.id, value)}
+                                disabled={actionLoading === booking.id}
                               >
                                 <SelectTrigger className="w-[130px]">
                                   <SelectValue />
@@ -383,7 +483,8 @@ export const EnhancedBookingsManagement = () => {
                             <TableCell>
                               <Select
                                 value={booking.payment_status}
-                                onValueChange={(value) => updatePaymentStatus(booking.id, value)}
+                                onValueChange={(value) => handleUpdatePaymentStatus(booking.id, value)}
+                                disabled={actionLoading === booking.id}
                               >
                                 <SelectTrigger className="w-[130px]">
                                   <SelectValue />
@@ -403,9 +504,14 @@ export const EnhancedBookingsManagement = () => {
                                     onChange={(e) => setNoteText(e.target.value)}
                                     placeholder="Add admin note..."
                                     className="min-h-[60px]"
+                                    maxLength={500}
                                   />
                                   <div className="flex gap-1">
-                                    <Button size="sm" onClick={() => saveAdminNote(booking.id)}>
+                                    <Button 
+                                      size="sm" 
+                                      onClick={() => saveAdminNote(booking.id)}
+                                      disabled={actionLoading === booking.id}
+                                    >
                                       <Save className="h-3 w-3 mr-1" />
                                       Save
                                     </Button>
@@ -436,16 +542,43 @@ export const EnhancedBookingsManagement = () => {
                               )}
                             </TableCell>
                             <TableCell>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setSelectedBooking(booking);
-                                  setShowDetails(true);
-                                }}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
+                              <div className="flex flex-col gap-1">
+                                {/* Quick Action Buttons */}
+                                {booking.status === 'pending' && (
+                                  <div className="flex gap-1 mb-1">
+                                    <Button
+                                      size="sm"
+                                      variant="default"
+                                      className="bg-green-600 hover:bg-green-700"
+                                      onClick={() => handleConfirmBooking(booking)}
+                                      disabled={actionLoading === booking.id}
+                                    >
+                                      <CheckCircle className="h-3 w-3 mr-1" />
+                                      Confirm
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => openRejectModal(booking)}
+                                      disabled={actionLoading === booking.id}
+                                    >
+                                      <XCircle className="h-3 w-3 mr-1" />
+                                      Reject
+                                    </Button>
+                                  </div>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedBooking(booking);
+                                    setShowDetails(true);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View Details
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))
@@ -503,7 +636,7 @@ export const EnhancedBookingsManagement = () => {
                                 </div>
                               )}
                               {draft.user_info?.phone && (
-                                <div className="text-xs font-mono text-primary flex items-center gap-1">
+                                <div className="text-xs font-mono text-primary font-semibold flex items-center gap-1">
                                   <Phone className="h-3 w-3" />
                                   {draft.user_info.phone}
                                 </div>
@@ -542,6 +675,16 @@ export const EnhancedBookingsManagement = () => {
         booking={selectedBooking}
         open={showDetails}
         onOpenChange={setShowDetails}
+      />
+
+      {/* Reject Booking Modal */}
+      <RejectBookingModal
+        open={rejectModalOpen}
+        onOpenChange={setRejectModalOpen}
+        bookingId={bookingToReject?.id || ''}
+        customerName={bookingToReject?.user_info?.fullName || 'Unknown'}
+        onConfirm={handleRejectBooking}
+        isLoading={!!actionLoading}
       />
     </div>
   );

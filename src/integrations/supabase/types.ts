@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_logs: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string | null
+          id: string
+          payload: Json | null
+          target_id: string | null
+          target_table: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string | null
+          id?: string
+          payload?: Json | null
+          target_id?: string | null
+          target_table?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string | null
+          id?: string
+          payload?: Json | null
+          target_id?: string | null
+          target_table?: string | null
+        }
+        Relationships: []
+      }
       booking_status_history: {
         Row: {
           booking_id: string | null
