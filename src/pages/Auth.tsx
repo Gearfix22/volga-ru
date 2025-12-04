@@ -137,7 +137,13 @@ const Auth = () => {
         if (error.message === 'User already registered') {
           toast({
             title: 'Sign Up Failed',
-            description: 'This email is already registered.',
+            description: 'This email is already registered. Please use a different email or sign in.',
+            variant: 'destructive'
+          });
+        } else if (error.message === 'Phone number already registered' || error.status === 409) {
+          toast({
+            title: 'Sign Up Failed',
+            description: 'This phone number is already registered. Please use a different phone number or sign in.',
             variant: 'destructive'
           });
         } else {
