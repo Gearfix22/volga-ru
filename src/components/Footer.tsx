@@ -74,10 +74,16 @@ export const Footer: React.FC = () => {
             {/* WhatsApp Button */}
             <Button
               asChild
-              className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
+              className="bg-[#25D366] hover:bg-[#20BA5A] text-white w-full sm:w-auto focus-visible:ring-2 focus-visible:ring-white"
             >
-              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
-                <Phone className="h-4 w-4 mr-2" />
+              <a 
+                href={whatsappUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex items-center justify-center"
+                aria-label="Open WhatsApp chat with Volga Services"
+              >
+                <Phone className="h-4 w-4 mr-2" aria-hidden="true" />
                 Chat on WhatsApp
               </a>
             </Button>

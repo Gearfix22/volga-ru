@@ -16,8 +16,8 @@ export const HeroSection: React.FC = () => {
 
   return (
     <main className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
-      {/* Dark Overlay for Text Visibility */}
-      <div className="absolute inset-0 bg-black/50"></div>
+      {/* Gradient Overlay for Text Visibility - WCAG AA Compliant */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/60 to-black/70" aria-hidden="true"></div>
       
       {/* Main Content Container */}
       <div className="relative z-10 w-full max-w-5xl mx-auto">
