@@ -544,6 +544,44 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          booking_id: string | null
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          target_admin_id: string | null
+          type: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          target_admin_id?: string | null
+          type: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          target_admin_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       page_visits: {
         Row: {
           created_at: string | null

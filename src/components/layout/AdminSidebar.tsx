@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { NotificationBell } from '@/components/admin/NotificationBell';
 
 interface AdminMenuItem {
   title: string;
@@ -58,9 +59,12 @@ const AdminSidebar = () => {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b px-6 py-4">
-        {!isCollapsed && (
-          <h2 className="text-lg font-semibold">Admin Panel</h2>
-        )}
+        <div className="flex items-center justify-between">
+          {!isCollapsed && (
+            <h2 className="text-lg font-semibold">Admin Panel</h2>
+          )}
+          <NotificationBell />
+        </div>
       </SidebarHeader>
       
       <SidebarContent>
