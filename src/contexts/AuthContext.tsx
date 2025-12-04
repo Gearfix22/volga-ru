@@ -116,6 +116,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signUp = async (email: string, password: string, phone: string, fullName: string, role: string = 'user') => {
+    // Check phone uniqueness before signup
+    const { data: existingPhone } = await supabase
+      .from('profiles')
+      .select('phone')
+      .eq('phone', phone)
+      .maybeSingle();
+
+    if (existingPhone) {
+      return { 
+        error: { 
+          message: 'Phone number already registered',
+          status: 409 
+        } 
+      };
+    }
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
