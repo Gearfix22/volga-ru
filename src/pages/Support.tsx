@@ -124,14 +124,14 @@ const Support = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Phone Support</p>
-                  <p className="text-lg font-semibold">+7 (123) 456-7890</p>
+                  <p className="text-lg font-semibold">+7 952 221-29-03</p>
                 </div>
                 <Phone className="h-8 w-8 text-blue-600" />
               </div>
               <Button 
                 variant="outline" 
                 className="w-full mt-4"
-                onClick={() => window.open('tel:+71234567890', '_self')}
+                onClick={() => window.open('tel:+79522212903', '_self')}
               >
                 <Phone className="h-4 w-4 mr-2" />
                 Call Now

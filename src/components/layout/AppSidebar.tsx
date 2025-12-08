@@ -42,27 +42,27 @@ const AppSidebar = () => {
 
   const userMenuItems = [
     {
-      title: t('dashboard'),
+      title: 'Dashboard',
       url: '/enhanced-dashboard',
       icon: LayoutDashboard,
     },
     {
-      title: t('myBookings'),
+      title: 'My Bookings',
       url: '/enhanced-dashboard',
       icon: Calendar,
     },
     {
-      title: t('payments'),
+      title: 'Payments',
       url: '/payments-history',
       icon: CreditCard,
     },
     {
-      title: t('profile'),
+      title: 'Profile',
       url: '/profile-settings',
       icon: User,
     },
     {
-      title: t('support'),
+      title: 'Support',
       url: '/support',
       icon: MessageCircle,
     },
@@ -70,37 +70,37 @@ const AppSidebar = () => {
 
   const adminMenuItems = [
     {
-      title: t('adminDashboard'),
+      title: 'Admin Dashboard',
       url: '/admin',
       icon: Shield,
     },
     {
-      title: t('manageBookings'),
+      title: 'Manage Bookings',
       url: '/admin/bookings',
       icon: Calendar,
     },
     {
-      title: t('managePayments'),
+      title: 'Manage Payments',
       url: '/admin/payments',
       icon: CreditCard,
     },
     {
-      title: t('manageServices'),
+      title: 'Manage Services',
       url: '/admin/services',
       icon: Package,
     },
     {
-      title: t('manageUsers'),
+      title: 'Manage Users',
       url: '/admin/users',
       icon: Users,
     },
     {
-      title: t('analytics'),
+      title: 'Analytics',
       url: '/admin/analytics',
       icon: BarChart,
     },
     {
-      title: t('logs'),
+      title: 'Activity Logs',
       url: '/admin/logs',
       icon: FileText,
     },
@@ -136,7 +136,7 @@ const AppSidebar = () => {
       <SidebarContent>
         {/* User Menu */}
         <SidebarGroup>
-          <SidebarGroupLabel>{t('userMenu')}</SidebarGroupLabel>
+          <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {userMenuItems.map((item) => (
@@ -156,7 +156,7 @@ const AppSidebar = () => {
         {/* Admin Menu - Only show if user is admin */}
         {hasRole('admin') && (
           <SidebarGroup>
-            <SidebarGroupLabel>{t('administration')}</SidebarGroupLabel>
+            <SidebarGroupLabel>Administration</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminMenuItems.map((item) => (
@@ -194,7 +194,7 @@ const AppSidebar = () => {
                 className="mt-1 h-7 px-2 text-xs"
               >
                 <LogOut className="h-3 w-3 mr-1" />
-                {t('signOut')}
+                Sign Out
               </Button>
             </div>
           )}
