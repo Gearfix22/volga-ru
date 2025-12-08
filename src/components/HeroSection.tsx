@@ -31,7 +31,7 @@ export const HeroSection: React.FC = () => {
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 font-serif leading-tight" 
               style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.9), 0 4px 12px rgba(0, 0, 0, 0.7)' }}>
-            Welcome to Volga Voyage
+            Welcome to Volga
           </h1>
           
           {/* Subtitle */}
