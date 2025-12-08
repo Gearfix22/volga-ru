@@ -139,72 +139,92 @@ const UserDashboard = () => {
 
   return (
     <DashboardLayout title="My Dashboard">
-      <div className="space-y-6">
+      <div className="space-y-8">
+        {/* Back to Home Button */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Welcome Back!</h2>
+            <p className="text-muted-foreground">Manage your bookings and account settings</p>
+          </div>
+          <Button onClick={() => navigate('/')} variant="outline" size="lg">
+            <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
+            Back to Home
+          </Button>
+        </div>
+
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4 md:p-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Bookings</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Bookings</p>
+                  <p className="text-3xl font-bold text-foreground">{stats.total}</p>
                 </div>
-                <FileText className="h-8 w-8 text-primary" />
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <FileText className="h-6 w-6 text-primary" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4 md:p-6">
+          <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Confirmed</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Confirmed</p>
+                  <p className="text-3xl font-bold text-green-600">{stats.confirmed}</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-600" />
+                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4 md:p-6">
+          <Card className="border-l-4 border-l-yellow-500 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Pending</p>
+                  <p className="text-3xl font-bold text-yellow-600">{stats.pending}</p>
                 </div>
-                <Clock className="h-8 w-8 text-yellow-600" />
+                <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-full">
+                  <Clock className="h-6 w-6 text-yellow-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4 md:p-6">
+          <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">In Progress</p>
-                  <p className="text-2xl font-bold text-orange-600">{stats.inProgress}</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">In Progress</p>
+                  <p className="text-3xl font-bold text-orange-600">{stats.inProgress}</p>
                 </div>
-                <RotateCcw className="h-8 w-8 text-orange-600" />
+                <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-full">
+                  <RotateCcw className="h-6 w-6 text-orange-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Quick Actions</CardTitle>
             <CardDescription>Start a new booking or browse our services</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button onClick={() => navigate('/booking')} className="flex-1">
-                <Plus className="h-4 w-4 mr-2" />
+              <Button onClick={() => navigate('/booking')} className="flex-1" size="lg">
+                <Plus className="h-5 w-5 mr-2" />
                 New Booking
               </Button>
-              <Button onClick={() => navigate('/services')} variant="outline" className="flex-1">
-                <TrendingUp className="h-4 w-4 mr-2" />
+              <Button onClick={() => navigate('/services')} variant="outline" className="flex-1" size="lg">
+                <TrendingUp className="h-5 w-5 mr-2" />
                 Browse Services
               </Button>
             </div>
@@ -213,19 +233,19 @@ const UserDashboard = () => {
 
         {/* Incomplete Bookings Alert */}
         {draftBookings.length > 0 && (
-          <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800">
-            <CardHeader>
+          <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800 shadow-sm">
+            <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
                 <RotateCcw className="h-5 w-5" />
                 Incomplete Bookings ({draftBookings.length})
               </CardTitle>
               <CardDescription>You have bookings that need to be completed</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4">
               {draftBookings.map(draft => (
-                <div key={draft.id} className="flex items-center justify-between p-3 bg-background rounded-lg border">
+                <div key={draft.id} className="flex items-center justify-between p-4 bg-background rounded-lg border shadow-sm">
                   <div>
-                    <p className="font-medium">{draft.service_type}</p>
+                    <p className="font-semibold text-foreground">{draft.service_type}</p>
                     <p className="text-sm text-muted-foreground">
                       Last updated: {new Date(draft.updated_at).toLocaleDateString()}
                     </p>
@@ -246,14 +266,14 @@ const UserDashboard = () => {
         )}
 
         {/* Recent Bookings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Bookings</CardTitle>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Recent Bookings</CardTitle>
             <CardDescription>Your latest reservations</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="animate-pulse">
                     <div className="h-16 bg-muted rounded"></div>
