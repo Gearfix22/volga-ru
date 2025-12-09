@@ -23,12 +23,9 @@ const AdminLogin = () => {
 
   useEffect(() => {
     // Redirect if already logged in as admin
-    const checkAdmin = async () => {
-      if (user && await hasRole('admin')) {
-        navigate('/admin');
-      }
-    };
-    checkAdmin();
+    if (user && hasRole('admin')) {
+      navigate('/admin');
+    }
   }, [user, navigate, hasRole]);
 
   const handleSubmit = async (e: React.FormEvent) => {

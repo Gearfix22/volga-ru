@@ -5,7 +5,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CreditCard, FileText } from 'lucide-react';
+import { CreditCard, FileText, Loader2 } from 'lucide-react';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import AdminDashboard from '@/components/admin/AdminDashboard';
 import { EnhancedBookingsManagement } from '@/components/admin/EnhancedBookingsManagement';
@@ -14,7 +14,7 @@ import { UsersManagement } from '@/components/admin/UsersManagement';
 type TabType = 'overview' | 'bookings' | 'payments' | 'users' | 'logs';
 
 const AdminPanel = () => {
-  const { hasRole } = useAuth();
+  const { user, loading, hasRole } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const activeTab = (searchParams.get('tab') as TabType) || 'overview';
@@ -24,6 +24,27 @@ const AdminPanel = () => {
       navigate('/admin?tab=overview', { replace: true });
     }
   }, [searchParams, navigate]);
+
+  // Redirect to admin login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/admin-login', { replace: true });
+    }
+  }, [loading, user, navigate]);
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Redirect handled above, but show nothing while redirecting
+  if (!user) {
+    return null;
+  }
 
   if (!hasRole('admin')) {
     return (
