@@ -27,10 +27,14 @@ Deno.serve(async (req) => {
     const adminPassword = Deno.env.get('ADMIN_PASSWORD');
 
     console.log('Admin login attempt for email:', email);
+    console.log('ADMIN_EMAIL configured:', adminEmail ? 'YES' : 'NO');
+    console.log('ADMIN_PASSWORD configured:', adminPassword ? 'YES' : 'NO');
+    console.log('Email match:', email === adminEmail);
+    console.log('Password match:', password === adminPassword);
 
     // Validate credentials
     if (email !== adminEmail || password !== adminPassword) {
-      console.log('Invalid admin credentials');
+      console.log('Invalid admin credentials - email match:', email === adminEmail, ', password match:', password === adminPassword);
       return new Response(
         JSON.stringify({ error: 'Invalid credentials' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
