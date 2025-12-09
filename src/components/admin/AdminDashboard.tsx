@@ -12,9 +12,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 
 interface AdminStats {
   totalBookings: number;
@@ -28,7 +26,6 @@ interface AdminStats {
 }
 
 const AdminDashboard = () => {
-  const { t } = useLanguage();
   const { hasRole } = useAuth();
   const [stats, setStats] = useState<AdminStats>({
     totalBookings: 0,
@@ -115,18 +112,16 @@ const AdminDashboard = () => {
 
   if (!hasRole('admin')) {
     return (
-      <DashboardLayout title="Access Denied">
-        <div className="text-center py-8">
-          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
-          <p className="text-muted-foreground">You don't have permission to access the admin dashboard.</p>
-        </div>
-      </DashboardLayout>
+      <div className="text-center py-8">
+        <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
+        <p className="text-muted-foreground">You don't have permission to access the admin dashboard.</p>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout title={t('adminDashboard')}>
+    <>
       <div className="space-y-6">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -256,7 +251,7 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 

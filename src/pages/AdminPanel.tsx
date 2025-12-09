@@ -5,11 +5,13 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CreditCard, FileText, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import AdminDashboard from '@/components/admin/AdminDashboard';
 import { EnhancedBookingsManagement } from '@/components/admin/EnhancedBookingsManagement';
 import { UsersManagement } from '@/components/admin/UsersManagement';
+import { AdminPayments } from '@/components/admin/AdminPayments';
+import { AdminLogs } from '@/components/admin/AdminLogs';
 
 type TabType = 'overview' | 'bookings' | 'payments' | 'users' | 'logs';
 
@@ -92,20 +94,8 @@ const AdminPanel = () => {
             {activeTab === 'overview' && <AdminDashboard />}
             {activeTab === 'bookings' && <EnhancedBookingsManagement />}
             {activeTab === 'users' && <UsersManagement />}
-            {activeTab === 'payments' && (
-              <div className="text-center py-12">
-                <CreditCard className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Payments Coming Soon</h3>
-                <p className="text-muted-foreground">This feature is currently in development</p>
-              </div>
-            )}
-            {activeTab === 'logs' && (
-              <div className="text-center py-12">
-                <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Logs Coming Soon</h3>
-                <p className="text-muted-foreground">This feature is currently in development</p>
-              </div>
-            )}
+            {activeTab === 'payments' && <AdminPayments />}
+            {activeTab === 'logs' && <AdminLogs />}
           </main>
         </SidebarInset>
       </div>
