@@ -58,14 +58,38 @@ Deno.serve(async (req) => {
     }
 
     // Find user by email
-    const adminUser = users.find(u => u.email === adminEmail);
+    let adminUser = users.find(u => u.email === adminEmail);
     
+    // If admin user doesn't exist, create them
     if (!adminUser) {
-      console.log('Admin user not found in database');
-      return new Response(
-        JSON.stringify({ error: 'Admin user not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.log('Admin user not found, creating...');
+      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+        email: adminEmail,
+        password: adminPassword,
+        email_confirm: true,
+      });
+      
+      if (createError) {
+        console.error('Error creating admin user:', createError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create admin user' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      adminUser = newUser.user;
+      console.log('Admin user created:', adminUser.id);
+      
+      // Add admin role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({ user_id: adminUser.id, role: 'admin' });
+      
+      if (roleError) {
+        console.error('Error assigning admin role:', roleError);
+      } else {
+        console.log('Admin role assigned');
+      }
     }
 
     // Verify user has admin role
@@ -74,7 +98,19 @@ Deno.serve(async (req) => {
       .select('role')
       .eq('user_id', adminUser.id)
       .eq('role', 'admin')
-      .single();
+      .maybeSingle();
+
+    if (roleError) {
+      console.error('Error checking role:', roleError);
+    }
+    
+    // If no admin role, add it
+    if (!roleData) {
+      console.log('Admin role missing, adding...');
+      await supabase
+        .from('user_roles')
+        .insert({ user_id: adminUser.id, role: 'admin' });
+    }
 
     if (roleError || !roleData) {
       console.log('User does not have admin role');
