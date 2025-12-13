@@ -1,0 +1,20 @@
+# Netlify configuration
+# https://docs.netlify.com/configure-builds/file-based-configuration/
+
+[build]
+  command = "bun run build"
+  publish = "dist"
+
+# Redirect the default Netlify subdomain to the custom domain
+[[redirects]]
+  from = "https://volgaru.netlify.app/*"
+  to = "https://www.volgaservices.com/:splat"
+  status = 301
+  force = true
+
+# Also redirect the apex domain to www (if configured)
+[[redirects]]
+  from = "https://volgaservices.com/*"
+  to = "https://www.volgaservices.com/:splat"
+  status = 301
+  force = true
