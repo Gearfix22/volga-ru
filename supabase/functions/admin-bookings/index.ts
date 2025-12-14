@@ -307,6 +307,53 @@ serve(async (req) => {
       })
     }
 
+    // DELETE /admin-bookings/:id - Delete booking
+    if (method === 'DELETE' && bookingId && !action) {
+      const { data: booking, error: fetchError } = await supabaseAdmin
+        .from('bookings')
+        .select('*')
+        .eq('id', bookingId)
+        .maybeSingle()
+
+      if (fetchError || !booking) {
+        return new Response(JSON.stringify({ error: 'Booking not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      // Delete related records first
+      await supabaseAdmin.from('hotel_bookings').delete().eq('booking_id', bookingId)
+      await supabaseAdmin.from('transportation_bookings').delete().eq('booking_id', bookingId)
+      await supabaseAdmin.from('event_bookings').delete().eq('booking_id', bookingId)
+      await supabaseAdmin.from('custom_trip_bookings').delete().eq('booking_id', bookingId)
+      await supabaseAdmin.from('payment_receipts').delete().eq('booking_id', bookingId)
+      await supabaseAdmin.from('booking_status_history').delete().eq('booking_id', bookingId)
+      await supabaseAdmin.from('notifications').delete().eq('booking_id', bookingId)
+
+      // Delete the booking
+      const { error: deleteError } = await supabaseAdmin
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId)
+
+      if (deleteError) throw deleteError
+
+      // Log admin action
+      await supabaseAdmin.from('admin_logs').insert({
+        admin_id: user.id,
+        action_type: 'booking_deleted',
+        target_id: bookingId,
+        target_table: 'bookings',
+        payload: { deleted_booking: booking }
+      })
+
+      console.log(`Booking ${bookingId} deleted by admin ${user.id}`)
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     return new Response(JSON.stringify({ error: 'Not found' }), {
       status: 404,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

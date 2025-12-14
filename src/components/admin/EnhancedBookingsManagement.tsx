@@ -27,7 +27,8 @@ import {
   Save,
   FileEdit,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -46,7 +47,9 @@ import {
   rejectBooking,
   updateBooking,
   updatePaymentStatus,
+  deleteBooking,
 } from '@/services/adminService';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface Booking {
   id: string;
@@ -92,6 +95,10 @@ export const EnhancedBookingsManagement = () => {
   // Rejection modal state
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [bookingToReject, setBookingToReject] = useState<Booking | null>(null);
+
+  // Delete modal state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
 
   useEffect(() => {
     fetchBookings();
@@ -292,6 +299,39 @@ export const EnhancedBookingsManagement = () => {
         description: error.message,
         variant: 'destructive'
       });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const confirmDeleteBooking = (booking: Booking) => {
+    setBookingToDelete(booking);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteBooking = async () => {
+    if (!bookingToDelete) return;
+    
+    try {
+      setActionLoading(bookingToDelete.id);
+      await deleteBooking(bookingToDelete.id);
+      
+      // Optimistic update
+      setBookings(prev => prev.filter(b => b.id !== bookingToDelete.id));
+      
+      toast({
+        title: 'Success',
+        description: 'Booking deleted successfully',
+      });
+      setDeleteDialogOpen(false);
+      setBookingToDelete(null);
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+      fetchBookings();
     } finally {
       setActionLoading(null);
     }
@@ -567,17 +607,28 @@ export const EnhancedBookingsManagement = () => {
                                     </Button>
                                   </div>
                                 )}
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setSelectedBooking(booking);
-                                    setShowDetails(true);
-                                  }}
-                                >
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  View Details
-                                </Button>
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setSelectedBooking(booking);
+                                      setShowDetails(true);
+                                    }}
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" />
+                                    View
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-destructive hover:text-destructive"
+                                    onClick={() => confirmDeleteBooking(booking)}
+                                    disabled={actionLoading === booking.id}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -686,6 +737,27 @@ export const EnhancedBookingsManagement = () => {
         onConfirm={handleRejectBooking}
         isLoading={!!actionLoading}
       />
+
+      {/* Delete Booking Confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Booking</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this booking? This will permanently remove all associated data including payment receipts and history. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteBooking} 
+              className="bg-destructive text-destructive-foreground"
+            >
+              Delete Booking
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
