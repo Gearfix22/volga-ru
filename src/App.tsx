@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { SplashScreen } from "@/components/SplashScreen";
+import { AdminRouteGuard } from "@/components/auth/AdminRouteGuard";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
 import Gallery from "./pages/Gallery";
@@ -77,11 +78,23 @@ const App = () => {
                 <Route path="/support" element={<Support />} />
                 <Route path="/payments-history" element={<PaymentsHistory />} />
                 
-                {/* Admin Routes */}
+                {/* Admin Routes - Protected by AdminRouteGuard */}
                 <Route path="/admin-login" element={<AdminLogin />} />
-                <Route path="/admin" element={<AdminPanel />} />
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/admin/bookings" element={<BookingsManagement />} />
+                <Route path="/admin" element={
+                  <AdminRouteGuard>
+                    <AdminPanel />
+                  </AdminRouteGuard>
+                } />
+                <Route path="/admin/dashboard" element={
+                  <AdminRouteGuard>
+                    <AdminDashboard />
+                  </AdminRouteGuard>
+                } />
+                <Route path="/admin/bookings" element={
+                  <AdminRouteGuard>
+                    <BookingsManagement />
+                  </AdminRouteGuard>
+                } />
                 
                 {/* Legacy Dashboard Routes - Redirect to user dashboard */}
                 <Route path="/dashboard" element={<Dashboard />} />
