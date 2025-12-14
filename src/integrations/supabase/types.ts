@@ -85,6 +85,7 @@ export type Database = {
       bookings: {
         Row: {
           admin_notes: string | null
+          assigned_driver_id: string | null
           created_at: string | null
           customer_notes: string | null
           id: string
@@ -102,6 +103,7 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          assigned_driver_id?: string | null
           created_at?: string | null
           customer_notes?: string | null
           id?: string
@@ -119,6 +121,7 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          assigned_driver_id?: string | null
           created_at?: string | null
           customer_notes?: string | null
           id?: string
@@ -134,7 +137,15 @@ export type Database = {
           user_id?: string | null
           user_info?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bookings_assigned_driver_id_fkey"
+            columns: ["assigned_driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contact_submissions: {
         Row: {
@@ -294,6 +305,33 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
           user_info?: Json | null
+        }
+        Relationships: []
+      }
+      drivers: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          phone: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id?: string
+          phone: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }

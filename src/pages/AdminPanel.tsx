@@ -11,8 +11,9 @@ import { EnhancedBookingsManagement } from '@/components/admin/EnhancedBookingsM
 import { UsersManagement } from '@/components/admin/UsersManagement';
 import { AdminPayments } from '@/components/admin/AdminPayments';
 import { AdminLogs } from '@/components/admin/AdminLogs';
+import DriversManagement from '@/components/admin/DriversManagement';
 
-type TabType = 'overview' | 'bookings' | 'payments' | 'users' | 'logs';
+type TabType = 'overview' | 'bookings' | 'payments' | 'drivers' | 'users' | 'logs';
 
 const AdminPanel = () => {
   const { user, loading, hasRole } = useAuth();
@@ -40,6 +41,7 @@ const AdminPanel = () => {
       overview: 'Overview',
       bookings: 'Bookings',
       payments: 'Payments',
+      drivers: 'Drivers',
       users: 'Users',
       logs: 'Logs',
     };
@@ -68,6 +70,7 @@ const AdminPanel = () => {
           <main className="flex-1 p-4 md:p-6 lg:p-8">
             {activeTab === 'overview' && <AdminDashboard />}
             {activeTab === 'bookings' && <EnhancedBookingsManagement />}
+            {activeTab === 'drivers' && <DriversManagement />}
             {activeTab === 'users' && <UsersManagement />}
             {activeTab === 'payments' && <AdminPayments />}
             {activeTab === 'logs' && <AdminLogs />}
