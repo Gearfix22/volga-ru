@@ -5,9 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Search, CreditCard, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Loader2, Search, CreditCard, CheckCircle, XCircle, Clock, Trash2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { updatePaymentStatus } from '@/services/adminService';
+import { updatePaymentStatus, deleteBooking } from '@/services/adminService';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -27,6 +28,9 @@ export const AdminPayments = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [paymentToDelete, setPaymentToDelete] = useState<PaymentBooking | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPayments();
@@ -63,12 +67,38 @@ export const AdminPayments = () => {
 
   const handleUpdatePaymentStatus = async (bookingId: string, newStatus: string) => {
     try {
+      setActionLoading(bookingId);
       await updatePaymentStatus(bookingId, newStatus);
       toast.success('Payment status updated');
       fetchPayments();
     } catch (error) {
       console.error('Error updating payment status:', error);
       toast.error('Failed to update payment status');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const confirmDeletePayment = (payment: PaymentBooking) => {
+    setPaymentToDelete(payment);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeletePayment = async () => {
+    if (!paymentToDelete) return;
+    
+    try {
+      setActionLoading(paymentToDelete.id);
+      await deleteBooking(paymentToDelete.id);
+      toast.success('Payment record deleted');
+      setDeleteDialogOpen(false);
+      setPaymentToDelete(null);
+      fetchPayments();
+    } catch (error) {
+      console.error('Error deleting payment:', error);
+      toast.error('Failed to delete payment');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -160,6 +190,10 @@ export const AdminPayments = () => {
               </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="outline" size="sm" onClick={fetchPayments} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -225,20 +259,32 @@ export const AdminPayments = () => {
                       <TableCell className="font-medium">${booking.total_price?.toFixed(2) || '0.00'}</TableCell>
                       <TableCell>{getStatusBadge(booking.payment_status)}</TableCell>
                       <TableCell>
-                        <Select
-                          value={booking.payment_status || 'pending'}
-                          onValueChange={(value) => handleUpdatePaymentStatus(booking.id, value)}
-                        >
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="pending_verification">Verify</SelectItem>
-                            <SelectItem value="paid">Mark Paid</SelectItem>
-                            <SelectItem value="failed">Failed</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center gap-1">
+                          <Select
+                            value={booking.payment_status || 'pending'}
+                            onValueChange={(value) => handleUpdatePaymentStatus(booking.id, value)}
+                            disabled={actionLoading === booking.id}
+                          >
+                            <SelectTrigger className="w-28">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="pending_verification">Verify</SelectItem>
+                              <SelectItem value="paid">Paid</SelectItem>
+                              <SelectItem value="failed">Failed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => confirmDeletePayment(booking)}
+                            disabled={actionLoading === booking.id}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -248,6 +294,28 @@ export const AdminPayments = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Payment Confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Payment Record</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this payment record for {(paymentToDelete?.user_info as any)?.fullName || 'this customer'}? 
+              This will also delete the associated booking. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeletePayment} 
+              className="bg-destructive text-destructive-foreground"
+            >
+              Delete Record
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

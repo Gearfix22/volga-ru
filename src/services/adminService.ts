@@ -132,6 +132,22 @@ export async function updatePaymentStatus(bookingId: string, payment_status: str
   return data;
 }
 
+// DELETE /admin-bookings/:id - Delete booking
+export async function deleteBooking(bookingId: string): Promise<AdminApiResponse> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${EDGE_FUNCTION_URL}/${bookingId}`, {
+    method: 'DELETE',
+    headers,
+  });
+  const data = await response.json();
+  
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to delete booking');
+  }
+  
+  return data;
+}
+
 // Fetch admin logs
 export async function getAdminLogs(limit: number = 50) {
   const { data, error } = await supabase
@@ -142,4 +158,64 @@ export async function getAdminLogs(limit: number = 50) {
   
   if (error) throw error;
   return data;
+}
+
+// Log admin action (for client-side actions)
+export async function logAdminAction(actionType: string, targetId: string | null, targetTable: string, payload: any) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase.from('admin_logs').insert({
+    admin_id: user.id,
+    action_type: actionType,
+    target_id: targetId,
+    target_table: targetTable,
+    payload
+  });
+
+  if (error) throw error;
+}
+
+// Update user profile (admin only)
+export async function updateUserProfile(userId: string, updates: { full_name?: string; phone?: string; phone_verified?: boolean }) {
+  const { error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId);
+  
+  if (error) throw error;
+  
+  await logAdminAction('user_updated', userId, 'profiles', updates);
+}
+
+// Update user role
+export async function updateUserRole(userId: string, newRole: 'admin' | 'moderator' | 'user') {
+  // First delete existing roles
+  await supabase.from('user_roles').delete().eq('user_id', userId);
+  
+  // Insert new role
+  const { error } = await supabase.from('user_roles').insert({
+    user_id: userId,
+    role: newRole
+  });
+  
+  if (error) throw error;
+  
+  await logAdminAction('role_changed', userId, 'user_roles', { new_role: newRole });
+}
+
+// Delete user (admin only) - marks profile as deleted, doesn't remove auth user
+export async function disableUser(userId: string) {
+  // Update profile to indicate disabled
+  const { error } = await supabase
+    .from('profiles')
+    .update({ full_name: '[DISABLED USER]' })
+    .eq('id', userId);
+  
+  if (error) throw error;
+  
+  // Remove all roles except 'user'
+  await supabase.from('user_roles').delete().eq('user_id', userId);
+  
+  await logAdminAction('user_disabled', userId, 'profiles', { disabled: true });
 }

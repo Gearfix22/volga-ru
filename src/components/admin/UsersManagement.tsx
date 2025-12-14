@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { 
   Table,
   TableBody,
@@ -10,9 +15,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, Search, Phone, Shield, CheckCircle, XCircle, Calendar } from 'lucide-react';
+import { Users, Search, Phone, Shield, CheckCircle, XCircle, Calendar, Edit, Trash2, UserX, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { updateUserProfile, updateUserRole, disableUser, logAdminAction } from '@/services/adminService';
 
 interface UserProfile {
   id: string;
@@ -30,6 +36,17 @@ export const UsersManagement = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  // Edit form state
+  const [editFullName, setEditFullName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editRole, setEditRole] = useState<'admin' | 'moderator' | 'user'>('user');
+  const [editVerified, setEditVerified] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -39,7 +56,6 @@ export const UsersManagement = () => {
     try {
       setLoading(true);
       
-      // Fetch profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -47,19 +63,16 @@ export const UsersManagement = () => {
 
       if (profilesError) throw profilesError;
 
-      // Fetch user roles
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id, role');
 
       if (rolesError) throw rolesError;
 
-      // Fetch bookings stats per user
       const { data: bookings } = await supabase
         .from('bookings')
         .select('user_id, total_price');
 
-      // Create maps
       const rolesMap: Record<string, string[]> = {};
       roles?.forEach(r => {
         if (!rolesMap[r.user_id]) rolesMap[r.user_id] = [];
@@ -74,7 +87,6 @@ export const UsersManagement = () => {
         bookingsMap[b.user_id].total += b.total_price || 0;
       });
 
-      // Combine data
       const enrichedUsers: UserProfile[] = (profiles || []).map(profile => ({
         ...profile,
         roles: rolesMap[profile.id] || ['user'],
@@ -95,6 +107,85 @@ export const UsersManagement = () => {
     }
   };
 
+  const openEditDialog = (user: UserProfile) => {
+    setEditingUser(user);
+    setEditFullName(user.full_name || '');
+    setEditPhone(user.phone || '');
+    setEditRole(user.roles.includes('admin') ? 'admin' : user.roles.includes('moderator') ? 'moderator' : 'user');
+    setEditVerified(user.phone_verified);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveUser = async () => {
+    if (!editingUser) return;
+    
+    try {
+      setActionLoading(editingUser.id);
+      
+      // Update profile
+      await updateUserProfile(editingUser.id, {
+        full_name: editFullName,
+        phone: editPhone,
+        phone_verified: editVerified
+      });
+
+      // Update role if changed
+      const currentRole = editingUser.roles.includes('admin') ? 'admin' : 
+                          editingUser.roles.includes('moderator') ? 'moderator' : 'user';
+      if (editRole !== currentRole) {
+        await updateUserRole(editingUser.id, editRole);
+      }
+
+      toast({ title: 'Success', description: 'User updated successfully' });
+      setEditDialogOpen(false);
+      fetchUsers();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const confirmDeleteUser = (user: UserProfile) => {
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDisableUser = async () => {
+    if (!userToDelete) return;
+    
+    try {
+      setActionLoading(userToDelete.id);
+      await disableUser(userToDelete.id);
+      
+      toast({ title: 'Success', description: 'User has been disabled' });
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+      fetchUsers();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleToggleVerification = async (user: UserProfile) => {
+    try {
+      setActionLoading(user.id);
+      await updateUserProfile(user.id, { phone_verified: !user.phone_verified });
+      
+      toast({ 
+        title: 'Success', 
+        description: `Phone ${!user.phone_verified ? 'verified' : 'unverified'} for ${user.full_name || 'user'}` 
+      });
+      fetchUsers();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const filteredUsers = users.filter(user => 
     user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.phone?.includes(searchQuery) ||
@@ -112,120 +203,222 @@ export const UsersManagement = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Users Management
-            </CardTitle>
-            <CardDescription>
-              View all registered users with contact details
-            </CardDescription>
+    <>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Users Management
+              </CardTitle>
+              <CardDescription>
+                View, edit, and manage registered users
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={fetchUsers} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              <Badge variant="outline" className="text-lg px-4 py-2">
+                {filteredUsers.length} Users
+              </Badge>
+            </div>
           </div>
-          <Badge variant="outline" className="text-lg px-4 py-2 self-start">
-            {filteredUsers.length} Users
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {/* Search */}
-        <div className="mb-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, phone, or ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+        </CardHeader>
+        <CardContent>
+          <div className="mb-6">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, phone, or ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </div>
-        </div>
 
-        {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-4 text-muted-foreground">Loading users...</p>
-          </div>
-        ) : (
-          <div className="border rounded-lg overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Phone Number</TableHead>
-                  <TableHead>Verified</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Bookings</TableHead>
-                  <TableHead>Total Spent</TableHead>
-                  <TableHead>Joined</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-muted-foreground">Loading users...</p>
+            </div>
+          ) : (
+            <div className="border rounded-lg overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      No users found
-                    </TableCell>
+                    <TableHead>User</TableHead>
+                    <TableHead>Phone Number</TableHead>
+                    <TableHead>Verified</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Bookings</TableHead>
+                    <TableHead>Total Spent</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium">
-                            {user.full_name || 'Unnamed User'}
-                          </div>
-                          <div className="text-xs text-muted-foreground font-mono">
-                            ID: {user.id.slice(0, 8)}...
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-mono font-semibold text-primary">
-                            {user.phone || 'N/A'}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {user.phone_verified ? (
-                          <Badge variant="default" className="bg-green-600">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Verified
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">
-                            <XCircle className="h-3 w-3 mr-1" />
-                            Unverified
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {getRoleBadge(user.roles)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{user.bookings_count}</Badge>
-                      </TableCell>
-                      <TableCell className="font-semibold">
-                        ${user.total_spent?.toFixed(2) || '0.00'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(user.created_at).toLocaleDateString()}
-                        </div>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                        No users found
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    filteredUsers.map((user) => (
+                      <TableRow key={user.id} className={actionLoading === user.id ? 'opacity-50' : ''}>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="font-medium">
+                              {user.full_name || 'Unnamed User'}
+                            </div>
+                            <div className="text-xs text-muted-foreground font-mono">
+                              {user.id.slice(0, 8)}...
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-mono font-semibold text-primary">
+                              {user.phone || 'N/A'}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleVerification(user)}
+                            disabled={actionLoading === user.id}
+                          >
+                            {user.phone_verified ? (
+                              <Badge variant="default" className="bg-green-600 cursor-pointer">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Verified
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="cursor-pointer">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Unverified
+                              </Badge>
+                            )}
+                          </Button>
+                        </TableCell>
+                        <TableCell>{getRoleBadge(user.roles)}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{user.bookings_count}</Badge>
+                        </TableCell>
+                        <TableCell className="font-semibold">
+                          ${user.total_spent?.toFixed(2) || '0.00'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(user.created_at).toLocaleDateString()}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditDialog(user)}
+                              disabled={actionLoading === user.id}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => confirmDeleteUser(user)}
+                              disabled={actionLoading === user.id || user.roles.includes('admin')}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <UserX className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Edit User Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Update user details and permissions</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <Input value={editFullName} onChange={(e) => setEditFullName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Phone Number</Label>
+              <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Role</Label>
+              <Select value={editRole} onValueChange={(v) => setEditRole(v as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">Customer</SelectItem>
+                  <SelectItem value="moderator">Moderator</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <input 
+                type="checkbox" 
+                id="verified" 
+                checked={editVerified} 
+                onChange={(e) => setEditVerified(e.target.checked)}
+                className="rounded"
+              />
+              <Label htmlFor="verified">Phone Verified</Label>
+            </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveUser} disabled={actionLoading !== null}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Disable User Confirmation */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disable User Account</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will disable the user account for "{userToDelete?.full_name || 'this user'}". 
+              They will lose access to the platform. This action is logged.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDisableUser} className="bg-destructive text-destructive-foreground">
+              Disable User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
