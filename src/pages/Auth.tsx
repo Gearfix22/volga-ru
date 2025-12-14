@@ -8,24 +8,32 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, Sparkles, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { loginSchema, signupSchema } from '@/lib/validationSchemas';
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { signUp, signIn, user, loading } = useAuth();
+  const { signUp, signIn, resetPassword, updatePassword, user, loading, session } = useAuth();
   const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState('login');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
   
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  
+  // Forgot password state
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   
   // Signup form state
   const [signupEmail, setSignupEmail] = useState('');
@@ -34,12 +42,21 @@ const Auth = () => {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
 
-  // Redirect authenticated users
+  // Check for password recovery mode
   useEffect(() => {
-    if (user && !loading) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type');
+    if (type === 'recovery' && session) {
+      setIsRecoveryMode(true);
+    }
+  }, [session]);
+
+  // Redirect authenticated users (except in recovery mode)
+  useEffect(() => {
+    if (user && !loading && !isRecoveryMode) {
       navigate('/');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, isRecoveryMode]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,6 +191,96 @@ const Auth = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!forgotEmail.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter your email address.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await resetPassword(forgotEmail);
+      
+      if (error) {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive'
+        });
+      } else {
+        setResetEmailSent(true);
+        toast({
+          title: 'Email Sent',
+          description: 'Check your email for a password reset link. The link expires in 1 hour.',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'An unexpected error occurred.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword.length < 8) {
+      toast({
+        title: 'Validation Error',
+        description: 'Password must be at least 8 characters.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast({
+        title: 'Validation Error',
+        description: 'Passwords do not match.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await updatePassword(newPassword);
+      
+      if (error) {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Password Updated',
+          description: 'Your password has been successfully updated.',
+        });
+        setIsRecoveryMode(false);
+        navigate('/');
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'An unexpected error occurred.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="relative min-h-screen overflow-hidden flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5">
@@ -181,6 +288,208 @@ const Auth = () => {
         <div className="relative z-10 text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto"></div>
           <p className="mt-4 text-lg text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Password Recovery Mode UI
+  if (isRecoveryMode) {
+    return (
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
+        <AnimatedBackground />
+        <Navigation />
+        
+        <div className="relative z-10 pt-20 pb-12 px-4">
+          <div className="container mx-auto max-w-lg">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground mb-4 shadow-lg">
+                <Lock className="h-8 w-8" />
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+                Set New Password
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Enter your new password below
+              </p>
+            </div>
+
+            <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur-xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl text-center">Create New Password</CardTitle>
+                <CardDescription className="text-center">
+                  Your password must be at least 8 characters
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleUpdatePassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="new-password" className="flex items-center gap-2 text-sm font-medium">
+                      <Lock className="h-4 w-4 text-primary" />
+                      New Password
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="new-password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password"
+                        required
+                        minLength={8}
+                        className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-new-password" className="flex items-center gap-2 text-sm font-medium">
+                      <Lock className="h-4 w-4 text-primary" />
+                      Confirm New Password
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="confirm-new-password"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        placeholder="Confirm new password"
+                        required
+                        minLength={8}
+                        className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 text-base font-semibold" 
+                    disabled={isLoading}
+                  >
+                    {isLoading ? 'Updating Password...' : 'Update Password'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Forgot Password UI
+  if (showForgotPassword) {
+    return (
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
+        <AnimatedBackground />
+        <Navigation />
+        
+        <div className="relative z-10 pt-20 pb-12 px-4">
+          <div className="container mx-auto max-w-lg">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground mb-4 shadow-lg">
+                <Mail className="h-8 w-8" />
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+                Reset Password
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                {resetEmailSent ? 'Check your email for the reset link' : 'Enter your email to receive a reset link'}
+              </p>
+            </div>
+
+            <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur-xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl text-center">
+                  {resetEmailSent ? 'Email Sent!' : 'Forgot Password'}
+                </CardTitle>
+                <CardDescription className="text-center">
+                  {resetEmailSent 
+                    ? 'We sent a password reset link to your email. The link expires in 1 hour.'
+                    : 'Enter your email address and we\'ll send you a link to reset your password.'
+                  }
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {resetEmailSent ? (
+                  <div className="space-y-4">
+                    <Alert className="bg-primary/5 border-primary/20">
+                      <CheckCircle className="h-4 w-4 text-primary" />
+                      <AlertDescription className="text-sm">
+                        If an account exists with that email, you'll receive a password reset link shortly.
+                      </AlertDescription>
+                    </Alert>
+                    <Button 
+                      variant="outline"
+                      className="w-full h-11" 
+                      onClick={() => {
+                        setShowForgotPassword(false);
+                        setResetEmailSent(false);
+                        setForgotEmail('');
+                      }}
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back to Sign In
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="forgot-email" className="flex items-center gap-2 text-sm font-medium">
+                        <Mail className="h-4 w-4 text-primary" />
+                        Email Address
+                      </Label>
+                      <Input
+                        id="forgot-email"
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        required
+                        className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
+                      />
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full h-11 text-base font-semibold" 
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Sending...' : 'Send Reset Link'}
+                    </Button>
+
+                    <Button 
+                      type="button"
+                      variant="ghost"
+                      className="w-full h-11" 
+                      onClick={() => setShowForgotPassword(false)}
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back to Sign In
+                    </Button>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
@@ -240,10 +549,20 @@ const Auth = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="login-password" className="flex items-center gap-2 text-sm font-medium">
-                        <Lock className="h-4 w-4 text-primary" />
-                        Password
-                      </Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="login-password" className="flex items-center gap-2 text-sm font-medium">
+                          <Lock className="h-4 w-4 text-primary" />
+                          Password
+                        </Label>
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="h-auto p-0 text-sm text-primary hover:text-primary/80"
+                          onClick={() => setShowForgotPassword(true)}
+                        >
+                          Forgot password?
+                        </Button>
+                      </div>
                       <div className="relative">
                         <Input
                           id="login-password"
