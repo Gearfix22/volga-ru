@@ -4,7 +4,6 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import AdminDashboard from '@/components/admin/AdminDashboard';
@@ -27,35 +26,11 @@ const AdminPanel = () => {
     }
   }, [searchParams, navigate]);
 
-  // Redirect to admin login if not authenticated
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/admin-login', { replace: true });
-    }
-  }, [loading, user, navigate]);
-
-  // Show loading while checking auth
+  // Show loading while checking auth (guard handles redirect)
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Redirect handled above, but show nothing while redirecting
-  if (!user) {
-    return null;
-  }
-
-  if (!hasRole('admin')) {
-    return (
-      <div className="flex items-center justify-center min-h-screen p-4">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertDescription>
-            Access Denied. You do not have permission to view this page.
-          </AlertDescription>
-        </Alert>
       </div>
     );
   }
