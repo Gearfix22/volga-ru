@@ -5,6 +5,70 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limiting configuration
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MINUTES = 15;
+
+// Get client IP from request headers
+function getClientIP(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+         req.headers.get('x-real-ip') || 
+         'unknown';
+}
+
+// Check if user is rate limited
+async function checkRateLimit(supabase: any, identifier: string, ip: string): Promise<{ isLimited: boolean; remainingAttempts: number }> {
+  const cutoffTime = new Date(Date.now() - LOCKOUT_DURATION_MINUTES * 60 * 1000).toISOString();
+  
+  // Count recent failed attempts for this identifier or IP
+  const { data: attempts, error } = await supabase
+    .from('login_attempts')
+    .select('id')
+    .or(`identifier.eq.${identifier},ip_address.eq.${ip}`)
+    .eq('success', false)
+    .eq('attempt_type', 'admin')
+    .gte('created_at', cutoffTime);
+
+  if (error) {
+    console.error('Error checking rate limit:', error);
+    return { isLimited: false, remainingAttempts: MAX_ATTEMPTS };
+  }
+
+  const attemptCount = attempts?.length || 0;
+  const remainingAttempts = Math.max(0, MAX_ATTEMPTS - attemptCount);
+  
+  return { 
+    isLimited: attemptCount >= MAX_ATTEMPTS,
+    remainingAttempts 
+  };
+}
+
+// Record login attempt
+async function recordAttempt(supabase: any, identifier: string, ip: string, success: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('login_attempts')
+    .insert({
+      identifier,
+      ip_address: ip,
+      attempt_type: 'admin',
+      success
+    });
+
+  if (error) {
+    console.error('Error recording login attempt:', error);
+  }
+}
+
+// Constant-time string comparison to prevent timing attacks
+function constantTimeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -22,6 +86,35 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Initialize Supabase client with service role for rate limiting
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get client IP
+    const clientIP = getClientIP(req);
+
+    // Check rate limiting
+    const { isLimited, remainingAttempts } = await checkRateLimit(supabase, email, clientIP);
+    
+    if (isLimited) {
+      console.log(`Rate limit exceeded for admin login: ${email} from IP ${clientIP}`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many login attempts. Please try again later.',
+          retryAfter: LOCKOUT_DURATION_MINUTES * 60
+        }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Retry-After': String(LOCKOUT_DURATION_MINUTES * 60)
+          } 
+        }
+      );
+    }
+
     // Get admin credentials from environment
     const adminEmail = Deno.env.get('ADMIN_EMAIL');
     const adminPassword = Deno.env.get('ADMIN_PASSWORD');
@@ -31,25 +124,28 @@ Deno.serve(async (req) => {
       attemptedEmail: email,
       adminEmailConfigured: !!adminEmail,
       adminPasswordConfigured: !!adminPassword,
+      clientIP,
+      remainingAttempts,
       timestamp: new Date().toISOString()
     });
 
-    // Validate credentials - constant-time comparison to prevent timing attacks
-    const emailMatch = email === adminEmail;
-    const passwordMatch = password === adminPassword;
+    // Validate credentials using constant-time comparison
+    const emailMatch = adminEmail ? constantTimeCompare(email, adminEmail) : false;
+    const passwordMatch = adminPassword ? constantTimeCompare(password, adminPassword) : false;
     
     if (!emailMatch || !passwordMatch) {
+      // Record failed attempt
+      await recordAttempt(supabase, email, clientIP, false);
+      
       console.log('Admin login failed: invalid credentials');
       return new Response(
-        JSON.stringify({ error: 'Invalid credentials' }),
+        JSON.stringify({ 
+          error: 'Invalid credentials',
+          remainingAttempts: remainingAttempts - 1
+        }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get the admin user from auth.users
     const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
@@ -139,6 +235,9 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Record successful attempt
+    await recordAttempt(supabase, email, clientIP, true);
+    
     console.log('Admin login successful');
 
     return new Response(
