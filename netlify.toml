@@ -6,6 +6,26 @@
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
 
+# Force HTTPS for all domains
+[[redirects]]
+  from = "http://volgaservices.com/*"
+  to = "https://volgaservices.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://www.volgaservices.com/*"
+  to = "https://www.volgaservices.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://admin.volgaservices.com/*"
+  to = "https://admin.volgaservices.com/:splat"
+  status = 301
+  force = true
+
+# SPA fallback - must be last
 [[redirects]]
   from = "/*"
   to = "/index.html"
