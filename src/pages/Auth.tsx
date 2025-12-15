@@ -8,14 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, Sparkles, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, Sparkles, ArrowLeft, Car, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { loginSchema, signupSchema } from '@/lib/validationSchemas';
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { signUp, signIn, resetPassword, updatePassword, user, loading, session } = useAuth();
+  const { signUp, signIn, signInWithPhone, sendOtp, verifyOtp, resetPassword, updatePassword, user, loading, session, hasRole } = useAuth();
   const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState('login');
@@ -42,21 +42,41 @@ const Auth = () => {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
 
-  // Check for password recovery mode
+  // Driver login state
+  const [driverPhone, setDriverPhone] = useState('');
+  const [driverPassword, setDriverPassword] = useState('');
+  const [driverOtp, setDriverOtp] = useState('');
+  const [driverLoginStep, setDriverLoginStep] = useState<'credentials' | 'otp'>('credentials');
+  const [useOtpLogin, setUseOtpLogin] = useState(false);
+
+  // Check for password recovery mode and role param
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const type = urlParams.get('type');
+    const role = urlParams.get('role');
+    
     if (type === 'recovery' && session) {
       setIsRecoveryMode(true);
     }
+    
+    // Auto-switch to driver tab if role=driver in URL
+    if (role === 'driver') {
+      setActiveTab('driver');
+    }
   }, [session]);
 
-  // Redirect authenticated users (except in recovery mode)
+  // Redirect authenticated users based on role (except in recovery mode)
   useEffect(() => {
     if (user && !loading && !isRecoveryMode) {
-      navigate('/');
+      if (hasRole('admin')) {
+        navigate('/admin');
+      } else if (hasRole('driver')) {
+        navigate('/driver-dashboard');
+      } else {
+        navigate('/user-dashboard');
+      }
     }
-  }, [user, loading, navigate, isRecoveryMode]);
+  }, [user, loading, navigate, isRecoveryMode, hasRole]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -269,6 +289,103 @@ const Auth = () => {
         });
         setIsRecoveryMode(false);
         navigate('/');
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'An unexpected error occurred.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Driver login with phone + password
+  const handleDriverLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!driverPhone.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter your phone number.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      if (useOtpLogin) {
+        // Send OTP to phone
+        const { error } = await sendOtp(driverPhone);
+        if (error) {
+          toast({
+            title: 'Error',
+            description: error.message,
+            variant: 'destructive'
+          });
+        } else {
+          setDriverLoginStep('otp');
+          toast({
+            title: 'OTP Sent',
+            description: 'Please enter the verification code sent to your phone.',
+          });
+        }
+      } else {
+        // Login with phone + password
+        const { error } = await signInWithPhone(driverPhone, driverPassword);
+        if (error) {
+          toast({
+            title: 'Login Failed',
+            description: error.message || 'Invalid phone number or password.',
+            variant: 'destructive'
+          });
+        } else {
+          toast({
+            title: 'Login Successful',
+            description: 'Welcome back, driver!',
+          });
+        }
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'An unexpected error occurred.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Verify driver OTP
+  const handleDriverOtpVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!driverOtp.trim() || driverOtp.length !== 6) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter a valid 6-digit OTP.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await verifyOtp(driverPhone, driverOtp, 'sms');
+      if (error) {
+        toast({
+          title: 'Verification Failed',
+          description: error.message || 'Invalid OTP. Please try again.',
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Login Successful',
+          description: 'Welcome back, driver!',
+        });
       }
     } catch (error: any) {
       toast({
@@ -524,9 +641,13 @@ const Auth = () => {
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsList className="grid w-full grid-cols-3 mb-6">
                   <TabsTrigger value="login" className="text-sm font-medium">Sign In</TabsTrigger>
                   <TabsTrigger value="signup" className="text-sm font-medium">Sign Up</TabsTrigger>
+                  <TabsTrigger value="driver" className="text-sm font-medium flex items-center gap-1">
+                    <Car className="h-3 w-3" />
+                    Driver
+                  </TabsTrigger>
                 </TabsList>
                 
                 {/* Login Form */}
@@ -718,6 +839,155 @@ const Auth = () => {
                       {isLoading ? 'Creating Account...' : 'Create Account'}
                     </Button>
                   </form>
+                </TabsContent>
+
+                {/* Driver Login Form */}
+                <TabsContent value="driver" className="space-y-4 mt-0">
+                  {driverLoginStep === 'credentials' ? (
+                    <form onSubmit={handleDriverLogin} className="space-y-4">
+                      <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 mb-4">
+                        <p className="text-sm text-muted-foreground flex items-center gap-2">
+                          <Car className="h-4 w-4 text-primary" />
+                          Driver portal - login with your phone number
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="driver-phone" className="flex items-center gap-2 text-sm font-medium">
+                          <Phone className="h-4 w-4 text-primary" />
+                          Phone Number
+                        </Label>
+                        <Input
+                          id="driver-phone"
+                          type="tel"
+                          value={driverPhone}
+                          onChange={(e) => setDriverPhone(e.target.value)}
+                          placeholder="+7 999 123 45 67"
+                          required
+                          className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
+                        />
+                      </div>
+
+                      {!useOtpLogin && (
+                        <div className="space-y-2">
+                          <Label htmlFor="driver-password" className="flex items-center gap-2 text-sm font-medium">
+                            <Lock className="h-4 w-4 text-primary" />
+                            Password
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              id="driver-password"
+                              type={showPassword ? 'text' : 'password'}
+                              value={driverPassword}
+                              onChange={(e) => setDriverPassword(e.target.value)}
+                              placeholder="Enter your password"
+                              required
+                              className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      <Button 
+                        type="submit" 
+                        className="w-full h-11 text-base font-semibold" 
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <span className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            {useOtpLogin ? 'Sending OTP...' : 'Signing In...'}
+                          </span>
+                        ) : (
+                          useOtpLogin ? 'Send OTP' : 'Sign In as Driver'
+                        )}
+                      </Button>
+
+                      <div className="text-center">
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="text-sm text-primary"
+                          onClick={() => setUseOtpLogin(!useOtpLogin)}
+                        >
+                          {useOtpLogin ? 'Use password instead' : 'Login with OTP instead'}
+                        </Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <form onSubmit={handleDriverOtpVerify} className="space-y-4">
+                      <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 mb-4">
+                        <p className="text-sm text-muted-foreground">
+                          Enter the 6-digit code sent to <strong>{driverPhone}</strong>
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="driver-otp" className="flex items-center gap-2 text-sm font-medium">
+                          <Lock className="h-4 w-4 text-primary" />
+                          Verification Code
+                        </Label>
+                        <Input
+                          id="driver-otp"
+                          type="text"
+                          value={driverOtp}
+                          onChange={(e) => setDriverOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          placeholder="000000"
+                          maxLength={6}
+                          required
+                          className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary text-center text-2xl tracking-widest"
+                        />
+                      </div>
+
+                      <Button 
+                        type="submit" 
+                        className="w-full h-11 text-base font-semibold" 
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <span className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Verifying...
+                          </span>
+                        ) : (
+                          'Verify & Sign In'
+                        )}
+                      </Button>
+
+                      <div className="flex justify-between">
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="text-sm text-muted-foreground"
+                          onClick={() => {
+                            setDriverLoginStep('credentials');
+                            setDriverOtp('');
+                          }}
+                        >
+                          <ArrowLeft className="h-4 w-4 mr-1" />
+                          Back
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="text-sm text-primary"
+                          onClick={handleDriverLogin}
+                          disabled={isLoading}
+                        >
+                          Resend Code
+                        </Button>
+                      </div>
+                    </form>
+                  )}
                 </TabsContent>
               </Tabs>
 
