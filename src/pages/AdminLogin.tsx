@@ -8,20 +8,34 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Eye, EyeOff, Shield, Lock, Mail, AlertTriangle } from 'lucide-react';
+import { Eye, EyeOff, Shield, Lock, Mail, AlertTriangle, Globe } from 'lucide-react';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Logo } from '@/components/Logo';
+
+const isAdminDomain = (): boolean => {
+  const hostname = window.location.hostname;
+  return (
+    hostname === 'admin.volgaservices.com' ||
+    hostname.startsWith('admin.') ||
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1'
+  );
+};
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isValidDomain, setIsValidDomain] = useState(true);
   const { user, hasRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check domain validity
+    setIsValidDomain(isAdminDomain());
+    
     // Redirect if already logged in as admin
     if (user && hasRole('admin')) {
       navigate('/admin');
@@ -77,6 +91,40 @@ const AdminLogin = () => {
       setLoading(false);
     }
   };
+
+  // Block access on non-admin domains
+  if (!isValidDomain) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+              <Globe className="h-8 w-8 text-destructive" />
+            </div>
+            <CardTitle>Invalid Domain</CardTitle>
+            <CardDescription>
+              Admin login is only accessible at <strong>admin.volgaservices.com</strong>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = 'https://volgaservices.com'}
+              className="w-full"
+            >
+              Go to Main Site
+            </Button>
+            <Button 
+              onClick={() => window.location.href = 'https://admin.volgaservices.com/admin-login'}
+              className="w-full"
+            >
+              Go to Admin Portal
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
