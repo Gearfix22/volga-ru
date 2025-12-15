@@ -7,14 +7,16 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  userRoles: string[];
   signUp: (email: string, password: string, phone: string, fullName: string, role?: string) => Promise<{ error: any }>;
-  signUpWithPhone: (phone: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signUpWithPhone: (phone: string, password: string, fullName: string, role?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithPhone: (phone: string, password: string) => Promise<{ error: any }>;
   verifyOtp: (phone: string, token: string, type: 'sms' | 'phone_change') => Promise<{ error: any }>;
   sendOtp: (phone: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   hasRole: (role: string) => boolean;
+  hasAnyRole: (roles: string[]) => boolean;
   resetPassword: (email: string) => Promise<{ error: any }>;
   updatePassword: (newPassword: string) => Promise<{ error: any }>;
 }
@@ -117,6 +119,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return userRoles.includes(role);
   };
 
+  const hasAnyRole = (roles: string[]) => {
+    return roles.some(role => userRoles.includes(role));
+  };
+
   const signUp = async (email: string, password: string, phone: string, fullName: string, role: string = 'user') => {
     // Check phone uniqueness before signup
     const { data: existingPhone } = await supabase
@@ -149,14 +155,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const signUpWithPhone = async (phone: string, password: string, fullName: string) => {
+  const signUpWithPhone = async (phone: string, password: string, fullName: string, role: string = 'user') => {
     const { error } = await supabase.auth.signUp({
       phone,
       password,
       options: {
         data: {
           full_name: fullName,
-          phone: phone
+          phone: phone,
+          role
         }
       }
     });
@@ -217,6 +224,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     session,
     loading,
+    userRoles,
     signUp,
     signUpWithPhone,
     signIn,
@@ -225,6 +233,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sendOtp,
     signOut,
     hasRole,
+    hasAnyRole,
     resetPassword,
     updatePassword,
   };

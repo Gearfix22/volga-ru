@@ -9,6 +9,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { SplashScreen } from "@/components/SplashScreen";
 import { AdminRouteGuard } from "@/components/auth/AdminRouteGuard";
+import { DriverRouteGuard } from "@/components/auth/DriverRouteGuard";
+import { UserRouteGuard } from "@/components/auth/UserRouteGuard";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
 import Gallery from "./pages/Gallery";
@@ -36,6 +38,7 @@ import AdminDashboard from "./components/admin/AdminDashboard";
 import BookingsManagement from "./components/admin/BookingsManagement";
 import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
+import DriverDashboard from "./pages/DriverDashboard";
 import { FloatingWhatsAppButton } from "./components/FloatingWhatsAppButton";
 
 const queryClient = new QueryClient();
@@ -94,6 +97,13 @@ const App = () => {
                   <AdminRouteGuard>
                     <BookingsManagement />
                   </AdminRouteGuard>
+                } />
+                
+                {/* Driver Routes - Protected by DriverRouteGuard */}
+                <Route path="/driver-dashboard" element={
+                  <DriverRouteGuard>
+                    <DriverDashboard />
+                  </DriverRouteGuard>
                 } />
                 
                 {/* Legacy Dashboard Routes - Redirect to user dashboard */}
