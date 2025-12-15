@@ -552,6 +552,33 @@ export type Database = {
         }
         Relationships: []
       }
+      login_attempts: {
+        Row: {
+          attempt_type: string
+          created_at: string
+          id: string
+          identifier: string
+          ip_address: string | null
+          success: boolean
+        }
+        Insert: {
+          attempt_type: string
+          created_at?: string
+          id?: string
+          identifier: string
+          ip_address?: string | null
+          success?: boolean
+        }
+        Update: {
+          attempt_type?: string
+          created_at?: string
+          id?: string
+          identifier?: string
+          ip_address?: string | null
+          success?: boolean
+        }
+        Relationships: []
+      }
       newsletter_subscriptions: {
         Row: {
           created_at: string | null
@@ -995,6 +1022,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_login_attempts: { Args: never; Returns: undefined }
       has_any_role: {
         Args: {
           _roles: Database["public"]["Enums"]["app_role"][]

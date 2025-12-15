@@ -6,6 +6,52 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Rate limiting configuration for password reset requests
+const MAX_RESET_ATTEMPTS = 3;
+const RESET_LOCKOUT_DURATION_MINUTES = 30;
+
+// Get client IP from request headers
+function getClientIP(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+         req.headers.get('x-real-ip') || 
+         'unknown';
+}
+
+// Check rate limit for password reset requests
+async function checkResetRateLimit(supabase: any, identifier: string, ip: string): Promise<{ isLimited: boolean }> {
+  const cutoffTime = new Date(Date.now() - RESET_LOCKOUT_DURATION_MINUTES * 60 * 1000).toISOString();
+  
+  const { data: attempts, error } = await supabase
+    .from('login_attempts')
+    .select('id')
+    .or(`identifier.eq.${identifier},ip_address.eq.${ip}`)
+    .eq('attempt_type', 'driver_reset')
+    .gte('created_at', cutoffTime);
+
+  if (error) {
+    console.error('Error checking rate limit:', error);
+    return { isLimited: false };
+  }
+
+  return { isLimited: (attempts?.length || 0) >= MAX_RESET_ATTEMPTS };
+}
+
+// Record password reset attempt
+async function recordResetAttempt(supabase: any, identifier: string, ip: string): Promise<void> {
+  const { error } = await supabase
+    .from('login_attempts')
+    .insert({
+      identifier,
+      ip_address: ip,
+      attempt_type: 'driver_reset',
+      success: true // We track all reset requests
+    });
+
+  if (error) {
+    console.error('Error recording reset attempt:', error);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -26,7 +72,7 @@ serve(async (req) => {
       }
     }
 
-    // Handle public password reset request (no auth required)
+    // Handle public password reset request (no auth required, but rate limited)
     if (req.method === 'POST' && body.action === 'request_password_reset') {
       const { phone } = body
       
@@ -38,6 +84,28 @@ serve(async (req) => {
       }
 
       const cleanPhone = phone.replace(/\D/g, '')
+      const clientIP = getClientIP(req);
+      
+      // Check rate limit
+      const { isLimited } = await checkResetRateLimit(supabaseAdmin, cleanPhone, clientIP);
+      
+      if (isLimited) {
+        console.log(`Rate limit exceeded for password reset: ${cleanPhone} from IP ${clientIP}`);
+        return new Response(JSON.stringify({ 
+          error: 'Too many password reset requests. Please try again later.',
+          retryAfter: RESET_LOCKOUT_DURATION_MINUTES * 60
+        }), {
+          status: 429,
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Retry-After': String(RESET_LOCKOUT_DURATION_MINUTES * 60)
+          }
+        })
+      }
+      
+      // Record the reset attempt
+      await recordResetAttempt(supabaseAdmin, cleanPhone, clientIP);
       
       // Find driver by phone
       const { data: driver } = await supabaseAdmin
