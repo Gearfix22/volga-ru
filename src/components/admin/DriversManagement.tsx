@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -38,8 +39,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Search, RefreshCw, Car } from 'lucide-react';
-import { logAdminAction } from '@/services/adminService';
+import { Plus, Pencil, Trash2, Search, RefreshCw, Car, CheckCircle, Ban, Eye, EyeOff } from 'lucide-react';
+
+const EDGE_FUNCTION_URL = 'https://tujborgbqzmcwolntvas.supabase.co/functions/v1/manage-drivers';
 
 interface Driver {
   id: string;
@@ -50,25 +52,35 @@ interface Driver {
   updated_at: string;
 }
 
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error('Not authenticated');
+  return {
+    'Authorization': `Bearer ${session.access_token}`,
+    'Content-Type': 'application/json',
+  };
+}
+
 export default function DriversManagement() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'blocked'>('all');
   
-  // Dialog states
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   
-  // Form states
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
-    status: 'active' as string,
+    password: '',
+    status: 'active',
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDrivers();
@@ -100,47 +112,47 @@ export default function DriversManagement() {
   });
 
   const resetForm = () => {
-    setFormData({ full_name: '', phone: '', status: 'active' });
+    setFormData({ full_name: '', phone: '', password: '', status: 'active' });
     setSelectedDriver(null);
+    setShowPassword(false);
   };
 
   const handleAddDriver = async () => {
-    if (!formData.full_name.trim() || !formData.phone.trim()) {
-      toast.error('Please fill in all required fields');
+    if (!formData.full_name.trim() || !formData.phone.trim() || !formData.password.trim()) {
+      toast.error('Please fill in all required fields including password');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
       return;
     }
 
     setFormLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('drivers')
-        .insert({
+      const headers = await getAuthHeaders();
+      const response = await fetch(EDGE_FUNCTION_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
           full_name: formData.full_name.trim(),
           phone: formData.phone.trim(),
-          status: formData.status,
-        })
-        .select()
-        .single();
-
-      if (error) {
-        if (error.code === '23505') {
-          toast.error('A driver with this phone number already exists');
-          return;
-        }
-        throw error;
-      }
-
-      await logAdminAction('driver_created', data.id, 'drivers', {
-        full_name: data.full_name,
-        phone: data.phone,
+          password: formData.password,
+        }),
       });
 
-      setDrivers(prev => [data, ...prev]);
-      toast.success('Driver added successfully');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create driver');
+      }
+
+      setDrivers(prev => [data.driver, ...prev]);
+      toast.success('Driver created successfully with login credentials');
       setIsAddDialogOpen(false);
       resetForm();
     } catch (error: any) {
-      toast.error('Failed to add driver: ' + error.message);
+      toast.error(error.message);
     } finally {
       setFormLoading(false);
     }
@@ -154,38 +166,74 @@ export default function DriversManagement() {
 
     setFormLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('drivers')
-        .update({
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${EDGE_FUNCTION_URL}/${selectedDriver.id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
           full_name: formData.full_name.trim(),
           phone: formData.phone.trim(),
           status: formData.status,
-        })
-        .eq('id', selectedDriver.id)
-        .select()
-        .single();
-
-      if (error) {
-        if (error.code === '23505') {
-          toast.error('A driver with this phone number already exists');
-          return;
-        }
-        throw error;
-      }
-
-      await logAdminAction('driver_updated', data.id, 'drivers', {
-        old_data: selectedDriver,
-        new_data: data,
+        }),
       });
 
-      setDrivers(prev => prev.map(d => d.id === data.id ? data : d));
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      setDrivers(prev => prev.map(d => d.id === selectedDriver.id ? data.driver : d));
       toast.success('Driver updated successfully');
       setIsEditDialogOpen(false);
       resetForm();
     } catch (error: any) {
-      toast.error('Failed to update driver: ' + error.message);
+      toast.error(error.message);
     } finally {
       setFormLoading(false);
+    }
+  };
+
+  const handleApproveDriver = async (driver: Driver) => {
+    try {
+      setActionLoading(driver.id);
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${EDGE_FUNCTION_URL}/${driver.id}/approve`, {
+        method: 'POST',
+        headers,
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error);
+      }
+
+      setDrivers(prev => prev.map(d => d.id === driver.id ? { ...d, status: 'active' } : d));
+      toast.success(`${driver.full_name} has been approved`);
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleBlockDriver = async (driver: Driver) => {
+    try {
+      setActionLoading(driver.id);
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${EDGE_FUNCTION_URL}/${driver.id}/block`, {
+        method: 'POST',
+        headers,
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error);
+      }
+
+      setDrivers(prev => prev.map(d => d.id === driver.id ? { ...d, status: 'blocked' } : d));
+      toast.success(`${driver.full_name} has been blocked`);
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -194,24 +242,23 @@ export default function DriversManagement() {
 
     setFormLoading(true);
     try {
-      const { error } = await supabase
-        .from('drivers')
-        .delete()
-        .eq('id', selectedDriver.id);
-
-      if (error) throw error;
-
-      await logAdminAction('driver_deleted', selectedDriver.id, 'drivers', {
-        full_name: selectedDriver.full_name,
-        phone: selectedDriver.phone,
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${EDGE_FUNCTION_URL}/${selectedDriver.id}`, {
+        method: 'DELETE',
+        headers,
       });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error);
+      }
 
       setDrivers(prev => prev.filter(d => d.id !== selectedDriver.id));
       toast.success('Driver deleted successfully');
       setIsDeleteDialogOpen(false);
       resetForm();
     } catch (error: any) {
-      toast.error('Failed to delete driver: ' + error.message);
+      toast.error(error.message);
     } finally {
       setFormLoading(false);
     }
@@ -222,6 +269,7 @@ export default function DriversManagement() {
     setFormData({
       full_name: driver.full_name,
       phone: driver.phone,
+      password: '',
       status: driver.status,
     });
     setIsEditDialogOpen(true);
@@ -230,6 +278,19 @@ export default function DriversManagement() {
   const openDeleteDialog = (driver: Driver) => {
     setSelectedDriver(driver);
     setIsDeleteDialogOpen(true);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+      case 'inactive':
+        return <Badge variant="secondary">Inactive</Badge>;
+      case 'blocked':
+        return <Badge variant="destructive">Blocked</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
 
   return (
@@ -248,7 +309,6 @@ export default function DriversManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -267,6 +327,7 @@ export default function DriversManagement() {
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="blocked">Blocked</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" onClick={fetchDrivers} disabled={loading}>
@@ -275,7 +336,6 @@ export default function DriversManagement() {
             </Button>
           </div>
 
-          {/* Table */}
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">Loading drivers...</div>
           ) : filteredDrivers.length === 0 ? (
@@ -296,23 +356,39 @@ export default function DriversManagement() {
                 </TableHeader>
                 <TableBody>
                   {filteredDrivers.map((driver) => (
-                    <TableRow key={driver.id}>
+                    <TableRow key={driver.id} className={actionLoading === driver.id ? 'opacity-50' : ''}>
                       <TableCell className="font-medium">{driver.full_name}</TableCell>
-                      <TableCell>{driver.phone}</TableCell>
-                      <TableCell>
-                        <Badge variant={driver.status === 'active' ? 'default' : 'secondary'}>
-                          {driver.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(driver.created_at).toLocaleDateString()}
-                      </TableCell>
+                      <TableCell className="font-mono">{driver.phone}</TableCell>
+                      <TableCell>{getStatusBadge(driver.status)}</TableCell>
+                      <TableCell>{new Date(driver.created_at).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-1">
+                          {driver.status === 'blocked' ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleApproveDriver(driver)}
+                              disabled={actionLoading === driver.id}
+                              title="Approve Driver"
+                            >
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleBlockDriver(driver)}
+                              disabled={actionLoading === driver.id}
+                              title="Block Driver"
+                            >
+                              <Ban className="h-4 w-4 text-orange-600" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => openEditDialog(driver)}
+                            disabled={actionLoading === driver.id}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -320,6 +396,7 @@ export default function DriversManagement() {
                             variant="ghost"
                             size="icon"
                             onClick={() => openDeleteDialog(driver)}
+                            disabled={actionLoading === driver.id}
                             className="text-destructive hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -340,6 +417,9 @@ export default function DriversManagement() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Driver</DialogTitle>
+            <DialogDescription>
+              Create a driver account with login credentials
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -361,19 +441,28 @@ export default function DriversManagement() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="add-status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(v) => setFormData(prev => ({ ...prev, status: v as any }))}
-              >
-                <SelectTrigger id="add-status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="add-password">Password *</Label>
+              <div className="relative">
+                <Input
+                  id="add-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="Min. 6 characters"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Driver will use their phone number and this password to login
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -381,7 +470,7 @@ export default function DriversManagement() {
               Cancel
             </Button>
             <Button onClick={handleAddDriver} disabled={formLoading}>
-              {formLoading ? 'Adding...' : 'Add Driver'}
+              {formLoading ? 'Creating...' : 'Create Driver'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -414,7 +503,7 @@ export default function DriversManagement() {
               <Label htmlFor="edit-status">Status</Label>
               <Select
                 value={formData.status}
-                onValueChange={(v) => setFormData(prev => ({ ...prev, status: v as any }))}
+                onValueChange={(v) => setFormData(prev => ({ ...prev, status: v }))}
               >
                 <SelectTrigger id="edit-status">
                   <SelectValue />
@@ -422,6 +511,7 @@ export default function DriversManagement() {
                 <SelectContent>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="blocked">Blocked</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -444,7 +534,7 @@ export default function DriversManagement() {
             <AlertDialogTitle>Delete Driver</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete driver "{selectedDriver?.full_name}"? 
-              This action cannot be undone. Any bookings assigned to this driver will be unassigned.
+              This will remove their account and unassign them from any bookings.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
