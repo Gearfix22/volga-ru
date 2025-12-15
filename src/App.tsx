@@ -38,6 +38,7 @@ import AdminDashboard from "./components/admin/AdminDashboard";
 import BookingsManagement from "./components/admin/BookingsManagement";
 import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
+import DriverLogin from "./pages/DriverLogin";
 import DriverDashboard from "./pages/DriverDashboard";
 import { FloatingWhatsAppButton } from "./components/FloatingWhatsAppButton";
 
@@ -83,7 +84,9 @@ const App = () => {
                 
                 {/* Auth Routes */}
                 <Route path="/admin-login" element={<AdminLogin />} />
-                <Route path="/driver-login" element={<Navigate to="/auth?role=driver" replace />} />
+                <Route path="/driver-login" element={<DriverLogin />} />
+                
+                {/* Admin Routes - Protected by AdminRouteGuard */}
                 <Route path="/admin" element={
                   <AdminRouteGuard>
                     <AdminPanel />
