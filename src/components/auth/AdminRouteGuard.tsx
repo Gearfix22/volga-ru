@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, ShieldX } from 'lucide-react';
+import { Loader2, ShieldX, Globe } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 
@@ -10,30 +10,78 @@ interface AdminRouteGuardProps {
 }
 
 /**
- * AdminRouteGuard ensures only authenticated admin users can access protected routes.
- * - Redirects unauthenticated users to /admin-login
- * - Shows access denied for authenticated non-admin users
- * - Supports subdomain-based routing (admin.volgaservices.com)
+ * Check if current domain is the admin subdomain
+ */
+const isAdminDomain = (): boolean => {
+  const hostname = window.location.hostname;
+  return (
+    hostname === 'admin.volgaservices.com' ||
+    hostname.startsWith('admin.') ||
+    // Allow localhost for development
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1'
+  );
+};
+
+/**
+ * AdminRouteGuard ensures:
+ * 1. Only accessible on admin.volgaservices.com subdomain
+ * 2. User is authenticated
+ * 3. User has admin role (verified server-side via user_roles table)
  */
 export const AdminRouteGuard: React.FC<AdminRouteGuardProps> = ({ children }) => {
   const { user, loading, hasRole } = useAuth();
   const location = useLocation();
-  const [isAdminSubdomain, setIsAdminSubdomain] = useState(false);
+  const [domainChecked, setDomainChecked] = useState(false);
+  const [isValidDomain, setIsValidDomain] = useState(false);
 
   useEffect(() => {
-    // Check if we're on the admin subdomain
-    const hostname = window.location.hostname;
-    const isAdmin = hostname.startsWith('admin.') || hostname === 'admin.volgaservices.com';
-    setIsAdminSubdomain(isAdmin);
+    const validDomain = isAdminDomain();
+    setIsValidDomain(validDomain);
+    setDomainChecked(true);
   }, []);
 
-  // Show loading while checking authentication
-  if (loading) {
+  // Show loading while checking domain and authentication
+  if (loading || !domainChecked) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
           <p className="text-muted-foreground">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Block access on non-admin domains (except localhost for dev)
+  if (!isValidDomain) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background p-4">
+        <div className="max-w-md w-full space-y-6 text-center">
+          <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
+            <Globe className="h-8 w-8 text-destructive" />
+          </div>
+          <Alert variant="destructive">
+            <AlertTitle className="text-lg font-semibold">Invalid Domain</AlertTitle>
+            <AlertDescription className="mt-2">
+              Admin panel is only accessible at <strong>admin.volgaservices.com</strong>
+            </AlertDescription>
+          </Alert>
+          <div className="space-y-3">
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = 'https://volgaservices.com'}
+              className="w-full"
+            >
+              Go to Main Site
+            </Button>
+            <Button 
+              onClick={() => window.location.href = 'https://admin.volgaservices.com/admin-login'}
+              className="w-full"
+            >
+              Go to Admin Portal
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -62,7 +110,7 @@ export const AdminRouteGuard: React.FC<AdminRouteGuardProps> = ({ children }) =>
           <div className="space-y-3">
             <Button 
               variant="outline" 
-              onClick={() => window.location.href = '/'}
+              onClick={() => window.location.href = 'https://volgaservices.com'}
               className="w-full"
             >
               Return to Home
@@ -87,23 +135,21 @@ export const useIsAdminSubdomain = () => {
   const [isAdminSubdomain, setIsAdminSubdomain] = useState(false);
 
   useEffect(() => {
-    const hostname = window.location.hostname;
-    const isAdmin = hostname.startsWith('admin.') || hostname === 'admin.volgaservices.com';
-    setIsAdminSubdomain(isAdmin);
+    setIsAdminSubdomain(isAdminDomain());
   }, []);
 
   return isAdminSubdomain;
 };
 
 /**
- * Component that restricts access to admin subdomain only
+ * Component that blocks admin routes on non-admin domains
+ * Use this to hide admin-related navigation on main site
  */
-export const AdminSubdomainGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const isAdminSubdomain = useIsAdminSubdomain();
+export const AdminSubdomainOnly: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isAdmin = useIsAdminSubdomain();
   
-  // On main domain, hide admin routes entirely
-  if (!isAdminSubdomain && window.location.hostname.includes('volgaservices.com')) {
-    return <Navigate to="/" replace />;
+  if (!isAdmin) {
+    return null;
   }
   
   return <>{children}</>;
