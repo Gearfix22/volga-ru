@@ -81,8 +81,9 @@ const App = () => {
                 <Route path="/support" element={<Support />} />
                 <Route path="/payments-history" element={<PaymentsHistory />} />
                 
-                {/* Admin Routes - Protected by AdminRouteGuard */}
+                {/* Auth Routes */}
                 <Route path="/admin-login" element={<AdminLogin />} />
+                <Route path="/driver-login" element={<Navigate to="/auth?role=driver" replace />} />
                 <Route path="/admin" element={
                   <AdminRouteGuard>
                     <AdminPanel />
