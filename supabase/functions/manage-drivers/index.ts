@@ -14,7 +14,61 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
+    // Handle JSON body for POST requests
+    let body: any = {}
+    if (req.method === 'POST' || req.method === 'PUT') {
+      try {
+        body = await req.json()
+      } catch {
+        body = {}
+      }
+    }
+
+    // Handle public password reset request (no auth required)
+    if (req.method === 'POST' && body.action === 'request_password_reset') {
+      const { phone } = body
+      
+      if (!phone) {
+        return new Response(JSON.stringify({ error: 'Phone number required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      const cleanPhone = phone.replace(/\D/g, '')
+      
+      // Find driver by phone
+      const { data: driver } = await supabaseAdmin
+        .from('drivers')
+        .select('id, full_name, phone')
+        .eq('phone', cleanPhone)
+        .maybeSingle()
+
+      if (!driver) {
+        // Don't reveal if driver exists or not for security
+        console.log(`Password reset request for unknown phone: ${cleanPhone}`)
+        return new Response(JSON.stringify({ success: true, message: 'If a driver with this phone exists, admin will be notified' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      // Create notification for admin about password reset request
+      await supabaseAdmin.from('notifications').insert({
+        type: 'password_reset_request',
+        message: `Driver ${driver.full_name} (${driver.phone}) requested a password reset`,
+        target_admin_id: null, // All admins
+        is_read: false
+      })
+
+      console.log(`Password reset requested for driver: ${driver.full_name}`)
+      return new Response(JSON.stringify({ success: true, message: 'Password reset request submitted' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // All other operations require admin auth
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -22,8 +76,6 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
     // Verify user is admin
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(
@@ -58,8 +110,7 @@ serve(async (req) => {
     const action = pathParts.length > 2 ? pathParts[2] : null
 
     // POST /manage-drivers - Create new driver with auth account
-    if (method === 'POST' && !driverId) {
-      const body = await req.json()
+    if (method === 'POST' && !driverId && body.action !== 'reset_driver_password') {
       const { full_name, phone, password } = body
 
       if (!full_name || !phone || !password) {
@@ -138,9 +189,66 @@ serve(async (req) => {
       })
     }
 
+    // POST - Admin reset driver password
+    if (method === 'POST' && body.action === 'reset_driver_password') {
+      const { driver_id, new_password } = body
+
+      if (!driver_id || !new_password) {
+        return new Response(JSON.stringify({ error: 'driver_id and new_password required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      if (new_password.length < 8) {
+        return new Response(JSON.stringify({ error: 'Password must be at least 8 characters' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      // Get driver info
+      const { data: driver } = await supabaseAdmin
+        .from('drivers')
+        .select('full_name, phone')
+        .eq('id', driver_id)
+        .single()
+
+      if (!driver) {
+        return new Response(JSON.stringify({ error: 'Driver not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      // Update password using admin API
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+        driver_id,
+        { password: new_password }
+      )
+
+      if (updateError) {
+        console.error('Error updating driver password:', updateError)
+        throw updateError
+      }
+
+      // Log admin action
+      await supabaseAdmin.from('admin_logs').insert({
+        admin_id: user.id,
+        action_type: 'driver_password_reset',
+        target_id: driver_id,
+        target_table: 'drivers',
+        payload: { driver_name: driver.full_name, driver_phone: driver.phone }
+      })
+
+      console.log(`Admin reset password for driver: ${driver.full_name}`)
+      return new Response(JSON.stringify({ success: true, message: 'Password reset successfully' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
     // PUT /manage-drivers/:id - Update driver
     if (method === 'PUT' && driverId && !action) {
-      const body = await req.json()
       const { full_name, phone, status } = body
 
       const updateData: any = { updated_at: new Date().toISOString() }

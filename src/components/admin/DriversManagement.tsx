@@ -39,7 +39,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Search, RefreshCw, Car, CheckCircle, Ban, Eye, EyeOff } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, RefreshCw, Car, CheckCircle, Ban, Eye, EyeOff, KeyRound } from 'lucide-react';
 
 const EDGE_FUNCTION_URL = 'https://tujborgbqzmcwolntvas.supabase.co/functions/v1/manage-drivers';
 
@@ -70,6 +70,7 @@ export default function DriversManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   
   const [formData, setFormData] = useState({
@@ -78,6 +79,8 @@ export default function DriversManagement() {
     password: '',
     status: 'active',
   });
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -115,6 +118,8 @@ export default function DriversManagement() {
     setFormData({ full_name: '', phone: '', password: '', status: 'active' });
     setSelectedDriver(null);
     setShowPassword(false);
+    setNewPassword('');
+    setConfirmNewPassword('');
   };
 
   const handleAddDriver = async () => {
@@ -280,6 +285,57 @@ export default function DriversManagement() {
     setIsDeleteDialogOpen(true);
   };
 
+  const openResetPasswordDialog = (driver: Driver) => {
+    setSelectedDriver(driver);
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setIsResetPasswordDialogOpen(true);
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedDriver) return;
+
+    if (!newPassword.trim()) {
+      toast.error('Please enter a new password');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    setFormLoading(true);
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(EDGE_FUNCTION_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          action: 'reset_driver_password',
+          driver_id: selectedDriver.id,
+          new_password: newPassword,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      toast.success(`Password reset for ${selectedDriver.full_name}`);
+      setIsResetPasswordDialogOpen(false);
+      resetForm();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -389,8 +445,18 @@ export default function DriversManagement() {
                             size="icon"
                             onClick={() => openEditDialog(driver)}
                             disabled={actionLoading === driver.id}
+                            title="Edit Driver"
                           >
                             <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openResetPasswordDialog(driver)}
+                            disabled={actionLoading === driver.id}
+                            title="Reset Password"
+                          >
+                            <KeyRound className="h-4 w-4 text-blue-600" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -398,6 +464,7 @@ export default function DriversManagement() {
                             onClick={() => openDeleteDialog(driver)}
                             disabled={actionLoading === driver.id}
                             className="text-destructive hover:text-destructive"
+                            title="Delete Driver"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -548,6 +615,59 @@ export default function DriversManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Driver Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for {selectedDriver?.full_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password *</Label>
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Min. 8 characters"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-new-password">Confirm Password *</Label>
+              <Input
+                id="confirm-new-password"
+                type={showPassword ? 'text' : 'password'}
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                placeholder="Confirm new password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setIsResetPasswordDialogOpen(false); resetForm(); }}>
+              Cancel
+            </Button>
+            <Button onClick={handleResetPassword} disabled={formLoading}>
+              {formLoading ? 'Resetting...' : 'Reset Password'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
