@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Eye, EyeOff, Shield, Lock, Mail, AlertTriangle, Globe } from 'lucide-react';
+import { Eye, EyeOff, Shield, Lock, Mail, AlertTriangle, Globe, ArrowLeft, KeyRound, CheckCircle } from 'lucide-react';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Logo } from '@/components/Logo';
 
@@ -23,12 +23,18 @@ const isAdminDomain = (): boolean => {
 };
 
 const AdminLogin = () => {
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isValidDomain, setIsValidDomain] = useState(true);
-  const { user, hasRole } = useAuth();
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
+  const { user, hasRole, resetPassword, updatePassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -36,11 +42,17 @@ const AdminLogin = () => {
     // Check domain validity
     setIsValidDomain(isAdminDomain());
     
+    // Check for recovery mode from URL
+    const type = searchParams.get('type');
+    if (type === 'recovery') {
+      setIsRecoveryMode(true);
+    }
+    
     // Redirect if already logged in as admin
     if (user && hasRole('admin')) {
       navigate('/admin');
     }
-  }, [user, navigate, hasRole]);
+  }, [user, navigate, hasRole, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +104,96 @@ const AdminLogin = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      toast({
+        title: 'Email Required',
+        description: 'Please enter your admin email address',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await resetPassword(email);
+      if (error) {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to send reset email',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      setResetEmailSent(true);
+      toast({
+        title: 'Reset Email Sent',
+        description: 'Check your email for the password reset link. It expires in 24 hours.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to send reset email',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: 'Password Mismatch',
+        description: 'New passwords do not match',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast({
+        title: 'Weak Password',
+        description: 'Password must be at least 8 characters',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await updatePassword(newPassword);
+      if (error) {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to update password',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'Password Updated',
+        description: 'Your password has been successfully reset',
+      });
+      
+      setIsRecoveryMode(false);
+      navigate('/admin-login');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update password',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Block access on non-admin domains
   if (!isValidDomain) {
     return (
@@ -122,6 +224,170 @@ const AdminLogin = () => {
             </Button>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // Password Recovery Mode
+  if (isRecoveryMode) {
+    return (
+      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <AnimatedBackground />
+        <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+          <Card className="w-full max-w-md shadow-2xl border-0 bg-card/95 backdrop-blur-xl">
+            <CardHeader className="space-y-4 text-center pb-2">
+              <div className="flex justify-center mb-2">
+                <Logo />
+              </div>
+              <div className="flex justify-center">
+                <div className="p-4 bg-gradient-to-br from-primary to-primary/80 rounded-2xl shadow-lg">
+                  <KeyRound className="h-10 w-10 text-primary-foreground" />
+                </div>
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold">Set New Password</CardTitle>
+                <CardDescription className="mt-2">
+                  Enter your new password below
+                </CardDescription>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="pt-4">
+              <form onSubmit={handleUpdatePassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword" className="flex items-center gap-2 text-sm font-medium">
+                    <Lock className="h-4 w-4 text-primary" />
+                    New Password
+                  </Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    required
+                    minLength={8}
+                    className="h-11 bg-background/50 border-border/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword" className="flex items-center gap-2 text-sm font-medium">
+                    <Lock className="h-4 w-4 text-primary" />
+                    Confirm Password
+                  </Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    required
+                    minLength={8}
+                    className="h-11 bg-background/50 border-border/50"
+                  />
+                </div>
+
+                <Button type="submit" className="w-full h-11" disabled={loading}>
+                  {loading ? 'Updating...' : 'Update Password'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Forgot Password View
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <AnimatedBackground />
+        <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+          <Card className="w-full max-w-md shadow-2xl border-0 bg-card/95 backdrop-blur-xl">
+            <CardHeader className="space-y-4 text-center pb-2">
+              <div className="flex justify-center mb-2">
+                <Logo />
+              </div>
+              <div className="flex justify-center">
+                <div className="p-4 bg-gradient-to-br from-primary to-primary/80 rounded-2xl shadow-lg">
+                  {resetEmailSent ? (
+                    <CheckCircle className="h-10 w-10 text-primary-foreground" />
+                  ) : (
+                    <KeyRound className="h-10 w-10 text-primary-foreground" />
+                  )}
+                </div>
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold">
+                  {resetEmailSent ? 'Check Your Email' : 'Reset Password'}
+                </CardTitle>
+                <CardDescription className="mt-2">
+                  {resetEmailSent 
+                    ? 'We sent a password reset link to your email. It expires in 24 hours.'
+                    : 'Enter your admin email to receive a reset link'}
+                </CardDescription>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="pt-4">
+              {resetEmailSent ? (
+                <div className="space-y-4">
+                  <Alert className="bg-primary/10 border-primary/20">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                    <AlertDescription>
+                      Click the link in your email to reset your password. Then return here to log in.
+                    </AlertDescription>
+                  </Alert>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setResetEmailSent(false);
+                    }}
+                    className="w-full"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to Login
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleForgotPassword} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="resetEmail" className="flex items-center gap-2 text-sm font-medium">
+                      <Mail className="h-4 w-4 text-primary" />
+                      Admin Email
+                    </Label>
+                    <Input
+                      id="resetEmail"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="admin@example.com"
+                      required
+                      className="h-11 bg-background/50 border-border/50"
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full h-11" disabled={loading}>
+                    {loading ? 'Sending...' : 'Send Reset Link'}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setShowForgotPassword(false)}
+                    className="w-full"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to Login
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -175,10 +441,19 @@ const AdminLogin = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="flex items-center gap-2 text-sm font-medium">
-                  <Lock className="h-4 w-4 text-primary" />
-                  Password
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="flex items-center gap-2 text-sm font-medium">
+                    <Lock className="h-4 w-4 text-primary" />
+                    Password
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <div className="relative">
                   <Input
                     id="password"
