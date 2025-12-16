@@ -46,18 +46,30 @@ const DriverLogin = () => {
 
     setLoading(true);
     try {
-      // Format phone to email-like format for auth (drivers use phone@driver.local)
-      const driverEmail = `${phone.replace(/\D/g, '')}@driver.local`;
-      
-      const { error } = await signIn(driverEmail, password);
-      
-      if (error) {
-        if (error.message.includes('Invalid login')) {
-          toast.error('Invalid phone number or password');
-        } else {
-          toast.error(error.message);
+      // Call the driver-login edge function
+      const { data, error } = await supabase.functions.invoke('driver-login', {
+        body: {
+          phone: phone.replace(/\D/g, ''),
+          password: password
         }
+      });
+
+      if (error) {
+        toast.error('Login failed. Please try again.');
         return;
+      }
+
+      if (!data.success) {
+        toast.error(data.error || 'Invalid phone number or password');
+        return;
+      }
+
+      // Set the session from the edge function response
+      if (data.session) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
       }
 
       toast.success('Login successful');

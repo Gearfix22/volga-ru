@@ -1,0 +1,238 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+function getClientIP(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+         req.headers.get('x-real-ip') || 
+         'unknown';
+}
+
+async function checkRateLimit(supabase: any, identifier: string, ip: string): Promise<{ allowed: boolean; retryAfter?: number }> {
+  const windowMinutes = 15;
+  const maxAttempts = 5;
+  const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
+
+  const { count } = await supabase
+    .from('login_attempts')
+    .select('*', { count: 'exact', head: true })
+    .eq('attempt_type', 'driver_login')
+    .or(`identifier.eq.${identifier},ip_address.eq.${ip}`)
+    .gte('created_at', windowStart);
+
+  if (count && count >= maxAttempts) {
+    return { allowed: false, retryAfter: windowMinutes * 60 };
+  }
+  return { allowed: true };
+}
+
+async function recordAttempt(supabase: any, identifier: string, ip: string, success: boolean): Promise<void> {
+  await supabase.from('login_attempts').insert({
+    identifier,
+    ip_address: ip,
+    attempt_type: 'driver_login',
+    success
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { phone, password } = await req.json();
+    const clientIP = getClientIP(req);
+
+    if (!phone || !password) {
+      return new Response(
+        JSON.stringify({ error: 'Phone and password are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Normalize phone number
+    const normalizedPhone = phone.replace(/\D/g, '');
+    
+    // Check rate limit
+    const rateLimitCheck = await checkRateLimit(supabase, normalizedPhone, clientIP);
+    if (!rateLimitCheck.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many login attempts. Please try again later.',
+          retryAfter: rateLimitCheck.retryAfter 
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if driver exists in drivers table
+    const { data: driver, error: driverError } = await supabase
+      .from('drivers')
+      .select('*')
+      .eq('phone', normalizedPhone)
+      .single();
+
+    if (driverError || !driver) {
+      await recordAttempt(supabase, normalizedPhone, clientIP, false);
+      console.log('Driver not found for phone:', normalizedPhone);
+      return new Response(
+        JSON.stringify({ error: 'Invalid credentials' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check driver status
+    if (driver.status === 'blocked') {
+      await recordAttempt(supabase, normalizedPhone, clientIP, false);
+      return new Response(
+        JSON.stringify({ error: 'Your account has been blocked. Please contact support.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (driver.status !== 'active') {
+      await recordAttempt(supabase, normalizedPhone, clientIP, false);
+      return new Response(
+        JSON.stringify({ error: 'Your account is pending approval. Please contact admin.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create email from phone for Supabase auth
+    const driverEmail = `driver_${normalizedPhone}@driver.volgaservices.local`;
+
+    // Check if auth user exists
+    const { data: existingUsers } = await supabase.auth.admin.listUsers();
+    let authUser = existingUsers?.users?.find((u: any) => u.email === driverEmail);
+
+    if (!authUser) {
+      // Create new auth user for this driver
+      console.log('Creating auth user for driver:', normalizedPhone);
+      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+        email: driverEmail,
+        password: password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: driver.full_name,
+          phone: normalizedPhone,
+          role: 'driver'
+        }
+      });
+
+      if (createError) {
+        console.error('Error creating auth user:', createError);
+        await recordAttempt(supabase, normalizedPhone, clientIP, false);
+        return new Response(
+          JSON.stringify({ error: 'Failed to create account. Please contact admin.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      authUser = newUser.user;
+
+      // Assign driver role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({ user_id: authUser.id, role: 'driver' });
+
+      if (roleError) {
+        console.error('Error assigning driver role:', roleError);
+      }
+
+      // Update driver record with auth user id if needed
+      if (driver.id !== authUser.id) {
+        // Update the drivers table to link with auth user
+        await supabase
+          .from('drivers')
+          .update({ id: authUser.id })
+          .eq('phone', normalizedPhone);
+      }
+
+      console.log('Driver auth account created successfully');
+    }
+
+    // Now authenticate the driver
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: driverEmail,
+      password: password
+    });
+
+    if (signInError) {
+      // If password doesn't match, update it (first login scenario)
+      if (signInError.message.includes('Invalid login credentials')) {
+        // Update password for existing user
+        const { error: updateError } = await supabase.auth.admin.updateUserById(
+          authUser.id,
+          { password: password }
+        );
+
+        if (updateError) {
+          await recordAttempt(supabase, normalizedPhone, clientIP, false);
+          return new Response(
+            JSON.stringify({ error: 'Invalid credentials' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Try signing in again
+        const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+          email: driverEmail,
+          password: password
+        });
+
+        if (retryError) {
+          await recordAttempt(supabase, normalizedPhone, clientIP, false);
+          return new Response(
+            JSON.stringify({ error: 'Invalid credentials' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        await recordAttempt(supabase, normalizedPhone, clientIP, true);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            session: retryData.session,
+            user: retryData.user,
+            driver: driver
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      await recordAttempt(supabase, normalizedPhone, clientIP, false);
+      console.error('Sign in error:', signInError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid credentials' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    await recordAttempt(supabase, normalizedPhone, clientIP, true);
+    
+    return new Response(
+      JSON.stringify({
+        success: true,
+        session: signInData.session,
+        user: signInData.user,
+        driver: driver
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Driver login error:', error);
+    return new Response(
+      JSON.stringify({ error: 'An unexpected error occurred' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
