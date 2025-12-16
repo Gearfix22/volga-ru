@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.manage-drivers]
 verify_jwt = true
+
+[functions.driver-login]
+verify_jwt = false
