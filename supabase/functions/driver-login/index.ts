@@ -148,26 +148,36 @@ Deno.serve(async (req) => {
       }
 
       authUser = newUser.user;
+      console.log('Driver auth account created successfully');
+    }
 
-      // Assign driver role
+    // Always ensure driver role exists for this user (handles both new and existing users)
+    const { data: existingRoles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', authUser.id);
+
+    const hasDriverRole = existingRoles?.some(r => r.role === 'driver');
+    
+    if (!hasDriverRole) {
+      console.log('Assigning driver role to user:', authUser.id);
       const { error: roleError } = await supabase
         .from('user_roles')
-        .insert({ user_id: authUser.id, role: 'driver' });
+        .upsert({ user_id: authUser.id, role: 'driver' }, { onConflict: 'user_id,role' });
 
       if (roleError) {
         console.error('Error assigning driver role:', roleError);
+      } else {
+        console.log('Driver role assigned successfully');
       }
+    }
 
-      // Update driver record with auth user id if needed
-      if (driver.id !== authUser.id) {
-        // Update the drivers table to link with auth user
-        await supabase
-          .from('drivers')
-          .update({ id: authUser.id })
-          .eq('phone', normalizedPhone);
-      }
-
-      console.log('Driver auth account created successfully');
+    // Update driver record with auth user id if needed
+    if (driver.id !== authUser.id) {
+      await supabase
+        .from('drivers')
+        .update({ id: authUser.id })
+        .eq('phone', driver.phone);
     }
 
     // Now authenticate the driver
