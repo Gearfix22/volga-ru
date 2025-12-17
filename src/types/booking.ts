@@ -52,4 +52,5 @@ export interface BookingData {
   paymentMethod?: string;
   transactionId?: string;
   paidAmount?: number;
+  driverRequired?: boolean;
 }

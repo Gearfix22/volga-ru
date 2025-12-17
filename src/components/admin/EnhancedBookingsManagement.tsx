@@ -67,6 +67,7 @@ interface Booking {
   payment_method: string | null;
   transaction_id: string | null;
   assigned_driver_id: string | null;
+  driver_required: boolean;
 }
 
 interface DraftBooking {
@@ -502,7 +503,15 @@ export const EnhancedBookingsManagement = () => {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Badge variant="outline">{booking.service_type}</Badge>
+                              <div className="flex flex-col gap-1">
+                                <Badge variant="outline">{booking.service_type}</Badge>
+                                {booking.driver_required && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    <Car className="h-3 w-3 mr-1" />
+                                    Driver needed
+                                  </Badge>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell className="font-semibold">
                               ${booking.total_price?.toFixed(2) || '0.00'}
@@ -543,12 +552,16 @@ export const EnhancedBookingsManagement = () => {
                               </Select>
                             </TableCell>
                             <TableCell>
-                              <DriverAssignmentSelect
-                                bookingId={booking.id}
-                                currentDriverId={booking.assigned_driver_id}
-                                onAssigned={fetchBookings}
-                                disabled={actionLoading === booking.id || booking.status === 'cancelled' || booking.status === 'completed'}
-                              />
+                              {booking.driver_required ? (
+                                <DriverAssignmentSelect
+                                  bookingId={booking.id}
+                                  currentDriverId={booking.assigned_driver_id}
+                                  onAssigned={fetchBookings}
+                                  disabled={actionLoading === booking.id || booking.status === 'cancelled' || booking.status === 'completed' || booking.status === 'pending'}
+                                />
+                              ) : (
+                                <span className="text-sm text-muted-foreground">Not required</span>
+                              )}
                             </TableCell>
                             <TableCell>
                               {editingNotes === booking.id ? (

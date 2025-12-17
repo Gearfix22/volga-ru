@@ -89,6 +89,7 @@ export type Database = {
           created_at: string | null
           customer_notes: string | null
           driver_notes: string | null
+          driver_required: boolean | null
           driver_response: string | null
           driver_response_at: string | null
           id: string
@@ -111,6 +112,7 @@ export type Database = {
           created_at?: string | null
           customer_notes?: string | null
           driver_notes?: string | null
+          driver_required?: boolean | null
           driver_response?: string | null
           driver_response_at?: string | null
           id?: string
@@ -133,6 +135,7 @@ export type Database = {
           created_at?: string | null
           customer_notes?: string | null
           driver_notes?: string | null
+          driver_required?: boolean | null
           driver_response?: string | null
           driver_response_at?: string | null
           id?: string

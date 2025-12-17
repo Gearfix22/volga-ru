@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Phone, Calendar, DollarSign, FileText } from 'lucide-react';
+import { User, Mail, Phone, Calendar, DollarSign, FileText, Car } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 interface BookingDetailsDialogProps {
@@ -121,6 +121,17 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
                     'outline'
                   }>
                     {booking.payment_status}
+                  </Badge>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <span className="text-sm font-medium flex items-center gap-2">
+                  <Car className="h-4 w-4" />
+                  Driver Required:
+                </span>
+                <div>
+                  <Badge variant={booking.driver_required ? 'default' : 'secondary'}>
+                    {booking.driver_required ? 'Yes' : 'No'}
                   </Badge>
                 </div>
               </div>
