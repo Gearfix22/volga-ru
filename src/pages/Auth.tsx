@@ -12,10 +12,11 @@ import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, Sparkles, ArrowLeft,
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { loginSchema, signupSchema } from '@/lib/validationSchemas';
+import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { signUp, signIn, signInWithPhone, sendOtp, verifyOtp, resetPassword, updatePassword, user, loading, session, hasRole } = useAuth();
+  const { signUp, signIn, resetPassword, updatePassword, user, loading, session, hasRole } = useAuth();
   const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState('login');
@@ -301,11 +302,13 @@ const Auth = () => {
     }
   };
 
-  // Driver login with phone + password
+  // Driver login with phone + password (via edge function to avoid Supabase phone provider dependency)
   const handleDriverLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!driverPhone.trim()) {
+
+    const normalizedPhone = driverPhone.replace(/\D/g, '');
+
+    if (!normalizedPhone) {
       toast({
         title: 'Validation Error',
         description: 'Please enter your phone number.',
@@ -314,59 +317,20 @@ const Auth = () => {
       return;
     }
 
-    setIsLoading(true);
-    try {
-      if (useOtpLogin) {
-        // Send OTP to phone
-        const { error } = await sendOtp(driverPhone);
-        if (error) {
-          toast({
-            title: 'Error',
-            description: error.message,
-            variant: 'destructive'
-          });
-        } else {
-          setDriverLoginStep('otp');
-          toast({
-            title: 'OTP Sent',
-            description: 'Please enter the verification code sent to your phone.',
-          });
-        }
-      } else {
-        // Login with phone + password
-        const { error } = await signInWithPhone(driverPhone, driverPassword);
-        if (error) {
-          toast({
-            title: 'Login Failed',
-            description: error.message || 'Invalid phone number or password.',
-            variant: 'destructive'
-          });
-        } else {
-          toast({
-            title: 'Login Successful',
-            description: 'Welcome back, driver!',
-          });
-        }
-      }
-    } catch (error: any) {
+    if (useOtpLogin) {
+      setUseOtpLogin(false);
       toast({
-        title: 'Error',
-        description: error.message || 'An unexpected error occurred.',
+        title: 'OTP Unavailable',
+        description: 'OTP login is currently disabled. Please sign in with your password.',
         variant: 'destructive'
       });
-    } finally {
-      setIsLoading(false);
+      return;
     }
-  };
 
-  // Verify driver OTP
-  const handleDriverOtpVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!driverOtp.trim() || driverOtp.length !== 6) {
+    if (!driverPassword.trim()) {
       toast({
         title: 'Validation Error',
-        description: 'Please enter a valid 6-digit OTP.',
+        description: 'Please enter your password.',
         variant: 'destructive'
       });
       return;
@@ -374,28 +338,63 @@ const Auth = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await verifyOtp(driverPhone, driverOtp, 'sms');
+      const { data, error } = await supabase.functions.invoke('driver-login', {
+        body: {
+          phone: normalizedPhone,
+          password: driverPassword
+        }
+      });
+
       if (error) {
+        throw error;
+      }
+
+      if (!data?.success) {
         toast({
-          title: 'Verification Failed',
-          description: error.message || 'Invalid OTP. Please try again.',
+          title: 'Login Failed',
+          description: data?.error || 'Invalid phone number or password.',
           variant: 'destructive'
         });
-      } else {
-        toast({
-          title: 'Login Successful',
-          description: 'Welcome back, driver!',
+        return;
+      }
+
+      if (data?.session?.access_token && data?.session?.refresh_token) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
         });
       }
+
+      toast({
+        title: 'Login Successful',
+        description: 'Welcome back, driver!',
+      });
+
+      navigate('/driver-dashboard');
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'An unexpected error occurred.',
+        title: 'Login Failed',
+        description: error?.message || 'Invalid phone number or password.',
         variant: 'destructive'
       });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Verify driver OTP (not available when phone provider is disabled)
+  const handleDriverOtpVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    toast({
+      title: 'OTP Unavailable',
+      description: 'OTP login is currently disabled. Please sign in with your password.',
+      variant: 'destructive'
+    });
+
+    setUseOtpLogin(false);
+    setDriverLoginStep('credentials');
+    setDriverOtp('');
   };
 
   if (loading) {
@@ -916,10 +915,10 @@ const Auth = () => {
                         <Button
                           type="button"
                           variant="link"
-                          className="text-sm text-primary"
-                          onClick={() => setUseOtpLogin(!useOtpLogin)}
+                          className="text-sm text-muted-foreground"
+                          disabled
                         >
-                          {useOtpLogin ? 'Use password instead' : 'Login with OTP instead'}
+                          OTP login is currently unavailable
                         </Button>
                       </div>
                     </form>
