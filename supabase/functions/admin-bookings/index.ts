@@ -225,13 +225,14 @@ serve(async (req) => {
     // PUT /admin-bookings/:id - Update booking
     if (method === 'PUT' && bookingId && !action) {
       const body = await req.json()
-      const { status, payment_status, admin_notes, total_price } = body
+      const { status, payment_status, admin_notes, total_price, assigned_driver_id } = body
 
       const updateData: any = { updated_at: new Date().toISOString() }
       if (status) updateData.status = status
       if (payment_status) updateData.payment_status = payment_status
       if (admin_notes !== undefined) updateData.admin_notes = admin_notes
       if (total_price !== undefined) updateData.total_price = total_price
+      if (assigned_driver_id !== undefined) updateData.assigned_driver_id = assigned_driver_id
 
       const { error: updateError } = await supabaseAdmin
         .from('bookings')
@@ -251,6 +252,161 @@ serve(async (req) => {
 
       console.log(`Booking ${bookingId} updated by admin ${user.id}`)
       return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // POST /admin-bookings/:id/assign-driver - Assign driver to booking
+    if (method === 'POST' && bookingId && action === 'assign-driver') {
+      const body = await req.json()
+      const { driver_id } = body
+
+      // Validate driver exists and is active if provided
+      if (driver_id) {
+        const { data: driver, error: driverError } = await supabaseAdmin
+          .from('drivers')
+          .select('id, full_name, status')
+          .eq('id', driver_id)
+          .maybeSingle()
+
+        if (driverError || !driver) {
+          return new Response(JSON.stringify({ error: 'Driver not found' }), {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        if (driver.status !== 'active') {
+          return new Response(JSON.stringify({ error: 'Driver is not available' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+      }
+
+      // Get current booking for logging
+      const { data: booking, error: fetchError } = await supabaseAdmin
+        .from('bookings')
+        .select('assigned_driver_id')
+        .eq('id', bookingId)
+        .maybeSingle()
+
+      if (fetchError || !booking) {
+        return new Response(JSON.stringify({ error: 'Booking not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      const oldDriverId = booking.assigned_driver_id
+
+      // Update booking with driver assignment
+      const { error: updateError } = await supabaseAdmin
+        .from('bookings')
+        .update({ 
+          assigned_driver_id: driver_id,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', bookingId)
+
+      if (updateError) throw updateError
+
+      // Log admin action
+      await supabaseAdmin.from('admin_logs').insert({
+        admin_id: user.id,
+        action_type: 'driver_assigned',
+        target_id: bookingId,
+        target_table: 'bookings',
+        payload: { 
+          old_driver_id: oldDriverId, 
+          new_driver_id: driver_id 
+        }
+      })
+
+      console.log(`Driver ${driver_id} assigned to booking ${bookingId} by admin ${user.id}`)
+      return new Response(JSON.stringify({ success: true, driver_id }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // POST /admin-bookings/:id/auto-assign - Auto-assign available driver
+    if (method === 'POST' && bookingId && action === 'auto-assign') {
+      // Find an available driver (active status, least assignments)
+      const { data: drivers, error: driversError } = await supabaseAdmin
+        .from('drivers')
+        .select('id, full_name')
+        .eq('status', 'active')
+
+      if (driversError || !drivers || drivers.length === 0) {
+        return new Response(JSON.stringify({ error: 'No available drivers' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      // Get assignment counts for each driver
+      const driverAssignments = await Promise.all(
+        drivers.map(async (driver) => {
+          const { count } = await supabaseAdmin
+            .from('bookings')
+            .select('*', { count: 'exact', head: true })
+            .eq('assigned_driver_id', driver.id)
+            .in('status', ['pending', 'confirmed'])
+
+          return { ...driver, assignmentCount: count || 0 }
+        })
+      )
+
+      // Sort by assignment count and pick the driver with least assignments
+      driverAssignments.sort((a, b) => a.assignmentCount - b.assignmentCount)
+      const selectedDriver = driverAssignments[0]
+
+      // Get current booking for logging
+      const { data: booking, error: fetchError } = await supabaseAdmin
+        .from('bookings')
+        .select('assigned_driver_id')
+        .eq('id', bookingId)
+        .maybeSingle()
+
+      if (fetchError || !booking) {
+        return new Response(JSON.stringify({ error: 'Booking not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      const oldDriverId = booking.assigned_driver_id
+
+      // Update booking with driver assignment
+      const { error: updateError } = await supabaseAdmin
+        .from('bookings')
+        .update({ 
+          assigned_driver_id: selectedDriver.id,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', bookingId)
+
+      if (updateError) throw updateError
+
+      // Log admin action
+      await supabaseAdmin.from('admin_logs').insert({
+        admin_id: user.id,
+        action_type: 'driver_auto_assigned',
+        target_id: bookingId,
+        target_table: 'bookings',
+        payload: { 
+          old_driver_id: oldDriverId, 
+          new_driver_id: selectedDriver.id,
+          driver_name: selectedDriver.full_name
+        }
+      })
+
+      console.log(`Driver ${selectedDriver.full_name} auto-assigned to booking ${bookingId}`)
+      return new Response(JSON.stringify({ 
+        success: true, 
+        driver_id: selectedDriver.id,
+        driver_name: selectedDriver.full_name
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }

@@ -28,12 +28,14 @@ import {
   FileEdit,
   AlertCircle,
   RefreshCw,
-  Trash2
+  Trash2,
+  Car
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { BookingDetailsDialog } from './BookingDetailsDialog';
 import { RejectBookingModal } from './RejectBookingModal';
+import { DriverAssignmentSelect } from './DriverAssignmentSelect';
 import {
   Select,
   SelectContent,
@@ -64,6 +66,7 @@ interface Booking {
   customer_notes: string | null;
   payment_method: string | null;
   transaction_id: string | null;
+  assigned_driver_id: string | null;
 }
 
 interface DraftBooking {
@@ -462,6 +465,7 @@ export const EnhancedBookingsManagement = () => {
                         <TableHead>Price</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Payment</TableHead>
+                        <TableHead>Driver</TableHead>
                         <TableHead>Notes</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -469,7 +473,7 @@ export const EnhancedBookingsManagement = () => {
                     <TableBody>
                       {filteredBookings.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                             No bookings found
                           </TableCell>
                         </TableRow>
@@ -535,6 +539,14 @@ export const EnhancedBookingsManagement = () => {
                                   <SelectItem value="pending_verification">Verifying</SelectItem>
                                 </SelectContent>
                               </Select>
+                            </TableCell>
+                            <TableCell>
+                              <DriverAssignmentSelect
+                                bookingId={booking.id}
+                                currentDriverId={booking.assigned_driver_id}
+                                onAssigned={fetchBookings}
+                                disabled={actionLoading === booking.id || booking.status === 'cancelled' || booking.status === 'completed'}
+                              />
                             </TableCell>
                             <TableCell>
                               {editingNotes === booking.id ? (

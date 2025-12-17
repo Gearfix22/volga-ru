@@ -308,6 +308,54 @@ export type Database = {
         }
         Relationships: []
       }
+      driver_notifications: {
+        Row: {
+          booking_id: string | null
+          created_at: string | null
+          driver_id: string
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          type: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string | null
+          driver_id: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          type: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string | null
+          driver_id?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_notifications_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drivers: {
         Row: {
           created_at: string
