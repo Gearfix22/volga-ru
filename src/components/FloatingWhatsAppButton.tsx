@@ -1,10 +1,20 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export const FloatingWhatsAppButton: React.FC = () => {
+  const location = useLocation();
   const whatsappNumber = '79522212903';
   const whatsappUrl = `https://wa.me/${whatsappNumber}`;
+
+  // Hide WhatsApp button on driver and admin routes
+  const isDriverRoute = location.pathname.startsWith('/driver');
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  
+  if (isDriverRoute || isAdminRoute) {
+    return null;
+  }
 
   return (
     <a

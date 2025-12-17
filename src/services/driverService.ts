@@ -127,7 +127,7 @@ export async function getDriverAssignedBookings(): Promise<AssignedBooking[]> {
     .from('bookings')
     .select('*')
     .eq('assigned_driver_id', user.id)
-    .in('status', ['confirmed', 'pending'])
+    .in('status', ['pending', 'confirmed', 'accepted', 'on_the_way', 'completed'])
     .order('created_at', { ascending: false });
   
   if (error) {
