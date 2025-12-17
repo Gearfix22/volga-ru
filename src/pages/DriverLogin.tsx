@@ -76,8 +76,9 @@ const DriverLogin = () => {
           return;
         }
         
-        // Wait for session to be established before navigating
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Wait for session and auth context to update before navigating
+        // The AuthContext will fetch roles after session is set
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
       toast.success('Login successful');
