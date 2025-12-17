@@ -66,10 +66,18 @@ const DriverLogin = () => {
 
       // Set the session from the edge function response
       if (data.session) {
-        await supabase.auth.setSession({
+        const { error: sessionError } = await supabase.auth.setSession({
           access_token: data.session.access_token,
           refresh_token: data.session.refresh_token
         });
+        
+        if (sessionError) {
+          toast.error('Failed to establish session');
+          return;
+        }
+        
+        // Wait for session to be established before navigating
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
       toast.success('Login successful');

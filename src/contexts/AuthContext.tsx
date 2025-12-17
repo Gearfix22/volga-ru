@@ -36,28 +36,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRoles, setUserRoles] = useState<string[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+
+  const fetchUserRoles = async (userId: string) => {
+    setRolesLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+      
+      if (!error && data) {
+        setUserRoles(data.map(r => r.role));
+      }
+    } catch (error) {
+      console.error('Error fetching user roles:', error);
+    } finally {
+      setRolesLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchUserRoles(session.user.id);
+        await fetchUserRoles(session.user.id);
       }
       setLoading(false);
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      
       if (session?.user) {
-        fetchUserRoles(session.user.id);
+        // Defer role fetching to avoid deadlock
+        setTimeout(() => {
+          fetchUserRoles(session.user.id);
+        }, 0);
       } else {
         setUserRoles([]);
       }
-      setLoading(false);
       
       // Track auth events (delayed to avoid circular dependency)
       if (event === 'SIGNED_IN' && session?.user) {
@@ -79,41 +101,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.error('Error logging login activity:', error);
           }
         }, 100);
-      } else if (event === 'SIGNED_OUT') {
-        setTimeout(async () => {
-          try {
-            await supabase
-              .from('user_activities')
-              .insert({
-                user_id: user?.id,
-                activity_type: 'logout',
-                activity_data: {},
-                activity_description: 'Logged out of the platform'
-              });
-          } catch (error) {
-            console.error('Error logging logout activity:', error);
-          }
-        }, 100);
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const fetchUserRoles = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-      
-      if (!error && data) {
-        setUserRoles(data.map(r => r.role));
-      }
-    } catch (error) {
-      console.error('Error fetching user roles:', error);
-    }
-  };
 
   const hasRole = (role: string) => {
     return userRoles.includes(role);
