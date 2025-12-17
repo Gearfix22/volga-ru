@@ -88,12 +88,16 @@ export type Database = {
           assigned_driver_id: string | null
           created_at: string | null
           customer_notes: string | null
+          driver_notes: string | null
+          driver_response: string | null
+          driver_response_at: string | null
           id: string
           payment_method: string | null
           payment_status: string | null
           requires_verification: boolean | null
           service_details: Json | null
           service_type: string
+          show_driver_to_customer: boolean | null
           status: string | null
           total_price: number | null
           transaction_id: string | null
@@ -106,12 +110,16 @@ export type Database = {
           assigned_driver_id?: string | null
           created_at?: string | null
           customer_notes?: string | null
+          driver_notes?: string | null
+          driver_response?: string | null
+          driver_response_at?: string | null
           id?: string
           payment_method?: string | null
           payment_status?: string | null
           requires_verification?: boolean | null
           service_details?: Json | null
           service_type: string
+          show_driver_to_customer?: boolean | null
           status?: string | null
           total_price?: number | null
           transaction_id?: string | null
@@ -124,12 +132,16 @@ export type Database = {
           assigned_driver_id?: string | null
           created_at?: string | null
           customer_notes?: string | null
+          driver_notes?: string | null
+          driver_response?: string | null
+          driver_response_at?: string | null
           id?: string
           payment_method?: string | null
           payment_status?: string | null
           requires_verification?: boolean | null
           service_details?: Json | null
           service_type?: string
+          show_driver_to_customer?: boolean | null
           status?: string | null
           total_price?: number | null
           transaction_id?: string | null

@@ -519,6 +519,8 @@ export const EnhancedBookingsManagement = () => {
                                 <SelectContent>
                                   <SelectItem value="pending">Pending</SelectItem>
                                   <SelectItem value="confirmed">Confirmed</SelectItem>
+                                  <SelectItem value="accepted">Accepted</SelectItem>
+                                  <SelectItem value="on_the_way">On The Way</SelectItem>
                                   <SelectItem value="completed">Completed</SelectItem>
                                   <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>

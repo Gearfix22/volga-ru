@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Car, 
   LogOut, 
@@ -16,7 +17,10 @@ import {
   Clock,
   Navigation as NavigationIcon,
   DollarSign,
-  RefreshCw
+  RefreshCw,
+  XCircle,
+  ThumbsUp,
+  ThumbsDown
 } from 'lucide-react';
 import { Navigation } from '@/components/Navigation';
 import { 
@@ -24,6 +28,8 @@ import {
   getDriverNotifications,
   markDriverNotificationRead,
   updateBookingStatusByDriver,
+  acceptBooking,
+  rejectBookingByDriver,
   subscribeToDriverNotifications,
   subscribeToAssignedBookings,
   AssignedBooking,
@@ -37,18 +43,35 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+
+interface ExtendedBooking extends AssignedBooking {
+  driver_response?: string;
+}
 
 const DriverDashboard = () => {
   const { user, signOut, hasRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [bookings, setBookings] = useState<AssignedBooking[]>([]);
+  const [bookings, setBookings] = useState<ExtendedBooking[]>([]);
   const [notifications, setNotifications] = useState<DriverNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [updatingBooking, setUpdatingBooking] = useState<string | null>(null);
+  
+  // Reject dialog state
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [bookingToReject, setBookingToReject] = useState<string | null>(null);
+  const [rejectNotes, setRejectNotes] = useState('');
 
   useEffect(() => {
     if (user && hasRole('driver')) {
@@ -84,7 +107,7 @@ const DriverDashboard = () => {
 
   const loadBookings = async () => {
     const data = await getDriverAssignedBookings();
-    setBookings(data);
+    setBookings(data as ExtendedBooking[]);
   };
 
   const loadNotifications = async () => {
@@ -103,14 +126,64 @@ const DriverDashboard = () => {
     }
   };
 
-  const handleUpdateStatus = async (bookingId: string, status: 'in_progress' | 'completed') => {
+  const handleAcceptBooking = async (bookingId: string) => {
+    setUpdatingBooking(bookingId);
+    const result = await acceptBooking(bookingId);
+    
+    if (result.success) {
+      toast({
+        title: 'Booking Accepted',
+        description: 'Customer has been notified. You can now start the trip.',
+      });
+      loadBookings();
+    } else {
+      toast({
+        title: 'Error',
+        description: result.error || 'Failed to accept booking',
+        variant: 'destructive',
+      });
+    }
+    setUpdatingBooking(null);
+  };
+
+  const openRejectDialog = (bookingId: string) => {
+    setBookingToReject(bookingId);
+    setRejectNotes('');
+    setRejectDialogOpen(true);
+  };
+
+  const handleRejectBooking = async () => {
+    if (!bookingToReject) return;
+    
+    setUpdatingBooking(bookingToReject);
+    const result = await rejectBookingByDriver(bookingToReject, rejectNotes);
+    
+    if (result.success) {
+      toast({
+        title: 'Booking Declined',
+        description: 'Admin will reassign to another driver.',
+      });
+      setRejectDialogOpen(false);
+      setBookingToReject(null);
+      loadBookings();
+    } else {
+      toast({
+        title: 'Error',
+        description: result.error || 'Failed to decline booking',
+        variant: 'destructive',
+      });
+    }
+    setUpdatingBooking(null);
+  };
+
+  const handleUpdateStatus = async (bookingId: string, status: 'on_the_way' | 'completed') => {
     setUpdatingBooking(bookingId);
     const result = await updateBookingStatusByDriver(bookingId, status);
     
     if (result.success) {
       toast({
         title: 'Status Updated',
-        description: `Booking marked as ${status.replace('_', ' ')}`,
+        description: status === 'on_the_way' ? 'Customer notified you\'re on the way!' : 'Trip completed successfully!',
       });
       loadBookings();
     } else {
@@ -144,16 +217,25 @@ const DriverDashboard = () => {
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    const config: Record<string, { variant: any; label: string }> = {
+  const getStatusBadge = (status: string, driverResponse?: string) => {
+    // Show driver response status for pending assignments
+    if (driverResponse === 'pending' && status === 'confirmed') {
+      return <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600">Awaiting Your Response</Badge>;
+    }
+    
+    const config: Record<string, { variant: any; label: string; className?: string }> = {
       pending: { variant: 'secondary', label: 'Pending' },
-      confirmed: { variant: 'default', label: 'Confirmed' },
-      in_progress: { variant: 'outline', label: 'In Progress' },
+      confirmed: { variant: 'secondary', label: 'Confirmed' },
+      accepted: { variant: 'default', label: 'Accepted', className: 'bg-green-600' },
+      on_the_way: { variant: 'default', label: 'On The Way', className: 'bg-blue-600' },
       completed: { variant: 'outline', label: 'Completed' },
     };
-    const { variant, label } = config[status] || { variant: 'secondary', label: status };
-    return <Badge variant={variant}>{label}</Badge>;
+    const { variant, label, className } = config[status] || { variant: 'secondary', label: status };
+    return <Badge variant={variant} className={className}>{label}</Badge>;
   };
+
+  const pendingResponse = bookings.filter(b => b.driver_response === 'pending' || (!b.driver_response && b.status === 'confirmed'));
+  const activeBookings = bookings.filter(b => b.driver_response === 'accepted' || b.status === 'accepted' || b.status === 'on_the_way');
 
   return (
     <div className="min-h-screen bg-background">
@@ -167,7 +249,10 @@ const DriverDashboard = () => {
               Driver Dashboard
             </h1>
             <p className="text-muted-foreground mt-1">
-              Welcome back! You have {bookings.length} active assignment{bookings.length !== 1 ? 's' : ''}.
+              {pendingResponse.length > 0 
+                ? `You have ${pendingResponse.length} booking${pendingResponse.length !== 1 ? 's' : ''} waiting for your response.`
+                : `You have ${activeBookings.length} active assignment${activeBookings.length !== 1 ? 's' : ''}.`
+              }
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -232,16 +317,16 @@ const DriverDashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3 mb-8">
-          <Card>
+        <div className="grid gap-4 md:grid-cols-4 mb-8">
+          <Card className={pendingResponse.length > 0 ? 'border-yellow-500/50 bg-yellow-500/5' : ''}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-primary/10">
-                  <Calendar className="h-6 w-6 text-primary" />
+                <div className={`p-3 rounded-full ${pendingResponse.length > 0 ? 'bg-yellow-500/20' : 'bg-muted'}`}>
+                  <Bell className={`h-6 w-6 ${pendingResponse.length > 0 ? 'text-yellow-600' : 'text-muted-foreground'}`} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{bookings.length}</p>
-                  <p className="text-sm text-muted-foreground">Active Assignments</p>
+                  <p className="text-2xl font-bold">{pendingResponse.length}</p>
+                  <p className="text-sm text-muted-foreground">Awaiting Response</p>
                 </div>
               </div>
             </CardContent>
@@ -254,8 +339,8 @@ const DriverDashboard = () => {
                   <CheckCircle className="h-6 w-6 text-green-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{bookings.filter(b => b.status === 'confirmed').length}</p>
-                  <p className="text-sm text-muted-foreground">Ready to Start</p>
+                  <p className="text-2xl font-bold">{bookings.filter(b => b.status === 'accepted').length}</p>
+                  <p className="text-sm text-muted-foreground">Accepted</p>
                 </div>
               </div>
             </CardContent>
@@ -264,26 +349,115 @@ const DriverDashboard = () => {
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-orange-500/10">
-                  <Clock className="h-6 w-6 text-orange-500" />
+                <div className="p-3 rounded-full bg-blue-500/10">
+                  <Car className="h-6 w-6 text-blue-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{bookings.filter(b => b.status === 'pending').length}</p>
-                  <p className="text-sm text-muted-foreground">Pending Confirmation</p>
+                  <p className="text-2xl font-bold">{bookings.filter(b => b.status === 'on_the_way').length}</p>
+                  <p className="text-sm text-muted-foreground">On The Way</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-full bg-primary/10">
+                  <Calendar className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{bookings.length}</p>
+                  <p className="text-sm text-muted-foreground">Total Active</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Assigned Trips */}
+        {/* Pending Response Section */}
+        {pendingResponse.length > 0 && (
+          <Card className="mb-6 border-yellow-500/50">
+            <CardHeader className="bg-yellow-500/5">
+              <CardTitle className="flex items-center gap-2 text-yellow-700">
+                <Bell className="h-5 w-5" />
+                New Assignments - Action Required
+              </CardTitle>
+              <CardDescription>Please accept or decline these bookings</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="space-y-4">
+                {pendingResponse.map((booking) => (
+                  <Card key={booking.id} className="border-l-4 border-l-yellow-500">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline">{booking.service_type}</Badge>
+                            {getStatusBadge(booking.status, booking.driver_response)}
+                          </div>
+                          
+                          <div className="flex items-center gap-2 text-sm">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{booking.user_info?.fullName || 'Customer'}</span>
+                          </div>
+                          
+                          {booking.service_details?.pickupLocation && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <MapPin className="h-4 w-4 text-muted-foreground" />
+                              <span>{booking.service_details.pickupLocation}</span>
+                              {booking.service_details?.dropoffLocation && (
+                                <>
+                                  <span className="text-muted-foreground">→</span>
+                                  <span>{booking.service_details.dropoffLocation}</span>
+                                </>
+                              )}
+                            </div>
+                          )}
+                          
+                          {booking.total_price && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <DollarSign className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-semibold">${booking.total_price.toFixed(2)}</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() => handleAcceptBooking(booking.id)}
+                            disabled={updatingBooking === booking.id}
+                          >
+                            <ThumbsUp className="h-4 w-4 mr-2" />
+                            Accept
+                          </Button>
+                          <Button 
+                            variant="destructive"
+                            onClick={() => openRejectDialog(booking.id)}
+                            disabled={updatingBooking === booking.id}
+                          >
+                            <ThumbsDown className="h-4 w-4 mr-2" />
+                            Decline
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Active Trips */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <NavigationIcon className="h-5 w-5 text-primary" />
-              Your Assigned Trips
+              Your Active Trips
             </CardTitle>
-            <CardDescription>Manage your current bookings and update their status</CardDescription>
+            <CardDescription>Manage your accepted bookings and update their status</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -291,15 +465,15 @@ const DriverDashboard = () => {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                 <p className="mt-4 text-muted-foreground">Loading assignments...</p>
               </div>
-            ) : bookings.length === 0 ? (
+            ) : activeBookings.length === 0 ? (
               <div className="text-center py-12">
                 <Car className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No trips assigned yet.</p>
-                <p className="text-sm text-muted-foreground mt-1">You'll be notified when a new trip is assigned to you.</p>
+                <p className="text-muted-foreground">No active trips.</p>
+                <p className="text-sm text-muted-foreground mt-1">Accept a booking to see it here.</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {bookings.map((booking) => (
+                {activeBookings.map((booking) => (
                   <Card key={booking.id} className="border-l-4 border-l-primary">
                     <CardContent className="p-4">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -352,19 +526,19 @@ const DriverDashboard = () => {
                         </div>
                         
                         <div className="flex flex-col gap-2">
-                          {booking.status === 'confirmed' && (
+                          {booking.status === 'accepted' && (
                             <Button 
-                              onClick={() => handleUpdateStatus(booking.id, 'in_progress')}
+                              className="bg-blue-600 hover:bg-blue-700"
+                              onClick={() => handleUpdateStatus(booking.id, 'on_the_way')}
                               disabled={updatingBooking === booking.id}
                             >
                               <Car className="h-4 w-4 mr-2" />
-                              Start Trip
+                              Start - On The Way
                             </Button>
                           )}
                           
-                          {booking.status === 'in_progress' && (
+                          {booking.status === 'on_the_way' && (
                             <Button 
-                              variant="default"
                               className="bg-green-600 hover:bg-green-700"
                               onClick={() => handleUpdateStatus(booking.id, 'completed')}
                               disabled={updatingBooking === booking.id}
@@ -410,6 +584,38 @@ const DriverDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Reject Dialog */}
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Decline Booking</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for declining this booking. The admin will reassign it to another driver.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              placeholder="Reason for declining (optional)..."
+              value={rejectNotes}
+              onChange={(e) => setRejectNotes(e.target.value)}
+              className="min-h-[100px]"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleRejectBooking}
+              disabled={updatingBooking === bookingToReject}
+            >
+              Decline Booking
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

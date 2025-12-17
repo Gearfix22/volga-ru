@@ -174,14 +174,111 @@ export async function markDriverNotificationRead(notificationId: string): Promis
 }
 
 // Update booking status by driver
-export async function updateBookingStatusByDriver(bookingId: string, status: 'in_progress' | 'completed'): Promise<{ success: boolean; error?: string }> {
+export async function updateBookingStatusByDriver(
+  bookingId: string, 
+  status: 'accepted' | 'on_the_way' | 'completed'
+): Promise<{ success: boolean; error?: string }> {
   const { error } = await supabase
     .from('bookings')
-    .update({ status, updated_at: new Date().toISOString() })
+    .update({ 
+      status, 
+      updated_at: new Date().toISOString() 
+    })
     .eq('id', bookingId);
   
   if (error) {
     console.error('Error updating booking status:', error);
+    return { success: false, error: error.message };
+  }
+  
+  return { success: true };
+}
+
+// Driver accepts a booking assignment
+export async function acceptBooking(bookingId: string): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase
+    .from('bookings')
+    .update({ 
+      driver_response: 'accepted',
+      driver_response_at: new Date().toISOString(),
+      status: 'accepted',
+      updated_at: new Date().toISOString() 
+    })
+    .eq('id', bookingId);
+  
+  if (error) {
+    console.error('Error accepting booking:', error);
+    return { success: false, error: error.message };
+  }
+  
+  return { success: true };
+}
+
+// Driver rejects a booking assignment
+export async function rejectBookingByDriver(
+  bookingId: string, 
+  notes?: string
+): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase
+    .from('bookings')
+    .update({ 
+      driver_response: 'rejected',
+      driver_response_at: new Date().toISOString(),
+      driver_notes: notes || null,
+      assigned_driver_id: null, // Unassign driver so admin can reassign
+      updated_at: new Date().toISOString() 
+    })
+    .eq('id', bookingId);
+  
+  if (error) {
+    console.error('Error rejecting booking:', error);
+    return { success: false, error: error.message };
+  }
+  
+  return { success: true };
+}
+
+// Get driver details for customer view
+export async function getDriverForBooking(bookingId: string): Promise<Driver | null> {
+  const { data: booking, error: bookingError } = await supabase
+    .from('bookings')
+    .select('assigned_driver_id, show_driver_to_customer, driver_response')
+    .eq('id', bookingId)
+    .single();
+  
+  if (bookingError || !booking || !booking.assigned_driver_id || !booking.show_driver_to_customer) {
+    return null;
+  }
+  
+  // Only show driver if they've accepted
+  if (booking.driver_response !== 'accepted') {
+    return null;
+  }
+  
+  const { data: driver, error: driverError } = await supabase
+    .from('drivers')
+    .select('*')
+    .eq('id', booking.assigned_driver_id)
+    .single();
+  
+  if (driverError || !driver) {
+    return null;
+  }
+  
+  return driver as Driver;
+}
+
+// Toggle driver visibility for customer
+export async function toggleDriverVisibility(
+  bookingId: string, 
+  showDriver: boolean
+): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase
+    .from('bookings')
+    .update({ show_driver_to_customer: showDriver })
+    .eq('id', bookingId);
+  
+  if (error) {
     return { success: false, error: error.message };
   }
   
