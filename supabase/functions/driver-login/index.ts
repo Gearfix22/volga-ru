@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Normalize phone number
+    // Normalize phone number - remove all non-digits
     const normalizedPhone = phone.replace(/\D/g, '');
     
     // Check rate limit
@@ -73,21 +73,32 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if driver exists in drivers table
+    // Check if driver exists in drivers table - try multiple phone formats
+    const phoneVariants = [
+      normalizedPhone,
+      `+${normalizedPhone}`,
+      normalizedPhone.startsWith('0') ? normalizedPhone.substring(1) : normalizedPhone,
+      normalizedPhone.startsWith('0') ? `+${normalizedPhone.substring(1)}` : `+${normalizedPhone}`
+    ];
+
+    console.log('Searching for driver with phone variants:', phoneVariants);
+
     const { data: driver, error: driverError } = await supabase
       .from('drivers')
       .select('*')
-      .eq('phone', normalizedPhone)
+      .or(phoneVariants.map(p => `phone.eq.${p}`).join(','))
       .single();
 
     if (driverError || !driver) {
       await recordAttempt(supabase, normalizedPhone, clientIP, false);
-      console.log('Driver not found for phone:', normalizedPhone);
+      console.log('Driver not found for phone variants:', phoneVariants);
       return new Response(
         JSON.stringify({ error: 'Invalid credentials' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Driver found:', driver.full_name, 'Phone in DB:', driver.phone);
 
     // Check driver status
     if (driver.status === 'blocked') {
