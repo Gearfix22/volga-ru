@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -51,6 +51,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DriverLocationTracker } from '@/components/driver/DriverLocationTracker';
 
 interface ExtendedBooking extends AssignedBooking {
   driver_response?: string;
@@ -219,6 +220,14 @@ const DriverDashboard = () => {
   const pendingResponse = bookings.filter(b => b.driver_response === 'pending' || (!b.driver_response && b.status === 'confirmed'));
   const activeBookings = bookings.filter(b => b.driver_response === 'accepted' || b.status === 'accepted' || b.status === 'on_the_way');
   const completedBookings = bookings.filter(b => b.status === 'completed');
+  
+  // Get active booking ID for location tracking
+  const activeBookingId = useMemo(() => {
+    const onTheWay = bookings.find(b => b.status === 'on_the_way');
+    if (onTheWay) return onTheWay.id;
+    const accepted = bookings.find(b => b.status === 'accepted');
+    return accepted?.id;
+  }, [bookings]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -363,6 +372,11 @@ const DriverDashboard = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Location Tracker */}
+        <div className="mb-6">
+          <DriverLocationTracker activeBookingId={activeBookingId} />
         </div>
 
         {/* Pending Response Section */}
