@@ -14,3 +14,6 @@ verify_jwt = true
 
 [functions.driver-login]
 verify_jwt = false
+
+[functions.get-mapbox-token]
+verify_jwt = true

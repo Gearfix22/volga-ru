@@ -6,7 +6,8 @@ import {
   Users,
   FileText,
   LogOut,
-  Car
+  Car,
+  MapPin
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,6 +46,7 @@ const AdminSidebar = () => {
     { title: 'Bookings', url: '/admin?tab=bookings', icon: Calendar },
     { title: 'Payments', url: '/admin?tab=payments', icon: CreditCard },
     { title: 'Drivers', url: '/admin?tab=drivers', icon: Car },
+    { title: 'Live Map', url: '/admin?tab=map', icon: MapPin },
     { title: 'Users', url: '/admin?tab=users', icon: Users },
     { title: 'Logs', url: '/admin?tab=logs', icon: FileText },
   ];

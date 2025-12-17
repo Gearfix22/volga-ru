@@ -12,8 +12,9 @@ import { UsersManagement } from '@/components/admin/UsersManagement';
 import { AdminPayments } from '@/components/admin/AdminPayments';
 import { AdminLogs } from '@/components/admin/AdminLogs';
 import DriversManagement from '@/components/admin/DriversManagement';
+import { AdminDriverMap } from '@/components/admin/AdminDriverMap';
 
-type TabType = 'overview' | 'bookings' | 'payments' | 'drivers' | 'users' | 'logs';
+type TabType = 'overview' | 'bookings' | 'payments' | 'drivers' | 'map' | 'users' | 'logs';
 
 const AdminPanel = () => {
   const { user, loading, hasRole } = useAuth();
@@ -42,6 +43,7 @@ const AdminPanel = () => {
       bookings: 'Bookings',
       payments: 'Payments',
       drivers: 'Drivers',
+      map: 'Live Map',
       users: 'Users',
       logs: 'Logs',
     };
@@ -71,6 +73,7 @@ const AdminPanel = () => {
             {activeTab === 'overview' && <AdminDashboard />}
             {activeTab === 'bookings' && <EnhancedBookingsManagement />}
             {activeTab === 'drivers' && <DriversManagement />}
+            {activeTab === 'map' && <AdminDriverMap />}
             {activeTab === 'users' && <UsersManagement />}
             {activeTab === 'payments' && <AdminPayments />}
             {activeTab === 'logs' && <AdminLogs />}
