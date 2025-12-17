@@ -189,7 +189,7 @@ export async function updateUserProfile(userId: string, updates: { full_name?: s
 }
 
 // Update user role
-export async function updateUserRole(userId: string, newRole: 'admin' | 'moderator' | 'user') {
+export async function updateUserRole(userId: string, newRole: 'admin' | 'user' | 'driver') {
   // First delete existing roles
   await supabase.from('user_roles').delete().eq('user_id', userId);
   

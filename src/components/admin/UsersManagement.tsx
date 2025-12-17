@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, Search, Phone, Shield, CheckCircle, XCircle, Calendar, Edit, Trash2, UserX, RefreshCw } from 'lucide-react';
+import { Users, Search, Phone, Shield, CheckCircle, XCircle, Calendar, Edit, Trash2, UserX, RefreshCw, Car } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfile, updateUserRole, disableUser, logAdminAction } from '@/services/adminService';
@@ -45,7 +45,7 @@ export const UsersManagement = () => {
   // Edit form state
   const [editFullName, setEditFullName] = useState('');
   const [editPhone, setEditPhone] = useState('');
-  const [editRole, setEditRole] = useState<'admin' | 'moderator' | 'user'>('user');
+  const [editRole, setEditRole] = useState<'admin' | 'user' | 'driver'>('user');
   const [editVerified, setEditVerified] = useState(false);
 
   useEffect(() => {
@@ -111,7 +111,7 @@ export const UsersManagement = () => {
     setEditingUser(user);
     setEditFullName(user.full_name || '');
     setEditPhone(user.phone || '');
-    setEditRole(user.roles.includes('admin') ? 'admin' : user.roles.includes('moderator') ? 'moderator' : 'user');
+    setEditRole(user.roles.includes('admin') ? 'admin' : user.roles.includes('driver') ? 'driver' : 'user');
     setEditVerified(user.phone_verified);
     setEditDialogOpen(true);
   };
@@ -131,7 +131,7 @@ export const UsersManagement = () => {
 
       // Update role if changed
       const currentRole = editingUser.roles.includes('admin') ? 'admin' : 
-                          editingUser.roles.includes('moderator') ? 'moderator' : 'user';
+                          editingUser.roles.includes('driver') ? 'driver' : 'user';
       if (editRole !== currentRole) {
         await updateUserRole(editingUser.id, editRole);
       }
@@ -196,8 +196,8 @@ export const UsersManagement = () => {
     if (roles.includes('admin')) {
       return <Badge variant="destructive"><Shield className="h-3 w-3 mr-1" />Admin</Badge>;
     }
-    if (roles.includes('moderator')) {
-      return <Badge variant="default"><Shield className="h-3 w-3 mr-1" />Moderator</Badge>;
+    if (roles.includes('driver')) {
+      return <Badge variant="default" className="bg-blue-600"><Car className="h-3 w-3 mr-1" />Driver</Badge>;
     }
     return <Badge variant="secondary">Customer</Badge>;
   };
@@ -376,7 +376,7 @@ export const UsersManagement = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="user">Customer</SelectItem>
-                  <SelectItem value="moderator">Moderator</SelectItem>
+                  <SelectItem value="driver">Driver</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>

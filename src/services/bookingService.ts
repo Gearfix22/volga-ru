@@ -184,7 +184,8 @@ export const createEnhancedBooking = async (
         requires_verification: requiresVerification,
         admin_notes: paymentInfo.adminNotes,
         customer_notes: paymentInfo.customerNotes,
-        service_details: bookingData.serviceDetails as any
+        service_details: bookingData.serviceDetails as any,
+        driver_required: bookingData.driverRequired || false
       })
       .select()
       .single();

@@ -12,7 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowRight, User, Mail, Phone, Globe, Save, Clock, CheckCircle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowRight, User, Mail, Phone, Globe, Save, Clock, CheckCircle, Car } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -50,6 +51,7 @@ const EnhancedBooking = () => {
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [driverRequired, setDriverRequired] = useState(false);
 
   const serviceFromUrl = searchParams.get('service');
   const isPreSelected = !!serviceFromUrl;
@@ -332,7 +334,8 @@ const EnhancedBooking = () => {
       serviceType,
       serviceDetails,
       userInfo,
-      totalPrice
+      totalPrice,
+      driverRequired
     };
 
     // Track form submission
@@ -541,6 +544,21 @@ const EnhancedBooking = () => {
                             <SelectItem value="russian">{t('russian')}</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+                    </div>
+
+                    {/* Driver Required Option */}
+                    <div className="flex items-center space-x-3 pt-4 border-t">
+                      <Checkbox
+                        id="driverRequired"
+                        checked={driverRequired}
+                        onCheckedChange={(checked) => setDriverRequired(checked === true)}
+                      />
+                      <div className="flex items-center gap-2">
+                        <Car className="h-4 w-4 text-muted-foreground" />
+                        <Label htmlFor="driverRequired" className="cursor-pointer">
+                          I need a driver for this service
+                        </Label>
                       </div>
                     </div>
                   </CardContent>
