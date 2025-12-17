@@ -22,7 +22,6 @@ import {
   ThumbsUp,
   ThumbsDown
 } from 'lucide-react';
-import { Navigation } from '@/components/Navigation';
 import { 
   getDriverAssignedBookings, 
   getDriverNotifications,
@@ -198,27 +197,10 @@ const DriverDashboard = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/auth?role=driver');
+    navigate('/driver-login');
   };
 
-  // Check if user has driver role
-  if (!hasRole('driver')) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Card className="max-w-md">
-          <CardContent className="pt-6 text-center">
-            <p className="text-destructive">Access denied. Driver privileges required.</p>
-            <Button className="mt-4" onClick={() => navigate('/auth?role=driver')}>
-              Go to Driver Login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   const getStatusBadge = (status: string, driverResponse?: string) => {
-    // Show driver response status for pending assignments
     if (driverResponse === 'pending' && status === 'confirmed') {
       return <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600">Awaiting Your Response</Badge>;
     }
@@ -236,25 +218,18 @@ const DriverDashboard = () => {
 
   const pendingResponse = bookings.filter(b => b.driver_response === 'pending' || (!b.driver_response && b.status === 'confirmed'));
   const activeBookings = bookings.filter(b => b.driver_response === 'accepted' || b.status === 'accepted' || b.status === 'on_the_way');
+  const completedBookings = bookings.filter(b => b.status === 'completed');
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
-      
-      <div className="container mx-auto px-4 pt-20 pb-12">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <Car className="h-8 w-8 text-primary" />
-              Driver Dashboard
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {pendingResponse.length > 0 
-                ? `You have ${pendingResponse.length} booking${pendingResponse.length !== 1 ? 's' : ''} waiting for your response.`
-                : `You have ${activeBookings.length} active assignment${activeBookings.length !== 1 ? 's' : ''}.`
-              }
-            </p>
+      {/* Driver-specific header - no customer navigation */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-b">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Car className="h-8 w-8 text-primary" />
+            <span className="text-xl font-bold">Driver Portal</span>
           </div>
+          
           <div className="flex items-center gap-2">
             {/* Notifications */}
             <Sheet>
@@ -315,6 +290,21 @@ const DriverDashboard = () => {
             </Button>
           </div>
         </div>
+      </header>
+
+      <main className="container mx-auto px-4 pt-24 pb-12">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground">
+            Welcome, Driver
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {pendingResponse.length > 0 
+              ? `You have ${pendingResponse.length} booking${pendingResponse.length !== 1 ? 's' : ''} waiting for your response.`
+              : `You have ${activeBookings.length} active assignment${activeBookings.length !== 1 ? 's' : ''}.`
+            }
+          </p>
+        </div>
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4 mb-8">
@@ -367,8 +357,8 @@ const DriverDashboard = () => {
                   <Calendar className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{bookings.length}</p>
-                  <p className="text-sm text-muted-foreground">Total Active</p>
+                  <p className="text-2xl font-bold">{completedBookings.length}</p>
+                  <p className="text-sm text-muted-foreground">Completed Today</p>
                 </div>
               </div>
             </CardContent>
@@ -402,6 +392,13 @@ const DriverDashboard = () => {
                             <span className="font-medium">{booking.user_info?.fullName || 'Customer'}</span>
                           </div>
                           
+                          {booking.user_info?.phone && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Phone className="h-4 w-4 text-muted-foreground" />
+                              <span>{booking.user_info.phone}</span>
+                            </div>
+                          )}
+                          
                           {booking.service_details?.pickupLocation && (
                             <div className="flex items-center gap-2 text-sm">
                               <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -411,6 +408,16 @@ const DriverDashboard = () => {
                                   <span className="text-muted-foreground">→</span>
                                   <span>{booking.service_details.dropoffLocation}</span>
                                 </>
+                              )}
+                            </div>
+                          )}
+                          
+                          {booking.service_details?.travelDate && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <span>{booking.service_details.travelDate}</span>
+                              {booking.service_details?.travelTime && (
+                                <span className="text-muted-foreground">at {booking.service_details.travelTime}</span>
                               )}
                             </div>
                           )}
@@ -451,27 +458,16 @@ const DriverDashboard = () => {
         )}
 
         {/* Active Trips */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <NavigationIcon className="h-5 w-5 text-primary" />
-              Your Active Trips
-            </CardTitle>
-            <CardDescription>Manage your accepted bookings and update their status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-4 text-muted-foreground">Loading assignments...</p>
-              </div>
-            ) : activeBookings.length === 0 ? (
-              <div className="text-center py-12">
-                <Car className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No active trips.</p>
-                <p className="text-sm text-muted-foreground mt-1">Accept a booking to see it here.</p>
-              </div>
-            ) : (
+        {activeBookings.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Car className="h-5 w-5 text-primary" />
+                Active Trips
+              </CardTitle>
+              <CardDescription>Manage your current assignments</CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-4">
                 {activeBookings.map((booking) => (
                   <Card key={booking.id} className="border-l-4 border-l-primary">
@@ -488,15 +484,14 @@ const DriverDashboard = () => {
                             <span className="font-medium">{booking.user_info?.fullName || 'Customer'}</span>
                           </div>
                           
-                          <div className="flex items-center gap-2 text-sm">
-                            <Phone className="h-4 w-4 text-muted-foreground" />
-                            <a 
-                              href={`tel:${booking.user_info?.phone}`} 
-                              className="text-primary hover:underline font-mono"
-                            >
-                              {booking.user_info?.phone || 'N/A'}
-                            </a>
-                          </div>
+                          {booking.user_info?.phone && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Phone className="h-4 w-4 text-muted-foreground" />
+                              <a href={`tel:${booking.user_info.phone}`} className="text-primary hover:underline">
+                                {booking.user_info.phone}
+                              </a>
+                            </div>
+                          )}
                           
                           {booking.service_details?.pickupLocation && (
                             <div className="flex items-center gap-2 text-sm">
@@ -517,26 +512,19 @@ const DriverDashboard = () => {
                               <span className="font-semibold">${booking.total_price.toFixed(2)}</span>
                             </div>
                           )}
-                          
-                          {booking.customer_notes && (
-                            <p className="text-sm text-muted-foreground italic">
-                              "{booking.customer_notes}"
-                            </p>
-                          )}
                         </div>
                         
-                        <div className="flex flex-col gap-2">
+                        <div className="flex gap-2">
                           {booking.status === 'accepted' && (
                             <Button 
                               className="bg-blue-600 hover:bg-blue-700"
                               onClick={() => handleUpdateStatus(booking.id, 'on_the_way')}
                               disabled={updatingBooking === booking.id}
                             >
-                              <Car className="h-4 w-4 mr-2" />
-                              Start - On The Way
+                              <NavigationIcon className="h-4 w-4 mr-2" />
+                              Start Trip
                             </Button>
                           )}
-                          
                           {booking.status === 'on_the_way' && (
                             <Button 
                               className="bg-green-600 hover:bg-green-700"
@@ -547,43 +535,29 @@ const DriverDashboard = () => {
                               Complete Trip
                             </Button>
                           )}
-                          
-                          <Button variant="outline" asChild>
-                            <a href={`https://wa.me/${booking.user_info?.phone?.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-                              <Phone className="h-4 w-4 mr-2" />
-                              Contact Customer
-                            </a>
-                          </Button>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Contact Support */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Phone className="h-5 w-5 text-primary" />
-              Need Help?
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Contact dispatch for any questions or issues.
-            </p>
-            <Button asChild>
-              <a href="https://wa.me/79522212903" target="_blank" rel="noopener noreferrer">
-                Contact via WhatsApp
-              </a>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+        {/* No Bookings Message */}
+        {bookings.length === 0 && !loading && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <Car className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Active Assignments</h3>
+              <p className="text-muted-foreground">
+                You don't have any assigned bookings at the moment. Check back later!
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </main>
 
       {/* Reject Dialog */}
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
@@ -591,17 +565,15 @@ const DriverDashboard = () => {
           <DialogHeader>
             <DialogTitle>Decline Booking</DialogTitle>
             <DialogDescription>
-              Please provide a reason for declining this booking. The admin will reassign it to another driver.
+              Please provide a reason for declining this booking. The admin will be notified.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Textarea
-              placeholder="Reason for declining (optional)..."
-              value={rejectNotes}
-              onChange={(e) => setRejectNotes(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
+          <Textarea
+            placeholder="Reason for declining (optional)..."
+            value={rejectNotes}
+            onChange={(e) => setRejectNotes(e.target.value)}
+            rows={3}
+          />
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
               Cancel
