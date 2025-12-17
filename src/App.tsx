@@ -10,7 +10,7 @@ import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { SplashScreen } from "@/components/SplashScreen";
 import { AdminRouteGuard } from "@/components/auth/AdminRouteGuard";
 import { DriverRouteGuard } from "@/components/auth/DriverRouteGuard";
-import { UserRouteGuard } from "@/components/auth/UserRouteGuard";
+import { CustomerRouteGuard } from "@/components/auth/CustomerRouteGuard";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
 import Gallery from "./pages/Gallery";
@@ -20,14 +20,8 @@ import Contact from "./pages/Contact";
 import Booking from "./pages/Booking";
 import Payment from "./pages/Payment";
 import BookingConfirmation from "./pages/BookingConfirmation";
-import DashboardActivity from "./pages/DashboardActivity";
-import Dashboard from "./pages/Dashboard";
-import DashboardReservations from "./pages/DashboardReservations";
-import DashboardSettings from "./pages/DashboardSettings";
-import DashboardPayments from "./pages/DashboardPayments";
 import EnhancedBooking from "./pages/EnhancedBooking";
 import EnhancedPayment from "./pages/EnhancedPayment";
-import EnhancedDashboard from "./pages/EnhancedDashboard";
 import EnhancedConfirmation from "./pages/EnhancedConfirmation";
 import Auth from "./pages/Auth";
 import UserDashboard from "./pages/UserDashboard";
@@ -65,24 +59,85 @@ const App = () => {
             <ErrorBoundary>
               <BrowserRouter>
               <Routes>
-                <Route path="/" element={<Index />} />
+                {/* Customer Pages - Protected from driver-only users */}
+                <Route path="/" element={
+                  <CustomerRouteGuard>
+                    <Index />
+                  </CustomerRouteGuard>
+                } />
                 <Route path="/auth" element={<Auth />} />
-                <Route path="/services" element={<Services />} />
-                <Route path="/gallery" element={<Gallery />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/booking" element={<Booking />} />
-                <Route path="/payment" element={<Payment />} />
-                <Route path="/booking-confirmation" element={<BookingConfirmation />} />
-                <Route path="/enhanced-booking" element={<EnhancedBooking />} />
-                <Route path="/enhanced-payment" element={<EnhancedPayment />} />
-                <Route path="/user-dashboard" element={<UserDashboard />} />
-                <Route path="/enhanced-confirmation" element={<EnhancedConfirmation />} />
-                <Route path="/profile-settings" element={<ProfileSettings />} />
-                <Route path="/support" element={<Support />} />
-                <Route path="/payments-history" element={<PaymentsHistory />} />
+                <Route path="/services" element={
+                  <CustomerRouteGuard>
+                    <Services />
+                  </CustomerRouteGuard>
+                } />
+                <Route path="/gallery" element={
+                  <CustomerRouteGuard>
+                    <Gallery />
+                  </CustomerRouteGuard>
+                } />
+                <Route path="/about" element={
+                  <CustomerRouteGuard>
+                    <About />
+                  </CustomerRouteGuard>
+                } />
+                <Route path="/contact" element={
+                  <CustomerRouteGuard>
+                    <Contact />
+                  </CustomerRouteGuard>
+                } />
+                <Route path="/booking" element={
+                  <CustomerRouteGuard>
+                    <Booking />
+                  </CustomerRouteGuard>
+                } />
+                <Route path="/payment" element={
+                  <CustomerRouteGuard>
+                    <Payment />
+                  </CustomerRouteGuard>
+                } />
+                <Route path="/booking-confirmation" element={
+                  <CustomerRouteGuard>
+                    <BookingConfirmation />
+                  </CustomerRouteGuard>
+                } />
+                <Route path="/enhanced-booking" element={
+                  <CustomerRouteGuard>
+                    <EnhancedBooking />
+                  </CustomerRouteGuard>
+                } />
+                <Route path="/enhanced-payment" element={
+                  <CustomerRouteGuard>
+                    <EnhancedPayment />
+                  </CustomerRouteGuard>
+                } />
+                <Route path="/user-dashboard" element={
+                  <CustomerRouteGuard>
+                    <UserDashboard />
+                  </CustomerRouteGuard>
+                } />
+                <Route path="/enhanced-confirmation" element={
+                  <CustomerRouteGuard>
+                    <EnhancedConfirmation />
+                  </CustomerRouteGuard>
+                } />
+                <Route path="/profile-settings" element={
+                  <CustomerRouteGuard>
+                    <ProfileSettings />
+                  </CustomerRouteGuard>
+                } />
+                <Route path="/support" element={
+                  <CustomerRouteGuard>
+                    <Support />
+                  </CustomerRouteGuard>
+                } />
+                <Route path="/payments-history" element={
+                  <CustomerRouteGuard>
+                    <PaymentsHistory />
+                  </CustomerRouteGuard>
+                } />
                 
-                {/* Auth Routes */}
+                {/* Auth Routes - Accessible to all */}
                 <Route path="/admin-login" element={<AdminLogin />} />
                 <Route path="/driver-login" element={<DriverLogin />} />
                 
@@ -110,14 +165,15 @@ const App = () => {
                   </DriverRouteGuard>
                 } />
                 
-                {/* Legacy Dashboard Routes - Redirect to user dashboard */}
-                <Route path="/dashboard" element={<Dashboard />} />
+                {/* Legacy redirects */}
+                <Route path="/dashboard" element={<Navigate to="/user-dashboard" replace />} />
                 <Route path="/enhanced-dashboard" element={<Navigate to="/user-dashboard" replace />} />
-                <Route path="/dashboard/reservations" element={<DashboardReservations />} />
-                <Route path="/dashboard/activity" element={<DashboardActivity />} />
-                <Route path="/dashboard/settings" element={<DashboardSettings />} />
-                <Route path="/dashboard/payments" element={<DashboardPayments />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="/dashboard/reservations" element={<Navigate to="/user-dashboard" replace />} />
+                <Route path="/dashboard/activity" element={<Navigate to="/user-dashboard" replace />} />
+                <Route path="/dashboard/settings" element={<Navigate to="/profile-settings" replace />} />
+                <Route path="/dashboard/payments" element={<Navigate to="/payments-history" replace />} />
+                
+                {/* Catch-all */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <FloatingWhatsAppButton />
