@@ -26,10 +26,17 @@ export const updateDriverLocation = async (location: LocationUpdate): Promise<{ 
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
+      console.error('Location update failed: Not authenticated');
       return { success: false, error: 'Not authenticated' };
     }
 
-    const { error } = await supabase
+    console.log('Updating driver location:', { 
+      driver_id: user.id, 
+      booking_id: location.booking_id,
+      coords: `${location.latitude}, ${location.longitude}` 
+    });
+
+    const { data, error } = await supabase
       .from('driver_locations')
       .upsert({
         driver_id: user.id,
@@ -42,13 +49,15 @@ export const updateDriverLocation = async (location: LocationUpdate): Promise<{ 
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'driver_id'
-      });
+      })
+      .select();
 
     if (error) {
-      console.error('Error updating location:', error);
+      console.error('Error updating location:', error.message, error.details, error.hint);
       return { success: false, error: error.message };
     }
 
+    console.log('Location updated successfully:', data);
     return { success: true };
   } catch (error) {
     console.error('Error updating driver location:', error);
