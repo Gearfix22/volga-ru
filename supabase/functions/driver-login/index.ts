@@ -172,12 +172,23 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Update driver record with auth user id if needed
+    // CRITICAL: Update driver record with auth user id to ensure RLS works
+    // The driver.id MUST match auth.uid for location tracking RLS policies
     if (driver.id !== authUser.id) {
-      await supabase
+      console.log('Syncing driver.id with auth.uid:', { old: driver.id, new: authUser.id });
+      const { error: updateError } = await supabase
         .from('drivers')
         .update({ id: authUser.id })
         .eq('phone', driver.phone);
+      
+      if (updateError) {
+        console.error('Failed to sync driver.id with auth.uid:', updateError);
+        // This is critical - without this sync, location tracking will fail
+      } else {
+        console.log('Driver.id synced successfully with auth.uid');
+        // Update local reference
+        driver.id = authUser.id;
+      }
     }
 
     // Now authenticate the driver
