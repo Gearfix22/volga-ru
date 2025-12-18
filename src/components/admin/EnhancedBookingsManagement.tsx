@@ -527,9 +527,10 @@ export const EnhancedBookingsManagement = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="assigned">Assigned</SelectItem>
                                   <SelectItem value="confirmed">Confirmed</SelectItem>
                                   <SelectItem value="accepted">Accepted</SelectItem>
-                                  <SelectItem value="on_the_way">On The Way</SelectItem>
+                                  <SelectItem value="on_trip">On Trip</SelectItem>
                                   <SelectItem value="completed">Completed</SelectItem>
                                   <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>

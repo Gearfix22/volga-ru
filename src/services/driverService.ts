@@ -118,7 +118,7 @@ export async function autoAssignDriver(bookingId: string): Promise<{ success: bo
   return { success: true, driverId: result.driver_id, driverName: result.driver_name };
 }
 
-// Get bookings assigned to current driver
+// Get bookings assigned to current driver - unified status flow
 export async function getDriverAssignedBookings(): Promise<AssignedBooking[]> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
@@ -127,7 +127,7 @@ export async function getDriverAssignedBookings(): Promise<AssignedBooking[]> {
     .from('bookings')
     .select('*')
     .eq('assigned_driver_id', user.id)
-    .in('status', ['pending', 'confirmed', 'accepted', 'on_the_way', 'completed'])
+    .in('status', ['assigned', 'accepted', 'on_trip', 'completed'])
     .order('created_at', { ascending: false });
   
   if (error) {
@@ -173,10 +173,10 @@ export async function markDriverNotificationRead(notificationId: string): Promis
   return true;
 }
 
-// Update booking status by driver
+// Update booking status by driver - unified status: pending → assigned → accepted → on_trip → completed
 export async function updateBookingStatusByDriver(
   bookingId: string, 
-  status: 'accepted' | 'on_the_way' | 'completed'
+  status: 'accepted' | 'on_trip' | 'completed'
 ): Promise<{ success: boolean; error?: string }> {
   const { error } = await supabase
     .from('bookings')

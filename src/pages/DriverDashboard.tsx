@@ -176,14 +176,14 @@ const DriverDashboard = () => {
     setUpdatingBooking(null);
   };
 
-  const handleUpdateStatus = async (bookingId: string, status: 'on_the_way' | 'completed') => {
+  const handleUpdateStatus = async (bookingId: string, status: 'on_trip' | 'completed') => {
     setUpdatingBooking(bookingId);
     const result = await updateBookingStatusByDriver(bookingId, status);
     
     if (result.success) {
       toast({
         title: 'Status Updated',
-        description: status === 'on_the_way' ? 'Customer notified you\'re on the way!' : 'Trip completed successfully!',
+        description: status === 'on_trip' ? 'Customer notified you\'re on the way!' : 'Trip completed successfully!',
       });
       loadBookings();
     } else {
@@ -208,23 +208,24 @@ const DriverDashboard = () => {
     
     const config: Record<string, { variant: any; label: string; className?: string }> = {
       pending: { variant: 'secondary', label: 'Pending' },
+      assigned: { variant: 'secondary', label: 'Assigned' },
       confirmed: { variant: 'secondary', label: 'Confirmed' },
       accepted: { variant: 'default', label: 'Accepted', className: 'bg-green-600' },
-      on_the_way: { variant: 'default', label: 'On The Way', className: 'bg-blue-600' },
+      on_trip: { variant: 'default', label: 'On Trip', className: 'bg-blue-600' },
       completed: { variant: 'outline', label: 'Completed' },
     };
     const { variant, label, className } = config[status] || { variant: 'secondary', label: status };
     return <Badge variant={variant} className={className}>{label}</Badge>;
   };
 
-  const pendingResponse = bookings.filter(b => b.driver_response === 'pending' || (!b.driver_response && b.status === 'confirmed'));
-  const activeBookings = bookings.filter(b => b.driver_response === 'accepted' || b.status === 'accepted' || b.status === 'on_the_way');
+  const pendingResponse = bookings.filter(b => b.driver_response === 'pending' || (!b.driver_response && b.status === 'assigned'));
+  const activeBookings = bookings.filter(b => b.driver_response === 'accepted' || b.status === 'accepted' || b.status === 'on_trip');
   const completedBookings = bookings.filter(b => b.status === 'completed');
   
   // Get active booking ID for location tracking
   const activeBookingId = useMemo(() => {
-    const onTheWay = bookings.find(b => b.status === 'on_the_way');
-    if (onTheWay) return onTheWay.id;
+    const onTrip = bookings.find(b => b.status === 'on_trip');
+    if (onTrip) return onTrip.id;
     const accepted = bookings.find(b => b.status === 'accepted');
     return accepted?.id;
   }, [bookings]);
@@ -352,8 +353,8 @@ const DriverDashboard = () => {
                   <Car className="h-6 w-6 text-blue-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{bookings.filter(b => b.status === 'on_the_way').length}</p>
-                  <p className="text-sm text-muted-foreground">On The Way</p>
+                  <p className="text-2xl font-bold">{bookings.filter(b => b.status === 'on_trip').length}</p>
+                  <p className="text-sm text-muted-foreground">On Trip</p>
                 </div>
               </div>
             </CardContent>
@@ -532,14 +533,14 @@ const DriverDashboard = () => {
                           {booking.status === 'accepted' && (
                             <Button 
                               className="bg-blue-600 hover:bg-blue-700"
-                              onClick={() => handleUpdateStatus(booking.id, 'on_the_way')}
+                              onClick={() => handleUpdateStatus(booking.id, 'on_trip')}
                               disabled={updatingBooking === booking.id}
                             >
                               <NavigationIcon className="h-4 w-4 mr-2" />
                               Start Trip
                             </Button>
                           )}
-                          {booking.status === 'on_the_way' && (
+                          {booking.status === 'on_trip' && (
                             <Button 
                               className="bg-green-600 hover:bg-green-700"
                               onClick={() => handleUpdateStatus(booking.id, 'completed')}
