@@ -28,13 +28,14 @@ export const AdminDriverMap: React.FC = () => {
   const [drivers, setDrivers] = useState<DriverWithLocation[]>([]);
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
 
-  // Fetch driver details
+  // Fetch driver details - only include drivers with on_trip status bookings
   const enrichDriverData = async (locations: DriverLocation[]): Promise<DriverWithLocation[]> => {
     const enriched: DriverWithLocation[] = [];
     
     for (const loc of locations) {
       let driver_name = 'Unknown Driver';
       let booking_service = '';
+      let booking_status = '';
       
       // Get driver name
       const { data: driver } = await supabase
@@ -57,14 +58,18 @@ export const AdminDriverMap: React.FC = () => {
         
         if (booking) {
           booking_service = `${booking.service_type} (${booking.status})`;
+          booking_status = booking.status;
         }
       }
       
-      enriched.push({
-        ...loc,
-        driver_name,
-        booking_service,
-      });
+      // Only include drivers with on_trip status (active trips)
+      if (booking_status === 'on_trip') {
+        enriched.push({
+          ...loc,
+          driver_name,
+          booking_service,
+        });
+      }
     }
     
     return enriched;
@@ -276,16 +281,16 @@ export const AdminDriverMap: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Driver List */}
+      {/* Driver List - Only shows drivers with on_trip status */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Active Drivers ({drivers.length})</CardTitle>
+          <CardTitle className="text-sm">Drivers On Trip ({drivers.length})</CardTitle>
         </CardHeader>
         <CardContent className="p-2">
           <div className="space-y-2 max-h-[450px] overflow-y-auto">
             {drivers.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No drivers currently sharing location
+                No drivers currently on trip
               </p>
             ) : (
               drivers.map(driver => (
@@ -300,9 +305,7 @@ export const AdminDriverMap: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-sm">{driver.driver_name}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {driver.booking_id ? 'On Trip' : 'Available'}
-                    </Badge>
+                    <Badge className="text-xs bg-green-600">On Trip</Badge>
                   </div>
                   {driver.booking_service && (
                     <p className="text-xs text-muted-foreground mt-1">{driver.booking_service}</p>

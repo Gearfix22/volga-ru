@@ -204,7 +204,7 @@ export async function updateUserRole(userId: string, newRole: 'admin' | 'user' |
   await logAdminAction('role_changed', userId, 'user_roles', { new_role: newRole });
 }
 
-// Delete user (admin only) - marks profile as deleted, doesn't remove auth user
+// Disable user (admin only) - marks profile as deleted, doesn't remove auth user
 export async function disableUser(userId: string) {
   // Update profile to indicate disabled
   const { error } = await supabase
@@ -218,4 +218,20 @@ export async function disableUser(userId: string) {
   await supabase.from('user_roles').delete().eq('user_id', userId);
   
   await logAdminAction('user_disabled', userId, 'profiles', { disabled: true });
+}
+
+// Delete user profile (admin only) - full deletion
+export async function deleteUser(userId: string) {
+  // Delete user roles first
+  await supabase.from('user_roles').delete().eq('user_id', userId);
+  
+  // Delete user profile
+  const { error } = await supabase
+    .from('profiles')
+    .delete()
+    .eq('id', userId);
+  
+  if (error) throw error;
+  
+  await logAdminAction('user_deleted', userId, 'profiles', { deleted: true });
 }

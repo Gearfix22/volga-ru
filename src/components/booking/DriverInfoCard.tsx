@@ -90,11 +90,13 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
     switch (bookingStatus) {
       case 'pending':
         return 'Waiting for confirmation...';
+      case 'assigned':
+        return 'Driver assigned - awaiting acceptance...';
       case 'confirmed':
         return 'Booking confirmed - Assigning driver...';
       case 'accepted':
         return 'Driver assigned and ready!';
-      case 'on_the_way':
+      case 'on_trip':
         return 'Your driver is on the way!';
       case 'completed':
         return 'Trip completed';
@@ -103,7 +105,7 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
     }
   };
 
-  const canShowMap = driver && showDriver && ['accepted', 'on_the_way'].includes(bookingStatus);
+  const canShowMap = driver && showDriver && ['accepted', 'on_trip'].includes(bookingStatus);
 
   if (loading) {
     return (
@@ -187,12 +189,12 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
                   <Badge 
                     variant="outline" 
                     className={
-                      bookingStatus === 'on_the_way' 
+                      bookingStatus === 'on_trip' 
                         ? 'bg-blue-500/10 text-blue-600 border-blue-200' 
                         : 'bg-green-500/10 text-green-600 border-green-200'
                     }
                   >
-                    {bookingStatus === 'on_the_way' ? 'On The Way' : 'Ready'}
+                    {bookingStatus === 'on_trip' ? 'On Trip' : 'Ready'}
                   </Badge>
                 </div>
               </div>
@@ -227,7 +229,7 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
                 </Button>
               )}
 
-              {bookingStatus === 'on_the_way' && !showMap && (
+              {bookingStatus === 'on_trip' && !showMap && (
                 <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-200">
                   <p className="text-sm text-blue-700 font-medium flex items-center gap-2">
                     <Car className="h-4 w-4" />

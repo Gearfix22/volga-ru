@@ -81,7 +81,9 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
         return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-      case 'on_the_way':
+      case 'assigned':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
+      case 'on_trip':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
       case 'completed':
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
@@ -94,10 +96,12 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'on_the_way':
-        return 'Driver On The Way';
-      case 'accepted':
+      case 'on_trip':
+        return 'Driver On Trip';
+      case 'assigned':
         return 'Driver Assigned';
+      case 'accepted':
+        return 'Driver Accepted';
       default:
         return status.charAt(0).toUpperCase() + status.slice(1);
     }
@@ -131,7 +135,7 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
 
   const hasDriver = (booking: Booking) => {
     return booking.assigned_driver_id && 
-           (booking.status === 'accepted' || booking.status === 'on_the_way' || booking.status === 'confirmed');
+           (booking.status === 'accepted' || booking.status === 'on_trip' || booking.status === 'assigned');
   };
 
   return (
@@ -226,7 +230,7 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                         </div>
                         
                         {/* Driver Info */}
-                        {(hasDriver(booking) || ['accepted', 'on_the_way', 'confirmed'].includes(booking.status)) && (
+                        {(hasDriver(booking) || ['accepted', 'on_trip', 'assigned'].includes(booking.status)) && (
                           <DriverInfoCard 
                             bookingId={booking.id}
                             showToggle={true}
