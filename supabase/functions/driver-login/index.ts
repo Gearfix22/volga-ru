@@ -117,16 +117,28 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create email from phone for Supabase auth
-    const driverEmail = `driver_${normalizedPhone}@driver.volgaservices.local`;
+    // Create email from phone for Supabase auth - check both old and new formats
+    const driverEmailNew = `driver_${normalizedPhone}@driver.volgaservices.local`;
+    const driverEmailOld = `${normalizedPhone}@driver.local`;
 
-    // Check if auth user exists
+    // Check if auth user exists - try to find one that matches driver.id first
     const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    let authUser = existingUsers?.users?.find((u: any) => u.email === driverEmail);
+    
+    // First priority: find auth user with ID matching driver.id (ensures RLS works)
+    let authUser = existingUsers?.users?.find((u: any) => u.id === driver.id);
+    
+    // Second priority: find auth user with matching email (any format)
+    if (!authUser) {
+      authUser = existingUsers?.users?.find((u: any) => 
+        u.email === driverEmailNew || u.email === driverEmailOld
+      );
+    }
+
+    const driverEmail = authUser?.email || driverEmailNew;
 
     if (!authUser) {
-      // Create new auth user for this driver
-      console.log('Creating auth user for driver:', normalizedPhone);
+      // Create new auth user for this driver - use driver.id as the auth user id
+      console.log('Creating auth user for driver with matching ID:', driver.id);
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
         email: driverEmail,
         password: password,
@@ -148,7 +160,14 @@ Deno.serve(async (req) => {
       }
 
       authUser = newUser.user;
-      console.log('Driver auth account created successfully');
+      console.log('Driver auth account created successfully with ID:', authUser.id);
+      
+      // Sync driver.id if needed
+      if (driver.id !== authUser.id) {
+        console.log('New auth user has different ID, need to sync driver record');
+      }
+    } else {
+      console.log('Found existing auth user:', authUser.id, 'driver.id:', driver.id);
     }
 
     // Always ensure driver role exists for this user (handles both new and existing users)
