@@ -1,5 +1,9 @@
 import { useToast } from '@/hooks/use-toast';
 import { 
+  driverSchema,
+  accommodationSchema,
+  eventsSchema,
+  // Legacy imports for backward compatibility
   transportationSchema, 
   hotelSchema, 
   eventSchema, 
@@ -13,14 +17,22 @@ export const useServiceValidation = () => {
     let schema;
     
     switch (serviceType) {
+      // New service types
+      case 'Driver':
+        schema = driverSchema;
+        break;
+      case 'Accommodation':
+        schema = accommodationSchema;
+        break;
+      case 'Events':
+        schema = eventsSchema;
+        break;
+      // Legacy service types (backward compatibility)
       case 'Transportation':
         schema = transportationSchema;
         break;
       case 'Hotels':
         schema = hotelSchema;
-        break;
-      case 'Events':
-        schema = eventSchema;
         break;
       case 'Custom Trips':
         schema = customTripSchema;

@@ -71,28 +71,46 @@ export const bankTransferSchema = z.object({
     .or(z.literal('')),
 });
 
-// Service Details Schemas
-export const transportationSchema = z.object({
-  pickup: z
+// ========================================
+// NEW SERVICE SCHEMAS (3 Services Only)
+// ========================================
+
+// SERVICE 1: Driver Only Booking Schema
+export const driverSchema = z.object({
+  tripType: z
+    .enum(['one-way', 'round-trip'], {
+      errorMap: () => ({ message: "Please select trip type" }),
+    })
+    .optional()
+    .default('one-way'),
+  pickupLocation: z
     .string()
     .trim()
     .min(3, { message: "Pickup location must be at least 3 characters" })
     .max(200, { message: "Pickup location must be less than 200 characters" }),
-  dropoff: z
+  dropoffLocation: z
     .string()
     .trim()
-    .min(3, { message: "Dropoff location must be at least 3 characters" })
-    .max(200, { message: "Dropoff location must be less than 200 characters" }),
-  date: z
+    .min(3, { message: "Drop-off location must be at least 3 characters" })
+    .max(200, { message: "Drop-off location must be less than 200 characters" }),
+  pickupDate: z
     .string()
     .refine((date) => new Date(date) >= new Date(new Date().setHours(0, 0, 0, 0)), {
-      message: "Date must be today or in the future",
+      message: "Pickup date must be today or in the future",
     }),
-  time: z
+  pickupTime: z
     .string()
     .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid time format" }),
+  returnDate: z
+    .string()
+    .optional()
+    .or(z.literal('')),
+  returnTime: z
+    .string()
+    .optional()
+    .or(z.literal('')),
   vehicleType: z
-    .enum(['economy', 'comfort', 'business', 'minivan', 'bus'], {
+    .enum(['economy', 'comfort', 'business', 'suv', 'minivan', 'van', 'bus'], {
       errorMap: () => ({ message: "Please select a valid vehicle type" }),
     }),
   passengers: z
@@ -100,86 +118,98 @@ export const transportationSchema = z.object({
     .refine((val) => {
       const num = parseInt(val);
       return !isNaN(num) && num >= 1 && num <= 50;
-    }, { message: "Number of passengers must be between 1 and 50" })
-    .optional()
-    .or(z.literal('')),
-});
-
-export const hotelSchema = z.object({
-  city: z
-    .string()
-    .trim()
-    .min(2, { message: "City name must be at least 2 characters" })
-    .max(100, { message: "City name must be less than 100 characters" }),
-  hotel: z
-    .string()
-    .trim()
-    .max(200, { message: "Hotel name must be less than 200 characters" })
-    .optional()
-    .or(z.literal('')),
-  checkin: z
-    .string()
-    .refine((date) => new Date(date) >= new Date(new Date().setHours(0, 0, 0, 0)), {
-      message: "Check-in date must be today or in the future",
-    }),
-  checkout: z
-    .string()
-    .refine((date) => new Date(date) >= new Date(new Date().setHours(0, 0, 0, 0)), {
-      message: "Check-out date must be today or in the future",
-    }),
-  roomType: z
-    .enum(['standard', 'deluxe', 'suite', 'family', 'presidential'], {
-      errorMap: () => ({ message: "Please select a valid room type" }),
-    }),
-  guests: z
-    .string()
-    .refine((val) => {
-      const num = parseInt(val);
-      return !isNaN(num) && num >= 1 && num <= 20;
-    }, { message: "Number of guests must be between 1 and 20" })
-    .optional()
-    .or(z.literal('')),
+    }, { message: "Number of passengers must be between 1 and 50" }),
   specialRequests: z
     .string()
     .trim()
     .max(500, { message: "Special requests must be less than 500 characters" })
     .optional()
     .or(z.literal('')),
-}).refine((data) => new Date(data.checkout) > new Date(data.checkin), {
-  message: "Check-out date must be after check-in date",
-  path: ["checkout"],
 });
 
-export const eventSchema = z.object({
+// SERVICE 2: Accommodation Booking Schema
+export const accommodationSchema = z.object({
+  location: z
+    .string()
+    .trim()
+    .min(2, { message: "Location must be at least 2 characters" })
+    .max(200, { message: "Location must be less than 200 characters" }),
+  checkIn: z
+    .string()
+    .refine((date) => new Date(date) >= new Date(new Date().setHours(0, 0, 0, 0)), {
+      message: "Check-in date must be today or in the future",
+    }),
+  checkOut: z
+    .string()
+    .refine((date) => new Date(date) >= new Date(new Date().setHours(0, 0, 0, 0)), {
+      message: "Check-out date must be today or in the future",
+    }),
+  guests: z
+    .string()
+    .refine((val) => {
+      const num = parseInt(val);
+      return !isNaN(num) && num >= 1 && num <= 20;
+    }, { message: "Number of guests must be between 1 and 20" }),
+  roomPreference: z
+    .enum(['standard', 'deluxe', 'suite', 'family', 'apartment', 'any'], {
+      errorMap: () => ({ message: "Please select a valid room preference" }),
+    })
+    .optional()
+    .or(z.literal('')),
+  specialRequests: z
+    .string()
+    .trim()
+    .max(1000, { message: "Special requests must be less than 1000 characters" })
+    .optional()
+    .or(z.literal('')),
+}).refine((data) => new Date(data.checkOut) > new Date(data.checkIn), {
+  message: "Check-out date must be after check-in date",
+  path: ["checkOut"],
+});
+
+// SERVICE 3: Events & Entertainment Schema
+export const eventsSchema = z.object({
+  eventType: z
+    .enum(['circus', 'balloon', 'museum', 'park', 'cabin', 'city-tour', 'cable-car', 'opera', 'other'], {
+      errorMap: () => ({ message: "Please select an event type" }),
+    }),
   eventName: z
     .string()
     .trim()
-    .min(3, { message: "Event name must be at least 3 characters" })
-    .max(200, { message: "Event name must be less than 200 characters" }),
-  eventLocation: z
+    .max(200, { message: "Event name must be less than 200 characters" })
+    .optional()
+    .or(z.literal('')),
+  location: z
     .string()
     .trim()
-    .min(3, { message: "Event location must be at least 3 characters" })
-    .max(200, { message: "Event location must be less than 200 characters" }),
-  eventDate: z
+    .min(2, { message: "Location must be at least 2 characters" })
+    .max(200, { message: "Location must be less than 200 characters" }),
+  date: z
     .string()
     .refine((date) => new Date(date) >= new Date(new Date().setHours(0, 0, 0, 0)), {
       message: "Event date must be today or in the future",
     }),
-  tickets: z
+  numberOfPeople: z
     .string()
     .refine((val) => {
       const num = parseInt(val);
       return !isNaN(num) && num >= 1 && num <= 100;
-    }, { message: "Number of tickets must be between 1 and 100" }),
-  ticketType: z
-    .enum(['general', 'vip', 'premium', 'backstage'], {
-      errorMap: () => ({ message: "Please select a valid ticket type" }),
-    })
+    }, { message: "Number of people must be between 1 and 100" }),
+  specialRequests: z
+    .string()
+    .trim()
+    .max(1000, { message: "Special requests must be less than 1000 characters" })
     .optional()
     .or(z.literal('')),
 });
 
+// ========================================
+// LEGACY SCHEMAS (for backward compatibility)
+// ========================================
+
+export const transportationSchema = driverSchema;
+export const hotelSchema = accommodationSchema;
+export const eventSchema = eventsSchema;
 export const customTripSchema = z.object({
   duration: z
     .enum(['1-3-days', '4-7-days', '1-2-weeks', '3-4-weeks', '1-month+'], {
