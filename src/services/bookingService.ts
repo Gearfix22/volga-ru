@@ -131,10 +131,12 @@ export const deleteDraftBooking = async (id: string): Promise<void> => {
 /**
  * UNIFIED BOOKING CREATION
  * 
- * Status flow: draft → pending → confirmed → active → completed → cancelled
+ * NORMALIZED STATUS FLOW:
+ * pending (REQUESTED) → confirmed (ADMIN_REVIEW) → assigned (DRIVER_ASSIGNED) 
+ * → accepted (DRIVER_CONFIRMED) → on_trip (IN_PROGRESS) → completed → paid/closed
  * 
  * Payment rules:
- * - Visa/Credit Card: Auto-activate (status: confirmed), notify driver if assigned
+ * - Visa/Credit Card: Auto-confirm (status: confirmed), notify driver when assigned
  * - Cash on arrival: status: pending, admin must confirm
  * - Bank Transfer: status: pending, requires verification
  */
@@ -157,26 +159,26 @@ export const createEnhancedBooking = async (
 
   try {
     // Determine status based on payment method
-    let bookingStatus = 'pending'; // Default for cash
+    let bookingStatus = 'pending'; // Default = REQUESTED
     let paymentStatus = 'pending';
     let requiresVerification = false;
     
     const normalizedPaymentMethod = paymentInfo.paymentMethod.toLowerCase();
     
-    // VISA / Credit Card = auto-activate
+    // VISA / Credit Card = auto-confirm, moves to ADMIN_REVIEW
     if (normalizedPaymentMethod.includes('visa') || 
         normalizedPaymentMethod.includes('credit') || 
         normalizedPaymentMethod.includes('card') ||
         normalizedPaymentMethod.includes('stripe')) {
-      bookingStatus = 'confirmed'; // Auto-confirm for card payments
+      bookingStatus = 'confirmed'; // ADMIN_REVIEW - ready for driver assignment
       paymentStatus = 'paid';
     }
-    // Cash = pending for admin
+    // Cash = pending for admin (REQUESTED)
     else if (normalizedPaymentMethod.includes('cash')) {
       bookingStatus = 'pending';
       paymentStatus = 'cash_on_delivery';
     }
-    // Bank Transfer = pending verification
+    // Bank Transfer = pending verification (REQUESTED)
     else if (normalizedPaymentMethod.includes('bank')) {
       bookingStatus = 'pending';
       paymentStatus = 'awaiting_verification';
@@ -192,7 +194,7 @@ export const createEnhancedBooking = async (
       paymentStatus = 'awaiting_quote';
     }
 
-    // Determine if driver is needed (only for Driver service)
+    // Driver service ALWAYS requires a driver - no user toggle needed
     const driverRequired = bookingData.serviceType === 'Driver';
 
     // Create main booking record
@@ -425,12 +427,24 @@ export const confirmBooking = async (bookingId: string): Promise<void> => {
   if (error) throw error;
 };
 
-// Admin: Activate booking (start service)
+// Admin: Activate booking (assign driver) - moves to DRIVER_ASSIGNED
+export const assignDriverToBooking = async (bookingId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('bookings')
+    .update({
+      status: 'assigned'
+    })
+    .eq('id', bookingId);
+
+  if (error) throw error;
+};
+
+// Admin: Mark booking as in progress - moves to IN_PROGRESS
 export const activateBooking = async (bookingId: string): Promise<void> => {
   const { error } = await supabase
     .from('bookings')
     .update({
-      status: 'active'
+      status: 'on_trip'
     })
     .eq('id', bookingId);
 

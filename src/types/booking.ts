@@ -2,7 +2,12 @@
 export type ServiceType = 'Driver' | 'Accommodation' | 'Events';
 
 // Unified booking status flow
-export type BookingStatus = 'draft' | 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled';
+/**
+ * NORMALIZED BOOKING LIFECYCLE:
+ * pending (REQUESTED) → confirmed (ADMIN_REVIEW) → assigned (DRIVER_ASSIGNED) 
+ * → accepted (DRIVER_CONFIRMED) → on_trip (IN_PROGRESS) → completed → paid/closed
+ */
+export type BookingStatus = 'pending' | 'confirmed' | 'assigned' | 'accepted' | 'on_trip' | 'completed' | 'paid' | 'cancelled' | 'rejected';
 
 // Payment methods
 export type PaymentMethod = 'visa' | 'cash';

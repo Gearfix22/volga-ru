@@ -51,7 +51,7 @@ const EnhancedBooking = () => {
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [driverRequired, setDriverRequired] = useState(false);
+  // Driver is automatically required for Driver service - no user toggle needed
 
   const serviceFromUrl = searchParams.get('service');
   const isPreSelected = !!serviceFromUrl;
@@ -330,6 +330,8 @@ const EnhancedBooking = () => {
     await autoSave();
 
     const totalPrice = calculatePrice();
+    // Driver service ALWAYS includes a driver - no separate flag needed
+    const driverRequired = serviceType === 'Driver';
     const bookingData = {
       serviceType,
       serviceDetails,
@@ -547,20 +549,13 @@ const EnhancedBooking = () => {
                       </div>
                     </div>
 
-                    {/* Driver Required Option */}
-                    <div className="flex items-center space-x-3 pt-4 border-t">
-                      <Checkbox
-                        id="driverRequired"
-                        checked={driverRequired}
-                        onCheckedChange={(checked) => setDriverRequired(checked === true)}
-                      />
-                      <div className="flex items-center gap-2">
-                        <Car className="h-4 w-4 text-muted-foreground" />
-                        <Label htmlFor="driverRequired" className="cursor-pointer">
-                          I need a driver for this service
-                        </Label>
+                    {/* Driver info notice - Driver service always includes a driver */}
+                    {serviceType === 'Driver' && (
+                      <div className="flex items-center gap-2 pt-4 border-t text-sm text-muted-foreground">
+                        <Car className="h-4 w-4 text-primary" />
+                        <span>A professional driver is included with this service</span>
                       </div>
-                    </div>
+                    )}
                   </CardContent>
                 </Card>
 

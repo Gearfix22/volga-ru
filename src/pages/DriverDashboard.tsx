@@ -52,6 +52,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DriverLocationTracker } from '@/components/driver/DriverLocationTracker';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ExtendedBooking extends AssignedBooking {
   driver_response?: string;
@@ -67,6 +68,7 @@ const DriverDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [updatingBooking, setUpdatingBooking] = useState<string | null>(null);
+  const [driverName, setDriverName] = useState<string>('');
   
   // Reject dialog state
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -76,6 +78,7 @@ const DriverDashboard = () => {
   useEffect(() => {
     if (user && hasRole('driver')) {
       loadData();
+      loadDriverName();
       
       // Subscribe to real-time notifications
       const unsubNotifications = subscribeToDriverNotifications(user.id, (newNotification) => {
@@ -98,6 +101,36 @@ const DriverDashboard = () => {
       };
     }
   }, [user, hasRole]);
+
+  const loadDriverName = async () => {
+    if (!user) return;
+    try {
+      // First try to get from drivers table
+      const { data: driverData } = await supabase
+        .from('drivers')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+      
+      if (driverData?.full_name) {
+        setDriverName(driverData.full_name);
+        return;
+      }
+      
+      // Fallback to profiles table
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+      
+      if (profileData?.full_name) {
+        setDriverName(profileData.full_name);
+      }
+    } catch (error) {
+      console.error('Error loading driver name:', error);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -306,7 +339,7 @@ const DriverDashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">
-            Welcome, Driver
+            Welcome{driverName ? `, ${driverName}` : ', Driver'}
           </h1>
           <p className="text-muted-foreground mt-1">
             {pendingResponse.length > 0 

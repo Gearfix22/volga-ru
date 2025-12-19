@@ -7,22 +7,40 @@ interface BookingStatusTimelineProps {
   compact?: boolean;
 }
 
-// Unified status flow: draft → pending → confirmed → active → completed → cancelled
+/**
+ * NORMALIZED BOOKING LIFECYCLE:
+ * REQUESTED → ADMIN_REVIEW → DRIVER_ASSIGNED → DRIVER_CONFIRMED → IN_PROGRESS → COMPLETED → PAID/CLOSED
+ * 
+ * Status mapping:
+ * - pending = REQUESTED (customer submitted booking)
+ * - confirmed = ADMIN_REVIEW passed, awaiting driver assignment
+ * - assigned = DRIVER_ASSIGNED (admin assigned driver)
+ * - accepted = DRIVER_CONFIRMED (driver accepted)
+ * - on_trip/active = IN_PROGRESS
+ * - completed = COMPLETED
+ * - paid = PAID/CLOSED
+ */
 const STATUS_FLOW = [
-  { key: 'draft', label: 'Draft', icon: FileText, description: 'Booking started' },
-  { key: 'pending', label: 'Pending', icon: Clock, description: 'Awaiting confirmation' },
-  { key: 'confirmed', label: 'Confirmed', icon: Check, description: 'Booking confirmed' },
-  { key: 'active', label: 'Active', icon: Car, description: 'Service in progress' },
+  { key: 'pending', label: 'Requested', icon: FileText, description: 'Booking submitted' },
+  { key: 'confirmed', label: 'Confirmed', icon: Check, description: 'Admin confirmed' },
+  { key: 'assigned', label: 'Driver Assigned', icon: Car, description: 'Driver assigned' },
+  { key: 'accepted', label: 'Driver Confirmed', icon: CheckCircle2, description: 'Driver accepted' },
+  { key: 'on_trip', label: 'In Progress', icon: Car, description: 'Trip in progress' },
   { key: 'completed', label: 'Completed', icon: CheckCircle2, description: 'Service completed' },
 ];
 
 const STATUS_INDEX: Record<string, number> = {
   draft: 0,
-  pending: 1,
-  confirmed: 2,
-  active: 3,
-  on_trip: 3, // Alias for active
-  completed: 4,
+  pending: 0,
+  confirmed: 1,
+  assigned: 2,
+  accepted: 3,
+  active: 4,
+  on_trip: 4,
+  in_progress: 4,
+  completed: 5,
+  paid: 5,
+  closed: 5,
   cancelled: -1,
   rejected: -1,
 };
