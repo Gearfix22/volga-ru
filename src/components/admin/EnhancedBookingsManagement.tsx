@@ -36,6 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { BookingDetailsDialog } from './BookingDetailsDialog';
 import { RejectBookingModal } from './RejectBookingModal';
 import { DriverAssignmentSelect } from './DriverAssignmentSelect';
+import { BookingStatusTimeline } from '@/components/booking/BookingStatusTimeline';
 import {
   Select,
   SelectContent,
@@ -517,24 +518,26 @@ export const EnhancedBookingsManagement = () => {
                               ${booking.total_price?.toFixed(2) || '0.00'}
                             </TableCell>
                             <TableCell>
-                              <Select
-                                value={booking.status}
-                                onValueChange={(value) => handleUpdateStatus(booking.id, value)}
-                                disabled={actionLoading === booking.id}
-                              >
-                                <SelectTrigger className="w-[130px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="pending">Pending</SelectItem>
-                                  <SelectItem value="assigned">Assigned</SelectItem>
-                                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                                  <SelectItem value="accepted">Accepted</SelectItem>
-                                  <SelectItem value="on_trip">On Trip</SelectItem>
-                                  <SelectItem value="completed">Completed</SelectItem>
-                                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <div className="space-y-2">
+                                <BookingStatusTimeline currentStatus={booking.status} compact />
+                                <Select
+                                  value={booking.status}
+                                  onValueChange={(value) => handleUpdateStatus(booking.id, value)}
+                                  disabled={actionLoading === booking.id}
+                                >
+                                  <SelectTrigger className="w-[130px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="assigned">Assigned</SelectItem>
+                                    <SelectItem value="accepted">Accepted</SelectItem>
+                                    <SelectItem value="on_trip">On Trip</SelectItem>
+                                    <SelectItem value="completed">Completed</SelectItem>
+                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </TableCell>
                             <TableCell>
                               <Select
