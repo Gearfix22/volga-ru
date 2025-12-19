@@ -33,7 +33,7 @@ export const AdminDriverMap: React.FC = () => {
   const [drivers, setDrivers] = useState<DriverWithLocation[]>([]);
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
 
-  // Fetch driver details - only include drivers with on_trip status bookings
+  // Fetch driver details - include ALL active drivers (on_trip, accepted, assigned)
   const enrichDriverData = async (locations: DriverLocation[]): Promise<DriverWithLocation[]> => {
     const enriched: DriverWithLocation[] = [];
     
@@ -49,7 +49,7 @@ export const AdminDriverMap: React.FC = () => {
       // Get driver name
       const { data: driver } = await supabase
         .from('drivers')
-        .select('full_name')
+        .select('full_name, status')
         .eq('id', loc.driver_id)
         .single();
       
@@ -76,8 +76,8 @@ export const AdminDriverMap: React.FC = () => {
             pickup_location = details.pickup_location || details.pickupLocation || '';
             dropoff_location = details.dropoff_location || details.dropoffLocation || '';
             
-            // Calculate ETA if we have destination coordinates
-            if (details.dropoff_coordinates) {
+            // Calculate ETA if we have destination coordinates and status is on_trip
+            if (details.dropoff_coordinates && booking_status === 'on_trip') {
               eta = await calculateETA(
                 loc.longitude,
                 loc.latitude,
@@ -89,12 +89,17 @@ export const AdminDriverMap: React.FC = () => {
         }
       }
       
-      // Only include drivers with on_trip status (active trips)
-      if (booking_status === 'on_trip') {
+      // Include ALL drivers with active status bookings (accepted, on_trip, assigned)
+      // or drivers who are online (have location data within last 5 minutes)
+      const locationAge = Date.now() - new Date(loc.updated_at).getTime();
+      const isRecentLocation = locationAge < 5 * 60 * 1000; // 5 minutes
+      const isActiveBooking = ['accepted', 'on_trip', 'assigned', 'confirmed'].includes(booking_status);
+      
+      if (isActiveBooking || (isRecentLocation && driver?.status === 'active')) {
         enriched.push({
           ...loc,
           driver_name,
-          booking_service,
+          booking_service: booking_service || 'Online - No active booking',
           customer_name,
           pickup_location,
           dropoff_location,
@@ -320,16 +325,16 @@ export const AdminDriverMap: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Driver List - Only shows drivers with on_trip status */}
+      {/* Driver List - Shows all active drivers */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Drivers On Trip ({drivers.length})</CardTitle>
+          <CardTitle className="text-sm">Active Drivers ({drivers.length})</CardTitle>
         </CardHeader>
         <CardContent className="p-2">
           <div className="space-y-2 max-h-[450px] overflow-y-auto">
             {drivers.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No drivers currently on trip
+                No active drivers online
               </p>
             ) : (
               drivers.map(driver => (
@@ -344,8 +349,19 @@ export const AdminDriverMap: React.FC = () => {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-sm">{driver.driver_name}</span>
-                    <Badge className="text-xs bg-green-600">On Trip</Badge>
+                    <Badge className={`text-xs ${
+                      driver.booking_service?.includes('on_trip') ? 'bg-green-600' :
+                      driver.booking_service?.includes('accepted') ? 'bg-blue-600' :
+                      driver.booking_service?.includes('assigned') ? 'bg-yellow-600' :
+                      'bg-gray-500'
+                    }`}>
+                      {driver.booking_service?.includes('on_trip') ? 'On Trip' :
+                       driver.booking_service?.includes('accepted') ? 'Accepted' :
+                       driver.booking_service?.includes('assigned') ? 'Assigned' :
+                       'Online'}
+                    </Badge>
                   </div>
+
                   {driver.customer_name && (
                     <p className="text-xs text-muted-foreground mt-1">
                       Customer: {driver.customer_name}

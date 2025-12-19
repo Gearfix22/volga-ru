@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, Info } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { DollarSign, Info, Clock } from 'lucide-react';
 
 interface PricingDisplayProps {
   serviceType: string;
@@ -14,76 +12,80 @@ export const PricingDisplay: React.FC<PricingDisplayProps> = ({
   serviceType,
   serviceDetails
 }) => {
-  const { t } = useLanguage();
-  const calculateEstimatedPrice = () => {
-    const basePrices = {
-      'Transportation': 3000,  // ₽3,000
-      'Hotels': 6000,         // ₽6,000
-      'Events': 4500,         // ₽4,500
-      'Custom Trips': 12000   // ₽12,000
-    };
-    
-    let basePrice = basePrices[serviceType as keyof typeof basePrices] || 3000;
-    
-    // Add modifiers based on service details
-    if (serviceType === 'Transportation') {
-      if (serviceDetails.vehicleType === 'business') basePrice += 3000;
-      if (serviceDetails.vehicleType === 'minivan') basePrice += 1800;
-      if (serviceDetails.vehicleType === 'bus') basePrice += 6000;
-    }
-    
-    if (serviceType === 'Hotels') {
-      if (serviceDetails.roomType === 'suite') basePrice += 6000;
-      if (serviceDetails.roomType === 'presidential') basePrice += 18000;
-      if (serviceDetails.roomType === 'deluxe') basePrice += 3000;
-    }
-    
-    if (serviceType === 'Events') {
-      const ticketCount = parseInt(serviceDetails.tickets) || 1;
-      basePrice *= ticketCount;
-      if (serviceDetails.ticketType === 'vip') basePrice += 3000;
-      if (serviceDetails.ticketType === 'premium') basePrice += 1800;
-      if (serviceDetails.ticketType === 'backstage') basePrice += 6000;
-    }
-    
-    if (serviceType === 'Custom Trips') {
-      if (serviceDetails.duration?.includes('1-2-weeks')) basePrice += 12000;
-      if (serviceDetails.duration?.includes('3-4-weeks')) basePrice += 30000;
-      if (serviceDetails.duration?.includes('1-month+')) basePrice += 60000;
-      if (serviceDetails.interests?.length > 5) basePrice += 6000;
-    }
-    
-    return Math.max(basePrice, 1500); // Minimum ₽1,500
-  };
-
+  // Only show fixed price for Driver service
+  // Accommodation and Events require admin pricing - NO estimated price shown
+  
   if (!serviceType) return null;
 
-  const estimatedPrice = calculateEstimatedPrice();
+  // Driver service - show base price from $50
+  if (serviceType === 'Driver' || serviceType === 'Transportation') {
+    let basePrice = 50; // Base USD
+    
+    // Add modifiers based on vehicle type
+    if (serviceDetails?.vehicleType === 'business') basePrice += 30;
+    if (serviceDetails?.vehicleType === 'suv') basePrice += 20;
+    if (serviceDetails?.vehicleType === 'minivan') basePrice += 40;
+    if (serviceDetails?.vehicleType === 'van') basePrice += 60;
+    if (serviceDetails?.vehicleType === 'bus') basePrice += 100;
+    
+    // Round trip adds 80%
+    if (serviceDetails?.tripType === 'round-trip') basePrice = Math.round(basePrice * 1.8);
 
+    return (
+      <Card className="bg-gradient-to-br from-green-500/5 to-green-500/10 border border-green-500/20">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-green-600" />
+              <span className="font-semibold text-lg">Estimated Price</span>
+            </div>
+            <Badge variant="secondary" className="bg-green-500/20 text-green-700">
+              Driver Service
+            </Badge>
+          </div>
+          
+          <div className="flex items-baseline gap-2 mb-3">
+            <span className="text-3xl font-bold text-green-600">
+              ${basePrice}+
+            </span>
+            <span className="text-sm text-muted-foreground">USD</span>
+          </div>
+          
+          <div className="flex items-start gap-2 text-xs text-muted-foreground">
+            <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
+            <span>
+              Final price depends on distance and may be adjusted by admin. Price shown is minimum starting price.
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Accommodation and Events - No estimated price, admin sets it
   return (
-    <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20">
+    <Card className="bg-gradient-to-br from-amber-500/5 to-amber-500/10 border border-amber-500/20">
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-primary" />
-            <span className="font-semibold text-lg">{t('estimatedPrice')}</span>
+            <Clock className="h-5 w-5 text-amber-600" />
+            <span className="font-semibold text-lg">Price Quote Required</span>
           </div>
-          <Badge variant="secondary" className="bg-primary/20 text-primary">
-            {t(serviceType.toLowerCase())}
+          <Badge variant="secondary" className="bg-amber-500/20 text-amber-700">
+            {serviceType === 'Accommodation' ? 'Accommodation' : 'Activities & Events'}
           </Badge>
         </div>
         
         <div className="flex items-baseline gap-2 mb-3">
-          <span className="text-3xl font-bold text-primary">
-            ₽{estimatedPrice.toLocaleString('ru-RU')}
+          <span className="text-2xl font-bold text-amber-600">
+            To Be Determined
           </span>
-          <span className="text-sm text-slate-600 dark:text-slate-400">RUB</span>
         </div>
         
-        <div className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400">
+        <div className="flex items-start gap-2 text-xs text-muted-foreground">
           <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
           <span>
-            {t('estimatedPriceDisclaimer')}
+            Submit your request and our team will contact you with a custom price quote based on your specific requirements.
           </span>
         </div>
       </CardContent>

@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getServiceCategories } from '@/services/servicesService';
 
 interface ServicesTabsProps {
   activeCategory: string;
@@ -8,13 +8,7 @@ interface ServicesTabsProps {
 }
 
 export const ServicesTabs: React.FC<ServicesTabsProps> = ({ activeCategory, setActiveCategory }) => {
-  // Only 3 service types: Driver, Accommodation, Events
-  const categories = [
-    { id: 'all', label: 'All Services' },
-    { id: 'Driver', label: 'Driver Service' },
-    { id: 'Accommodation', label: 'Accommodation' },
-    { id: 'Events', label: 'Events & Entertainment' }
-  ];
+  const categories = getServiceCategories();
 
   return (
     <nav className="flex justify-center mb-4 sm:mb-6 lg:mb-8 animate-slide-up animation-delay-200 px-1 sm:px-2" role="navigation" aria-label="Service categories">
