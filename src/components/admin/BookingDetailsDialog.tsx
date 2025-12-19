@@ -9,7 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { User, Mail, Phone, Calendar, DollarSign, FileText, Car } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-
+import { BookingStatusTimeline } from '@/components/booking/BookingStatusTimeline';
 interface BookingDetailsDialogProps {
   booking: any;
   open: boolean;
@@ -76,6 +76,19 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
 
           <Separator />
 
+          {/* Status Timeline */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Status Progress
+            </h3>
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <BookingStatusTimeline currentStatus={booking.status} />
+            </div>
+          </div>
+
+          <Separator />
+
           {/* Booking Information */}
           <div>
             <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
@@ -99,18 +112,6 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
                 <p className="text-lg font-bold text-primary">
                   ${booking.total_price?.toFixed(2) || '0.00'}
                 </p>
-              </div>
-              <div className="space-y-2">
-                <span className="text-sm font-medium">Booking Status:</span>
-                <div>
-                  <Badge variant={
-                    booking.status === 'confirmed' ? 'default' : 
-                    booking.status === 'pending' ? 'secondary' : 
-                    'destructive'
-                  }>
-                    {booking.status}
-                  </Badge>
-                </div>
               </div>
               <div className="space-y-2">
                 <span className="text-sm font-medium">Payment Status:</span>

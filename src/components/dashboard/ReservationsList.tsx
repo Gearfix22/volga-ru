@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { DriverInfoCard } from '@/components/booking/DriverInfoCard';
+import { BookingStatusTimeline } from '@/components/booking/BookingStatusTimeline';
 import {
   Collapsible,
   CollapsibleContent,
@@ -165,15 +166,15 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{booking.service_type}</span>
-                              <Badge className={getStatusColor(booking.status)}>
-                                {getStatusLabel(booking.status)}
-                              </Badge>
                               {hasDriver(booking) && (
                                 <Badge variant="outline" className="gap-1">
                                   <Car className="h-3 w-3" />
                                   Driver Assigned
                                 </Badge>
                               )}
+                            </div>
+                            <div className="mt-2">
+                              <BookingStatusTimeline currentStatus={booking.status} compact />
                             </div>
                             <p className="text-sm text-muted-foreground mt-1">
                               {formatServiceDetails(booking.service_type, booking.service_details)}
