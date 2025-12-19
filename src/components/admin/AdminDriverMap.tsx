@@ -3,7 +3,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MapPin, Car, RefreshCw } from 'lucide-react';
+import { Loader2, MapPin, Car, RefreshCw, Clock, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   getAllDriverLocations, 
@@ -11,11 +11,16 @@ import {
   getMapboxToken,
   DriverLocation 
 } from '@/services/locationService';
+import { calculateETA, ETAResult } from '@/services/etaService';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DriverWithLocation extends DriverLocation {
   driver_name?: string;
   booking_service?: string;
+  customer_name?: string;
+  pickup_location?: string;
+  dropoff_location?: string;
+  eta?: ETAResult | null;
 }
 
 export const AdminDriverMap: React.FC = () => {
@@ -36,6 +41,10 @@ export const AdminDriverMap: React.FC = () => {
       let driver_name = 'Unknown Driver';
       let booking_service = '';
       let booking_status = '';
+      let customer_name = '';
+      let pickup_location = '';
+      let dropoff_location = '';
+      let eta: ETAResult | null = null;
       
       // Get driver name
       const { data: driver } = await supabase
@@ -52,13 +61,31 @@ export const AdminDriverMap: React.FC = () => {
       if (loc.booking_id) {
         const { data: booking } = await supabase
           .from('bookings')
-          .select('service_type, status')
+          .select('service_type, status, user_info, service_details')
           .eq('id', loc.booking_id)
           .single();
         
         if (booking) {
           booking_service = `${booking.service_type} (${booking.status})`;
           booking_status = booking.status;
+          customer_name = (booking.user_info as any)?.fullName || 'Customer';
+          
+          // Extract locations from service_details
+          const details = booking.service_details as any;
+          if (details) {
+            pickup_location = details.pickup_location || details.pickupLocation || '';
+            dropoff_location = details.dropoff_location || details.dropoffLocation || '';
+            
+            // Calculate ETA if we have destination coordinates
+            if (details.dropoff_coordinates) {
+              eta = await calculateETA(
+                loc.longitude,
+                loc.latitude,
+                details.dropoff_coordinates.lng,
+                details.dropoff_coordinates.lat
+              );
+            }
+          }
         }
       }
       
@@ -68,6 +95,10 @@ export const AdminDriverMap: React.FC = () => {
           ...loc,
           driver_name,
           booking_service,
+          customer_name,
+          pickup_location,
+          dropoff_location,
+          eta,
         });
       }
     }
@@ -180,10 +211,18 @@ export const AdminDriverMap: React.FC = () => {
       const marker = new mapboxgl.Marker(el)
         .setLngLat([driver.longitude, driver.latitude])
         .setPopup(
-          new mapboxgl.Popup({ offset: 25 }).setHTML(`
-            <div class="p-2">
-              <h3 class="font-semibold">${driver.driver_name}</h3>
+          new mapboxgl.Popup({ offset: 25, maxWidth: '300px' }).setHTML(`
+            <div class="p-3 space-y-2">
+              <h3 class="font-semibold text-base">${driver.driver_name}</h3>
+              ${driver.customer_name ? `<p class="text-sm"><span class="text-gray-500">Customer:</span> ${driver.customer_name}</p>` : ''}
               ${driver.booking_service ? `<p class="text-sm text-gray-600">${driver.booking_service}</p>` : '<p class="text-sm text-gray-500">No active booking</p>'}
+              ${driver.dropoff_location ? `<p class="text-sm"><span class="text-gray-500">Destination:</span> ${driver.dropoff_location}</p>` : ''}
+              ${driver.eta ? `
+                <div class="flex items-center gap-2 mt-2 p-2 bg-green-50 rounded">
+                  <span class="font-semibold text-green-700">ETA: ${driver.eta.durationText}</span>
+                  <span class="text-sm text-green-600">(${driver.eta.distanceText})</span>
+                </div>
+              ` : ''}
               <p class="text-xs text-gray-400 mt-1">Updated: ${new Date(driver.updated_at).toLocaleTimeString()}</p>
             </div>
           `)
@@ -297,7 +336,7 @@ export const AdminDriverMap: React.FC = () => {
                 <button
                   key={driver.driver_id}
                   onClick={() => focusOnDriver(driver)}
-                  className={`w-full text-left p-2 rounded-lg transition-colors ${
+                  className={`w-full text-left p-3 rounded-lg transition-colors ${
                     selectedDriver === driver.driver_id 
                       ? 'bg-primary/10 border border-primary/20' 
                       : 'hover:bg-muted'
@@ -307,10 +346,25 @@ export const AdminDriverMap: React.FC = () => {
                     <span className="font-medium text-sm">{driver.driver_name}</span>
                     <Badge className="text-xs bg-green-600">On Trip</Badge>
                   </div>
-                  {driver.booking_service && (
-                    <p className="text-xs text-muted-foreground mt-1">{driver.booking_service}</p>
+                  {driver.customer_name && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Customer: {driver.customer_name}
+                    </p>
                   )}
-                  <p className="text-xs text-muted-foreground">
+                  {driver.dropoff_location && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                      <Navigation className="h-3 w-3" />
+                      <span className="truncate">{driver.dropoff_location}</span>
+                    </div>
+                  )}
+                  {driver.eta && (
+                    <div className="flex items-center gap-1 mt-2 px-2 py-1 bg-green-100 dark:bg-green-900/30 rounded text-green-700 dark:text-green-400">
+                      <Clock className="h-3 w-3" />
+                      <span className="text-xs font-medium">ETA: {driver.eta.durationText}</span>
+                      <span className="text-xs">({driver.eta.distanceText})</span>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
                     {new Date(driver.updated_at).toLocaleTimeString()}
                   </p>
                 </button>

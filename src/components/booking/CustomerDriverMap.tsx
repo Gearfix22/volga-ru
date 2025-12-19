@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, MapPin, Car, Phone, User } from 'lucide-react';
+import { Loader2, MapPin, Car, Phone, User, Clock, Navigation } from 'lucide-react';
 import { 
   getDriverLocationForBooking, 
   subscribeToDriverLocation, 
   getMapboxToken,
   DriverLocation 
 } from '@/services/locationService';
+import { calculateETA, ETAResult } from '@/services/etaService';
 import { supabase } from '@/integrations/supabase/client';
 
 interface CustomerDriverMapProps {
@@ -25,11 +26,57 @@ export const CustomerDriverMap: React.FC<CustomerDriverMapProps> = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const destinationMarkerRef = useRef<mapboxgl.Marker | null>(null);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [driverLocation, setDriverLocation] = useState<DriverLocation | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [eta, setEta] = useState<ETAResult | null>(null);
+  const [destination, setDestination] = useState<{ lat: number; lng: number; name: string } | null>(null);
+  const [bookingStatus, setBookingStatus] = useState<string | null>(null);
+
+  // Fetch booking destination
+  useEffect(() => {
+    const fetchBookingDetails = async () => {
+      const { data: booking } = await supabase
+        .from('bookings')
+        .select('service_details, status')
+        .eq('id', bookingId)
+        .single();
+
+      if (booking) {
+        setBookingStatus(booking.status);
+        const details = booking.service_details as any;
+        if (details?.dropoff_coordinates) {
+          setDestination({
+            lat: details.dropoff_coordinates.lat,
+            lng: details.dropoff_coordinates.lng,
+            name: details.dropoff_location || details.dropoffLocation || 'Destination',
+          });
+        }
+      }
+    };
+
+    fetchBookingDetails();
+  }, [bookingId]);
+
+  // Calculate ETA when driver location or destination changes
+  useEffect(() => {
+    const updateETA = async () => {
+      if (driverLocation && destination && bookingStatus === 'on_trip') {
+        const etaResult = await calculateETA(
+          driverLocation.longitude,
+          driverLocation.latitude,
+          destination.lng,
+          destination.lat
+        );
+        setEta(etaResult);
+      }
+    };
+
+    updateETA();
+  }, [driverLocation, destination, bookingStatus]);
 
   // Initialize map
   useEffect(() => {
@@ -83,6 +130,36 @@ export const CustomerDriverMap: React.FC<CustomerDriverMapProps> = ({
       map.current?.remove();
     };
   }, [bookingId]);
+
+  // Add destination marker when available
+  useEffect(() => {
+    if (!map.current || !destination) return;
+
+    if (destinationMarkerRef.current) {
+      destinationMarkerRef.current.remove();
+    }
+
+    const el = document.createElement('div');
+    el.innerHTML = `
+      <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+        </svg>
+      </div>
+    `;
+
+    destinationMarkerRef.current = new mapboxgl.Marker(el)
+      .setLngLat([destination.lng, destination.lat])
+      .setPopup(
+        new mapboxgl.Popup({ offset: 25 }).setHTML(`
+          <div class="p-2">
+            <p class="font-semibold">Destination</p>
+            <p class="text-sm text-gray-600">${destination.name}</p>
+          </div>
+        `)
+      )
+      .addTo(map.current);
+  }, [destination, map.current]);
 
   // Subscribe to real-time updates
   useEffect(() => {
@@ -151,31 +228,55 @@ export const CustomerDriverMap: React.FC<CustomerDriverMapProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        {/* Driver Info */}
-        {(driverName || driverPhone) && (
-          <div className="px-4 py-3 border-b bg-muted/50">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{driverName || 'Your Driver'}</span>
-              </div>
-              {driverPhone && (
-                <a 
-                  href={`tel:${driverPhone}`} 
-                  className="flex items-center gap-1 text-sm text-primary hover:underline"
-                >
-                  <Phone className="h-4 w-4" />
-                  Call
-                </a>
-              )}
+        {/* Driver Info & ETA */}
+        <div className="px-4 py-3 border-b bg-muted/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">{driverName || 'Your Driver'}</span>
             </div>
-            {lastUpdate && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Last updated: {lastUpdate.toLocaleTimeString()}
-              </p>
+            {driverPhone && (
+              <a 
+                href={`tel:${driverPhone}`} 
+                className="flex items-center gap-1 text-sm text-primary hover:underline"
+              >
+                <Phone className="h-4 w-4" />
+                Call
+              </a>
             )}
           </div>
-        )}
+          
+          {/* ETA Display */}
+          {eta && bookingStatus === 'on_trip' && (
+            <div className="mt-3 p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <div>
+                  <p className="font-semibold text-green-700 dark:text-green-300">
+                    ETA: {eta.durationText}
+                  </p>
+                  <p className="text-sm text-green-600 dark:text-green-400">
+                    {eta.distanceText} away
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Destination */}
+          {destination && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+              <Navigation className="h-4 w-4" />
+              <span>To: {destination.name}</span>
+            </div>
+          )}
+
+          {lastUpdate && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Last updated: {lastUpdate.toLocaleTimeString()}
+            </p>
+          )}
+        </div>
         
         {/* Map */}
         <div className="relative h-[300px] rounded-b-lg overflow-hidden">
