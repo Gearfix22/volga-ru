@@ -1,11 +1,10 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, Check } from 'lucide-react';
 
 interface ServiceCardProps {
   service: {
@@ -16,33 +15,19 @@ interface ServiceCardProps {
     icon: LucideIcon;
     image: string;
     features: string[];
+    pricing: string;
+    hasFixedPrice: boolean;
   };
   index: number;
 }
 
 export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
-  const { t } = useLanguage();
   const navigate = useNavigate();
   const Icon = service.icon;
 
-  const getServiceTypeFromCategory = (category: string) => {
-    switch (category) {
-      case 'transportation':
-        return 'transportation';
-      case 'hotels':
-        return 'hotel';
-      case 'events':
-        return 'event';
-      case 'customTrips':
-        return 'trip';
-      default:
-        return 'transportation';
-    }
-  };
-
   const handleBookNow = () => {
-    const serviceType = getServiceTypeFromCategory(service.category);
-    navigate(`/enhanced-booking?service=${serviceType}`);
+    // Navigate directly with the new service type (Driver, Accommodation, Events)
+    navigate(`/enhanced-booking?service=${service.id}`);
   };
 
   return (
@@ -62,6 +47,14 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
             <Icon className="h-5 w-5 lg:h-6 lg:w-6 text-brand-primary-foreground" />
           </div>
         </div>
+        <div className="absolute top-4 right-4">
+          <Badge 
+            variant={service.hasFixedPrice ? "default" : "secondary"} 
+            className={service.hasFixedPrice ? 'bg-green-600 text-white' : 'bg-amber-600 text-white'}
+          >
+            {service.pricing}
+          </Badge>
+        </div>
       </div>
       
       <CardHeader className="p-4 lg:p-6 flex-grow">
@@ -75,9 +68,9 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
       
       <CardContent className="space-y-4 p-4 lg:p-6 pt-0 mt-auto">
         <div className="space-y-2">
-          {service.features.slice(0, 3).map((feature, featureIndex) => (
+          {service.features.map((feature, featureIndex) => (
             <div key={featureIndex} className="flex items-center text-sm text-muted-foreground">
-              <div className="w-1.5 h-1.5 bg-brand-accent rounded-full mr-2 flex-shrink-0" />
+              <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
               {feature}
             </div>
           ))}
@@ -87,7 +80,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
           onClick={handleBookNow}
           className="w-full bg-brand-secondary hover:bg-brand-secondary/90 text-brand-secondary-foreground text-sm lg:text-base py-2.5 shadow-lg hover:shadow-xl transition-all group-hover:scale-105"
         >
-          {t('common.bookNow')}
+          Book Now
         </Button>
       </CardContent>
     </Card>

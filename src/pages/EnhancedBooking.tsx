@@ -109,19 +109,19 @@ const EnhancedBooking = () => {
   // Pre-select service type from URL parameters
   useEffect(() => {
     if (serviceFromUrl && !location.state?.resumeDraft) {
+      // New service types: Driver, Accommodation, Events
       const serviceMap: { [key: string]: string } = {
-        'transportation': 'Transportation',
-        'hotel': 'Hotels',
-        'hotels': 'Hotels',
+        'driver': 'Driver',
+        'transportation': 'Driver',
+        'accommodation': 'Accommodation',
+        'hotel': 'Accommodation',
+        'hotels': 'Accommodation',
         'event': 'Events',
         'events': 'Events',
-        'trip': 'Custom Trips',
-        'trips': 'Custom Trips'
+        'entertainment': 'Events'
       };
       
-      const mappedService = serviceMap[serviceFromUrl.toLowerCase()] || 
-                           serviceFromUrl.charAt(0).toUpperCase() + serviceFromUrl.slice(1);
-      
+      const mappedService = serviceMap[serviceFromUrl.toLowerCase()] || serviceFromUrl;
       setServiceType(mappedService);
     }
   }, [serviceFromUrl, location.state]);
@@ -184,11 +184,11 @@ const EnhancedBooking = () => {
 
   const checkRequiredFields = (): boolean => {
     const details = serviceDetails as any;
+    // New service types: Driver, Accommodation, Events
     const requiredFields: { [key: string]: string[] } = {
-      'Transportation': ['pickup', 'dropoff', 'date', 'time', 'vehicleType'],
-      'Hotels': ['city', 'checkin', 'checkout', 'roomType'],
-      'Events': ['eventName', 'eventLocation', 'eventDate', 'tickets'],
-      'Custom Trips': ['duration', 'regions']
+      'Driver': ['pickupLocation', 'dropoffLocation', 'pickupDate', 'pickupTime', 'vehicleType', 'passengers'],
+      'Accommodation': ['location', 'checkIn', 'checkOut', 'guests'],
+      'Events': ['eventType', 'location', 'date', 'numberOfPeople']
     };
 
     const missing = requiredFields[serviceType]?.filter(field => !details[field]) || [];
@@ -271,14 +271,14 @@ const EnhancedBooking = () => {
   };
 
   const calculatePrice = () => {
-    const basePrices = {
-      'Transportation': 50,
-      'Hotels': 100,
-      'Events': 75,
-      'Custom Trips': 200
+    // New pricing: Driver has base price, others require admin pricing
+    const basePrices: { [key: string]: number } = {
+      'Driver': 50, // From $50 USD
+      'Accommodation': 0, // Price set by admin
+      'Events': 0 // Price set by admin
     };
     
-    return basePrices[serviceType as keyof typeof basePrices] || 0;
+    return basePrices[serviceType] || 0;
   };
 
   const handleManualSave = async () => {
