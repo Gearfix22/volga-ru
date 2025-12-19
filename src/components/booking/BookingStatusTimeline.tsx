@@ -1,4 +1,4 @@
-import { Check, Clock, User, Car, MapPin, CheckCircle2 } from 'lucide-react';
+import { Check, Clock, FileText, CheckCircle2, Car, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BookingStatusTimelineProps {
@@ -7,34 +7,36 @@ interface BookingStatusTimelineProps {
   compact?: boolean;
 }
 
+// Unified status flow: draft → pending → confirmed → active → completed → cancelled
 const STATUS_FLOW = [
+  { key: 'draft', label: 'Draft', icon: FileText, description: 'Booking started' },
   { key: 'pending', label: 'Pending', icon: Clock, description: 'Awaiting confirmation' },
-  { key: 'assigned', label: 'Assigned', icon: User, description: 'Driver assigned' },
-  { key: 'accepted', label: 'Accepted', icon: Check, description: 'Driver accepted' },
-  { key: 'on_trip', label: 'On Trip', icon: Car, description: 'Trip in progress' },
-  { key: 'completed', label: 'Completed', icon: CheckCircle2, description: 'Trip finished' },
+  { key: 'confirmed', label: 'Confirmed', icon: Check, description: 'Booking confirmed' },
+  { key: 'active', label: 'Active', icon: Car, description: 'Service in progress' },
+  { key: 'completed', label: 'Completed', icon: CheckCircle2, description: 'Service completed' },
 ];
 
 const STATUS_INDEX: Record<string, number> = {
-  pending: 0,
-  confirmed: 0, // Map confirmed to pending index for display
-  assigned: 1,
-  accepted: 2,
-  on_trip: 3,
+  draft: 0,
+  pending: 1,
+  confirmed: 2,
+  active: 3,
+  on_trip: 3, // Alias for active
   completed: 4,
   cancelled: -1,
   rejected: -1,
 };
 
 export function BookingStatusTimeline({ currentStatus, className, compact = false }: BookingStatusTimelineProps) {
-  const currentIndex = STATUS_INDEX[currentStatus] ?? -1;
-  const isCancelled = currentStatus === 'cancelled' || currentStatus === 'rejected';
+  const normalizedStatus = currentStatus?.toLowerCase() || 'pending';
+  const currentIndex = STATUS_INDEX[normalizedStatus] ?? 1; // Default to pending
+  const isCancelled = normalizedStatus === 'cancelled' || normalizedStatus === 'rejected';
 
   if (isCancelled) {
     return (
       <div className={cn("flex items-center gap-2 text-destructive", className)}>
         <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center">
-          <span className="text-destructive font-bold">✕</span>
+          <Ban className="w-4 h-4 text-destructive" />
         </div>
         <span className="font-medium capitalize">{currentStatus}</span>
       </div>

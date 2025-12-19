@@ -1,13 +1,13 @@
 import { supabase } from '@/integrations/supabase/client';
-import { BookingData, ServiceDetails, UserInfo } from '@/types/booking';
+import { BookingData, ServiceDetails, UserInfo, SERVICE_PRICING, ServiceType } from '@/types/booking';
 
 export interface DraftBooking {
   id: string;
   user_id: string;
   service_type: string;
-  service_details: any; // Using any to handle Json type from Supabase
-  user_info: any; // Using any to handle Json type from Supabase
-  booking_progress: string; // Using string to handle any progress value
+  service_details: any;
+  user_info: any;
+  booking_progress: string;
   total_price?: number;
   created_at: string;
   updated_at: string;
@@ -35,13 +35,12 @@ export const saveDraftBooking = async (
   }
 
   try {
-    // Check if existing draft exists
     const { data: existing } = await supabase
       .from('draft_bookings')
       .select('*')
       .eq('user_id', user.id)
       .eq('service_type', serviceType)
-      .single();
+      .maybeSingle();
 
     const draftData = {
       user_id: user.id,
@@ -53,7 +52,6 @@ export const saveDraftBooking = async (
     };
 
     if (existing) {
-      // Update existing draft
       const { data, error } = await supabase
         .from('draft_bookings')
         .update(draftData)
@@ -64,7 +62,6 @@ export const saveDraftBooking = async (
       if (error) throw error;
       return data;
     } else {
-      // Create new draft
       const { data, error } = await supabase
         .from('draft_bookings')
         .insert(draftData)
@@ -80,7 +77,6 @@ export const saveDraftBooking = async (
   }
 };
 
-// Get user's draft bookings
 export const getDraftBookings = async (): Promise<DraftBooking[]> => {
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -98,7 +94,6 @@ export const getDraftBookings = async (): Promise<DraftBooking[]> => {
   return data || [];
 };
 
-// Get specific draft booking
 export const getDraftBooking = async (id: string): Promise<DraftBooking | null> => {
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -111,16 +106,12 @@ export const getDraftBooking = async (id: string): Promise<DraftBooking | null> 
     .select('*')
     .eq('id', id)
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    if (error.code === 'PGRST116') return null; // Not found
-    throw error;
-  }
+  if (error) throw error;
   return data;
 };
 
-// Delete draft booking (after successful payment)
 export const deleteDraftBooking = async (id: string): Promise<void> => {
   const { data: { user } } = await supabase.auth.getUser();
   
@@ -137,7 +128,16 @@ export const deleteDraftBooking = async (id: string): Promise<void> => {
   if (error) throw error;
 };
 
-// Enhanced booking creation with status tracking
+/**
+ * UNIFIED BOOKING CREATION
+ * 
+ * Status flow: draft → pending → confirmed → active → completed → cancelled
+ * 
+ * Payment rules:
+ * - Visa/Credit Card: Auto-activate (status: confirmed), notify driver if assigned
+ * - Cash on arrival: status: pending, admin must confirm
+ * - Bank Transfer: status: pending, requires verification
+ */
 export const createEnhancedBooking = async (
   bookingData: BookingData,
   paymentInfo: {
@@ -156,18 +156,44 @@ export const createEnhancedBooking = async (
   }
 
   try {
-    // Determine payment status based on payment method
+    // Determine status based on payment method
+    let bookingStatus = 'pending'; // Default for cash
     let paymentStatus = 'pending';
     let requiresVerification = false;
     
-    if (paymentInfo.paymentMethod === 'Credit Card' || paymentInfo.paymentMethod === 'PayPal') {
+    const normalizedPaymentMethod = paymentInfo.paymentMethod.toLowerCase();
+    
+    // VISA / Credit Card = auto-activate
+    if (normalizedPaymentMethod.includes('visa') || 
+        normalizedPaymentMethod.includes('credit') || 
+        normalizedPaymentMethod.includes('card') ||
+        normalizedPaymentMethod.includes('stripe')) {
+      bookingStatus = 'confirmed'; // Auto-confirm for card payments
       paymentStatus = 'paid';
-    } else if (paymentInfo.paymentMethod === 'Bank Transfer') {
-      paymentStatus = 'awaiting_verification';
-      requiresVerification = true;
-    } else if (paymentInfo.paymentMethod === 'Cash on Arrival') {
+    }
+    // Cash = pending for admin
+    else if (normalizedPaymentMethod.includes('cash')) {
+      bookingStatus = 'pending';
       paymentStatus = 'cash_on_delivery';
     }
+    // Bank Transfer = pending verification
+    else if (normalizedPaymentMethod.includes('bank')) {
+      bookingStatus = 'pending';
+      paymentStatus = 'awaiting_verification';
+      requiresVerification = true;
+    }
+
+    // Check if service requires admin pricing (Accommodation, Events)
+    const requiresAdminPricing = bookingData.serviceType === 'Accommodation' || bookingData.serviceType === 'Events';
+    
+    // For services requiring admin pricing, always start as pending
+    if (requiresAdminPricing && paymentInfo.totalPrice === 0) {
+      bookingStatus = 'pending';
+      paymentStatus = 'awaiting_quote';
+    }
+
+    // Determine if driver is needed (only for Driver service)
+    const driverRequired = bookingData.serviceType === 'Driver';
 
     // Create main booking record
     const { data: booking, error: bookingError } = await supabase
@@ -179,90 +205,23 @@ export const createEnhancedBooking = async (
         payment_method: paymentInfo.paymentMethod,
         transaction_id: paymentInfo.transactionId,
         total_price: paymentInfo.totalPrice,
-        status: paymentStatus === 'paid' ? 'confirmed' : 'pending',
+        status: bookingStatus,
         payment_status: paymentStatus,
         requires_verification: requiresVerification,
         admin_notes: paymentInfo.adminNotes,
         customer_notes: paymentInfo.customerNotes,
         service_details: bookingData.serviceDetails as any,
-        driver_required: bookingData.driverRequired || false
+        driver_required: driverRequired
       })
       .select()
       .single();
 
     if (bookingError) throw bookingError;
 
-    // Insert into corresponding details table (existing logic)
-    let detailError = null;
-    switch (bookingData.serviceType) {
-      case 'Transportation': {
-        const d = bookingData.serviceDetails as any;
-        const { error } = await supabase
-          .from('transportation_bookings')
-          .insert({
-            booking_id: booking.id,
-            pickup_location: d.pickup,
-            dropoff_location: d.dropoff,
-            travel_date: d.date,
-            travel_time: d.time,
-            vehicle_type: d.vehicleType,
-            passengers: d.passengers || '1'
-          });
-        detailError = error;
-        break;
-      }
-      case 'Hotels': {
-        const d = bookingData.serviceDetails as any;
-        const { error } = await supabase
-          .from('hotel_bookings')
-          .insert({
-            booking_id: booking.id,
-            city: d.city,
-            hotel_name: d.hotel,
-            checkin_date: d.checkin,
-            checkout_date: d.checkout,
-            room_type: d.roomType,
-            guests: d.guests || '1',
-            special_requests: d.specialRequests || null
-          });
-        detailError = error;
-        break;
-      }
-      case 'Events': {
-        const d = bookingData.serviceDetails as any;
-        const { error } = await supabase
-          .from('event_bookings')
-          .insert({
-            booking_id: booking.id,
-            event_name: d.eventName,
-            event_location: d.eventLocation,
-            event_date: d.eventDate,
-            tickets_quantity: d.tickets,
-            ticket_type: d.ticketType || 'general'
-          });
-        detailError = error;
-        break;
-      }
-      case 'Custom Trips': {
-        const d = bookingData.serviceDetails as any;
-        const { error } = await supabase
-          .from('custom_trip_bookings')
-          .insert({
-            booking_id: booking.id,
-            duration: d.duration,
-            regions: d.regions,
-            interests: d.interests || [],
-            budget_range: d.budget || null,
-            additional_info: d.additionalInfo || null
-          });
-        detailError = error;
-        break;
-      }
-    }
+    // Insert into corresponding details table based on service type
+    await insertServiceDetails(booking.id, bookingData);
 
-    if (detailError) {
-      console.error('Error inserting booking details:', detailError);
-    }
+    console.log(`Booking created: ${booking.id}, Status: ${bookingStatus}, Payment: ${paymentStatus}`);
 
     return booking;
   } catch (error) {
@@ -270,6 +229,80 @@ export const createEnhancedBooking = async (
     throw error;
   }
 };
+
+// Helper function to insert service-specific details
+async function insertServiceDetails(bookingId: string, bookingData: BookingData) {
+  const d = bookingData.serviceDetails as any;
+  let error = null;
+
+  switch (bookingData.serviceType) {
+    case 'Driver':
+    case 'Transportation': {
+      const { error: e } = await supabase
+        .from('transportation_bookings')
+        .insert({
+          booking_id: bookingId,
+          pickup_location: d.pickupLocation || d.pickup,
+          dropoff_location: d.dropoffLocation || d.dropoff,
+          travel_date: d.pickupDate || d.date,
+          travel_time: d.pickupTime || d.time,
+          vehicle_type: d.vehicleType,
+          passengers: d.passengers || '1'
+        });
+      error = e;
+      break;
+    }
+    case 'Accommodation':
+    case 'Hotels': {
+      const { error: e } = await supabase
+        .from('hotel_bookings')
+        .insert({
+          booking_id: bookingId,
+          city: d.location || d.city,
+          hotel_name: d.hotel || 'TBD',
+          checkin_date: d.checkIn || d.checkin,
+          checkout_date: d.checkOut || d.checkout,
+          room_type: d.roomPreference || d.roomType || 'standard',
+          guests: d.guests || '1',
+          special_requests: d.specialRequests || null
+        });
+      error = e;
+      break;
+    }
+    case 'Events': {
+      const { error: e } = await supabase
+        .from('event_bookings')
+        .insert({
+          booking_id: bookingId,
+          event_name: d.eventName || d.eventType,
+          event_location: d.location || d.eventLocation,
+          event_date: d.date || d.eventDate,
+          tickets_quantity: d.numberOfPeople || d.tickets || '1',
+          ticket_type: d.eventType || 'general'
+        });
+      error = e;
+      break;
+    }
+    case 'Custom Trips': {
+      const { error: e } = await supabase
+        .from('custom_trip_bookings')
+        .insert({
+          booking_id: bookingId,
+          duration: d.duration,
+          regions: d.regions,
+          interests: d.interests || [],
+          budget_range: d.budget || null,
+          additional_info: d.additionalInfo || null
+        });
+      error = e;
+      break;
+    }
+  }
+
+  if (error) {
+    console.error('Error inserting booking details:', error);
+  }
+}
 
 // Update booking status (for admin use)
 export const updateBookingStatus = async (
@@ -357,7 +390,75 @@ export const getEnhancedBookings = async (filters?: {
   return data || [];
 };
 
-// Complete draft booking by deleting it (after successful booking creation)
+// Complete draft booking by deleting it
 export const completeDraftBooking = async (draftId: string): Promise<void> => {
   await deleteDraftBooking(draftId);
+};
+
+// Admin: Set price for booking (Accommodation/Events)
+export const setBookingPrice = async (
+  bookingId: string,
+  price: number,
+  adminNotes?: string
+): Promise<void> => {
+  const { error } = await supabase
+    .from('bookings')
+    .update({
+      total_price: price,
+      admin_notes: adminNotes,
+      payment_status: 'awaiting_payment' // Price set, waiting for customer payment
+    })
+    .eq('id', bookingId);
+
+  if (error) throw error;
+};
+
+// Admin: Confirm booking (for cash payments)
+export const confirmBooking = async (bookingId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('bookings')
+    .update({
+      status: 'confirmed'
+    })
+    .eq('id', bookingId);
+
+  if (error) throw error;
+};
+
+// Admin: Activate booking (start service)
+export const activateBooking = async (bookingId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('bookings')
+    .update({
+      status: 'active'
+    })
+    .eq('id', bookingId);
+
+  if (error) throw error;
+};
+
+// Admin: Complete booking
+export const completeBooking = async (bookingId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('bookings')
+    .update({
+      status: 'completed',
+      payment_status: 'paid'
+    })
+    .eq('id', bookingId);
+
+  if (error) throw error;
+};
+
+// Admin: Cancel booking
+export const cancelBooking = async (bookingId: string, reason?: string): Promise<void> => {
+  const { error } = await supabase
+    .from('bookings')
+    .update({
+      status: 'cancelled',
+      admin_notes: reason
+    })
+    .eq('id', bookingId);
+
+  if (error) throw error;
 };

@@ -1,8 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Car, Building2, Calendar, MapPin, Plane, Ship, Train, Music } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Car, Building2, Ticket, DollarSign } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { SERVICE_PRICING } from '@/types/booking';
 
 interface ServiceTypeSelectorProps {
   serviceType: string;
@@ -21,51 +22,65 @@ export const ServiceTypeSelector: React.FC<ServiceTypeSelectorProps> = ({
     return null;
   }
 
-   const services = [
-     {
-       id: 'Transportation',
-       label: t('transportation'),
-       icon: Car,
-       description: t('transportationDescription'),
-       features: [t('airportPickup'), t('cityTransportation'), t('privateDrivers'), t('groupTransport')]
-     },
-     {
-       id: 'Hotels',
-       label: t('hotelReservation'),
-       icon: Building2,
-       description: t('hotelsDescription'),
-       features: [t('hotelReservations'), t('roomSelection'), t('specialRequests'), t('groupBookings')]
-     },
-     {
-       id: 'Events',
-       label: t('eventBooking'),
-       icon: Calendar,
-       description: t('eventsDescription'),
-       features: [t('concertTickets'), t('culturalEvents'), t('sportsEvents'), t('vipAccess')]
-     },
-     {
-       id: 'Custom Trips',
-       label: t('customTrip'),
-       icon: MapPin,
-       description: t('customTripsDescription'),
-       features: [t('customItineraries'), t('multiDestination'), t('localExperiences'), t('adventureTours')]
-     }
-   ];
+  const services = [
+    {
+      id: 'Driver',
+      label: 'Driver Only Booking',
+      icon: Car,
+      description: 'Professional driver service for one-way or round trips',
+      features: [
+        'One-way or round trip',
+        'Professional drivers',
+        'Airport transfers',
+        'City transportation'
+      ],
+      pricing: `From $${SERVICE_PRICING.Driver.basePrice} USD`,
+      hasFixedPrice: true
+    },
+    {
+      id: 'Accommodation',
+      label: 'Accommodation Booking',
+      icon: Building2,
+      description: 'Hotels, apartments, and lodging reservations',
+      features: [
+        'Hotels & Resorts',
+        'Apartments',
+        'Guest houses',
+        'Custom requests'
+      ],
+      pricing: 'Price set by admin',
+      hasFixedPrice: false
+    },
+    {
+      id: 'Events',
+      label: 'Events & Entertainment',
+      icon: Ticket,
+      description: 'Tickets and experiences for attractions and events',
+      features: [
+        'Circus & Shows',
+        'Museums & Parks',
+        'City Tours',
+        'Cable Cars & Opera'
+      ],
+      pricing: 'Price set by admin',
+      hasFixedPrice: false
+    }
+  ];
 
   return (
     <Card className="coastal-glass border border-white/20">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-white">
-          <Plane className="h-5 w-5 text-coastal-blue" />
-          {t('selectServiceType')}
+          <DollarSign className="h-5 w-5 text-coastal-blue" />
+          Select Service Type
         </CardTitle>
         <CardDescription className="text-coastal-pearl">
-          {t('chooseServiceYouNeed')}
+          Choose the service you need
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {services.map(({ id, label, icon: Icon, description, features }) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {services.map(({ id, label, icon: Icon, description, features, pricing, hasFixedPrice }) => (
             <Card
               key={id}
               className={`cursor-pointer transition-all duration-300 hover:shadow-glow hover:scale-105 ${
@@ -85,28 +100,37 @@ export const ServiceTypeSelector: React.FC<ServiceTypeSelectorProps> = ({
               }}
             >
               <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg transition-colors ${
-                    serviceType === id 
-                      ? 'bg-brand-primary text-white' 
-                      : 'bg-white/10 text-coastal-blue'
-                  }`}>
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-1 text-white">{label}</h3>
-                    <p className="text-sm text-coastal-pearl mb-3 leading-relaxed">
-                      {description}
-                    </p>
-                    <div className="space-y-1">
-                      {features.map((feature, index) => (
-                        <div key={index} className="flex items-center gap-2 text-xs text-coastal-sage">
-                          <div className="w-1.5 h-1.5 bg-coastal-blue rounded-full" />
-                          {feature}
-                        </div>
-                      ))}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg transition-colors ${
+                      serviceType === id 
+                        ? 'bg-brand-primary text-white' 
+                        : 'bg-white/10 text-coastal-blue'
+                    }`}>
+                      <Icon className="h-6 w-6" />
                     </div>
+                    <h3 className="font-semibold text-lg text-white">{label}</h3>
                   </div>
+                  
+                  <p className="text-sm text-coastal-pearl leading-relaxed">
+                    {description}
+                  </p>
+                  
+                  <div className="space-y-1">
+                    {features.map((feature, index) => (
+                      <div key={index} className="flex items-center gap-2 text-xs text-coastal-sage">
+                        <div className="w-1.5 h-1.5 bg-coastal-blue rounded-full" />
+                        {feature}
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <Badge 
+                    variant={hasFixedPrice ? "default" : "secondary"} 
+                    className={`w-fit mt-2 ${hasFixedPrice ? 'bg-green-600' : 'bg-amber-600'}`}
+                  >
+                    {pricing}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>

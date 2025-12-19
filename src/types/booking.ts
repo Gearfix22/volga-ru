@@ -1,40 +1,47 @@
+// Service Types - exactly 3 services
+export type ServiceType = 'Driver' | 'Accommodation' | 'Events';
 
-export interface TransportationDetails {
-  pickup: string;
-  dropoff: string;
-  date: string;
-  time: string;
+// Unified booking status flow
+export type BookingStatus = 'draft' | 'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled';
+
+// Payment methods
+export type PaymentMethod = 'visa' | 'cash';
+
+// Driver booking details (one-way or round trip)
+export interface DriverBookingDetails {
+  tripType: 'one-way' | 'round-trip';
+  pickupLocation: string;
+  dropoffLocation: string;
+  pickupDate: string;
+  pickupTime: string;
+  returnDate?: string; // For round trips
+  returnTime?: string;
+  passengers: string;
   vehicleType: string;
-  passengers?: string;
-}
-
-export interface HotelDetails {
-  city: string;
-  hotel: string;
-  checkin: string;
-  checkout: string;
-  roomType: string;
-  guests?: string;
   specialRequests?: string;
 }
 
-export interface EventDetails {
-  eventName: string;
-  eventLocation: string;
-  eventDate: string;
-  tickets: string;
-  ticketType?: string;
+// Accommodation booking details
+export interface AccommodationDetails {
+  location: string;
+  checkIn: string;
+  checkOut: string;
+  guests: string;
+  roomPreference?: string;
+  specialRequests?: string;
 }
 
-export interface TripDetails {
-  duration: string;
-  regions: string;
-  interests: string[];
-  budget?: string;
-  additionalInfo?: string;
+// Events & Entertainment details
+export interface EventsDetails {
+  eventType: 'circus' | 'balloon' | 'museum' | 'park' | 'cabin' | 'city-tour' | 'cable-car' | 'opera' | 'other';
+  eventName?: string;
+  location: string;
+  date: string;
+  numberOfPeople: string;
+  specialRequests?: string;
 }
 
-export type ServiceDetails = TransportationDetails | HotelDetails | EventDetails | TripDetails | {};
+export type ServiceDetails = DriverBookingDetails | AccommodationDetails | EventsDetails | Record<string, unknown>;
 
 export interface UserInfo {
   fullName: string;
@@ -44,13 +51,54 @@ export interface UserInfo {
 }
 
 export interface BookingData {
-  serviceType: string;
+  serviceType: ServiceType | string;
   serviceDetails: ServiceDetails;
   userInfo: UserInfo;
   customAmount?: number;
   totalPrice?: number;
-  paymentMethod?: string;
+  paymentMethod?: PaymentMethod | string;
   transactionId?: string;
   paidAmount?: number;
+  status?: BookingStatus | string;
   driverRequired?: boolean;
 }
+
+// Legacy type aliases for backward compatibility
+export type TransportationDetails = DriverBookingDetails;
+export type HotelDetails = AccommodationDetails;
+export type EventDetails = EventsDetails;
+export type TripDetails = Record<string, unknown>;
+
+// Pricing rules
+export const SERVICE_PRICING = {
+  Driver: {
+    basePrice: 50, // USD minimum
+    hasFixedPrice: true,
+    adminCanEdit: true
+  },
+  Accommodation: {
+    basePrice: 0, // No fixed price
+    hasFixedPrice: false,
+    adminCanEdit: true,
+    requiresAdminPricing: true
+  },
+  Events: {
+    basePrice: 0, // No fixed price
+    hasFixedPrice: false,
+    adminCanEdit: true,
+    requiresAdminPricing: true
+  }
+} as const;
+
+// Event types for Events & Entertainment service
+export const EVENT_TYPES = [
+  { id: 'circus', label: 'Circus' },
+  { id: 'balloon', label: 'Hot Air Balloon' },
+  { id: 'museum', label: 'Museums' },
+  { id: 'park', label: 'Parks & Theme Parks' },
+  { id: 'cabin', label: 'Cabins & Retreats' },
+  { id: 'city-tour', label: 'City Tours' },
+  { id: 'cable-car', label: 'Cable Car' },
+  { id: 'opera', label: 'Opera & Theater' },
+  { id: 'other', label: 'Other' }
+] as const;
