@@ -105,6 +105,10 @@ export const EnhancedBookingsManagement = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
 
+  // Price editing state
+  const [editingPrice, setEditingPrice] = useState<string | null>(null);
+  const [priceValue, setPriceValue] = useState('');
+
   useEffect(() => {
     fetchBookings();
     fetchDraftBookings();
@@ -298,6 +302,43 @@ export const EnhancedBookingsManagement = () => {
       });
       setEditingNotes(null);
       setNoteText('');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const savePrice = async (bookingId: string) => {
+    try {
+      setActionLoading(bookingId);
+      const newPrice = parseFloat(priceValue);
+      if (isNaN(newPrice) || newPrice < 0) {
+        toast({
+          title: 'Invalid Price',
+          description: 'Please enter a valid price',
+          variant: 'destructive'
+        });
+        setActionLoading(null);
+        return;
+      }
+      await updateBooking(bookingId, { total_price: newPrice });
+      
+      // Optimistic update
+      setBookings(prev => prev.map(b => 
+        b.id === bookingId ? { ...b, total_price: newPrice } : b
+      ));
+      
+      toast({
+        title: 'Success',
+        description: 'Price updated successfully',
+      });
+      setEditingPrice(null);
+      setPriceValue('');
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -514,8 +555,53 @@ export const EnhancedBookingsManagement = () => {
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell className="font-semibold">
-                              ${booking.total_price?.toFixed(2) || '0.00'}
+                            <TableCell>
+                              {editingPrice === booking.id ? (
+                                <div className="flex items-center gap-1">
+                                  <Input
+                                    type="number"
+                                    value={priceValue}
+                                    onChange={(e) => setPriceValue(e.target.value)}
+                                    className="w-20 h-8"
+                                    min="0"
+                                    step="0.01"
+                                  />
+                                  <Button 
+                                    size="sm" 
+                                    className="h-8 px-2"
+                                    onClick={() => savePrice(booking.id)}
+                                    disabled={actionLoading === booking.id}
+                                  >
+                                    <Save className="h-3 w-3" />
+                                  </Button>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="h-8 px-2"
+                                    onClick={() => {
+                                      setEditingPrice(null);
+                                      setPriceValue('');
+                                    }}
+                                  >
+                                    ✕
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1">
+                                  <span className="font-semibold">${booking.total_price?.toFixed(2) || '0.00'}</span>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 px-1"
+                                    onClick={() => {
+                                      setEditingPrice(booking.id);
+                                      setPriceValue(booking.total_price?.toString() || '0');
+                                    }}
+                                  >
+                                    <Edit className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              )}
                             </TableCell>
                             <TableCell>
                               <div className="space-y-2">
@@ -530,6 +616,8 @@ export const EnhancedBookingsManagement = () => {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="confirmed">Confirmed</SelectItem>
+                                    <SelectItem value="active">Active</SelectItem>
                                     <SelectItem value="assigned">Assigned</SelectItem>
                                     <SelectItem value="accepted">Accepted</SelectItem>
                                     <SelectItem value="on_trip">On Trip</SelectItem>
@@ -551,7 +639,10 @@ export const EnhancedBookingsManagement = () => {
                                 <SelectContent>
                                   <SelectItem value="pending">Pending</SelectItem>
                                   <SelectItem value="paid">Paid</SelectItem>
+                                  <SelectItem value="cash_on_delivery">Cash on Arrival</SelectItem>
                                   <SelectItem value="pending_verification">Verifying</SelectItem>
+                                  <SelectItem value="awaiting_quote">Awaiting Quote</SelectItem>
+                                  <SelectItem value="awaiting_payment">Awaiting Payment</SelectItem>
                                 </SelectContent>
                               </Select>
                             </TableCell>
