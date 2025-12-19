@@ -18,7 +18,7 @@ import {
 import { Users, Search, Phone, Shield, CheckCircle, XCircle, Calendar, Edit, Trash2, UserX, RefreshCw, Car } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { updateUserProfile, updateUserRole, disableUser, logAdminAction } from '@/services/adminService';
+import { updateUserProfile, updateUserRole, disableUser, deleteUser, logAdminAction } from '@/services/adminService';
 
 interface UserProfile {
   id: string;
@@ -159,6 +159,24 @@ export const UsersManagement = () => {
       await disableUser(userToDelete.id);
       
       toast({ title: 'Success', description: 'User has been disabled' });
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+      fetchUsers();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    
+    try {
+      setActionLoading(userToDelete.id);
+      await deleteUser(userToDelete.id);
+      
+      toast({ title: 'Success', description: 'User has been permanently deleted' });
       setDeleteDialogOpen(false);
       setUserToDelete(null);
       fetchUsers();
@@ -401,20 +419,27 @@ export const UsersManagement = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Disable User Confirmation */}
+      {/* Delete/Disable User Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Disable User Account</AlertDialogTitle>
+            <AlertDialogTitle>Delete User Account</AlertDialogTitle>
             <AlertDialogDescription>
-              This will disable the user account for "{userToDelete?.full_name || 'this user'}". 
-              They will lose access to the platform. This action is logged.
+              Choose an action for "{userToDelete?.full_name || 'this user'}":
+              <ul className="mt-2 space-y-1 text-sm">
+                <li><strong>Disable:</strong> User loses access but data is preserved</li>
+                <li><strong>Delete:</strong> Permanently removes user and all their data</li>
+              </ul>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDisableUser} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction onClick={handleDisableUser} className="bg-yellow-600 text-white hover:bg-yellow-700">
               Disable User
+            </AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground">
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete Permanently
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

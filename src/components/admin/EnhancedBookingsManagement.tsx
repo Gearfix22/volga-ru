@@ -394,12 +394,19 @@ export const EnhancedBookingsManagement = () => {
   });
 
   const getStatusBadge = (status: string) => {
+    // Normalized booking lifecycle statuses
     const config: Record<string, { variant: any; icon: any; label: string }> = {
-      pending: { variant: 'secondary', icon: Clock, label: 'Pending' },
+      pending: { variant: 'secondary', icon: Clock, label: 'Requested' },
       confirmed: { variant: 'default', icon: CheckCircle, label: 'Confirmed' },
+      assigned: { variant: 'default', icon: Car, label: 'Driver Assigned' },
+      accepted: { variant: 'default', icon: CheckCircle, label: 'Driver Confirmed' },
+      on_trip: { variant: 'default', icon: Car, label: 'In Progress' },
+      active: { variant: 'default', icon: Car, label: 'In Progress' },
+      in_progress: { variant: 'default', icon: Car, label: 'In Progress' },
       completed: { variant: 'outline', icon: CheckCircle, label: 'Completed' },
-      paid: { variant: 'default', icon: CheckCircle, label: 'Paid' },
+      paid: { variant: 'outline', icon: CheckCircle, label: 'Paid' },
       cancelled: { variant: 'destructive', icon: XCircle, label: 'Cancelled' },
+      rejected: { variant: 'destructive', icon: XCircle, label: 'Rejected' },
       pending_verification: { variant: 'secondary', icon: Clock, label: 'Pending Verification' },
     };
 
@@ -473,8 +480,11 @@ export const EnhancedBookingsManagement = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="pending">Requested</SelectItem>
                     <SelectItem value="confirmed">Confirmed</SelectItem>
+                    <SelectItem value="assigned">Driver Assigned</SelectItem>
+                    <SelectItem value="accepted">Driver Confirmed</SelectItem>
+                    <SelectItem value="on_trip">In Progress</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>

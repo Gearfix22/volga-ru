@@ -220,10 +220,22 @@ export async function disableUser(userId: string) {
   await logAdminAction('user_disabled', userId, 'profiles', { disabled: true });
 }
 
-// Delete user profile (admin only) - full deletion
+// Delete user profile and related data (admin only) - full deletion
 export async function deleteUser(userId: string) {
+  // Delete user bookings first (if allowed by your business rules)
+  // Note: This may fail if bookings have foreign key constraints
+  
   // Delete user roles first
   await supabase.from('user_roles').delete().eq('user_id', userId);
+  
+  // Delete draft bookings
+  await supabase.from('draft_bookings').delete().eq('user_id', userId);
+  
+  // Delete user activities
+  await supabase.from('user_activities').delete().eq('user_id', userId);
+  
+  // Delete user preferences
+  await supabase.from('user_preferences').delete().eq('user_id', userId);
   
   // Delete user profile
   const { error } = await supabase
@@ -234,4 +246,21 @@ export async function deleteUser(userId: string) {
   if (error) throw error;
   
   await logAdminAction('user_deleted', userId, 'profiles', { deleted: true });
+}
+
+// Check if phone number already exists (for duplicate prevention)
+export async function checkPhoneExists(phone: string, excludeUserId?: string): Promise<boolean> {
+  let query = supabase
+    .from('profiles')
+    .select('id')
+    .eq('phone', phone);
+  
+  if (excludeUserId) {
+    query = query.neq('id', excludeUserId);
+  }
+  
+  const { data, error } = await query.limit(1);
+  
+  if (error) throw error;
+  return (data?.length || 0) > 0;
 }
