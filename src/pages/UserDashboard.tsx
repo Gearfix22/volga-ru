@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getDraftBookings, deleteDraftBooking, type DraftBooking } from '@/services/bookingService';
+import { CustomerBookingTimeline } from '@/components/booking/CustomerBookingTimeline';
 import { 
   Clock, 
   CheckCircle, 
@@ -18,7 +19,9 @@ import {
   Plus,
   Trash2,
   CreditCard,
-  ArrowRight
+  ArrowRight,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface Booking {
@@ -29,6 +32,78 @@ interface Booking {
   total_price: number;
   created_at: string;
   service_details: any;
+}
+
+// Expandable booking card with timeline
+function BookingCardWithTimeline({ booking, onPayNow }: { booking: Booking; onPayNow: (b: Booking) => void }) {
+  const [expanded, setExpanded] = useState(false);
+  
+  const isActiveBooking = ['pending', 'confirmed', 'assigned', 'accepted', 'on_trip'].includes(booking.status);
+
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <div 
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-full ${
+            booking.status === 'confirmed' || booking.status === 'completed' 
+              ? 'bg-green-100 dark:bg-green-900/20' 
+              : booking.status === 'pending'
+              ? 'bg-yellow-100 dark:bg-yellow-900/20'
+              : booking.status === 'on_trip' || booking.status === 'assigned' || booking.status === 'accepted'
+              ? 'bg-blue-100 dark:bg-blue-900/20'
+              : 'bg-red-100 dark:bg-red-900/20'
+          }`}>
+            {booking.status === 'confirmed' || booking.status === 'completed' ? (
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            ) : booking.status === 'pending' ? (
+              <Clock className="h-5 w-5 text-yellow-600" />
+            ) : booking.status === 'on_trip' || booking.status === 'assigned' || booking.status === 'accepted' ? (
+              <PlayCircle className="h-5 w-5 text-blue-600" />
+            ) : (
+              <Clock className="h-5 w-5 text-red-600" />
+            )}
+          </div>
+          <div>
+            <p className="font-medium">{booking.service_type}</p>
+            <p className="text-sm text-muted-foreground">
+              {new Date(booking.created_at).toLocaleDateString()} • ${booking.total_price?.toFixed(2) || '0.00'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Badge className={
+            booking.status === 'confirmed' || booking.status === 'completed'
+              ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+              : booking.status === 'pending'
+              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+              : booking.status === 'on_trip' || booking.status === 'assigned' || booking.status === 'accepted'
+              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+              : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+          }>
+            {booking.status}
+          </Badge>
+          {booking.payment_status === 'pending' && (
+            <Button size="sm" onClick={(e) => { e.stopPropagation(); onPayNow(booking); }}>
+              <CreditCard className="h-4 w-4 mr-1" />
+              Pay Now
+            </Button>
+          )}
+          {isActiveBooking && (
+            expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          )}
+        </div>
+      </div>
+      
+      {expanded && isActiveBooking && (
+        <div className="border-t bg-muted/30 p-4">
+          <CustomerBookingTimeline booking={booking} showEstimates={true} />
+        </div>
+      )}
+    </div>
+  );
 }
 
 const UserDashboard = () => {
@@ -289,50 +364,13 @@ const UserDashboard = () => {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {bookings.slice(0, 5).map(booking => (
-                  <div key={booking.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${
-                        booking.status === 'confirmed' || booking.status === 'completed' 
-                          ? 'bg-green-100 dark:bg-green-900/20' 
-                          : booking.status === 'pending'
-                          ? 'bg-yellow-100 dark:bg-yellow-900/20'
-                          : 'bg-red-100 dark:bg-red-900/20'
-                      }`}>
-                        {booking.status === 'confirmed' || booking.status === 'completed' ? (
-                          <CheckCircle className="h-5 w-5 text-green-600" />
-                        ) : booking.status === 'pending' ? (
-                          <Clock className="h-5 w-5 text-yellow-600" />
-                        ) : (
-                          <Clock className="h-5 w-5 text-red-600" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium">{booking.service_type}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(booking.created_at).toLocaleDateString()} • ${booking.total_price?.toFixed(2) || '0.00'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge className={
-                        booking.status === 'confirmed' || booking.status === 'completed'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                          : booking.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                          : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                      }>
-                        {booking.status}
-                      </Badge>
-                      {booking.payment_status === 'pending' && (
-                        <Button size="sm" onClick={() => handlePayNow(booking)}>
-                          <CreditCard className="h-4 w-4 mr-1" />
-                          Pay Now
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                  <BookingCardWithTimeline 
+                    key={booking.id} 
+                    booking={booking} 
+                    onPayNow={handlePayNow} 
+                  />
                 ))}
                 {bookings.length > 5 && (
                   <Button 
