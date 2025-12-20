@@ -247,28 +247,123 @@ export const AdminDriverMap: React.FC = () => {
     };
   }, []);
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time location updates
   useEffect(() => {
-    const unsubscribe = subscribeToAllDriverLocations(async (location) => {
-      const enriched = await enrichDriverData([location]);
-      if (enriched.length > 0) {
-        const updatedDriver = enriched[0];
-        
-        setDrivers(prev => {
-          const existing = prev.findIndex(d => d.driver_id === updatedDriver.driver_id);
-          if (existing >= 0) {
-            const newDrivers = [...prev];
-            newDrivers[existing] = updatedDriver;
-            return newDrivers;
+    console.log('[AdminDriverMap] Setting up realtime subscription');
+    
+    // Subscribe to driver_locations table changes
+    const channel = supabase
+      .channel('admin-driver-locations')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'driver_locations'
+        },
+        async (payload) => {
+          console.log('[AdminDriverMap] Realtime location update:', payload.eventType);
+          
+          if (payload.eventType === 'DELETE') {
+            // Remove marker when location is deleted (driver stopped tracking)
+            const deletedId = (payload.old as any)?.driver_id;
+            if (deletedId) {
+              const marker = markersRef.current.get(deletedId);
+              if (marker) {
+                marker.remove();
+                markersRef.current.delete(deletedId);
+              }
+              setDrivers(prev => prev.filter(d => d.driver_id !== deletedId));
+            }
+            return;
           }
-          return [...prev, updatedDriver];
-        });
-        
-        addOrUpdateMarker(updatedDriver);
-      }
-    });
+          
+          if (payload.new) {
+            const location = payload.new as DriverLocation;
+            console.log('[AdminDriverMap] New location for driver:', location.driver_id, {
+              lat: location.latitude,
+              lng: location.longitude,
+              bookingId: location.booking_id
+            });
+            
+            const enriched = await enrichDriverData([location]);
+            if (enriched.length > 0) {
+              const updatedDriver = enriched[0];
+              
+              // Only show drivers with active bookings (not completed/cancelled)
+              if (updatedDriver.booking_service?.includes('completed') || 
+                  updatedDriver.booking_service?.includes('cancelled')) {
+                console.log('[AdminDriverMap] Skipping completed/cancelled booking');
+                const marker = markersRef.current.get(updatedDriver.driver_id);
+                if (marker) {
+                  marker.remove();
+                  markersRef.current.delete(updatedDriver.driver_id);
+                }
+                setDrivers(prev => prev.filter(d => d.driver_id !== updatedDriver.driver_id));
+                return;
+              }
+              
+              setDrivers(prev => {
+                const existing = prev.findIndex(d => d.driver_id === updatedDriver.driver_id);
+                if (existing >= 0) {
+                  const newDrivers = [...prev];
+                  newDrivers[existing] = updatedDriver;
+                  return newDrivers;
+                }
+                return [...prev, updatedDriver];
+              });
+              
+              addOrUpdateMarker(updatedDriver);
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('[AdminDriverMap] Realtime subscription status:', status);
+      });
 
-    return unsubscribe;
+    // Also subscribe to booking status changes to update/remove markers
+    const bookingChannel = supabase
+      .channel('admin-booking-status')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'bookings'
+        },
+        async (payload) => {
+          const booking = payload.new as any;
+          console.log('[AdminDriverMap] Booking status changed:', booking.id, booking.status);
+          
+          // If booking is completed/cancelled, remove the driver marker
+          if (['completed', 'cancelled', 'rejected'].includes(booking.status)) {
+            const driverId = booking.assigned_driver_id;
+            if (driverId) {
+              console.log('[AdminDriverMap] Removing marker for completed booking, driver:', driverId);
+              const marker = markersRef.current.get(driverId);
+              if (marker) {
+                marker.remove();
+                markersRef.current.delete(driverId);
+              }
+              setDrivers(prev => prev.filter(d => d.driver_id !== driverId));
+            }
+          } else if (booking.assigned_driver_id && 
+                     ['assigned', 'accepted', 'on_trip', 'confirmed'].includes(booking.status)) {
+            // Refresh driver list when a new driver is assigned or status changes to active
+            const enriched = await fetchActiveDrivers();
+            setDrivers(enriched);
+            enriched.forEach(driver => addOrUpdateMarker(driver));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('[AdminDriverMap] Cleaning up realtime subscriptions');
+      supabase.removeChannel(channel);
+      supabase.removeChannel(bookingChannel);
+    };
   }, []);
 
   const addOrUpdateMarker = (driver: DriverWithLocation) => {

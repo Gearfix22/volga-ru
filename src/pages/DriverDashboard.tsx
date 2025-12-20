@@ -266,12 +266,15 @@ const DriverDashboard = () => {
   );
   const completedBookings = bookings.filter(b => b.status === 'completed');
   
-  // Get active booking ID for location tracking
-  const activeBookingId = useMemo(() => {
+  // Get active booking for location tracking (ID and status)
+  const activeBooking = useMemo(() => {
     const onTrip = bookings.find(b => b.status === 'on_trip');
-    if (onTrip) return onTrip.id;
+    if (onTrip) return { id: onTrip.id, status: onTrip.status };
     const accepted = bookings.find(b => b.status === 'accepted');
-    return accepted?.id;
+    if (accepted) return { id: accepted.id, status: accepted.status };
+    const confirmed = bookings.find(b => b.driver_response === 'accepted' && b.status === 'confirmed');
+    if (confirmed) return { id: confirmed.id, status: 'confirmed' };
+    return null;
   }, [bookings]);
 
   return (
@@ -421,7 +424,10 @@ const DriverDashboard = () => {
 
         {/* Location Tracker */}
         <div className="mb-6">
-          <DriverLocationTracker activeBookingId={activeBookingId} />
+          <DriverLocationTracker 
+            activeBookingId={activeBooking?.id} 
+            bookingStatus={activeBooking?.status}
+          />
         </div>
 
         {/* Pending Response Section */}

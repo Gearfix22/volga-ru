@@ -24,16 +24,28 @@ export interface LocationUpdate {
 // Update driver's location
 export const updateDriverLocation = async (location: LocationUpdate): Promise<{ success: boolean; error?: string }> => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError) {
+      console.error('[LocationService] Auth error:', authError.message);
+      return { success: false, error: `Auth error: ${authError.message}` };
+    }
+    
     if (!user) {
-      console.error('Location update failed: Not authenticated');
+      console.error('[LocationService] Not authenticated');
       return { success: false, error: 'Not authenticated' };
     }
 
-    console.log('Updating driver location:', { 
+    // Validate coordinates
+    if (!location.latitude || !location.longitude) {
+      console.error('[LocationService] Invalid coordinates:', location);
+      return { success: false, error: 'Invalid coordinates' };
+    }
+
+    console.log('[LocationService] Updating location:', { 
       driver_id: user.id, 
       booking_id: location.booking_id,
-      coords: `${location.latitude}, ${location.longitude}` 
+      coords: `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}` 
     });
 
     const { data, error } = await supabase
@@ -42,9 +54,9 @@ export const updateDriverLocation = async (location: LocationUpdate): Promise<{ 
         driver_id: user.id,
         latitude: location.latitude,
         longitude: location.longitude,
-        heading: location.heading,
-        speed: location.speed,
-        accuracy: location.accuracy,
+        heading: location.heading ?? null,
+        speed: location.speed ?? null,
+        accuracy: location.accuracy ?? null,
         booking_id: location.booking_id || null,
         updated_at: new Date().toISOString(),
       }, {
@@ -53,33 +65,46 @@ export const updateDriverLocation = async (location: LocationUpdate): Promise<{ 
       .select();
 
     if (error) {
-      console.error('Error updating location:', error.message, error.details, error.hint);
+      console.error('[LocationService] Error updating location:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      
+      // Check for RLS policy error
+      if (error.code === '42501' || error.message.includes('policy')) {
+        return { success: false, error: 'Permission denied - check driver role' };
+      }
+      
       return { success: false, error: error.message };
     }
 
-    console.log('Location updated successfully:', data);
+    console.log('[LocationService] Location updated successfully:', data?.[0]?.id);
     return { success: true };
   } catch (error) {
-    console.error('Error updating driver location:', error);
-    return { success: false, error: 'Failed to update location' };
+    console.error('[LocationService] Unexpected error:', error);
+    return { success: false, error: 'Unexpected error updating location' };
   }
 };
 
 // Get all driver locations (admin only)
 export const getAllDriverLocations = async (): Promise<DriverLocation[]> => {
   try {
+    console.log('[LocationService] Fetching all driver locations');
     const { data, error } = await supabase
       .from('driver_locations')
       .select('*');
 
     if (error) {
-      console.error('Error fetching driver locations:', error);
+      console.error('[LocationService] Error fetching locations:', error);
       return [];
     }
 
+    console.log('[LocationService] Found', data?.length || 0, 'locations');
     return data || [];
   } catch (error) {
-    console.error('Error fetching driver locations:', error);
+    console.error('[LocationService] Unexpected error:', error);
     return [];
   }
 };
@@ -87,20 +112,27 @@ export const getAllDriverLocations = async (): Promise<DriverLocation[]> => {
 // Get driver location for a specific booking (customer view)
 export const getDriverLocationForBooking = async (bookingId: string): Promise<DriverLocation | null> => {
   try {
+    console.log('[LocationService] Fetching location for booking:', bookingId);
     const { data, error } = await supabase
       .from('driver_locations')
       .select('*')
       .eq('booking_id', bookingId)
-      .single();
+      .maybeSingle(); // Use maybeSingle to avoid error when no rows found
 
     if (error) {
-      console.error('Error fetching driver location:', error);
+      console.error('[LocationService] Error fetching driver location:', error);
       return null;
     }
 
+    if (data) {
+      console.log('[LocationService] Found driver location for booking');
+    } else {
+      console.log('[LocationService] No location found for booking');
+    }
+    
     return data;
   } catch (error) {
-    console.error('Error fetching driver location:', error);
+    console.error('[LocationService] Unexpected error:', error);
     return null;
   }
 };
@@ -109,6 +141,8 @@ export const getDriverLocationForBooking = async (bookingId: string): Promise<Dr
 export const subscribeToAllDriverLocations = (
   callback: (location: DriverLocation) => void
 ) => {
+  console.log('[LocationService] Setting up realtime subscription for all driver locations');
+  
   const channel = supabase
     .channel('all-driver-locations')
     .on(
@@ -119,15 +153,18 @@ export const subscribeToAllDriverLocations = (
         table: 'driver_locations'
       },
       (payload) => {
-        console.log('Driver location update:', payload);
-        if (payload.new) {
+        console.log('[LocationService] Realtime location event:', payload.eventType);
+        if (payload.new && payload.eventType !== 'DELETE') {
           callback(payload.new as DriverLocation);
         }
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log('[LocationService] Subscription status:', status);
+    });
 
   return () => {
+    console.log('[LocationService] Removing realtime subscription');
     supabase.removeChannel(channel);
   };
 };
@@ -181,14 +218,31 @@ export const getMapboxToken = async (): Promise<string | null> => {
 // Clear driver location when going offline
 export const clearDriverLocation = async (): Promise<void> => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError) {
+      console.error('[LocationService] Auth error clearing location:', authError.message);
+      return;
+    }
+    
+    if (!user) {
+      console.log('[LocationService] No user to clear location for');
+      return;
+    }
 
-    await supabase
+    console.log('[LocationService] Clearing location for driver:', user.id);
+    
+    const { error } = await supabase
       .from('driver_locations')
       .delete()
       .eq('driver_id', user.id);
+      
+    if (error) {
+      console.error('[LocationService] Error clearing location:', error.message);
+    } else {
+      console.log('[LocationService] Location cleared successfully');
+    }
   } catch (error) {
-    console.error('Error clearing driver location:', error);
+    console.error('[LocationService] Unexpected error clearing location:', error);
   }
 };
