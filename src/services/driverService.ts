@@ -119,22 +119,29 @@ export async function autoAssignDriver(bookingId: string): Promise<{ success: bo
 }
 
 // Get bookings assigned to current driver - unified status flow
+// CRITICAL: Include 'confirmed' status for backward compatibility with older bookings
 export async function getDriverAssignedBookings(): Promise<AssignedBooking[]> {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  if (!user) {
+    console.error('getDriverAssignedBookings: No authenticated user');
+    return [];
+  }
+
+  console.log('Fetching bookings for driver:', user.id);
 
   const { data, error } = await supabase
     .from('bookings')
-    .select('*')
+    .select('*, driver_response')
     .eq('assigned_driver_id', user.id)
-    .in('status', ['assigned', 'accepted', 'on_trip', 'completed'])
+    .in('status', ['assigned', 'confirmed', 'accepted', 'on_trip', 'completed'])
     .order('created_at', { ascending: false });
   
   if (error) {
-    console.error('Error fetching assigned bookings:', error);
+    console.error('Error fetching assigned bookings:', error.message, error.details, error.hint);
     return [];
   }
   
+  console.log('Driver bookings fetched:', data?.length || 0, 'bookings');
   return data as AssignedBooking[];
 }
 
@@ -178,25 +185,49 @@ export async function updateBookingStatusByDriver(
   bookingId: string, 
   status: 'accepted' | 'on_trip' | 'completed'
 ): Promise<{ success: boolean; error?: string }> {
-  const { error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    console.error('updateBookingStatusByDriver: No authenticated user');
+    return { success: false, error: 'Not authenticated' };
+  }
+  
+  console.log('Driver updating booking status:', bookingId, 'to:', status, 'by driver:', user.id);
+  
+  const { data, error } = await supabase
     .from('bookings')
     .update({ 
       status, 
       updated_at: new Date().toISOString() 
     })
-    .eq('id', bookingId);
+    .eq('id', bookingId)
+    .eq('assigned_driver_id', user.id) // Security: only allow driver to update their own assignments
+    .select();
   
   if (error) {
-    console.error('Error updating booking status:', error);
+    console.error('Error updating booking status:', error.message, error.details, error.hint);
     return { success: false, error: error.message };
   }
   
+  if (!data || data.length === 0) {
+    console.error('No booking updated - may not be assigned to this driver');
+    return { success: false, error: 'Booking not found or not assigned to you' };
+  }
+  
+  console.log('Booking status updated successfully:', data);
   return { success: true };
 }
 
 // Driver accepts a booking assignment
 export async function acceptBooking(bookingId: string): Promise<{ success: boolean; error?: string }> {
-  const { error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    console.error('acceptBooking: No authenticated user');
+    return { success: false, error: 'Not authenticated' };
+  }
+  
+  console.log('Driver accepting booking:', bookingId, 'by driver:', user.id);
+  
+  const { data, error } = await supabase
     .from('bookings')
     .update({ 
       driver_response: 'accepted',
@@ -204,13 +235,21 @@ export async function acceptBooking(bookingId: string): Promise<{ success: boole
       status: 'accepted',
       updated_at: new Date().toISOString() 
     })
-    .eq('id', bookingId);
+    .eq('id', bookingId)
+    .eq('assigned_driver_id', user.id) // Security: only allow driver to update their own assignments
+    .select();
   
   if (error) {
-    console.error('Error accepting booking:', error);
+    console.error('Error accepting booking:', error.message, error.details, error.hint);
     return { success: false, error: error.message };
   }
   
+  if (!data || data.length === 0) {
+    console.error('No booking updated - may not be assigned to this driver');
+    return { success: false, error: 'Booking not found or not assigned to you' };
+  }
+  
+  console.log('Booking accepted successfully:', data);
   return { success: true };
 }
 
@@ -219,22 +258,39 @@ export async function rejectBookingByDriver(
   bookingId: string, 
   notes?: string
 ): Promise<{ success: boolean; error?: string }> {
-  const { error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    console.error('rejectBookingByDriver: No authenticated user');
+    return { success: false, error: 'Not authenticated' };
+  }
+  
+  console.log('Driver rejecting booking:', bookingId, 'by driver:', user.id);
+  
+  const { data, error } = await supabase
     .from('bookings')
     .update({ 
       driver_response: 'rejected',
       driver_response_at: new Date().toISOString(),
       driver_notes: notes || null,
       assigned_driver_id: null, // Unassign driver so admin can reassign
+      status: 'confirmed', // Reset to confirmed so admin can reassign
       updated_at: new Date().toISOString() 
     })
-    .eq('id', bookingId);
+    .eq('id', bookingId)
+    .eq('assigned_driver_id', user.id) // Security: only allow driver to reject their own assignments
+    .select();
   
   if (error) {
-    console.error('Error rejecting booking:', error);
+    console.error('Error rejecting booking:', error.message, error.details, error.hint);
     return { success: false, error: error.message };
   }
   
+  if (!data || data.length === 0) {
+    console.error('No booking updated - may not be assigned to this driver');
+    return { success: false, error: 'Booking not found or not assigned to you' };
+  }
+  
+  console.log('Booking rejected successfully:', data);
   return { success: true };
 }
 

@@ -33,14 +33,106 @@ export const AdminDriverMap: React.FC = () => {
   const [drivers, setDrivers] = useState<DriverWithLocation[]>([]);
   const [selectedDriver, setSelectedDriver] = useState<string | null>(null);
 
-  // Fetch driver details - include ALL active drivers (on_trip, accepted, assigned)
+  // Fetch driver details - FIXED: Query drivers with active bookings, not just locations
+  const fetchActiveDrivers = async (): Promise<DriverWithLocation[]> => {
+    const enriched: DriverWithLocation[] = [];
+    
+    // First get all drivers with active bookings
+    const { data: activeBookings, error: bookingsError } = await supabase
+      .from('bookings')
+      .select('id, assigned_driver_id, service_type, status, user_info, service_details')
+      .not('assigned_driver_id', 'is', null)
+      .in('status', ['assigned', 'accepted', 'on_trip', 'confirmed']);
+    
+    if (bookingsError) {
+      console.error('Error fetching active bookings:', bookingsError);
+      return [];
+    }
+    
+    console.log('Active bookings with drivers:', activeBookings?.length || 0);
+    
+    // Get unique driver IDs from active bookings
+    const driverIds = [...new Set((activeBookings || []).map(b => b.assigned_driver_id).filter(Boolean))];
+    
+    if (driverIds.length === 0) {
+      console.log('No drivers with active bookings found');
+      return [];
+    }
+    
+    // Get driver info for all active drivers
+    const { data: drivers } = await supabase
+      .from('drivers')
+      .select('id, full_name, status')
+      .in('id', driverIds);
+    
+    const driverMap = new Map((drivers || []).map(d => [d.id, d]));
+    
+    // Get locations for these drivers
+    const { data: locations } = await supabase
+      .from('driver_locations')
+      .select('*')
+      .in('driver_id', driverIds);
+    
+    const locationMap = new Map((locations || []).map(l => [l.driver_id, l]));
+    
+    // Build enriched data for each active booking's driver
+    for (const booking of (activeBookings || [])) {
+      const driverId = booking.assigned_driver_id;
+      if (!driverId) continue;
+      
+      const driver = driverMap.get(driverId);
+      const location = locationMap.get(driverId);
+      
+      // Use location data if available, otherwise use default coordinates
+      const lat = location?.latitude ?? 55.7558; // Moscow default
+      const lng = location?.longitude ?? 37.6173;
+      
+      const details = booking.service_details as any;
+      let eta: ETAResult | null = null;
+      
+      // Calculate ETA if we have destination coordinates and driver location
+      if (details?.dropoff_coordinates && location && booking.status === 'on_trip') {
+        eta = await calculateETA(
+          location.longitude,
+          location.latitude,
+          details.dropoff_coordinates.lng,
+          details.dropoff_coordinates.lat
+        );
+      }
+      
+      // Avoid duplicates - check if driver already added
+      if (!enriched.find(e => e.driver_id === driverId)) {
+        enriched.push({
+          id: location?.id || driverId,
+          driver_id: driverId,
+          booking_id: booking.id,
+          latitude: lat,
+          longitude: lng,
+          heading: location?.heading || null,
+          speed: location?.speed || null,
+          accuracy: location?.accuracy || null,
+          updated_at: location?.updated_at || new Date().toISOString(),
+          driver_name: driver?.full_name || 'Unknown Driver',
+          booking_service: `${booking.service_type} (${booking.status})`,
+          customer_name: (booking.user_info as any)?.fullName || 'Customer',
+          pickup_location: details?.pickup_location || details?.pickupLocation || '',
+          dropoff_location: details?.dropoff_location || details?.dropoffLocation || '',
+          eta,
+        });
+      }
+    }
+    
+    console.log('Enriched active drivers:', enriched.length);
+    return enriched;
+  };
+
+  // Legacy function for location-based enrichment (backup)
   const enrichDriverData = async (locations: DriverLocation[]): Promise<DriverWithLocation[]> => {
     const enriched: DriverWithLocation[] = [];
     
     for (const loc of locations) {
       let driver_name = 'Unknown Driver';
       let booking_service = '';
-      let booking_status = '';
       let customer_name = '';
       let pickup_location = '';
       let dropoff_location = '';
@@ -67,17 +159,14 @@ export const AdminDriverMap: React.FC = () => {
         
         if (booking) {
           booking_service = `${booking.service_type} (${booking.status})`;
-          booking_status = booking.status;
           customer_name = (booking.user_info as any)?.fullName || 'Customer';
           
-          // Extract locations from service_details
           const details = booking.service_details as any;
           if (details) {
             pickup_location = details.pickup_location || details.pickupLocation || '';
             dropoff_location = details.dropoff_location || details.dropoffLocation || '';
             
-            // Calculate ETA if we have destination coordinates and status is on_trip
-            if (details.dropoff_coordinates && booking_status === 'on_trip') {
+            if (details.dropoff_coordinates && booking.status === 'on_trip') {
               eta = await calculateETA(
                 loc.longitude,
                 loc.latitude,
@@ -89,23 +178,15 @@ export const AdminDriverMap: React.FC = () => {
         }
       }
       
-      // Include ALL drivers with active status bookings (accepted, on_trip, assigned)
-      // or drivers who are online (have location data within last 5 minutes)
-      const locationAge = Date.now() - new Date(loc.updated_at).getTime();
-      const isRecentLocation = locationAge < 5 * 60 * 1000; // 5 minutes
-      const isActiveBooking = ['accepted', 'on_trip', 'assigned', 'confirmed'].includes(booking_status);
-      
-      if (isActiveBooking || (isRecentLocation && driver?.status === 'active')) {
-        enriched.push({
-          ...loc,
-          driver_name,
-          booking_service: booking_service || 'Online - No active booking',
-          customer_name,
-          pickup_location,
-          dropoff_location,
-          eta,
-        });
-      }
+      enriched.push({
+        ...loc,
+        driver_name,
+        booking_service: booking_service || 'Online - No active booking',
+        customer_name,
+        pickup_location,
+        dropoff_location,
+        eta,
+      });
     }
     
     return enriched;
@@ -136,9 +217,8 @@ export const AdminDriverMap: React.FC = () => {
         map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
         map.current.on('load', async () => {
-          // Load initial driver locations
-          const locations = await getAllDriverLocations();
-          const enriched = await enrichDriverData(locations);
+          // FIXED: Fetch active drivers from bookings, not just location data
+          const enriched = await fetchActiveDrivers();
           setDrivers(enriched);
           
           // Add markers for each driver
@@ -254,8 +334,8 @@ export const AdminDriverMap: React.FC = () => {
 
   const handleRefresh = async () => {
     setLoading(true);
-    const locations = await getAllDriverLocations();
-    const enriched = await enrichDriverData(locations);
+    // FIXED: Use fetchActiveDrivers instead of location-only approach
+    const enriched = await fetchActiveDrivers();
     setDrivers(enriched);
     
     // Clear old markers and add new ones
