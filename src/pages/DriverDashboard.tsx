@@ -251,8 +251,19 @@ const DriverDashboard = () => {
     return <Badge variant={variant} className={className}>{label}</Badge>;
   };
 
-  const pendingResponse = bookings.filter(b => b.driver_response === 'pending' || (!b.driver_response && b.status === 'assigned'));
-  const activeBookings = bookings.filter(b => b.driver_response === 'accepted' || b.status === 'accepted' || b.status === 'on_trip');
+  // FIXED: Properly filter bookings based on status and driver_response
+  // Pending = assigned to driver, awaiting their response (status=assigned AND driver_response=pending or null)
+  // OR confirmed with driver assigned but no response yet
+  const pendingResponse = bookings.filter(b => 
+    (b.status === 'assigned' && (b.driver_response === 'pending' || !b.driver_response)) ||
+    (b.status === 'confirmed' && b.driver_response === 'pending')
+  );
+  // Active = driver accepted or on_trip
+  const activeBookings = bookings.filter(b => 
+    b.status === 'accepted' || 
+    b.status === 'on_trip' ||
+    (b.driver_response === 'accepted' && b.status !== 'completed')
+  );
   const completedBookings = bookings.filter(b => b.status === 'completed');
   
   // Get active booking ID for location tracking

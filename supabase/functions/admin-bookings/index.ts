@@ -300,11 +300,13 @@ serve(async (req) => {
 
       const oldDriverId = booking.assigned_driver_id
 
-      // Update booking with driver assignment
+      // Update booking with driver assignment - CRITICAL: Set status to 'assigned' and driver_response to 'pending'
       const { error: updateError } = await supabaseAdmin
         .from('bookings')
         .update({ 
           assigned_driver_id: driver_id,
+          status: driver_id ? 'assigned' : 'confirmed', // Set to assigned when driver is assigned, back to confirmed if unassigned
+          driver_response: driver_id ? 'pending' : null, // Reset driver response when assigned
           updated_at: new Date().toISOString() 
         })
         .eq('id', bookingId)
@@ -377,11 +379,13 @@ serve(async (req) => {
 
       const oldDriverId = booking.assigned_driver_id
 
-      // Update booking with driver assignment
+      // Update booking with driver assignment - CRITICAL: Set status to 'assigned' and driver_response to 'pending'
       const { error: updateError } = await supabaseAdmin
         .from('bookings')
         .update({ 
           assigned_driver_id: selectedDriver.id,
+          status: 'assigned', // Set to assigned when driver is auto-assigned
+          driver_response: 'pending', // Reset driver response
           updated_at: new Date().toISOString() 
         })
         .eq('id', bookingId)
