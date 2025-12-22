@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Navigation, Loader2, AlertCircle } from 'lucide-react';
 import { updateDriverLocation, clearDriverLocation } from '@/services/locationService';
+import { recordRoutePoint } from '@/services/routeHistoryService';
 import { useToast } from '@/hooks/use-toast';
 
 interface DriverLocationTrackerProps {
@@ -36,8 +37,8 @@ export const DriverLocationTracker: React.FC<DriverLocationTrackerProps> = ({
 
   // Send location update to server
   const sendLocationUpdate = useCallback(async (coords: GeolocationCoordinates) => {
-    if (!activeBookingId) {
-      console.warn('[LocationTracker] No active booking ID, skipping update');
+    if (!activeBookingId || !user) {
+      console.warn('[LocationTracker] No active booking ID or user, skipping update');
       return;
     }
 
@@ -50,6 +51,7 @@ export const DriverLocationTracker: React.FC<DriverLocationTrackerProps> = ({
       status: bookingStatus
     });
 
+    // Update driver_locations table
     const result = await updateDriverLocation({
       latitude,
       longitude,
@@ -58,6 +60,18 @@ export const DriverLocationTracker: React.FC<DriverLocationTrackerProps> = ({
       accuracy: accuracy || undefined,
       booking_id: activeBookingId,
     });
+
+    // Also record to route history for trip replay
+    if (bookingStatus === 'on_trip' || bookingStatus === 'accepted') {
+      await recordRoutePoint(
+        activeBookingId,
+        user.id,
+        latitude,
+        longitude,
+        heading || undefined,
+        speed || undefined
+      );
+    }
 
     if (!result.success) {
       console.error('[LocationTracker] Failed to update location:', result.error);
@@ -68,7 +82,7 @@ export const DriverLocationTracker: React.FC<DriverLocationTrackerProps> = ({
       setLocationError(null);
       console.log('[LocationTracker] Location update successful');
     }
-  }, [activeBookingId, bookingStatus]);
+  }, [activeBookingId, bookingStatus, user]);
 
   // Start GPS tracking
   const startTracking = useCallback(async () => {

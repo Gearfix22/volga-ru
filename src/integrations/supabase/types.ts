@@ -44,6 +44,60 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          permissions: Database["public"]["Enums"]["admin_permission"][]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permissions?: Database["public"]["Enums"]["admin_permission"][]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permissions?: Database["public"]["Enums"]["admin_permission"][]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      auth_sessions: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string
+          user_role: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id: string
+          user_role: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string
+          user_role?: string
+        }
+        Relationships: []
+      }
       booking_status_history: {
         Row: {
           booking_id: string | null
@@ -87,12 +141,14 @@ export type Database = {
           admin_notes: string | null
           assigned_driver_id: string | null
           created_at: string | null
+          currency: string | null
           customer_notes: string | null
           driver_notes: string | null
           driver_required: boolean | null
           driver_response: string | null
           driver_response_at: string | null
           id: string
+          original_price_usd: number | null
           payment_method: string | null
           payment_status: string | null
           requires_verification: boolean | null
@@ -110,12 +166,14 @@ export type Database = {
           admin_notes?: string | null
           assigned_driver_id?: string | null
           created_at?: string | null
+          currency?: string | null
           customer_notes?: string | null
           driver_notes?: string | null
           driver_required?: boolean | null
           driver_response?: string | null
           driver_response_at?: string | null
           id?: string
+          original_price_usd?: number | null
           payment_method?: string | null
           payment_status?: string | null
           requires_verification?: boolean | null
@@ -133,12 +191,14 @@ export type Database = {
           admin_notes?: string | null
           assigned_driver_id?: string | null
           created_at?: string | null
+          currency?: string | null
           customer_notes?: string | null
           driver_notes?: string | null
           driver_required?: boolean | null
           driver_response?: string | null
           driver_response_at?: string | null
           id?: string
+          original_price_usd?: number | null
           payment_method?: string | null
           payment_status?: string | null
           requires_verification?: boolean | null
@@ -195,6 +255,33 @@ export type Database = {
           status?: string | null
           subject?: string | null
           submitted_at?: string | null
+        }
+        Relationships: []
+      }
+      currency_rates: {
+        Row: {
+          currency_code: string
+          id: string
+          rate_to_usd: number
+          symbol: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          currency_code: string
+          id?: string
+          rate_to_usd?: number
+          symbol: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          currency_code?: string
+          id?: string
+          rate_to_usd?: number
+          symbol?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -286,6 +373,47 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      customer_notifications: {
+        Row: {
+          booking_id: string | null
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       draft_bookings: {
         Row: {
@@ -418,6 +546,54 @@ export type Database = {
           },
           {
             foreignKeyName: "driver_notifications_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_route_history: {
+        Row: {
+          booking_id: string
+          driver_id: string
+          heading: number | null
+          id: string
+          latitude: number
+          longitude: number
+          recorded_at: string
+          speed: number | null
+        }
+        Insert: {
+          booking_id: string
+          driver_id: string
+          heading?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          recorded_at?: string
+          speed?: number | null
+        }
+        Update: {
+          booking_id?: string
+          driver_id?: string
+          heading?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          recorded_at?: string
+          speed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_route_history_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "driver_route_history_driver_id_fkey"
             columns: ["driver_id"]
             isOneToOne: false
             referencedRelation: "drivers"
@@ -854,6 +1030,7 @@ export type Database = {
           id: string
           phone: string
           phone_verified: boolean | null
+          preferred_currency: string | null
           preferred_language: string | null
           updated_at: string | null
         }
@@ -863,6 +1040,7 @@ export type Database = {
           id: string
           phone: string
           phone_verified?: boolean | null
+          preferred_currency?: string | null
           preferred_language?: string | null
           updated_at?: string | null
         }
@@ -872,6 +1050,7 @@ export type Database = {
           id?: string
           phone?: string
           phone_verified?: boolean | null
+          preferred_currency?: string | null
           preferred_language?: string | null
           updated_at?: string | null
         }
@@ -1140,6 +1319,13 @@ export type Database = {
     }
     Functions: {
       cleanup_old_login_attempts: { Args: never; Returns: undefined }
+      has_admin_permission: {
+        Args: {
+          _permission: Database["public"]["Enums"]["admin_permission"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_any_role: {
         Args: {
           _roles: Database["public"]["Enums"]["app_role"][]
@@ -1156,6 +1342,18 @@ export type Database = {
       }
     }
     Enums: {
+      admin_permission:
+        | "users_create"
+        | "users_delete"
+        | "users_view"
+        | "users_edit"
+        | "bookings_view"
+        | "bookings_edit"
+        | "payments_view"
+        | "payments_edit"
+        | "drivers_manage"
+        | "settings_manage"
+        | "full_access"
       app_role: "admin" | "moderator" | "user" | "driver"
     }
     CompositeTypes: {
@@ -1284,6 +1482,19 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_permission: [
+        "users_create",
+        "users_delete",
+        "users_view",
+        "users_edit",
+        "bookings_view",
+        "bookings_edit",
+        "payments_view",
+        "payments_edit",
+        "drivers_manage",
+        "settings_manage",
+        "full_access",
+      ],
       app_role: ["admin", "moderator", "user", "driver"],
     },
   },

@@ -1,7 +1,7 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
+import { logAuthEvent, UserRole } from '@/services/authSessionService';
 
 interface AuthContextType {
   user: User | null;
@@ -85,6 +85,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (event === 'SIGNED_IN' && session?.user) {
         setTimeout(async () => {
           try {
+            // Determine user role for auth session logging
+            const { data: roleData } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .limit(1);
+            
+            const userRole: UserRole = roleData?.[0]?.role || 'user';
+            
+            // Log to auth_sessions table
+            await logAuthEvent(session.user.id, userRole, 'login');
+
+            // Also log to user_activities for backward compatibility
             await supabase
               .from('user_activities')
               .insert({
@@ -101,6 +114,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.error('Error logging login activity:', error);
           }
         }, 100);
+      }
+
+      // Track logout events
+      if (event === 'SIGNED_OUT') {
+        // Note: We can't easily get user info after signout, but we tracked the login
+        console.log('User signed out');
       }
     });
 
@@ -195,6 +214,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    // Log logout before signing out
+    if (user) {
+      try {
+        const userRole: UserRole = userRoles.includes('admin') ? 'admin' : 
+                                   userRoles.includes('driver') ? 'driver' : 'user';
+        await logAuthEvent(user.id, userRole, 'logout');
+      } catch (error) {
+        console.error('Error logging logout:', error);
+      }
+    }
     await supabase.auth.signOut();
   };
 
