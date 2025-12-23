@@ -7,6 +7,7 @@ import { BackButton } from '@/components/BackButton';
 import { AuthRequiredWrapper } from '@/components/booking/AuthRequiredWrapper';
 import { BankTransferForm } from '@/components/payment/BankTransferForm';
 import { BankTransferInfo } from '@/components/payment/BankTransferInfo';
+import { CurrencySelector } from '@/components/booking/CurrencySelector';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { createBooking } from '@/services/database';
 import { completeDraftBooking, createEnhancedBooking } from '@/services/bookingService';
+import { convertFromUSD, getCurrencyRates, type CurrencyCode, type CurrencyRate } from '@/services/currencyService';
 import type { BookingData } from '@/types/booking';
 
 const EnhancedPayment = () => {
@@ -45,12 +47,32 @@ const EnhancedPayment = () => {
   const [selectedMethod, setSelectedMethod] = useState<'cash' | 'stripe' | 'bank-transfer'>('cash');
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState(bookingData?.totalPrice?.toString() || '');
+  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>('USD');
+  const [currencyRates, setCurrencyRates] = useState<CurrencyRate[]>([]);
+  const [convertedAmount, setConvertedAmount] = useState<number>(bookingData?.totalPrice || 0);
 
   // Stripe payment form fields
   const [cardNumber, setCardNumber] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [cvv, setCvv] = useState('');
   const [cardholderName, setCardholderName] = useState('');
+
+  // Load currency rates
+  useEffect(() => {
+    const loadRates = async () => {
+      const rates = await getCurrencyRates();
+      setCurrencyRates(rates);
+    };
+    loadRates();
+  }, []);
+
+  // Update converted amount when currency changes
+  useEffect(() => {
+    const baseAmount = parseFloat(paymentAmount) || 0;
+    const rate = currencyRates.find(r => r.currency_code === selectedCurrency);
+    const converted = rate ? convertFromUSD(baseAmount, rate.rate_to_usd) : baseAmount;
+    setConvertedAmount(converted);
+  }, [selectedCurrency, paymentAmount, currencyRates]);
 
   useEffect(() => {
     if (!bookingData) {
@@ -340,10 +362,31 @@ const EnhancedPayment = () => {
             <span className="text-sm">{bookingData.userInfo.phone}</span>
           </div>
         </div>
+        
+        {/* Currency Selector */}
+        <div className="border-t-2 pt-4 mt-4">
+          <Label className="text-sm font-medium mb-2 block">Select Currency</Label>
+          <CurrencySelector
+            selectedCurrency={selectedCurrency}
+            onCurrencyChange={setSelectedCurrency}
+          />
+        </div>
+        
         <div className="border-t-2 pt-4 mt-4">
           <div className="flex items-center justify-between">
             <span className="text-lg font-semibold">Total Amount:</span>
-            <span className="text-2xl font-bold text-primary">${finalAmount.toFixed(2)}</span>
+            <div className="text-right">
+              {selectedCurrency !== 'USD' && (
+                <span className="text-sm text-muted-foreground block">
+                  (${finalAmount.toFixed(2)} USD)
+                </span>
+              )}
+              <span className="text-2xl font-bold text-primary">
+                {currencyRates.find(r => r.currency_code === selectedCurrency)?.symbol || '$'}
+                {convertedAmount.toFixed(2)}
+                {selectedCurrency !== 'USD' && ` ${selectedCurrency}`}
+              </span>
+            </div>
           </div>
         </div>
         <Alert className="mt-4">

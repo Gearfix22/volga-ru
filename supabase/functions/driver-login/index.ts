@@ -248,6 +248,16 @@ Deno.serve(async (req) => {
         }
 
         await recordAttempt(supabase, normalizedPhone, clientIP, true);
+        
+        // Log auth session for driver
+        await supabase.from('auth_sessions').insert({
+          user_id: retryData.user.id,
+          user_role: 'driver',
+          event_type: 'login',
+          ip_address: clientIP,
+          user_agent: req.headers.get('user-agent') || null
+        });
+        
         return new Response(
           JSON.stringify({
             success: true,
@@ -268,6 +278,15 @@ Deno.serve(async (req) => {
     }
 
     await recordAttempt(supabase, normalizedPhone, clientIP, true);
+    
+    // Log auth session for driver
+    await supabase.from('auth_sessions').insert({
+      user_id: signInData.user.id,
+      user_role: 'driver',
+      event_type: 'login',
+      ip_address: clientIP,
+      user_agent: req.headers.get('user-agent') || null
+    });
     
     return new Response(
       JSON.stringify({

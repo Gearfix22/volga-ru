@@ -238,6 +238,15 @@ Deno.serve(async (req) => {
     // Record successful attempt
     await recordAttempt(supabase, email, clientIP, true);
     
+    // Log auth session for admin
+    await supabase.from('auth_sessions').insert({
+      user_id: adminUser.id,
+      user_role: 'admin',
+      event_type: 'login',
+      ip_address: clientIP,
+      user_agent: req.headers.get('user-agent') || null
+    });
+    
     console.log('Admin login successful');
 
     return new Response(
