@@ -314,37 +314,77 @@ export const EnhancedBookingsManagement = () => {
   };
 
   const savePrice = async (bookingId: string) => {
+    const trimmedValue = priceValue.trim();
+    
+    // Validate input
+    if (!trimmedValue) {
+      toast({
+        title: 'Invalid Price',
+        description: 'Please enter a price value',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    const newPrice = parseFloat(trimmedValue);
+    
+    if (isNaN(newPrice)) {
+      toast({
+        title: 'Invalid Price',
+        description: 'Please enter a valid number',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (newPrice < 0) {
+      toast({
+        title: 'Invalid Price',
+        description: 'Price cannot be negative',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
       setActionLoading(bookingId);
-      const newPrice = parseFloat(priceValue);
-      if (isNaN(newPrice) || newPrice < 0) {
-        toast({
-          title: 'Invalid Price',
-          description: 'Please enter a valid price',
-          variant: 'destructive'
-        });
-        setActionLoading(null);
-        return;
-      }
-      await updateBooking(bookingId, { total_price: newPrice });
       
-      // Optimistic update
+      // Store original price for rollback
+      const originalBooking = bookings.find(b => b.id === bookingId);
+      const originalPrice = originalBooking?.total_price;
+      
+      // Optimistic update first for instant feedback
       setBookings(prev => prev.map(b => 
         b.id === bookingId ? { ...b, total_price: newPrice } : b
       ));
       
+      // Make API call
+      const result = await updateBooking(bookingId, { total_price: newPrice });
+      
+      if (!result.success) {
+        // Rollback on failure
+        setBookings(prev => prev.map(b => 
+          b.id === bookingId ? { ...b, total_price: originalPrice ?? 0 } : b
+        ));
+        throw new Error('Failed to update price');
+      }
+      
       toast({
-        title: 'Success',
-        description: 'Price updated successfully',
+        title: 'Price Updated',
+        description: `Price set to $${newPrice.toFixed(2)}`,
       });
+      
       setEditingPrice(null);
       setPriceValue('');
     } catch (error: any) {
+      console.error('Price update error:', error);
       toast({
-        title: 'Error',
-        description: error.message,
+        title: 'Error Updating Price',
+        description: error.message || 'Failed to save price. Please try again.',
         variant: 'destructive'
       });
+      // Refresh to get actual state from server
+      fetchBookings();
     } finally {
       setActionLoading(null);
     }
