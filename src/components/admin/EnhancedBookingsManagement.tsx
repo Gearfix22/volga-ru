@@ -899,6 +899,7 @@ export const EnhancedBookingsManagement = () => {
         booking={selectedBooking}
         open={showDetails}
         onOpenChange={setShowDetails}
+        onPriceUpdated={fetchBookings}
       />
 
       {/* Reject Booking Modal */}
