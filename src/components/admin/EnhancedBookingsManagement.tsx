@@ -641,14 +641,15 @@ export const EnhancedBookingsManagement = () => {
                                   <span className="font-semibold">${booking.total_price?.toFixed(2) || '0.00'}</span>
                                   <Button
                                     size="sm"
-                                    variant="ghost"
-                                    className="h-6 px-1"
+                                    variant="outline"
+                                    className="h-7 px-2 ml-1"
                                     onClick={() => {
                                       setEditingPrice(booking.id);
                                       setPriceValue(booking.total_price?.toString() || '0');
                                     }}
                                   >
-                                    <Edit className="h-3 w-3" />
+                                    <Edit className="h-3 w-3 mr-1" />
+                                    Edit
                                   </Button>
                                 </div>
                               )}
