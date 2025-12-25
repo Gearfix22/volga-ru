@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -7,21 +7,103 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Phone, Calendar, DollarSign, FileText, Car } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { User, Mail, Phone, Calendar, DollarSign, FileText, Car, Edit, Save, X } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { BookingStatusTimeline } from '@/components/booking/BookingStatusTimeline';
+import { updateBooking } from '@/services/adminService';
+import { useToast } from '@/hooks/use-toast';
+
 interface BookingDetailsDialogProps {
   booking: any;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onPriceUpdated?: () => void;
 }
 
 export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
   booking,
   open,
   onOpenChange,
+  onPriceUpdated,
 }) => {
+  const { toast } = useToast();
+  const [editingPrice, setEditingPrice] = useState(false);
+  const [priceValue, setPriceValue] = useState('');
+  const [saving, setSaving] = useState(false);
+
   if (!booking) return null;
+
+  const handleEditPrice = () => {
+    setPriceValue(booking.total_price?.toString() || '0');
+    setEditingPrice(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingPrice(false);
+    setPriceValue('');
+  };
+
+  const handleSavePrice = async () => {
+    const trimmedValue = priceValue.trim();
+    
+    if (!trimmedValue) {
+      toast({
+        title: 'Invalid Price',
+        description: 'Please enter a price value',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    const newPrice = parseFloat(trimmedValue);
+    
+    if (isNaN(newPrice)) {
+      toast({
+        title: 'Invalid Price',
+        description: 'Please enter a valid number',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    if (newPrice < 0) {
+      toast({
+        title: 'Invalid Price',
+        description: 'Price cannot be negative',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const result = await updateBooking(booking.id, { total_price: newPrice });
+      
+      if (!result.success) {
+        throw new Error('Failed to update price');
+      }
+      
+      toast({
+        title: 'Price Updated',
+        description: `Price set to $${newPrice.toFixed(2)}`,
+      });
+      
+      setEditingPrice(false);
+      setPriceValue('');
+      onPriceUpdated?.();
+    } catch (error: any) {
+      console.error('Price update error:', error);
+      toast({
+        title: 'Error Updating Price',
+        description: error.message || 'Failed to save price. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -109,9 +191,49 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
                   <DollarSign className="h-4 w-4" />
                   Total Price:
                 </span>
-                <p className="text-lg font-bold text-primary">
-                  ${booking.total_price?.toFixed(2) || '0.00'}
-                </p>
+                {editingPrice ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      value={priceValue}
+                      onChange={(e) => setPriceValue(e.target.value)}
+                      className="w-28 h-9"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                    />
+                    <Button 
+                      size="sm" 
+                      onClick={handleSavePrice}
+                      disabled={saving}
+                    >
+                      <Save className="h-4 w-4 mr-1" />
+                      Save
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      onClick={handleCancelEdit}
+                      disabled={saving}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-bold text-primary">
+                      ${booking.total_price?.toFixed(2) || '0.00'}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleEditPrice}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit Price
+                    </Button>
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <span className="text-sm font-medium">Payment Status:</span>
