@@ -11,6 +11,7 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { AdminRouteGuard } from "@/components/auth/AdminRouteGuard";
 import { DriverRouteGuard } from "@/components/auth/DriverRouteGuard";
 import { CustomerRouteGuard } from "@/components/auth/CustomerRouteGuard";
+import { GuideRouteGuard } from "@/components/auth/GuideRouteGuard";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
 import Gallery from "./pages/Gallery";
@@ -34,6 +35,8 @@ import AdminPanel from "./pages/AdminPanel";
 import AdminLogin from "./pages/AdminLogin";
 import DriverLogin from "./pages/DriverLogin";
 import DriverDashboard from "./pages/DriverDashboard";
+import GuideLogin from "./pages/GuideLogin";
+import GuideDashboard from "./pages/GuideDashboard";
 import { FloatingWhatsAppButton } from "./components/FloatingWhatsAppButton";
 
 const queryClient = new QueryClient();
@@ -140,6 +143,7 @@ const App = () => {
                 {/* Auth Routes - Accessible to all */}
                 <Route path="/admin-login" element={<AdminLogin />} />
                 <Route path="/driver-login" element={<DriverLogin />} />
+                <Route path="/guide-login" element={<GuideLogin />} />
                 
                 {/* Admin Routes - Protected by AdminRouteGuard */}
                 <Route path="/admin" element={
@@ -163,6 +167,13 @@ const App = () => {
                   <DriverRouteGuard>
                     <DriverDashboard />
                   </DriverRouteGuard>
+                } />
+                
+                {/* Guide Routes - Protected by GuideRouteGuard */}
+                <Route path="/guide-dashboard" element={
+                  <GuideRouteGuard>
+                    <GuideDashboard />
+                  </GuideRouteGuard>
                 } />
                 
                 {/* Legacy redirects */}
