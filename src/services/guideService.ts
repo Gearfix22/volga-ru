@@ -12,6 +12,19 @@ export interface Guide {
   updated_at: string;
 }
 
+export interface GuideAvailability {
+  id: string;
+  guide_id: string;
+  is_available: boolean;
+  available_from: string;
+  available_to: string;
+  working_days: number[];
+  languages: string[];
+  service_areas: string[];
+  created_at: string;
+  updated_at: string;
+}
+
 export interface GuideLocation {
   id: string;
   guide_id: string;
@@ -72,7 +85,7 @@ export async function getGuideById(guideId: string): Promise<Guide | null> {
     .from('guides')
     .select('*')
     .eq('id', guideId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Error fetching guide:', error);
@@ -128,6 +141,109 @@ export async function deleteGuide(guideId: string): Promise<boolean> {
   return true;
 }
 
+// Get guide availability
+export async function getGuideAvailability(guideId: string): Promise<GuideAvailability | null> {
+  const { data, error } = await supabase
+    .from('guide_availability')
+    .select('*')
+    .eq('guide_id', guideId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching guide availability:', error);
+    return null;
+  }
+
+  return data as GuideAvailability;
+}
+
+// Upsert guide availability
+export async function upsertGuideAvailability(
+  guideId: string,
+  availability: Partial<Omit<GuideAvailability, 'id' | 'guide_id' | 'created_at' | 'updated_at'>>
+): Promise<boolean> {
+  const { error } = await supabase
+    .from('guide_availability')
+    .upsert({
+      guide_id: guideId,
+      ...availability,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'guide_id' });
+
+  if (error) {
+    console.error('Error updating guide availability:', error);
+    return false;
+  }
+
+  return true;
+}
+
+// Get available guides for booking
+export async function getAvailableGuides(
+  language?: string,
+  area?: string,
+  dayOfWeek?: number,
+  time?: string
+): Promise<(Guide & { availability: GuideAvailability })[]> {
+  // First get availability records
+  let query = supabase
+    .from('guide_availability')
+    .select('*')
+    .eq('is_available', true);
+
+  if (language) {
+    query = query.contains('languages', [language]);
+  }
+  if (area) {
+    query = query.contains('service_areas', [area]);
+  }
+  if (dayOfWeek !== undefined) {
+    query = query.contains('working_days', [dayOfWeek]);
+  }
+
+  const { data: availabilityData, error: availError } = await query;
+
+  if (availError || !availabilityData?.length) {
+    console.error('Error fetching availability:', availError);
+    return [];
+  }
+
+  // Filter by time if provided
+  let filteredAvail = availabilityData;
+  if (time) {
+    filteredAvail = availabilityData.filter(item => {
+      return time >= item.available_from && time <= item.available_to;
+    });
+  }
+
+  if (!filteredAvail.length) return [];
+
+  // Fetch guide details for matching availability
+  const guideIds = filteredAvail.map(a => a.guide_id);
+  const { data: guidesData, error: guidesError } = await supabase
+    .from('guides')
+    .select('*')
+    .in('id', guideIds)
+    .eq('status', 'active');
+
+  if (guidesError || !guidesData) {
+    console.error('Error fetching guides:', guidesError);
+    return [];
+  }
+
+  // Combine data
+  return filteredAvail
+    .map(avail => {
+      const guide = guidesData.find(g => g.id === avail.guide_id);
+      if (!guide) return null;
+      return {
+        ...guide,
+        availability: avail as GuideAvailability
+      };
+    })
+    .filter((item): item is Guide & { availability: GuideAvailability } => item !== null);
+}
+
 // Update guide location
 export async function updateGuideLocation(
   guideId: string,
@@ -159,13 +275,28 @@ export async function updateGuideLocation(
   return true;
 }
 
+// Clear guide location
+export async function clearGuideLocation(guideId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from('guide_locations')
+    .delete()
+    .eq('guide_id', guideId);
+
+  if (error) {
+    console.error('Error clearing guide location:', error);
+    return false;
+  }
+
+  return true;
+}
+
 // Get guide location
 export async function getGuideLocation(guideId: string): Promise<GuideLocation | null> {
   const { data, error } = await supabase
     .from('guide_locations')
     .select('*')
     .eq('guide_id', guideId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Error fetching guide location:', error);
