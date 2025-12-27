@@ -8,8 +8,8 @@ import {
   LogOut,
   Car,
   MapPin,
-  UserCheck,
-  Package
+  Package,
+  DollarSign
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -47,6 +47,7 @@ const AdminSidebar = () => {
     { title: 'Overview', url: '/admin?tab=overview', icon: LayoutDashboard },
     { title: 'Bookings', url: '/admin?tab=bookings', icon: Calendar },
     { title: 'Payments', url: '/admin?tab=payments', icon: CreditCard },
+    { title: 'Pricing', url: '/admin?tab=pricing', icon: DollarSign },
     { title: 'Drivers', url: '/admin?tab=drivers', icon: Car },
     { title: 'Services', url: '/admin?tab=services', icon: Package },
     { title: 'Live Map', url: '/admin?tab=map', icon: MapPin },
