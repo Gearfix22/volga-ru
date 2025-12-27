@@ -1354,7 +1354,7 @@ export type Database = {
         | "drivers_manage"
         | "settings_manage"
         | "full_access"
-      app_role: "admin" | "moderator" | "user" | "driver"
+      app_role: "admin" | "moderator" | "user" | "driver" | "guide"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1495,7 +1495,7 @@ export const Constants = {
         "settings_manage",
         "full_access",
       ],
-      app_role: ["admin", "moderator", "user", "driver"],
+      app_role: ["admin", "moderator", "user", "driver", "guide"],
     },
   },
 } as const
