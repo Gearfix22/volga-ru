@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +12,7 @@ import { AdminRouteGuard } from "@/components/auth/AdminRouteGuard";
 import { DriverRouteGuard } from "@/components/auth/DriverRouteGuard";
 import { CustomerRouteGuard } from "@/components/auth/CustomerRouteGuard";
 import { GuideRouteGuard } from "@/components/auth/GuideRouteGuard";
+import { useWebViewBackHandler, useDeepLinkHandler } from "@/hooks/useWebViewCompat";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
 import Gallery from "./pages/Gallery";
@@ -37,9 +38,25 @@ import DriverLogin from "./pages/DriverLogin";
 import DriverDashboard from "./pages/DriverDashboard";
 import GuideLogin from "./pages/GuideLogin";
 import GuideDashboard from "./pages/GuideDashboard";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { FloatingWhatsAppButton } from "./components/FloatingWhatsAppButton";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+// WebView compatibility wrapper
+const WebViewWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  useWebViewBackHandler();
+  useDeepLinkHandler();
+  return <>{children}</>;
+};
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -61,7 +78,11 @@ const App = () => {
           <LanguageProvider>
             <ErrorBoundary>
               <BrowserRouter>
+              <WebViewWrapper>
               <Routes>
+                {/* Public Routes */}
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                
                 {/* Customer Pages - Protected from driver-only users */}
                 <Route path="/" element={
                   <CustomerRouteGuard>
@@ -187,6 +208,7 @@ const App = () => {
                 {/* Catch-all */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </WebViewWrapper>
               <FloatingWhatsAppButton />
               </BrowserRouter>
             </ErrorBoundary>
