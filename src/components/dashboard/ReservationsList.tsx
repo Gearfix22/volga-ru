@@ -2,20 +2,13 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { Calendar, ChevronDown, ChevronUp, Car } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp, Car, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { DriverInfoCard } from '@/components/booking/DriverInfoCard';
 import { BookingStatusTimeline } from '@/components/booking/BookingStatusTimeline';
+import PriceNegotiationCard from '@/components/booking/PriceNegotiationCard';
 import {
   Collapsible,
   CollapsibleContent,
@@ -33,6 +26,8 @@ interface Booking {
   assigned_driver_id?: string | null;
   driver_response?: string;
   show_driver_to_customer?: boolean;
+  price_confirmed?: boolean;
+  customer_proposed_price?: number | null;
 }
 
 interface ReservationsListProps {
@@ -139,6 +134,13 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
            (booking.status === 'accepted' || booking.status === 'on_trip' || booking.status === 'assigned');
   };
 
+  const needsPriceAction = (booking: Booking) => {
+    return booking.status === 'pending' && 
+           booking.total_price && 
+           !booking.price_confirmed;
+  };
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -158,18 +160,29 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                 open={expandedBooking === booking.id}
                 onOpenChange={(open) => setExpandedBooking(open ? booking.id : null)}
               >
-                <Card className={`border ${hasDriver(booking) ? 'border-primary/30' : ''}`}>
+                <Card className={`border ${hasDriver(booking) ? 'border-primary/30' : ''} ${needsPriceAction(booking) ? 'border-amber-300' : ''}`}>
                   <CollapsibleTrigger asChild>
                     <div className="p-4 cursor-pointer hover:bg-muted/50 transition-colors">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-medium">{booking.service_type}</span>
                               {hasDriver(booking) && (
                                 <Badge variant="outline" className="gap-1">
                                   <Car className="h-3 w-3" />
                                   Driver Assigned
+                                </Badge>
+                              )}
+                              {needsPriceAction(booking) && (
+                                <Badge variant="outline" className="gap-1 border-amber-400 text-amber-700 dark:text-amber-300">
+                                  <DollarSign className="h-3 w-3" />
+                                  Price Action Needed
+                                </Badge>
+                              )}
+                              {booking.customer_proposed_price && (
+                                <Badge variant="outline" className="gap-1 border-blue-400 text-blue-700 dark:text-blue-300">
+                                  Proposal Pending
                                 </Badge>
                               )}
                             </div>
@@ -216,7 +229,20 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                   </CollapsibleTrigger>
                   
                   <CollapsibleContent>
-                    <div className="px-4 pb-4 pt-2 border-t">
+                    <div className="px-4 pb-4 pt-2 border-t space-y-4">
+                      {/* Price Negotiation Section */}
+                      {booking.status === 'pending' && booking.total_price && (
+                        <PriceNegotiationCard 
+                          bookingId={booking.id}
+                          onPriceConfirmed={() => {
+                            toast({
+                              title: 'Price Confirmed',
+                              description: 'You can now proceed with payment.',
+                            });
+                          }}
+                        />
+                      )}
+
                       <div className="grid gap-4 md:grid-cols-2">
                         {/* Booking Details */}
                         <div className="space-y-2">
@@ -226,6 +252,9 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                             <p>Created: {new Date(booking.created_at).toLocaleString()}</p>
                             {booking.payment_method && (
                               <p>Payment: {booking.payment_method}</p>
+                            )}
+                            {booking.price_confirmed && (
+                              <p className="text-green-600 dark:text-green-400">✓ Price Confirmed</p>
                             )}
                           </div>
                         </div>
