@@ -12,6 +12,7 @@ import { UsersManagement } from '@/components/admin/UsersManagement';
 import { AdminPayments } from '@/components/admin/AdminPayments';
 import { AdminLogs } from '@/components/admin/AdminLogs';
 import DriversManagement from '@/components/admin/DriversManagement';
+import GuidesManagement from '@/components/admin/GuidesManagement';
 import { AdminDriverMap } from '@/components/admin/AdminDriverMap';
 import AdminServicesManagement from '@/components/admin/AdminServicesManagement';
 import AdminPriceNegotiations from '@/components/admin/AdminPriceNegotiations';
@@ -78,6 +79,7 @@ const AdminPanel = () => {
             {activeTab === 'overview' && <AdminDashboard />}
             {activeTab === 'bookings' && <EnhancedBookingsManagement />}
             {activeTab === 'drivers' && <DriversManagement />}
+            {activeTab === 'guides' && <GuidesManagement />}
             {activeTab === 'services' && <AdminServicesManagement />}
             {activeTab === 'pricing' && <AdminPriceNegotiations />}
             {activeTab === 'map' && <AdminDriverMap />}
