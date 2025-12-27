@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type UserRole = 'admin' | 'driver' | 'user' | 'moderator';
+export type UserRole = 'admin' | 'driver' | 'user' | 'moderator' | 'guide';
 export type EventType = 'login' | 'logout';
 
 export interface AuthSession {
