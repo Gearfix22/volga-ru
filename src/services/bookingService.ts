@@ -306,20 +306,35 @@ async function insertServiceDetails(bookingId: string, bookingData: BookingData)
   }
 }
 
-// Update booking status (for admin use)
+// Update booking status with validation (for admin use)
 export const updateBookingStatus = async (
   bookingId: string,
   newStatus: string,
   paymentStatus?: string,
   adminNotes?: string
-): Promise<void> => {
+): Promise<{ success: boolean; error?: string }> => {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
-    throw new Error('User must be authenticated');
+    return { success: false, error: 'User must be authenticated' };
   }
 
-  const updateData: any = { status: newStatus };
+  // Get current booking status for validation
+  const { data: currentBooking, error: fetchError } = await supabase
+    .from('bookings')
+    .select('status, service_type')
+    .eq('id', bookingId)
+    .single();
+
+  if (fetchError || !currentBooking) {
+    return { success: false, error: 'Booking not found' };
+  }
+
+  // Build update data
+  const updateData: Record<string, unknown> = { 
+    status: newStatus,
+    updated_at: new Date().toISOString()
+  };
   if (paymentStatus) updateData.payment_status = paymentStatus;
   if (adminNotes) updateData.admin_notes = adminNotes;
 
@@ -328,7 +343,12 @@ export const updateBookingStatus = async (
     .update(updateData)
     .eq('id', bookingId);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error updating booking status:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
 };
 
 // Get booking status history

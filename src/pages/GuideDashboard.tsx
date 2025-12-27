@@ -20,10 +20,11 @@ import {
   Calendar,
   Loader2,
   Settings,
-  Save
+  Save,
+  UserCheck,
+  LogOut,
+  RefreshCw
 } from 'lucide-react';
-import { Navigation } from '@/components/Navigation';
-import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { GuideLocationTracker } from '@/components/guide/GuideLocationTracker';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -278,25 +279,37 @@ const GuideDashboard = () => {
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
-      <AnimatedBackground />
-      <Navigation />
-
-      <div className="relative z-10 pt-20 pb-12 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Guide Dashboard</h1>
-              <p className="text-muted-foreground">
-                Welcome, {guideProfile?.full_name || 'Guide'}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button variant="outline" onClick={() => signOut()}>
-                Sign Out
-              </Button>
-            </div>
+    <div className="min-h-screen bg-background">
+      {/* Guide-specific header - no customer navigation */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-b">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <UserCheck className="h-8 w-8 text-primary" />
+            <span className="text-xl font-bold">Guide Portal</span>
           </div>
+          
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={loadData} disabled={loading}>
+              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            
+            <Button variant="outline" onClick={() => signOut()}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 pt-24 pb-12 max-w-6xl">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Guide Dashboard</h1>
+            <p className="text-muted-foreground">
+              Welcome, {guideProfile?.full_name || 'Guide'}
+            </p>
+          </div>
+        </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-6">
@@ -556,8 +569,7 @@ const GuideDashboard = () => {
               </Card>
             </TabsContent>
           </Tabs>
-        </div>
-      </div>
+      </main>
     </div>
   );
 };
