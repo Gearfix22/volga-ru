@@ -1,5 +1,6 @@
 import React from 'react';
-import { Phone, Mail, MapPin, Globe, Facebook, Instagram } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Phone, Mail, MapPin, Globe, Facebook, Instagram, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -162,11 +163,20 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-white/20 mt-8 sm:mt-12 pt-6 sm:pt-8 text-center">
-          <p className="text-white/90 text-sm"
-             style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}>
-            © 2024 <span className="text-white font-semibold">Volga Services</span>. All Rights Reserved.
-          </p>
+        <div className="border-t border-white/20 mt-8 sm:mt-12 pt-6 sm:pt-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-white/90 text-sm text-center sm:text-left"
+               style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}>
+              © 2024 <span className="text-white font-semibold">Volga Services</span>. All Rights Reserved.
+            </p>
+            <Link 
+              to="/privacy-policy" 
+              className="flex items-center gap-2 text-white/80 hover:text-white text-sm transition-colors"
+            >
+              <Shield className="h-4 w-4" />
+              Privacy Policy
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
