@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, Sparkles, ArrowLeft, Car, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, Sparkles, ArrowLeft, Car, Loader2, UserCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { loginSchema, signupSchema } from '@/lib/validationSchemas';
@@ -50,6 +50,10 @@ const Auth = () => {
   const [driverLoginStep, setDriverLoginStep] = useState<'credentials' | 'otp'>('credentials');
   const [useOtpLogin, setUseOtpLogin] = useState(false);
 
+  // Guide login state
+  const [guidePhone, setGuidePhone] = useState('');
+  const [guidePassword, setGuidePassword] = useState('');
+
   // Check for password recovery mode and role param
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -60,9 +64,11 @@ const Auth = () => {
       setIsRecoveryMode(true);
     }
     
-    // Auto-switch to driver tab if role=driver in URL
+    // Auto-switch to driver/guide tab if role in URL
     if (role === 'driver') {
       setActiveTab('driver');
+    } else if (role === 'guide') {
+      setActiveTab('guide');
     }
   }, [session]);
 
@@ -73,6 +79,8 @@ const Auth = () => {
         navigate('/admin');
       } else if (hasRole('driver')) {
         navigate('/driver-dashboard');
+      } else if (hasRole('guide')) {
+        navigate('/guide-dashboard');
       } else {
         navigate('/user-dashboard');
       }
@@ -397,6 +405,76 @@ const Auth = () => {
     setDriverOtp('');
   };
 
+  // Guide login with phone + password
+  const handleGuideLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const normalizedPhone = guidePhone.replace(/\D/g, '');
+
+    if (!normalizedPhone) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter your phone number.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!guidePassword.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter your password.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('guide-login', {
+        body: {
+          phone: normalizedPhone,
+          password: guidePassword
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data?.success) {
+        toast({
+          title: 'Login Failed',
+          description: data?.error || 'Invalid phone number or password.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      if (data?.session?.access_token && data?.session?.refresh_token) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+      }
+
+      toast({
+        title: 'Login Successful',
+        description: 'Welcome back, guide!',
+      });
+
+      navigate('/guide-dashboard');
+    } catch (error: any) {
+      toast({
+        title: 'Login Failed',
+        description: error?.message || 'Invalid phone number or password.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="relative min-h-screen overflow-hidden flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5">
@@ -640,12 +718,16 @@ const Auth = () => {
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsList className="grid w-full grid-cols-4 mb-6">
                   <TabsTrigger value="login" className="text-sm font-medium">Sign In</TabsTrigger>
                   <TabsTrigger value="signup" className="text-sm font-medium">Sign Up</TabsTrigger>
                   <TabsTrigger value="driver" className="text-sm font-medium flex items-center gap-1">
                     <Car className="h-3 w-3" />
                     Driver
+                  </TabsTrigger>
+                  <TabsTrigger value="guide" className="text-sm font-medium flex items-center gap-1">
+                    <UserCheck className="h-3 w-3" />
+                    Guide
                   </TabsTrigger>
                 </TabsList>
                 
@@ -987,6 +1069,83 @@ const Auth = () => {
                       </div>
                     </form>
                   )}
+                </TabsContent>
+
+                {/* Guide Login */}
+                <TabsContent value="guide" className="space-y-4 mt-0">
+                  <form onSubmit={handleGuideLogin} className="space-y-4">
+                    <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 mb-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-primary font-medium mb-1">
+                        <UserCheck className="h-4 w-4" />
+                        Guide Mode
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Guide portal - login with your phone number
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="guide-phone" className="flex items-center gap-2 text-sm font-medium">
+                        <Phone className="h-4 w-4 text-primary" />
+                        Phone Number
+                      </Label>
+                      <Input
+                        id="guide-phone"
+                        type="tel"
+                        value={guidePhone}
+                        onChange={(e) => setGuidePhone(e.target.value)}
+                        placeholder="+7 999 123 45 67"
+                        required
+                        className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="guide-password" className="flex items-center gap-2 text-sm font-medium">
+                        <Lock className="h-4 w-4 text-primary" />
+                        Password
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="guide-password"
+                          type={showPassword ? 'text' : 'password'}
+                          value={guidePassword}
+                          onChange={(e) => setGuidePassword(e.target.value)}
+                          placeholder="Enter your password"
+                          required
+                          className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full h-11 text-base font-semibold" 
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Signing In...
+                        </span>
+                      ) : (
+                        'Sign In as Guide'
+                      )}
+                    </Button>
+
+                    <p className="text-center text-sm text-muted-foreground">
+                      Contact your administrator if you need account access
+                    </p>
+                  </form>
                 </TabsContent>
               </Tabs>
 

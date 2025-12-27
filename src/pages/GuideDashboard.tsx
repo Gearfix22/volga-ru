@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { 
   MapPin, 
   Clock, 
@@ -16,7 +19,9 @@ import {
   Phone,
   Globe,
   Calendar,
-  Loader2
+  Loader2,
+  Settings,
+  Save
 } from 'lucide-react';
 import { Navigation } from '@/components/Navigation';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
@@ -27,7 +32,9 @@ import {
   getGuideBookings, 
   markGuideNotificationRead,
   updateGuideLocation,
-  type GuideNotification 
+  getGuideById,
+  type GuideNotification,
+  type Guide
 } from '@/services/guideService';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -39,13 +46,23 @@ const GuideDashboard = () => {
   const [activeTab, setActiveTab] = useState('bookings');
   const [notifications, setNotifications] = useState<GuideNotification[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [guideProfile, setGuideProfile] = useState<Guide | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [isTracking, setIsTracking] = useState(false);
   const [currentBookingId, setCurrentBookingId] = useState<string | null>(null);
+  
+  // Settings state
+  const [isAvailable, setIsAvailable] = useState(true);
+  const [languages, setLanguages] = useState<string[]>(['English']);
+  const [workingAreas, setWorkingAreas] = useState<string[]>(['City Tours']);
+  const [hourlyRate, setHourlyRate] = useState(50);
+  const [newLanguage, setNewLanguage] = useState('');
+  const [newArea, setNewArea] = useState('');
 
   useEffect(() => {
     if (!user) {
-      navigate('/auth?role=guide');
+      navigate('/guide-login');
       return;
     }
 
@@ -60,19 +77,28 @@ const GuideDashboard = () => {
     }
 
     loadData();
-  }, [user, hasRole]);
+  }, [user, hasRole, navigate]);
 
   const loadData = async () => {
     if (!user) return;
     
     setLoading(true);
     try {
-      const [notifs, bkgs] = await Promise.all([
+      const [notifs, bkgs, profile] = await Promise.all([
         getGuideNotifications(user.id),
-        getGuideBookings(user.id)
+        getGuideBookings(user.id),
+        getGuideById(user.id)
       ]);
       setNotifications(notifs);
       setBookings(bkgs);
+      
+      if (profile) {
+        setGuideProfile(profile);
+        setIsAvailable(profile.status === 'active');
+        setLanguages(profile.languages || ['English']);
+        setWorkingAreas(profile.specialization || ['City Tours']);
+        setHourlyRate(profile.hourly_rate || 50);
+      }
     } catch (error) {
       console.error('Error loading guide data:', error);
     } finally {
@@ -219,6 +245,61 @@ const GuideDashboard = () => {
     );
   };
 
+  const handleSaveSettings = async () => {
+    if (!user) return;
+    
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('guides')
+        .update({
+          status: isAvailable ? 'active' : 'inactive',
+          languages,
+          specialization: workingAreas,
+          hourly_rate: hourlyRate,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Settings Saved',
+        description: 'Your profile has been updated.'
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save settings',
+        variant: 'destructive'
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addLanguage = () => {
+    if (newLanguage.trim() && !languages.includes(newLanguage.trim())) {
+      setLanguages([...languages, newLanguage.trim()]);
+      setNewLanguage('');
+    }
+  };
+
+  const removeLanguage = (lang: string) => {
+    setLanguages(languages.filter(l => l !== lang));
+  };
+
+  const addWorkingArea = () => {
+    if (newArea.trim() && !workingAreas.includes(newArea.trim())) {
+      setWorkingAreas([...workingAreas, newArea.trim()]);
+      setNewArea('');
+    }
+  };
+
+  const removeWorkingArea = (area: string) => {
+    setWorkingAreas(workingAreas.filter(a => a !== area));
+  };
+
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   if (loading) {
@@ -239,7 +320,9 @@ const GuideDashboard = () => {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Guide Dashboard</h1>
-              <p className="text-muted-foreground">Manage your tour bookings</p>
+              <p className="text-muted-foreground">
+                Welcome, {guideProfile?.full_name || 'Guide'}
+              </p>
             </div>
             <div className="flex items-center gap-4">
               {isTracking && (
@@ -264,6 +347,10 @@ const GuideDashboard = () => {
                     {unreadCount}
                   </Badge>
                 )}
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex items-center gap-1">
+                <Settings className="h-3 w-3" />
+                Settings
               </TabsTrigger>
             </TabsList>
 
@@ -407,6 +494,64 @@ const GuideDashboard = () => {
                   ))
                 )}
               </div>
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Guide Settings</CardTitle>
+                  <CardDescription>Manage your availability and preferences</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Availability</Label>
+                      <p className="text-sm text-muted-foreground">Toggle to accept new bookings</p>
+                    </div>
+                    <Switch checked={isAvailable} onCheckedChange={setIsAvailable} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Hourly Rate (USD)</Label>
+                    <Input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value))} className="max-w-[200px]" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Languages</Label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {languages.map(lang => (
+                        <Badge key={lang} variant="secondary" className="cursor-pointer" onClick={() => removeLanguage(lang)}>
+                          {lang} <XCircle className="h-3 w-3 ml-1" />
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input value={newLanguage} onChange={(e) => setNewLanguage(e.target.value)} placeholder="Add language" className="max-w-[200px]" />
+                      <Button type="button" variant="outline" size="sm" onClick={addLanguage}>Add</Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Working Areas</Label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {workingAreas.map(area => (
+                        <Badge key={area} variant="secondary" className="cursor-pointer" onClick={() => removeWorkingArea(area)}>
+                          {area} <XCircle className="h-3 w-3 ml-1" />
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <Input value={newArea} onChange={(e) => setNewArea(e.target.value)} placeholder="Add area" className="max-w-[200px]" />
+                      <Button type="button" variant="outline" size="sm" onClick={addWorkingArea}>Add</Button>
+                    </div>
+                  </div>
+
+                  <Button onClick={handleSaveSettings} disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                    Save Settings
+                  </Button>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
