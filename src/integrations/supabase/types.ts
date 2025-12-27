@@ -140,9 +140,11 @@ export type Database = {
         Row: {
           admin_notes: string | null
           assigned_driver_id: string | null
+          assigned_guide_id: string | null
           created_at: string | null
           currency: string | null
           customer_notes: string | null
+          customer_proposed_price: number | null
           driver_notes: string | null
           driver_required: boolean | null
           driver_response: string | null
@@ -151,6 +153,8 @@ export type Database = {
           original_price_usd: number | null
           payment_method: string | null
           payment_status: string | null
+          price_confirmed: boolean | null
+          price_confirmed_at: string | null
           requires_verification: boolean | null
           service_details: Json | null
           service_type: string
@@ -165,9 +169,11 @@ export type Database = {
         Insert: {
           admin_notes?: string | null
           assigned_driver_id?: string | null
+          assigned_guide_id?: string | null
           created_at?: string | null
           currency?: string | null
           customer_notes?: string | null
+          customer_proposed_price?: number | null
           driver_notes?: string | null
           driver_required?: boolean | null
           driver_response?: string | null
@@ -176,6 +182,8 @@ export type Database = {
           original_price_usd?: number | null
           payment_method?: string | null
           payment_status?: string | null
+          price_confirmed?: boolean | null
+          price_confirmed_at?: string | null
           requires_verification?: boolean | null
           service_details?: Json | null
           service_type: string
@@ -190,9 +198,11 @@ export type Database = {
         Update: {
           admin_notes?: string | null
           assigned_driver_id?: string | null
+          assigned_guide_id?: string | null
           created_at?: string | null
           currency?: string | null
           customer_notes?: string | null
+          customer_proposed_price?: number | null
           driver_notes?: string | null
           driver_required?: boolean | null
           driver_response?: string | null
@@ -201,6 +211,8 @@ export type Database = {
           original_price_usd?: number | null
           payment_method?: string | null
           payment_status?: string | null
+          price_confirmed?: boolean | null
+          price_confirmed_at?: string | null
           requires_verification?: boolean | null
           service_details?: Json | null
           service_type?: string
@@ -218,6 +230,13 @@ export type Database = {
             columns: ["assigned_driver_id"]
             isOneToOne: false
             referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_assigned_guide_id_fkey"
+            columns: ["assigned_guide_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
             referencedColumns: ["id"]
           },
         ]
@@ -753,6 +772,144 @@ export type Database = {
         }
         Relationships: []
       }
+      guide_locations: {
+        Row: {
+          accuracy: number | null
+          booking_id: string | null
+          created_at: string | null
+          guide_id: string
+          heading: number | null
+          id: string
+          latitude: number
+          longitude: number
+          speed: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          accuracy?: number | null
+          booking_id?: string | null
+          created_at?: string | null
+          guide_id: string
+          heading?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          speed?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          accuracy?: number | null
+          booking_id?: string | null
+          created_at?: string | null
+          guide_id?: string
+          heading?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          speed?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guide_locations_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guide_locations_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: true
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guide_notifications: {
+        Row: {
+          booking_id: string | null
+          created_at: string | null
+          guide_id: string
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          type: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string | null
+          guide_id: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          type: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string | null
+          guide_id?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "guide_notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "guide_notifications_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guides: {
+        Row: {
+          created_at: string | null
+          full_name: string
+          hourly_rate: number | null
+          id: string
+          languages: string[] | null
+          phone: string
+          specialization: string[] | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name: string
+          hourly_rate?: number | null
+          id?: string
+          languages?: string[] | null
+          phone: string
+          specialization?: string[] | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string
+          hourly_rate?: number | null
+          id?: string
+          languages?: string[] | null
+          phone?: string
+          specialization?: string[] | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       hotel_bookings: {
         Row: {
           booking_id: string | null
@@ -1122,29 +1279,105 @@ export type Database = {
       services: {
         Row: {
           base_price: number | null
+          category_id: string | null
           created_at: string | null
           description: string | null
+          display_order: number | null
+          features: string[] | null
           id: string
+          image_url: string | null
+          is_active: boolean | null
           name: string
           type: string
+          updated_at: string | null
         }
         Insert: {
           base_price?: number | null
+          category_id?: string | null
           created_at?: string | null
           description?: string | null
+          display_order?: number | null
+          features?: string[] | null
           id?: string
+          image_url?: string | null
+          is_active?: boolean | null
           name: string
           type: string
+          updated_at?: string | null
         }
         Update: {
           base_price?: number | null
+          category_id?: string | null
           created_at?: string | null
           description?: string | null
+          display_order?: number | null
+          features?: string[] | null
           id?: string
+          image_url?: string | null
+          is_active?: boolean | null
           name?: string
           type?: string
+          updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "services_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tourist_guide_bookings: {
+        Row: {
+          booking_id: string | null
+          created_at: string | null
+          group_size: number | null
+          guide_language: string
+          hourly_rate: number | null
+          id: string
+          special_interests: string | null
+          tour_area: string
+          tour_date: string
+          tour_duration_hours: number
+          tour_start_time: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string | null
+          group_size?: number | null
+          guide_language?: string
+          hourly_rate?: number | null
+          id?: string
+          special_interests?: string | null
+          tour_area: string
+          tour_date: string
+          tour_duration_hours?: number
+          tour_start_time: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string | null
+          group_size?: number | null
+          guide_language?: string
+          hourly_rate?: number | null
+          id?: string
+          special_interests?: string | null
+          tour_area?: string
+          tour_date?: string
+          tour_duration_hours?: number
+          tour_start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tourist_guide_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transportation_bookings: {
         Row: {
