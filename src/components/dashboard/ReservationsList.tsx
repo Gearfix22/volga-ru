@@ -139,7 +139,6 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
            booking.total_price && 
            !booking.price_confirmed;
   };
-  };
 
   return (
     <Card>
