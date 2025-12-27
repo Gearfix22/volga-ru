@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,16 +24,19 @@ import {
 } from 'lucide-react';
 import { Navigation } from '@/components/Navigation';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
+import { GuideLocationTracker } from '@/components/guide/GuideLocationTracker';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { 
   getGuideNotifications, 
   getGuideBookings, 
   markGuideNotificationRead,
-  updateGuideLocation,
   getGuideById,
+  getGuideAvailability,
+  upsertGuideAvailability,
   type GuideNotification,
-  type Guide
+  type Guide,
+  type GuideAvailability
 } from '@/services/guideService';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -49,13 +51,14 @@ const GuideDashboard = () => {
   const [guideProfile, setGuideProfile] = useState<Guide | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [isTracking, setIsTracking] = useState(false);
-  const [currentBookingId, setCurrentBookingId] = useState<string | null>(null);
   
   // Settings state
   const [isAvailable, setIsAvailable] = useState(true);
+  const [availableFrom, setAvailableFrom] = useState('09:00');
+  const [availableTo, setAvailableTo] = useState('18:00');
+  const [workingDays, setWorkingDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [languages, setLanguages] = useState<string[]>(['English']);
-  const [workingAreas, setWorkingAreas] = useState<string[]>(['City Tours']);
+  const [workingAreas, setWorkingAreas] = useState<string[]>(['City Center']);
   const [hourlyRate, setHourlyRate] = useState(50);
   const [newLanguage, setNewLanguage] = useState('');
   const [newArea, setNewArea] = useState('');
@@ -84,20 +87,27 @@ const GuideDashboard = () => {
     
     setLoading(true);
     try {
-      const [notifs, bkgs, profile] = await Promise.all([
+      const [notifs, bkgs, profile, availability] = await Promise.all([
         getGuideNotifications(user.id),
         getGuideBookings(user.id),
-        getGuideById(user.id)
+        getGuideById(user.id),
+        getGuideAvailability(user.id)
       ]);
       setNotifications(notifs);
       setBookings(bkgs);
       
       if (profile) {
         setGuideProfile(profile);
-        setIsAvailable(profile.status === 'active');
-        setLanguages(profile.languages || ['English']);
-        setWorkingAreas(profile.specialization || ['City Tours']);
         setHourlyRate(profile.hourly_rate || 50);
+      }
+      
+      if (availability) {
+        setIsAvailable(availability.is_available);
+        setAvailableFrom(availability.available_from || '09:00');
+        setAvailableTo(availability.available_to || '18:00');
+        setWorkingDays(availability.working_days || [1, 2, 3, 4, 5]);
+        setLanguages(availability.languages || ['English']);
+        setWorkingAreas(availability.service_areas || ['City Center']);
       }
     } catch (error) {
       console.error('Error loading guide data:', error);
@@ -164,8 +174,6 @@ const GuideDashboard = () => {
       .eq('id', bookingId);
 
     if (!error) {
-      setCurrentBookingId(bookingId);
-      startLocationTracking(bookingId);
       toast({
         title: 'Tour Started',
         description: 'Location tracking is now active.'
@@ -181,7 +189,6 @@ const GuideDashboard = () => {
       .eq('id', bookingId);
 
     if (!error) {
-      stopLocationTracking();
       toast({
         title: 'Tour Completed',
         description: 'Thank you for completing the tour!'
@@ -189,55 +196,6 @@ const GuideDashboard = () => {
       loadData();
     }
   };
-
-  const startLocationTracking = (bookingId: string) => {
-    if (!navigator.geolocation) {
-      toast({
-        title: 'Location Not Supported',
-        description: 'Your browser does not support location tracking.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    setIsTracking(true);
-
-    const watchId = navigator.geolocation.watchPosition(
-      async (position) => {
-        if (user) {
-          await updateGuideLocation(
-            user.id,
-            bookingId,
-            position.coords.latitude,
-            position.coords.longitude,
-            position.coords.heading ?? undefined,
-            position.coords.speed ?? undefined,
-            position.coords.accuracy ?? undefined
-          );
-        }
-      },
-      (error) => {
-        console.error('Location error:', error);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 5000
-      }
-    );
-
-    // Store watch ID for cleanup
-    (window as any).guideLocationWatchId = watchId;
-  };
-
-  const stopLocationTracking = () => {
-    setIsTracking(false);
-    setCurrentBookingId(null);
-    if ((window as any).guideLocationWatchId) {
-      navigator.geolocation.clearWatch((window as any).guideLocationWatchId);
-    }
-  };
-
   const handleMarkNotificationRead = async (notificationId: string) => {
     await markGuideNotificationRead(notificationId);
     setNotifications(prev => 
@@ -250,22 +208,31 @@ const GuideDashboard = () => {
     
     setSaving(true);
     try {
+      // Save to guide_availability table
+      const availSuccess = await upsertGuideAvailability(user.id, {
+        is_available: isAvailable,
+        available_from: availableFrom,
+        available_to: availableTo,
+        working_days: workingDays,
+        languages,
+        service_areas: workingAreas
+      });
+
+      // Also update hourly rate in guides table
       const { error } = await supabase
         .from('guides')
         .update({
-          status: isAvailable ? 'active' : 'inactive',
-          languages,
-          specialization: workingAreas,
           hourly_rate: hourlyRate,
+          status: isAvailable ? 'active' : 'inactive',
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (error || !availSuccess) throw error;
 
       toast({
         title: 'Settings Saved',
-        description: 'Your profile has been updated.'
+        description: 'Your availability has been updated.'
       });
     } catch (error) {
       toast({
@@ -325,12 +292,6 @@ const GuideDashboard = () => {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              {isTracking && (
-                <Badge variant="default" className="bg-green-600">
-                  <NavIcon className="h-3 w-3 mr-1 animate-pulse" />
-                  Tracking Active
-                </Badge>
-              )}
               <Button variant="outline" onClick={() => signOut()}>
                 Sign Out
               </Button>
@@ -356,6 +317,14 @@ const GuideDashboard = () => {
 
             <TabsContent value="bookings">
               <div className="grid gap-4">
+                {/* Show location tracker for active tour */}
+                {bookings.find(b => b.status === 'on_trip' || b.status === 'accepted') && (
+                  <GuideLocationTracker 
+                    activeBookingId={bookings.find(b => b.status === 'on_trip')?.id || bookings.find(b => b.status === 'accepted')?.id}
+                    bookingStatus={bookings.find(b => b.status === 'on_trip')?.status || bookings.find(b => b.status === 'accepted')?.status}
+                  />
+                )}
+                
                 {bookings.length === 0 ? (
                   <Card>
                     <CardContent className="py-12 text-center">
@@ -511,6 +480,39 @@ const GuideDashboard = () => {
                     <Switch checked={isAvailable} onCheckedChange={setIsAvailable} />
                   </div>
 
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Available From</Label>
+                      <Input type="time" value={availableFrom} onChange={(e) => setAvailableFrom(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Available To</Label>
+                      <Input type="time" value={availableTo} onChange={(e) => setAvailableTo(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Working Days</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => (
+                        <Badge
+                          key={day}
+                          variant={workingDays.includes(idx) ? 'default' : 'outline'}
+                          className="cursor-pointer"
+                          onClick={() => {
+                            if (workingDays.includes(idx)) {
+                              setWorkingDays(workingDays.filter(d => d !== idx));
+                            } else {
+                              setWorkingDays([...workingDays, idx].sort());
+                            }
+                          }}
+                        >
+                          {day}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <Label>Hourly Rate (USD)</Label>
                     <Input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value))} className="max-w-[200px]" />
@@ -532,7 +534,7 @@ const GuideDashboard = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Working Areas</Label>
+                    <Label>Service Areas</Label>
                     <div className="flex flex-wrap gap-2 mb-2">
                       {workingAreas.map(area => (
                         <Badge key={area} variant="secondary" className="cursor-pointer" onClick={() => removeWorkingArea(area)}>

@@ -772,6 +772,45 @@ export type Database = {
         }
         Relationships: []
       }
+      guide_availability: {
+        Row: {
+          available_from: string | null
+          available_to: string | null
+          created_at: string | null
+          guide_id: string
+          id: string
+          is_available: boolean | null
+          languages: string[] | null
+          service_areas: string[] | null
+          updated_at: string | null
+          working_days: number[] | null
+        }
+        Insert: {
+          available_from?: string | null
+          available_to?: string | null
+          created_at?: string | null
+          guide_id: string
+          id?: string
+          is_available?: boolean | null
+          languages?: string[] | null
+          service_areas?: string[] | null
+          updated_at?: string | null
+          working_days?: number[] | null
+        }
+        Update: {
+          available_from?: string | null
+          available_to?: string | null
+          created_at?: string | null
+          guide_id?: string
+          id?: string
+          is_available?: boolean | null
+          languages?: string[] | null
+          service_areas?: string[] | null
+          updated_at?: string | null
+          working_days?: number[] | null
+        }
+        Relationships: []
+      }
       guide_locations: {
         Row: {
           accuracy: number | null
