@@ -593,16 +593,13 @@ const Auth = () => {
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="customer" className="text-sm font-medium flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Customer
-                  </TabsTrigger>
-                  <TabsTrigger value="admin" className="text-sm font-medium flex items-center gap-2">
-                    <Shield className="h-4 w-4" />
-                    Admin
-                  </TabsTrigger>
-                </TabsList>
+                {/* Only Customer tab - Admin/Driver/Guide use separate login pages */}
+                <div className="mb-6 text-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg">
+                    <User className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-primary">Customer Account</span>
+                  </div>
+                </div>
                 
                 {/* Customer Login/Signup */}
                 <TabsContent value="customer" className="space-y-4 mt-0">
@@ -826,73 +823,6 @@ const Auth = () => {
                   )}
                 </TabsContent>
                 
-                {/* Admin Login */}
-                <TabsContent value="admin" className="space-y-4 mt-0">
-                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 mb-4">
-                    <p className="text-sm text-muted-foreground flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-primary" />
-                      Administrator access - authorized personnel only
-                    </p>
-                  </div>
-
-                  <form onSubmit={handleAdminLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="admin-email" className="flex items-center gap-2 text-sm font-medium">
-                        <Mail className="h-4 w-4 text-primary" />
-                        Admin Email
-                      </Label>
-                      <Input
-                        id="admin-email"
-                        type="email"
-                        value={adminEmail}
-                        onChange={(e) => setAdminEmail(e.target.value)}
-                        placeholder="admin@example.com"
-                        required
-                        className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="admin-password" className="flex items-center gap-2 text-sm font-medium">
-                        <Lock className="h-4 w-4 text-primary" />
-                        Password
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="admin-password"
-                          type={showPassword ? 'text' : 'password'}
-                          value={adminPassword}
-                          onChange={(e) => setAdminPassword(e.target.value)}
-                          placeholder="Enter admin password"
-                          required
-                          className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <Button 
-                      type="submit" 
-                      className="w-full h-11 text-base font-semibold" 
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <span className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Signing In...
-                        </span>
-                      ) : 'Sign In as Admin'}
-                    </Button>
-                  </form>
-                </TabsContent>
               </Tabs>
             </CardContent>
           </Card>
