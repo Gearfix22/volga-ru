@@ -6,7 +6,8 @@ import { ThemeSwitcher } from './ThemeSwitcher';
 import { UserMenu } from './auth/UserMenu';
 import { CustomerNotificationBell } from './booking/CustomerNotificationBell';
 import { useAuth } from '@/contexts/AuthContext';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Car, UserCheck } from 'lucide-react';
+import { Button } from './ui/button';
 
 export const Navigation: React.FC = () => {
   const { t } = useLanguage();
@@ -63,6 +64,30 @@ export const Navigation: React.FC = () => {
 
           {/* Right side items */}
           <div className="flex items-center space-x-1 sm:space-x-2">
+            {/* Driver & Guide Login - Only show when NOT logged in */}
+            {!user && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/driver-login')}
+                  className="hidden sm:flex items-center gap-1 text-foreground hover:text-brand-accent"
+                >
+                  <Car className="h-4 w-4" />
+                  <span className="hidden md:inline">Driver</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/guide-login')}
+                  className="hidden sm:flex items-center gap-1 text-foreground hover:text-brand-accent"
+                >
+                  <UserCheck className="h-4 w-4" />
+                  <span className="hidden md:inline">Guide</span>
+                </Button>
+              </>
+            )}
+
             {/* Customer Notifications */}
             {user && <CustomerNotificationBell />}
 
@@ -110,6 +135,32 @@ export const Navigation: React.FC = () => {
                   {item.label}
                 </button>
               ))}
+              
+              {/* Driver & Guide Login in mobile menu - Only when NOT logged in */}
+              {!user && (
+                <>
+                  <button
+                    onClick={() => {
+                      navigate('/driver-login');
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center gap-2 w-full text-left px-4 py-3 text-sm font-medium rounded-md text-foreground hover:text-brand-accent hover:bg-brand-accent/5"
+                  >
+                    <Car className="h-4 w-4" />
+                    Driver Login
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate('/guide-login');
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center gap-2 w-full text-left px-4 py-3 text-sm font-medium rounded-md text-foreground hover:text-brand-accent hover:bg-brand-accent/5"
+                  >
+                    <UserCheck className="h-4 w-4" />
+                    Guide Login
+                  </button>
+                </>
+              )}
               
               {/* Language Switcher in mobile menu */}
               <div className="px-4 py-2 sm:hidden">
