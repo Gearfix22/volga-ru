@@ -35,10 +35,10 @@ export async function getAllServices(): Promise<Service[]> {
 
   if (error) {
     console.error('Error fetching services:', error);
-    return [];
+    throw new Error(`Failed to fetch services: ${error.message}`);
   }
 
-  return data as Service[];
+  return (data || []) as Service[];
 }
 
 // Get active services (public)
@@ -74,7 +74,7 @@ export async function getServiceById(serviceId: string): Promise<Service | null>
 }
 
 // Create service (admin)
-export async function createService(service: Omit<Service, 'id' | 'created_at' | 'updated_at'>): Promise<Service | null> {
+export async function createService(service: Omit<Service, 'id' | 'created_at' | 'updated_at'>): Promise<Service> {
   const { data, error } = await supabase
     .from('services')
     .insert(service)
@@ -83,7 +83,11 @@ export async function createService(service: Omit<Service, 'id' | 'created_at' |
 
   if (error) {
     console.error('Error creating service:', error);
-    return null;
+    throw new Error(`Failed to create service: ${error.message}`);
+  }
+
+  if (!data) {
+    throw new Error('Service created but no data returned');
   }
 
   await logAdminAction('service_created', data.id, 'services', { name: service.name });
@@ -99,7 +103,7 @@ export async function updateService(serviceId: string, updates: Partial<Service>
 
   if (error) {
     console.error('Error updating service:', error);
-    return false;
+    throw new Error(`Failed to update service: ${error.message}`);
   }
 
   await logAdminAction('service_updated', serviceId, 'services', updates);

@@ -1,17 +1,16 @@
 import React from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeSwitcher } from './ThemeSwitcher';
 import { UserMenu } from './auth/UserMenu';
 import { CustomerNotificationBell } from './booking/CustomerNotificationBell';
 import { useAuth } from '@/contexts/AuthContext';
-import { Menu, X, Car, UserCheck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Menu, X } from 'lucide-react';
 
 export const Navigation: React.FC = () => {
   const { t } = useLanguage();
-  const { user, hasRole } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = React.useState(false);
@@ -25,10 +24,6 @@ export const Navigation: React.FC = () => {
     { key: 'about', path: '/about', label: t('navbar.about') },
     { key: 'contact', path: '/contact', label: t('navbar.contact') },
   ];
-
-  // Don't show role login buttons if user is already logged in with that role
-  const showDriverLogin = !user || !hasRole('driver');
-  const showGuideLogin = !user || !hasRole('guide');
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-surface-glass backdrop-blur-xl border-b border-border/50">
@@ -70,38 +65,6 @@ export const Navigation: React.FC = () => {
           <div className="flex items-center space-x-1 sm:space-x-2">
             {/* Customer Notifications */}
             {user && <CustomerNotificationBell />}
-
-            {/* Role-specific Login Buttons - Hidden on small screens */}
-            {!user && (
-              <div className="hidden md:flex items-center space-x-1">
-                {showDriverLogin && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    asChild
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <Link to="/driver-login">
-                      <Car className="h-4 w-4 mr-1" />
-                      <span className="hidden lg:inline">Driver</span>
-                    </Link>
-                  </Button>
-                )}
-                {showGuideLogin && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    asChild
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <Link to="/guide-login">
-                      <UserCheck className="h-4 w-4 mr-1" />
-                      <span className="hidden lg:inline">Guide</span>
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            )}
 
             {/* Theme Switcher */}
             <div className="hidden sm:block">
@@ -147,29 +110,6 @@ export const Navigation: React.FC = () => {
                   {item.label}
                 </button>
               ))}
-              
-              {/* Mobile Role Login Buttons */}
-              {!user && (
-                <>
-                  <div className="border-t border-border/30 my-2" />
-                  <Link
-                    to="/driver-login"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center w-full px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors"
-                  >
-                    <Car className="h-4 w-4 mr-2" />
-                    Driver Login
-                  </Link>
-                  <Link
-                    to="/guide-login"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center w-full px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors"
-                  >
-                    <UserCheck className="h-4 w-4 mr-2" />
-                    Guide Login
-                  </Link>
-                </>
-              )}
               
               {/* Language Switcher in mobile menu */}
               <div className="px-4 py-2 sm:hidden">
