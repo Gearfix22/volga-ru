@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ServiceCard } from './ServiceCard';
-import { Car, Building2, Ticket, LucideIcon } from 'lucide-react';
+import { Car, Building2, Ticket, UserCheck, LucideIcon } from 'lucide-react';
 import { getServices, ServiceData } from '@/services/servicesService';
 import { Loader2 } from 'lucide-react';
 
@@ -12,7 +12,8 @@ interface ServicesGridProps {
 const ICONS: Record<string, LucideIcon> = {
   'Driver': Car,
   'Accommodation': Building2,
-  'Events': Ticket
+  'Events': Ticket,
+  'Guide': UserCheck
 };
 
 export const ServicesGrid: React.FC<ServicesGridProps> = ({ activeCategory }) => {

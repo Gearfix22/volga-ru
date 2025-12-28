@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // Service types - single source of truth
-export type ServiceType = 'Driver' | 'Accommodation' | 'Events';
+export type ServiceType = 'Driver' | 'Accommodation' | 'Events' | 'Guide';
 
 export interface ServiceData {
   id: ServiceType;
@@ -49,6 +49,17 @@ const DEFAULT_SERVICES: ServiceData[] = [
     hasFixedPrice: false,
     minPrice: 100, // Admin minimum starting value
     image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=300&fit=crop'
+  },
+  {
+    id: 'Guide',
+    category: 'Guide',
+    title: 'Private Tourist Guide',
+    description: 'Professional tourist guide services with local expertise. City tours, historical sites, and personalized experiences.',
+    features: ['Local Expertise', 'Multiple Languages', 'Personalized Tours', 'Historical Insights'],
+    pricing: 'From $50/hr',
+    hasFixedPrice: false,
+    minPrice: 50,
+    image: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400&h=300&fit=crop'
   }
 ];
 
@@ -71,7 +82,9 @@ export const getServices = async (): Promise<ServiceData[]> => {
     const { data, error } = await supabase
       .from('services')
       .select('*')
-      .in('type', ['Driver', 'Accommodation', 'Events']);
+      .in('type', ['Driver', 'Accommodation', 'Events', 'Guide'])
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
     
     if (!error && data && data.length > 0) {
       // Map database services to our format
@@ -82,11 +95,12 @@ export const getServices = async (): Promise<ServiceData[]> => {
           category: s.type as ServiceType,
           title: s.name,
           description: s.description || defaultService?.description || '',
-          features: defaultService?.features || [],
-          pricing: s.type === 'Driver' ? `From $${s.base_price || 50} USD` : 'Quote by admin',
+          features: s.features || defaultService?.features || [],
+          pricing: s.type === 'Driver' ? `From $${s.base_price || 50} USD` : 
+                   s.type === 'Guide' ? `From $${s.base_price || 50}/hr` : 'Quote by admin',
           hasFixedPrice: s.type === 'Driver',
           minPrice: s.base_price || defaultService?.minPrice || 0,
-          image: defaultService?.image || ''
+          image: s.image_url || defaultService?.image || ''
         };
       });
     } else {
@@ -120,6 +134,7 @@ export const getServiceCategories = (): { id: string; label: string }[] => {
     { id: 'all', label: 'All Services' },
     { id: 'Driver', label: 'Transportation' },
     { id: 'Accommodation', label: 'Accommodation' },
-    { id: 'Events', label: 'Activities & Events' }
+    { id: 'Events', label: 'Activities & Events' },
+    { id: 'Guide', label: 'Tourist Guide' }
   ];
 };
