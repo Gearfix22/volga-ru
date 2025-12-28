@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, Sparkles, ArrowLeft, Car, Loader2, UserCheck } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, Sparkles, ArrowLeft, Shield, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { loginSchema, signupSchema } from '@/lib/validationSchemas';
@@ -19,7 +19,8 @@ const Auth = () => {
   const { signUp, signIn, resetPassword, updatePassword, user, loading, session, hasRole } = useAuth();
   const { toast } = useToast();
   
-  const [activeTab, setActiveTab] = useState('login');
+  const [activeTab, setActiveTab] = useState('customer');
+  const [customerMode, setCustomerMode] = useState<'login' | 'signup'>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -43,32 +44,17 @@ const Auth = () => {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
 
-  // Driver login state
-  const [driverPhone, setDriverPhone] = useState('');
-  const [driverPassword, setDriverPassword] = useState('');
-  const [driverOtp, setDriverOtp] = useState('');
-  const [driverLoginStep, setDriverLoginStep] = useState<'credentials' | 'otp'>('credentials');
-  const [useOtpLogin, setUseOtpLogin] = useState(false);
+  // Admin login state
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
 
-  // Guide login state
-  const [guidePhone, setGuidePhone] = useState('');
-  const [guidePassword, setGuidePassword] = useState('');
-
-  // Check for password recovery mode and role param
+  // Check for password recovery mode
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const type = urlParams.get('type');
-    const role = urlParams.get('role');
     
     if (type === 'recovery' && session) {
       setIsRecoveryMode(true);
-    }
-    
-    // Auto-switch to driver/guide tab if role in URL
-    if (role === 'driver') {
-      setActiveTab('driver');
-    } else if (role === 'guide') {
-      setActiveTab('guide');
     }
   }, [session]);
 
@@ -90,7 +76,6 @@ const Auth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate with zod schema
     const validation = loginSchema.safeParse({
       email: loginEmail,
       password: loginPassword,
@@ -151,13 +136,12 @@ const Auth = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate with zod schema
     const validation = signupSchema.safeParse({
       email: signupEmail,
       password: signupPassword,
       confirmPassword: confirmPassword,
       fullName: fullName,
-      phone: phone.replace(/[\s\-()]/g, ''), // Remove formatting for validation
+      phone: phone.replace(/[\s\-()]/g, ''),
     });
 
     if (!validation.success) {
@@ -204,15 +188,71 @@ const Auth = () => {
           title: 'Account Created',
           description: 'Please check your email to verify your account.',
         });
-        
-        // Switch to login tab after successful signup
-        setActiveTab('login');
+        setCustomerMode('login');
         setLoginEmail(signupEmail);
       }
     } catch (error: any) {
       toast({
         title: 'Error',
         description: error.message || 'An unexpected error occurred.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!adminEmail.trim() || !adminPassword.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please enter email and password.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-login', {
+        body: {
+          email: adminEmail,
+          password: adminPassword
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data?.success) {
+        toast({
+          title: 'Login Failed',
+          description: data?.error || 'Invalid credentials or insufficient permissions.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      if (data?.session?.access_token && data?.session?.refresh_token) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+      }
+
+      toast({
+        title: 'Login Successful',
+        description: 'Welcome, Administrator!',
+      });
+
+      navigate('/admin');
+    } catch (error: any) {
+      toast({
+        title: 'Login Failed',
+        description: error?.message || 'Invalid credentials.',
         variant: 'destructive'
       });
     } finally {
@@ -246,7 +286,7 @@ const Auth = () => {
         setResetEmailSent(true);
         toast({
           title: 'Email Sent',
-          description: 'Check your email for a password reset link. The link expires in 1 hour.',
+          description: 'Check your email for a password reset link.',
         });
       }
     } catch (error: any) {
@@ -303,171 +343,6 @@ const Auth = () => {
       toast({
         title: 'Error',
         description: error.message || 'An unexpected error occurred.',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Driver login with phone + password (via edge function to avoid Supabase phone provider dependency)
-  const handleDriverLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const normalizedPhone = driverPhone.replace(/\D/g, '');
-
-    if (!normalizedPhone) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please enter your phone number.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (useOtpLogin) {
-      setUseOtpLogin(false);
-      toast({
-        title: 'OTP Unavailable',
-        description: 'OTP login is currently disabled. Please sign in with your password.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (!driverPassword.trim()) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please enter your password.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('driver-login', {
-        body: {
-          phone: normalizedPhone,
-          password: driverPassword
-        }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data?.success) {
-        toast({
-          title: 'Login Failed',
-          description: data?.error || 'Invalid phone number or password.',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      if (data?.session?.access_token && data?.session?.refresh_token) {
-        await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token
-        });
-      }
-
-      toast({
-        title: 'Login Successful',
-        description: 'Welcome back, driver!',
-      });
-
-      navigate('/driver-dashboard');
-    } catch (error: any) {
-      toast({
-        title: 'Login Failed',
-        description: error?.message || 'Invalid phone number or password.',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Verify driver OTP (not available when phone provider is disabled)
-  const handleDriverOtpVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    toast({
-      title: 'OTP Unavailable',
-      description: 'OTP login is currently disabled. Please sign in with your password.',
-      variant: 'destructive'
-    });
-
-    setUseOtpLogin(false);
-    setDriverLoginStep('credentials');
-    setDriverOtp('');
-  };
-
-  // Guide login with phone + password
-  const handleGuideLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const normalizedPhone = guidePhone.replace(/\D/g, '');
-
-    if (!normalizedPhone) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please enter your phone number.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (!guidePassword.trim()) {
-      toast({
-        title: 'Validation Error',
-        description: 'Please enter your password.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('guide-login', {
-        body: {
-          phone: normalizedPhone,
-          password: guidePassword
-        }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data?.success) {
-        toast({
-          title: 'Login Failed',
-          description: data?.error || 'Invalid phone number or password.',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      if (data?.session?.access_token && data?.session?.refresh_token) {
-        await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token
-        });
-      }
-
-      toast({
-        title: 'Login Successful',
-        description: 'Welcome back, guide!',
-      });
-
-      navigate('/guide-dashboard');
-    } catch (error: any) {
-      toast({
-        title: 'Login Failed',
-        description: error?.message || 'Invalid phone number or password.',
         variant: 'destructive'
       });
     } finally {
@@ -617,7 +492,7 @@ const Auth = () => {
                 </CardTitle>
                 <CardDescription className="text-center">
                   {resetEmailSent 
-                    ? 'We sent a password reset link to your email. The link expires in 1 hour.'
+                    ? 'We sent a password reset link to your email.'
                     : 'Enter your email address and we\'ll send you a link to reset your password.'
                   }
                 </CardDescription>
@@ -713,270 +588,100 @@ const Auth = () => {
             <CardHeader className="pb-4">
               <CardTitle className="text-xl text-center">Account Access</CardTitle>
               <CardDescription className="text-center">
-                Choose to sign in or create a new account
+                Choose your account type
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-4 mb-6">
-                  <TabsTrigger value="login" className="text-sm font-medium">Sign In</TabsTrigger>
-                  <TabsTrigger value="signup" className="text-sm font-medium">Sign Up</TabsTrigger>
-                  <TabsTrigger value="driver" className="text-sm font-medium flex items-center gap-1">
-                    <Car className="h-3 w-3" />
-                    Driver
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="customer" className="text-sm font-medium flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Customer
                   </TabsTrigger>
-                  <TabsTrigger value="guide" className="text-sm font-medium flex items-center gap-1">
-                    <UserCheck className="h-3 w-3" />
-                    Guide
+                  <TabsTrigger value="admin" className="text-sm font-medium flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    Admin
                   </TabsTrigger>
                 </TabsList>
                 
-                {/* Login Form */}
-                <TabsContent value="login" className="space-y-4 mt-0">
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="login-email" className="flex items-center gap-2 text-sm font-medium">
-                        <Mail className="h-4 w-4 text-primary" />
-                        Email Address
-                      </Label>
-                      <Input
-                        id="login-email"
-                        type="email"
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder="you@example.com"
-                        required
-                        className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="login-password" className="flex items-center gap-2 text-sm font-medium">
-                          <Lock className="h-4 w-4 text-primary" />
-                          Password
-                        </Label>
-                        <Button
-                          type="button"
-                          variant="link"
-                          className="h-auto p-0 text-sm text-primary hover:text-primary/80"
-                          onClick={() => setShowForgotPassword(true)}
-                        >
-                          Forgot password?
-                        </Button>
-                      </div>
-                      <div className="relative">
-                        <Input
-                          id="login-password"
-                          type={showPassword ? 'text' : 'password'}
-                          value={loginPassword}
-                          onChange={(e) => setLoginPassword(e.target.value)}
-                          placeholder="Enter your password"
-                          required
-                          className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <Button 
-                      type="submit" 
-                      className="w-full h-11 text-base font-semibold" 
-                      disabled={isLoading}
+                {/* Customer Login/Signup */}
+                <TabsContent value="customer" className="space-y-4 mt-0">
+                  {/* Toggle between login and signup */}
+                  <div className="flex gap-2 mb-4">
+                    <Button
+                      type="button"
+                      variant={customerMode === 'login' ? 'default' : 'outline'}
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setCustomerMode('login')}
                     >
-                      {isLoading ? 'Signing In...' : 'Sign In'}
+                      Sign In
                     </Button>
-                  </form>
-                </TabsContent>
-                
-                {/* Signup Form */}
-                <TabsContent value="signup" className="space-y-4 mt-0">
-                  <form onSubmit={handleSignup} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-name" className="flex items-center gap-2 text-sm font-medium">
-                        <User className="h-4 w-4 text-primary" />
-                        Full Name
-                      </Label>
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="John Doe"
-                        maxLength={100}
-                        required
-                        className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email" className="flex items-center gap-2 text-sm font-medium">
-                        <Mail className="h-4 w-4 text-primary" />
-                        Email Address
-                      </Label>
-                      <Input
-                        id="signup-email"
-                        type="email"
-                        value={signupEmail}
-                        onChange={(e) => setSignupEmail(e.target.value)}
-                        placeholder="you@example.com"
-                        maxLength={255}
-                        required
-                        className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-phone" className="flex items-center gap-2 text-sm font-medium">
-                        <Phone className="h-4 w-4 text-primary" />
-                        Phone Number
-                        <span className="text-destructive">*</span>
-                      </Label>
-                      <Input
-                        id="signup-phone"
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+7 999 123 45 67"
-                        maxLength={20}
-                        required
-                        className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Include country code (e.g., +7 for Russia)
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-password" className="flex items-center gap-2 text-sm font-medium">
-                        <Lock className="h-4 w-4 text-primary" />
-                        Password
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="signup-password"
-                          type={showPassword ? 'text' : 'password'}
-                          value={signupPassword}
-                          onChange={(e) => setSignupPassword(e.target.value)}
-                          placeholder="Create a strong password"
-                          required
-                          className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Min 8 characters with uppercase, lowercase & numbers
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password" className="flex items-center gap-2 text-sm font-medium">
-                        <Lock className="h-4 w-4 text-primary" />
-                        Confirm Password
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="confirm-password"
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder="Confirm your password"
-                          required
-                          className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        >
-                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <Button 
-                      type="submit" 
-                      className="w-full h-11 text-base font-semibold" 
-                      disabled={isLoading}
+                    <Button
+                      type="button"
+                      variant={customerMode === 'signup' ? 'default' : 'outline'}
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setCustomerMode('signup')}
                     >
-                      {isLoading ? 'Creating Account...' : 'Create Account'}
+                      Sign Up
                     </Button>
-                  </form>
-                </TabsContent>
+                  </div>
 
-                {/* Driver Login Form */}
-                <TabsContent value="driver" className="space-y-4 mt-0">
-                  {driverLoginStep === 'credentials' ? (
-                    <form onSubmit={handleDriverLogin} className="space-y-4">
-                      <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 mb-4">
-                        <p className="text-sm text-muted-foreground flex items-center gap-2">
-                          <Car className="h-4 w-4 text-primary" />
-                          Driver portal - login with your phone number
-                        </p>
-                      </div>
-
+                  {customerMode === 'login' ? (
+                    <form onSubmit={handleLogin} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="driver-phone" className="flex items-center gap-2 text-sm font-medium">
-                          <Phone className="h-4 w-4 text-primary" />
-                          Phone Number
+                        <Label htmlFor="login-email" className="flex items-center gap-2 text-sm font-medium">
+                          <Mail className="h-4 w-4 text-primary" />
+                          Email Address
                         </Label>
                         <Input
-                          id="driver-phone"
-                          type="tel"
-                          value={driverPhone}
-                          onChange={(e) => setDriverPhone(e.target.value)}
-                          placeholder="+7 999 123 45 67"
+                          id="login-email"
+                          type="email"
+                          value={loginEmail}
+                          onChange={(e) => setLoginEmail(e.target.value)}
+                          placeholder="you@example.com"
                           required
                           className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
                         />
                       </div>
 
-                      {!useOtpLogin && (
-                        <div className="space-y-2">
-                          <Label htmlFor="driver-password" className="flex items-center gap-2 text-sm font-medium">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="login-password" className="flex items-center gap-2 text-sm font-medium">
                             <Lock className="h-4 w-4 text-primary" />
                             Password
                           </Label>
-                          <div className="relative">
-                            <Input
-                              id="driver-password"
-                              type={showPassword ? 'text' : 'password'}
-                              value={driverPassword}
-                              onChange={(e) => setDriverPassword(e.target.value)}
-                              placeholder="Enter your password"
-                              required
-                              className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
-                              onClick={() => setShowPassword(!showPassword)}
-                            >
-                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </Button>
-                          </div>
+                          <Button
+                            type="button"
+                            variant="link"
+                            className="h-auto p-0 text-sm text-primary hover:text-primary/80"
+                            onClick={() => setShowForgotPassword(true)}
+                          >
+                            Forgot password?
+                          </Button>
                         </div>
-                      )}
+                        <div className="relative">
+                          <Input
+                            id="login-password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={loginPassword}
+                            onChange={(e) => setLoginPassword(e.target.value)}
+                            placeholder="Enter your password"
+                            required
+                            className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                      </div>
 
                       <Button 
                         type="submit" 
@@ -986,47 +691,123 @@ const Auth = () => {
                         {isLoading ? (
                           <span className="flex items-center gap-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            {useOtpLogin ? 'Sending OTP...' : 'Signing In...'}
+                            Signing In...
                           </span>
-                        ) : (
-                          useOtpLogin ? 'Send OTP' : 'Sign In as Driver'
-                        )}
+                        ) : 'Sign In'}
                       </Button>
-
-                      <div className="text-center">
-                        <Button
-                          type="button"
-                          variant="link"
-                          className="text-sm text-muted-foreground"
-                          disabled
-                        >
-                          OTP login is currently unavailable
-                        </Button>
-                      </div>
                     </form>
                   ) : (
-                    <form onSubmit={handleDriverOtpVerify} className="space-y-4">
-                      <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 mb-4">
-                        <p className="text-sm text-muted-foreground">
-                          Enter the 6-digit code sent to <strong>{driverPhone}</strong>
+                    <form onSubmit={handleSignup} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-name" className="flex items-center gap-2 text-sm font-medium">
+                          <User className="h-4 w-4 text-primary" />
+                          Full Name
+                        </Label>
+                        <Input
+                          id="signup-name"
+                          type="text"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="John Doe"
+                          maxLength={100}
+                          required
+                          className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-email" className="flex items-center gap-2 text-sm font-medium">
+                          <Mail className="h-4 w-4 text-primary" />
+                          Email Address
+                        </Label>
+                        <Input
+                          id="signup-email"
+                          type="email"
+                          value={signupEmail}
+                          onChange={(e) => setSignupEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          maxLength={255}
+                          required
+                          className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-phone" className="flex items-center gap-2 text-sm font-medium">
+                          <Phone className="h-4 w-4 text-primary" />
+                          Phone Number
+                          <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="signup-phone"
+                          type="tel"
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="+7 999 123 45 67"
+                          maxLength={20}
+                          required
+                          className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Include country code (e.g., +7 for Russia)
                         </p>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="driver-otp" className="flex items-center gap-2 text-sm font-medium">
+                        <Label htmlFor="signup-password" className="flex items-center gap-2 text-sm font-medium">
                           <Lock className="h-4 w-4 text-primary" />
-                          Verification Code
+                          Password
                         </Label>
-                        <Input
-                          id="driver-otp"
-                          type="text"
-                          value={driverOtp}
-                          onChange={(e) => setDriverOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                          placeholder="000000"
-                          maxLength={6}
-                          required
-                          className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary text-center text-2xl tracking-widest"
-                        />
+                        <div className="relative">
+                          <Input
+                            id="signup-password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={signupPassword}
+                            onChange={(e) => setSignupPassword(e.target.value)}
+                            placeholder="Create a strong password"
+                            required
+                            className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Min 8 characters with uppercase, lowercase & numbers
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-password" className="flex items-center gap-2 text-sm font-medium">
+                          <Lock className="h-4 w-4 text-primary" />
+                          Confirm Password
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="confirm-password"
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Confirm your password"
+                            required
+                            className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
                       </div>
 
                       <Button 
@@ -1037,81 +818,52 @@ const Auth = () => {
                         {isLoading ? (
                           <span className="flex items-center gap-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            Verifying...
+                            Creating Account...
                           </span>
-                        ) : (
-                          'Verify & Sign In'
-                        )}
+                        ) : 'Create Account'}
                       </Button>
-
-                      <div className="flex justify-between">
-                        <Button
-                          type="button"
-                          variant="link"
-                          className="text-sm text-muted-foreground"
-                          onClick={() => {
-                            setDriverLoginStep('credentials');
-                            setDriverOtp('');
-                          }}
-                        >
-                          <ArrowLeft className="h-4 w-4 mr-1" />
-                          Back
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="link"
-                          className="text-sm text-primary"
-                          onClick={handleDriverLogin}
-                          disabled={isLoading}
-                        >
-                          Resend Code
-                        </Button>
-                      </div>
                     </form>
                   )}
                 </TabsContent>
+                
+                {/* Admin Login */}
+                <TabsContent value="admin" className="space-y-4 mt-0">
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 mb-4">
+                    <p className="text-sm text-muted-foreground flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-primary" />
+                      Administrator access - authorized personnel only
+                    </p>
+                  </div>
 
-                {/* Guide Login */}
-                <TabsContent value="guide" className="space-y-4 mt-0">
-                  <form onSubmit={handleGuideLogin} className="space-y-4">
-                    <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 mb-4 text-center">
-                      <div className="flex items-center justify-center gap-2 text-primary font-medium mb-1">
-                        <UserCheck className="h-4 w-4" />
-                        Guide Mode
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Guide portal - login with your phone number
-                      </p>
-                    </div>
-
+                  <form onSubmit={handleAdminLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="guide-phone" className="flex items-center gap-2 text-sm font-medium">
-                        <Phone className="h-4 w-4 text-primary" />
-                        Phone Number
+                      <Label htmlFor="admin-email" className="flex items-center gap-2 text-sm font-medium">
+                        <Mail className="h-4 w-4 text-primary" />
+                        Admin Email
                       </Label>
                       <Input
-                        id="guide-phone"
-                        type="tel"
-                        value={guidePhone}
-                        onChange={(e) => setGuidePhone(e.target.value)}
-                        placeholder="+7 999 123 45 67"
+                        id="admin-email"
+                        type="email"
+                        value={adminEmail}
+                        onChange={(e) => setAdminEmail(e.target.value)}
+                        placeholder="admin@example.com"
                         required
                         className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="guide-password" className="flex items-center gap-2 text-sm font-medium">
+                      <Label htmlFor="admin-password" className="flex items-center gap-2 text-sm font-medium">
                         <Lock className="h-4 w-4 text-primary" />
                         Password
                       </Label>
                       <div className="relative">
                         <Input
-                          id="guide-password"
+                          id="admin-password"
                           type={showPassword ? 'text' : 'password'}
-                          value={guidePassword}
-                          onChange={(e) => setGuidePassword(e.target.value)}
-                          placeholder="Enter your password"
+                          value={adminPassword}
+                          onChange={(e) => setAdminPassword(e.target.value)}
+                          placeholder="Enter admin password"
                           required
                           className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
                         />
@@ -1137,27 +889,11 @@ const Auth = () => {
                           <Loader2 className="h-4 w-4 animate-spin" />
                           Signing In...
                         </span>
-                      ) : (
-                        'Sign In as Guide'
-                      )}
+                      ) : 'Sign In as Admin'}
                     </Button>
-
-                    <p className="text-center text-sm text-muted-foreground">
-                      Contact your administrator if you need account access
-                    </p>
                   </form>
                 </TabsContent>
               </Tabs>
-
-              {/* Security Note */}
-              <div className="mt-6 pt-6 border-t border-border/50">
-                <Alert className="bg-primary/5 border-primary/20">
-                  <CheckCircle className="h-4 w-4 text-primary" />
-                  <AlertDescription className="text-sm text-muted-foreground">
-                    Your data is encrypted and secure. We never share your information.
-                  </AlertDescription>
-                </Alert>
-              </div>
             </CardContent>
           </Card>
         </div>
