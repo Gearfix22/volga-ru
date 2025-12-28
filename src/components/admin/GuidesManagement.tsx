@@ -39,7 +39,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Search, RefreshCw, UserCheck, CheckCircle, Ban, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, RefreshCw, UserCheck, CheckCircle, Ban, Loader2, Key, Eye, EyeOff } from 'lucide-react';
 
 interface Guide {
   id: string;
@@ -70,6 +70,7 @@ export default function GuidesManagement() {
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
+    password: '',
     status: 'active',
     languages: ['English'] as string[],
     specialization: ['City Tours'] as string[],
@@ -77,6 +78,9 @@ export default function GuidesManagement() {
   });
   const [formLoading, setFormLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
 
   useEffect(() => {
     fetchGuides();
@@ -111,12 +115,15 @@ export default function GuidesManagement() {
     setFormData({ 
       full_name: '', 
       phone: '', 
+      password: '',
       status: 'active',
       languages: ['English'],
       specialization: ['City Tours'],
       hourly_rate: 50,
     });
     setSelectedGuide(null);
+    setShowPassword(false);
+    setNewPassword('');
   };
 
   const handleAddGuide = async () => {
@@ -125,25 +132,46 @@ export default function GuidesManagement() {
       return;
     }
 
+    if (!formData.password || formData.password.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
     setFormLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('guides')
-        .insert({
-          full_name: formData.full_name.trim(),
-          phone: formData.phone.trim(),
-          status: formData.status,
-          languages: formData.languages,
-          specialization: formData.specialization,
-          hourly_rate: formData.hourly_rate,
-        })
-        .select()
-        .single();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Not authenticated');
+        return;
+      }
 
-      if (error) throw error;
+      const response = await fetch(
+        `https://tujborgbqzmcwolntvas.supabase.co/functions/v1/manage-guides`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            full_name: formData.full_name.trim(),
+            phone: formData.phone.trim(),
+            password: formData.password,
+            languages: formData.languages,
+            specialization: formData.specialization,
+            hourly_rate: formData.hourly_rate,
+          }),
+        }
+      );
 
-      setGuides(prev => [data, ...prev]);
-      toast.success('Guide added successfully');
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create guide');
+      }
+
+      setGuides(prev => [result.guide, ...prev]);
+      toast.success('Guide added successfully with login credentials');
       setIsAddDialogOpen(false);
       resetForm();
     } catch (error: any) {
@@ -161,24 +189,38 @@ export default function GuidesManagement() {
 
     setFormLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('guides')
-        .update({
-          full_name: formData.full_name.trim(),
-          phone: formData.phone.trim(),
-          status: formData.status,
-          languages: formData.languages,
-          specialization: formData.specialization,
-          hourly_rate: formData.hourly_rate,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', selectedGuide.id)
-        .select()
-        .single();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Not authenticated');
+        return;
+      }
 
-      if (error) throw error;
+      const response = await fetch(
+        `https://tujborgbqzmcwolntvas.supabase.co/functions/v1/manage-guides/${selectedGuide.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            full_name: formData.full_name.trim(),
+            phone: formData.phone.trim(),
+            status: formData.status,
+            languages: formData.languages,
+            specialization: formData.specialization,
+            hourly_rate: formData.hourly_rate,
+          }),
+        }
+      );
 
-      setGuides(prev => prev.map(g => g.id === selectedGuide.id ? data : g));
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update guide');
+      }
+
+      setGuides(prev => prev.map(g => g.id === selectedGuide.id ? result.guide : g));
       toast.success('Guide updated successfully');
       setIsEditDialogOpen(false);
       resetForm();
@@ -213,12 +255,27 @@ export default function GuidesManagement() {
 
     setFormLoading(true);
     try {
-      const { error } = await supabase
-        .from('guides')
-        .delete()
-        .eq('id', selectedGuide.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Not authenticated');
+        return;
+      }
 
-      if (error) throw error;
+      const response = await fetch(
+        `https://tujborgbqzmcwolntvas.supabase.co/functions/v1/manage-guides/${selectedGuide.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete guide');
+      }
 
       setGuides(prev => prev.filter(g => g.id !== selectedGuide.id));
       toast.success('Guide deleted successfully');
@@ -231,11 +288,70 @@ export default function GuidesManagement() {
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!selectedGuide || !newPassword) {
+      toast.error('Please enter a new password');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    setFormLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Not authenticated');
+        return;
+      }
+
+      const response = await fetch(
+        `https://tujborgbqzmcwolntvas.supabase.co/functions/v1/manage-guides`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            action: 'reset_guide_password',
+            guide_id: selectedGuide.id,
+            new_password: newPassword,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to reset password');
+      }
+
+      toast.success('Password reset successfully');
+      setIsResetPasswordDialogOpen(false);
+      setNewPassword('');
+      setSelectedGuide(null);
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const openResetPasswordDialog = (guide: Guide) => {
+    setSelectedGuide(guide);
+    setNewPassword('');
+    setIsResetPasswordDialogOpen(true);
+  };
+
   const openEditDialog = (guide: Guide) => {
     setSelectedGuide(guide);
     setFormData({
       full_name: guide.full_name,
       phone: guide.phone,
+      password: '', // Password not needed for edit
       status: guide.status,
       languages: guide.languages || ['English'],
       specialization: guide.specialization || ['City Tours'],
@@ -398,6 +514,15 @@ export default function GuidesManagement() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => openResetPasswordDialog(guide)}
+                            disabled={actionLoading === guide.id}
+                            title="Reset Password"
+                          >
+                            <Key className="h-4 w-4 text-blue-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => openEditDialog(guide)}
                             disabled={actionLoading === guide.id}
                             title="Edit Guide"
@@ -452,6 +577,28 @@ export default function GuidesManagement() {
                 onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                 placeholder="+1234567890"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="add-password">Password *</Label>
+              <div className="relative">
+                <Input
+                  id="add-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="Minimum 8 characters"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">Guide will use phone number and this password to login</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="add-rate">Hourly Rate (USD)</Label>
@@ -623,6 +770,50 @@ export default function GuidesManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reset Guide Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for {selectedGuide?.full_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password *</Label>
+              <div className="relative">
+                <Input
+                  id="new-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Minimum 8 characters"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full px-3"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setIsResetPasswordDialogOpen(false); setNewPassword(''); setShowPassword(false); }}>
+              Cancel
+            </Button>
+            <Button onClick={handleResetPassword} disabled={formLoading}>
+              {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Reset Password
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
