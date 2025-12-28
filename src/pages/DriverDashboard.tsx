@@ -284,7 +284,12 @@ const DriverDashboard = () => {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Car className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">Driver Portal</span>
+            <div>
+              <span className="text-xl font-bold">Driver Portal</span>
+              {driverName && (
+                <p className="text-sm text-muted-foreground">{driverName}</p>
+              )}
+            </div>
           </div>
           
           <div className="flex items-center gap-2">

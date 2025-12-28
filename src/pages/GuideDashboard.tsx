@@ -285,7 +285,12 @@ const GuideDashboard = () => {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <UserCheck className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold">Guide Portal</span>
+            <div>
+              <span className="text-xl font-bold">Guide Portal</span>
+              {guideProfile?.full_name && (
+                <p className="text-sm text-muted-foreground">{guideProfile.full_name}</p>
+              )}
+            </div>
           </div>
           
           <div className="flex items-center gap-2">
