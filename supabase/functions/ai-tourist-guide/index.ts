@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, language, session_id, user_id } = await req.json();
+    const { message, language, session_id, user_id, user_location } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -33,6 +33,31 @@ serve(async (req) => {
     const services = servicesResult.data || [];
     const events = eventsResult.data || [];
     const transport = transportResult.data || [];
+
+    // Fetch nearby places from Mapbox if user location is provided
+    let nearbyPlacesContext = '';
+    const MAPBOX_TOKEN = Deno.env.get("MAPBOX_PUBLIC_TOKEN");
+    
+    if (user_location && MAPBOX_TOKEN) {
+      try {
+        const { lat, lng } = user_location;
+        const categories = 'tourist_attraction,museum,historic,park,entertainment';
+        const mapboxUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=poi&limit=5&access_token=${MAPBOX_TOKEN}`;
+        
+        const mapboxResponse = await fetch(mapboxUrl);
+        if (mapboxResponse.ok) {
+          const placesData = await mapboxResponse.json();
+          if (placesData.features && placesData.features.length > 0) {
+            const places = placesData.features.map((f: any) => 
+              `${f.text} (${f.properties?.category || 'attraction'})`
+            ).join(', ');
+            nearbyPlacesContext = `Nearby attractions: ${places}`;
+          }
+        }
+      } catch (mapboxError) {
+        console.error("Mapbox error:", mapboxError);
+      }
+    }
 
     // Build context from available data
     const servicesContext = services.length > 0 
@@ -61,25 +86,38 @@ serve(async (req) => {
       fa: 'Respond in Persian/Farsi (فارسی).',
     };
 
-    const systemPrompt = `You are a friendly AI Tourist Guide assistant. Your role is to help tourists with questions about local services, events, transportation, and provide travel recommendations.
+    const systemPrompt = `You are a professional, friendly AI Tourist Guide assistant. You act as a knowledgeable local guide helping tourists discover the best of the area.
 
-IMPORTANT RULES:
-- You can ONLY answer questions related to tourism, travel, local attractions, services, events, and transportation
+PERSONALITY:
+- Be warm, welcoming, and enthusiastic about local culture
+- Give practical, realistic advice based on actual data
+- Keep responses SHORT and helpful (under 120 words for voice compatibility)
+- Use a conversational, friendly tone
+
+CAPABILITIES:
+- Answer questions about local attractions, landmarks, and hidden gems
+- Recommend events, activities, and experiences
+- Provide transportation guidance and travel tips
+- Suggest routes and estimate travel times when location is available
+- Share cultural insights and local customs
+
+STRICT RULES:
+- You can ONLY provide information and recommendations
 - You CANNOT create, modify, or cancel any bookings
 - You CANNOT change prices or booking status
-- You CANNOT access personal user data beyond what's provided
-- Keep responses concise (under 150 words) to save tokens
-- Be helpful, friendly, and informative
-- If asked about something outside your scope, politely explain your limitations
+- You CANNOT access personal user data
+- If asked about something you're unsure of, say: "Please contact our team for confirmation."
+- Never make up information - only use provided data
 
 ${languageInstructions[language] || languageInstructions.en}
 
-AVAILABLE DATA FOR CONTEXT:
+AVAILABLE DATA:
 ${servicesContext}
 ${eventsContext}
 ${transportContext}
+${nearbyPlacesContext}
 
-If the user asks about booking, direct them to use the booking feature on the website. Do not attempt to make bookings yourself.`;
+If a user asks about booking, politely direct them to use the booking feature on the website.`;
 
     // Call Lovable AI Gateway
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -89,12 +127,12 @@ If the user asks about booking, direct them to use the booking feature on the we
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite", // Using lite model for low token usage
+        model: "google/gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: message },
         ],
-        max_tokens: 200, // Limit response length
+        max_tokens: 180,
       }),
     });
 
