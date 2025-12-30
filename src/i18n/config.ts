@@ -28,6 +28,24 @@ export const isRTLLanguage = (lang: string): boolean => {
   return RTL_LANGUAGES.includes(lang);
 };
 
+// Supported languages
+export const SUPPORTED_LANGUAGES = ['en', 'ar', 'ru'] as const;
+export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
+
+// Language display names
+export const LANGUAGE_NAMES: Record<SupportedLanguage, string> = {
+  en: 'English',
+  ar: 'العربية',
+  ru: 'Русский',
+};
+
+// Language flags
+export const LANGUAGE_FLAGS: Record<SupportedLanguage, string> = {
+  en: '🇺🇸',
+  ar: '🇸🇦',
+  ru: '🇷🇺',
+};
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -36,10 +54,11 @@ i18n
     fallbackLng: 'en',
     defaultNS: 'common',
     ns: ['common'],
-    debug: false, // Disable debug in production
+    debug: process.env.NODE_ENV === 'development',
     
     interpolation: {
       escapeValue: false, // React already does escaping
+      formatSeparator: ',',
     },
 
     detection: {
@@ -50,6 +69,10 @@ i18n
 
     react: {
       useSuspense: false,
+      // Re-render on language change
+      bindI18n: 'languageChanged',
+      bindI18nStore: 'added removed',
+      transEmptyNodeValue: '',
     },
 
     // Missing key handler - log for admin review
@@ -57,19 +80,40 @@ i18n
     missingKeyHandler: (lngs, ns, key, fallbackValue) => {
       const languages = Array.isArray(lngs) ? lngs : [lngs];
       languages.forEach(lng => logMissingTranslation(key, lng));
+      
+      // In development, log to console with more context
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`[i18n] Missing key: "${key}" in namespace "${ns}" for languages: ${languages.join(', ')}`);
+      }
     },
+
+    // Return key as fallback to make missing translations visible
+    returnEmptyString: false,
   });
 
 // Apply initial direction based on saved language
 const savedLang = localStorage.getItem('i18nextLng') || 'en';
-document.documentElement.dir = isRTLLanguage(savedLang) ? 'rtl' : 'ltr';
+const isInitialRTL = isRTLLanguage(savedLang);
+document.documentElement.dir = isInitialRTL ? 'rtl' : 'ltr';
 document.documentElement.lang = savedLang;
+if (isInitialRTL) {
+  document.documentElement.classList.add('rtl');
+} else {
+  document.documentElement.classList.remove('rtl');
+}
 
 // Listen for language changes and update document direction
 i18n.on('languageChanged', (lng) => {
   const isRTL = isRTLLanguage(lng);
   document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
   document.documentElement.lang = lng;
+  
+  // Add/remove RTL class for additional styling hooks
+  if (isRTL) {
+    document.documentElement.classList.add('rtl');
+  } else {
+    document.documentElement.classList.remove('rtl');
+  }
   
   // Persist language choice
   localStorage.setItem('i18nextLng', lng);
