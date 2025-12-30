@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getDraftBookings, deleteDraftBooking, type DraftBooking } from '@/services/bookingService';
 import { CustomerBookingTimeline } from '@/components/booking/CustomerBookingTimeline';
+import { getStatusTranslationKey, getServiceTypeTranslationKey } from '@/utils/translationUtils';
 import { 
   Clock, 
   CheckCircle, 
@@ -37,16 +39,17 @@ interface Booking {
 // Expandable booking card with timeline
 function BookingCardWithTimeline({ booking, onPayNow }: { booking: Booking; onPayNow: (b: Booking) => void }) {
   const [expanded, setExpanded] = useState(false);
+  const { t, isRTL } = useLanguage();
   
   const isActiveBooking = ['pending', 'confirmed', 'assigned', 'accepted', 'on_trip'].includes(booking.status);
 
   return (
     <div className="border rounded-lg overflow-hidden">
       <div 
-        className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors"
+        className={`flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <div className={`p-2 rounded-full ${
             booking.status === 'confirmed' || booking.status === 'completed' 
               ? 'bg-green-100 dark:bg-green-900/20' 
@@ -66,14 +69,14 @@ function BookingCardWithTimeline({ booking, onPayNow }: { booking: Booking; onPa
               <Clock className="h-5 w-5 text-red-600" />
             )}
           </div>
-          <div>
-            <p className="font-medium">{booking.service_type}</p>
+          <div className={isRTL ? 'text-right' : ''}>
+            <p className="font-medium">{t(getServiceTypeTranslationKey(booking.service_type))}</p>
             <p className="text-sm text-muted-foreground">
               {new Date(booking.created_at).toLocaleDateString()} • ${booking.total_price?.toFixed(2) || '0.00'}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <Badge className={
             booking.status === 'confirmed' || booking.status === 'completed'
               ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
@@ -83,12 +86,12 @@ function BookingCardWithTimeline({ booking, onPayNow }: { booking: Booking; onPa
               ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
               : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
           }>
-            {booking.status}
+            {t(getStatusTranslationKey(booking.status))}
           </Badge>
           {booking.payment_status === 'pending' && (
             <Button size="sm" onClick={(e) => { e.stopPropagation(); onPayNow(booking); }}>
-              <CreditCard className="h-4 w-4 mr-1" />
-              Pay Now
+              <CreditCard className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+              {t('common.payNow')}
             </Button>
           )}
           {isActiveBooking && (
@@ -108,6 +111,7 @@ function BookingCardWithTimeline({ booking, onPayNow }: { booking: Booking; onPa
 
 const UserDashboard = () => {
   const { user, loading: authLoading } = useAuth();
+  const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -161,8 +165,8 @@ const UserDashboard = () => {
     } catch (error) {
       console.error('Error fetching user data:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load your bookings',
+        title: t('common.error'),
+        description: t('common.failedToLoad'),
         variant: 'destructive'
       });
     } finally {
@@ -182,13 +186,13 @@ const UserDashboard = () => {
       setDraftBookings(prev => prev.filter(d => d.id !== draftId));
       setStats(prev => ({ ...prev, inProgress: prev.inProgress - 1, total: prev.total - 1 }));
       toast({
-        title: 'Deleted',
-        description: 'Draft booking removed successfully',
+        title: t('common.deleted'),
+        description: t('common.draftDeleted'),
       });
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to delete draft',
+        title: t('common.error'),
+        description: t('common.failedToDelete'),
         variant: 'destructive'
       });
     }
@@ -213,27 +217,27 @@ const UserDashboard = () => {
   }
 
   return (
-    <DashboardLayout title="My Dashboard">
+    <DashboardLayout title={t('dashboard.dashboard')}>
       <div className="space-y-8">
         {/* Back to Home Button */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Welcome Back!</h2>
-            <p className="text-muted-foreground">Manage your bookings and account settings</p>
+        <div className={`flex justify-between items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <div className={isRTL ? 'text-right' : ''}>
+            <h2 className="text-2xl font-bold text-foreground">{t('common.welcomeBack')}</h2>
+            <p className="text-muted-foreground">{t('common.manageBookings')}</p>
           </div>
           <Button onClick={() => navigate('/')} variant="outline" size="lg">
-            <ArrowRight className="h-4 w-4 mr-2 rotate-180" />
-            Back to Home
+            <ArrowRight className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2 rotate-180'}`} />
+            {t('common.backToHome')}
           </Button>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow">
+          <Card className={`border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow ${isRTL ? 'border-l-0 border-r-4 border-r-primary' : ''}`}>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Total Bookings</p>
+              <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={isRTL ? 'text-right' : ''}>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">{t('common.totalBookings')}</p>
                   <p className="text-3xl font-bold text-foreground">{stats.total}</p>
                 </div>
                 <div className="p-3 bg-primary/10 rounded-full">
@@ -243,11 +247,11 @@ const UserDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow">
+          <Card className={`border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow ${isRTL ? 'border-l-0 border-r-4 border-r-green-500' : ''}`}>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Confirmed</p>
+              <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={isRTL ? 'text-right' : ''}>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">{t('common.confirmed')}</p>
                   <p className="text-3xl font-bold text-green-600">{stats.confirmed}</p>
                 </div>
                 <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
@@ -257,11 +261,11 @@ const UserDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-yellow-500 shadow-sm hover:shadow-md transition-shadow">
+          <Card className={`border-l-4 border-l-yellow-500 shadow-sm hover:shadow-md transition-shadow ${isRTL ? 'border-l-0 border-r-4 border-r-yellow-500' : ''}`}>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Pending</p>
+              <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={isRTL ? 'text-right' : ''}>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">{t('common.pending')}</p>
                   <p className="text-3xl font-bold text-yellow-600">{stats.pending}</p>
                 </div>
                 <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-full">
@@ -271,11 +275,11 @@ const UserDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
+          <Card className={`border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow ${isRTL ? 'border-l-0 border-r-4 border-r-orange-500' : ''}`}>
             <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">In Progress</p>
+              <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={isRTL ? 'text-right' : ''}>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">{t('common.inProgress')}</p>
                   <p className="text-3xl font-bold text-orange-600">{stats.inProgress}</p>
                 </div>
                 <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-full">
@@ -289,18 +293,18 @@ const UserDashboard = () => {
         {/* Quick Actions */}
         <Card className="shadow-sm">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Quick Actions</CardTitle>
-            <CardDescription>Start a new booking or browse our services</CardDescription>
+            <CardTitle className="text-lg">{t('common.quickActions')}</CardTitle>
+            <CardDescription>{t('common.quickActionsDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button onClick={() => navigate('/booking')} className="flex-1" size="lg">
-                <Plus className="h-5 w-5 mr-2" />
-                New Booking
+                <Plus className={`h-5 w-5 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                {t('common.newBooking')}
               </Button>
               <Button onClick={() => navigate('/services')} variant="outline" className="flex-1" size="lg">
-                <TrendingUp className="h-5 w-5 mr-2" />
-                Browse Services
+                <TrendingUp className={`h-5 w-5 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                {t('common.browseServices')}
               </Button>
             </div>
           </CardContent>
@@ -310,25 +314,25 @@ const UserDashboard = () => {
         {draftBookings.length > 0 && (
           <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800 shadow-sm">
             <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
+              <CardTitle className={`flex items-center gap-2 text-orange-700 dark:text-orange-400 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <RotateCcw className="h-5 w-5" />
-                Incomplete Bookings ({draftBookings.length})
+                {t('common.incompleteBookings')} ({draftBookings.length})
               </CardTitle>
-              <CardDescription>You have bookings that need to be completed</CardDescription>
+              <CardDescription>{t('common.incompleteBookingsDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {draftBookings.map(draft => (
-                <div key={draft.id} className="flex items-center justify-between p-4 bg-background rounded-lg border shadow-sm">
-                  <div>
-                    <p className="font-semibold text-foreground">{draft.service_type}</p>
+                <div key={draft.id} className={`flex items-center justify-between p-4 bg-background rounded-lg border shadow-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <div className={isRTL ? 'text-right' : ''}>
+                    <p className="font-semibold text-foreground">{t(getServiceTypeTranslationKey(draft.service_type))}</p>
                     <p className="text-sm text-muted-foreground">
-                      Last updated: {new Date(draft.updated_at).toLocaleDateString()}
+                      {t('common.lastUpdated')}: {new Date(draft.updated_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className={`flex gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <Button onClick={() => handleResumeBooking(draft)} size="sm">
-                      <PlayCircle className="h-4 w-4 mr-1" />
-                      Resume
+                      <PlayCircle className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                      {t('common.resume')}
                     </Button>
                     <Button onClick={() => handleDeleteDraft(draft.id)} size="sm" variant="destructive">
                       <Trash2 className="h-4 w-4" />
@@ -343,8 +347,8 @@ const UserDashboard = () => {
         {/* Recent Bookings */}
         <Card className="shadow-sm">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Recent Bookings</CardTitle>
-            <CardDescription>Your latest reservations</CardDescription>
+            <CardTitle className="text-lg">{t('common.recentBookings')}</CardTitle>
+            <CardDescription>{t('common.recentBookingsDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -358,9 +362,9 @@ const UserDashboard = () => {
             ) : bookings.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground mb-4">No bookings yet</p>
+                <p className="text-muted-foreground mb-4">{t('common.noBookingsYet')}</p>
                 <Button onClick={() => navigate('/booking')}>
-                  Create Your First Booking
+                  {t('common.createFirstBooking')}
                 </Button>
               </div>
             ) : (
@@ -378,8 +382,8 @@ const UserDashboard = () => {
                     className="w-full" 
                     onClick={() => navigate('/dashboard/reservations')}
                   >
-                    View All Bookings
-                    <ArrowRight className="h-4 w-4 ml-2" />
+                    {t('common.viewAllBookings')}
+                    <ArrowRight className={`h-4 w-4 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
                   </Button>
                 )}
               </div>
