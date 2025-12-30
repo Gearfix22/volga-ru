@@ -135,50 +135,110 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signUp = async (email: string, password: string, phone: string, fullName: string, role: string = 'user') => {
+    // Normalize phone number
+    const normalizedPhone = phone.replace(/[\s\-()]/g, '');
+    
     // Check phone uniqueness before signup
-    const { data: existingPhone } = await supabase
+    const { data: existingPhone, error: phoneCheckError } = await supabase
       .from('profiles')
       .select('phone')
-      .eq('phone', phone)
+      .eq('phone', normalizedPhone)
       .maybeSingle();
+
+    if (phoneCheckError && phoneCheckError.code !== 'PGRST116') {
+      console.error('Phone check error:', phoneCheckError);
+      return { error: { message: 'Error checking phone availability', status: 500 } };
+    }
 
     if (existingPhone) {
       return { 
         error: { 
           message: 'Phone number already registered',
+          code: 'PHONE_EXISTS',
           status: 409 
         } 
       };
     }
 
-    const { error } = await supabase.auth.signUp({
+    // Check email uniqueness by attempting to find existing user
+    // This helps catch cases where email exists but wasn't fully registered
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
         data: {
-          phone,
+          phone: normalizedPhone,
           full_name: fullName,
           role
         }
       }
     });
-    return { error };
+
+    // Supabase returns a user with identities=[] when email already exists
+    if (authData?.user && authData.user.identities?.length === 0) {
+      return {
+        error: {
+          message: 'Email already registered',
+          code: 'EMAIL_EXISTS',
+          status: 409
+        }
+      };
+    }
+
+    return { error: signUpError };
   };
 
   const signUpWithPhone = async (phone: string, password: string, fullName: string, role: string = 'user') => {
-    const { error } = await supabase.auth.signUp({
-      phone,
+    // Normalize phone number
+    const normalizedPhone = phone.replace(/[\s\-()]/g, '');
+    
+    // Check phone uniqueness before signup
+    const { data: existingPhone, error: phoneCheckError } = await supabase
+      .from('profiles')
+      .select('phone')
+      .eq('phone', normalizedPhone)
+      .maybeSingle();
+
+    if (phoneCheckError && phoneCheckError.code !== 'PGRST116') {
+      console.error('Phone check error:', phoneCheckError);
+      return { error: { message: 'Error checking phone availability', status: 500 } };
+    }
+
+    if (existingPhone) {
+      return { 
+        error: { 
+          message: 'Phone number already registered',
+          code: 'PHONE_EXISTS',
+          status: 409 
+        } 
+      };
+    }
+
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
+      phone: normalizedPhone,
       password,
       options: {
         data: {
           full_name: fullName,
-          phone: phone,
+          phone: normalizedPhone,
           role
         }
       }
     });
-    return { error };
+
+    // Check if phone already exists in auth
+    if (authData?.user && authData.user.identities?.length === 0) {
+      return {
+        error: {
+          message: 'Phone number already registered',
+          code: 'PHONE_EXISTS',
+          status: 409
+        }
+      };
+    }
+
+    return { error: signUpError };
   };
 
   const signIn = async (email: string, password: string) => {
