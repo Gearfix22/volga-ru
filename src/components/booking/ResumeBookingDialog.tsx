@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { getDraftBookings, deleteDraftBooking, DraftBooking } from '@/services/bookingService';
-import { Clock, Trash2, Play, ChevronRight } from 'lucide-react';
+import { getLatestDraft, deleteDraftBooking, DraftBooking } from '@/services/bookingService';
+import { Clock, Trash2, Play, ChevronRight, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -25,43 +24,40 @@ export const ResumeBookingDialog: React.FC<ResumeBookingDialogProps> = ({
   const { t } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const [drafts, setDrafts] = useState<DraftBooking[]>([]);
+  const [draft, setDraft] = useState<DraftBooking | null>(null);
   const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (isOpen && user) {
-      loadDrafts();
+      loadDraft();
     }
   }, [isOpen, user]);
 
-  const loadDrafts = async () => {
+  const loadDraft = async () => {
     try {
       setLoading(true);
-      const draftBookings = await getDraftBookings();
-      setDrafts(draftBookings);
+      const latestDraft = await getLatestDraft();
+      setDraft(latestDraft);
     } catch (error) {
-      console.error('Error loading drafts:', error);
-      toast({
-        title: t('error'),
-        description: t('booking.errorLoadingDrafts'),
-        variant: 'destructive'
-      });
+      console.error('Error loading draft:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteDraft = async (draftId: string) => {
+  const handleDeleteDraft = async () => {
+    if (!draft) return;
+    
     try {
-      setDeleting(draftId);
-      await deleteDraftBooking(draftId);
-      setDrafts(drafts.filter(d => d.id !== draftId));
+      setDeleting(true);
+      await deleteDraftBooking(draft.id);
+      setDraft(null);
       toast({
         title: t('success'),
         description: t('booking.draftDeleted')
       });
+      onClose();
     } catch (error) {
       console.error('Error deleting draft:', error);
       toast({
@@ -70,149 +66,144 @@ export const ResumeBookingDialog: React.FC<ResumeBookingDialogProps> = ({
         variant: 'destructive'
       });
     } finally {
-      setDeleting(null);
+      setDeleting(false);
     }
   };
 
-  const handleResumeDraft = (draft: DraftBooking) => {
+  const handleResumeDraft = () => {
+    if (!draft) return;
     onResumeBooking(draft);
     onClose();
-    
-    // Navigate to booking page with resume parameter
-    navigate('/booking', { 
-      state: { 
-        resumeDraft: draft,
-        service: draft.service_type.toLowerCase() 
-      } 
-    });
   };
 
-  const getProgressBadge = (progress: DraftBooking['booking_progress']) => {
-    const progressMap = {
-      service_selection: { label: t('booking.serviceSelection'), variant: 'secondary' as const },
-      details_filled: { label: t('booking.detailsFilled'), variant: 'default' as const },
-      user_info_filled: { label: t('booking.userInfoFilled'), variant: 'default' as const },
-      ready_for_payment: { label: t('booking.readyForPayment'), variant: 'default' as const }
+  const getProgressBadge = (progress: string) => {
+    const progressMap: Record<string, { label: string; variant: 'secondary' | 'default' | 'outline' }> = {
+      service_selection: { label: 'Service Selection', variant: 'secondary' },
+      details_filled: { label: 'Details Filled', variant: 'default' },
+      user_info_filled: { label: 'User Info Filled', variant: 'default' },
+      ready_for_payment: { label: 'Ready for Payment', variant: 'default' }
     };
     
     const config = progressMap[progress] || progressMap.service_selection;
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
+  const getServicePreview = (draft: DraftBooking) => {
+    const details = draft.service_details as any;
+    
+    if (draft.service_type === 'Driver') {
+      return details.pickupLocation && details.dropoffLocation
+        ? `${details.pickupLocation} → ${details.dropoffLocation}`
+        : 'Transportation booking in progress';
+    }
+    if (draft.service_type === 'Accommodation') {
+      return details.location
+        ? `${details.location} - ${details.guests || 1} guests`
+        : 'Accommodation booking in progress';
+    }
+    if (draft.service_type === 'Events') {
+      return details.eventType
+        ? `${details.eventType} - ${details.location || 'Location TBD'}`
+        : 'Events booking in progress';
+    }
+    return 'Booking in progress';
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
             {t('booking.resumeBooking')}
           </DialogTitle>
           <DialogDescription>
-            {t('booking.resumeBookingDescription')}
+            {draft ? 'You have an unfinished booking. Would you like to continue?' : 'No saved bookings found.'}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="py-4">
           {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="animate-pulse">
-                  <div className="h-24 bg-gray-200 rounded"></div>
-                </div>
-              ))}
+            <div className="animate-pulse">
+              <div className="h-32 bg-muted rounded"></div>
             </div>
-          ) : drafts.length === 0 ? (
+          ) : !draft ? (
             <Card>
               <CardContent className="py-8 text-center">
-                <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">{t('booking.noDraftBookings')}</p>
-                <p className="text-sm text-gray-400 mt-2">
-                  {t('booking.noDraftBookingsDescription')}
+                <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">{t('booking.noDraftBookings')}</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Start a new booking to save your progress automatically.
                 </p>
               </CardContent>
             </Card>
           ) : (
-            drafts.map((draft) => (
-              <Card key={draft.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{draft.service_type}</CardTitle>
-                      <CardDescription>
-                        {t('booking.lastUpdated')}: {formatDistanceToNow(new Date(draft.updated_at), { addSuffix: true })}
-                      </CardDescription>
-                    </div>
-                    {getProgressBadge(draft.booking_progress)}
+            <Card className="border-primary/20">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-lg">{draft.service_type}</CardTitle>
+                    <CardDescription>
+                      Last updated {formatDistanceToNow(new Date(draft.updated_at), { addSuffix: true })}
+                    </CardDescription>
                   </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    {/* Service Details Preview */}
-                    {Object.keys(draft.service_details).length > 0 && (
-                      <div className="text-sm">
-                        <strong>{t('booking.serviceDetails')}:</strong>
-                        <div className="mt-1 text-gray-600">
-                          {draft.service_type === 'Transportation' && (
-                            <span>{(draft.service_details as any).pickup} → {(draft.service_details as any).dropoff}</span>
-                          )}
-                          {draft.service_type === 'Hotels' && (
-                            <span>{(draft.service_details as any).city} - {(draft.service_details as any).roomType}</span>
-                          )}
-                          {draft.service_type === 'Events' && (
-                            <span>{(draft.service_details as any).eventName} - {(draft.service_details as any).eventLocation}</span>
-                          )}
-                          {draft.service_type === 'Custom Trips' && (
-                            <span>{(draft.service_details as any).regions} ({(draft.service_details as any).duration})</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                  {getProgressBadge(draft.booking_progress)}
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-4">
+                {/* Service Preview */}
+                <div className="text-sm">
+                  <span className="font-medium">Details:</span>
+                  <p className="text-muted-foreground mt-1">{getServicePreview(draft)}</p>
+                </div>
 
-                    {/* User Info Preview */}
-                    {draft.user_info.fullName && (
-                      <div className="text-sm">
-                        <strong>{t('booking.contactInfo')}:</strong> {draft.user_info.fullName}
-                        {draft.user_info.email && ` (${draft.user_info.email})`}
-                      </div>
-                    )}
-
-                    {/* Price */}
-                    {draft.total_price && (
-                      <div className="text-sm">
-                        <strong>{t('booking.estimatedPrice')}:</strong> ${draft.total_price}
-                      </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        onClick={() => handleResumeDraft(draft)}
-                        className="flex-1"
-                        size="sm"
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        {t('booking.continueBooking')}
-                        <ChevronRight className="h-4 w-4 ml-2" />
-                      </Button>
-                      <Button
-                        onClick={() => handleDeleteDraft(draft.id)}
-                        variant="outline"
-                        size="sm"
-                        disabled={deleting === draft.id}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                {/* User Info Preview */}
+                {draft.user_info?.fullName && (
+                  <div className="text-sm">
+                    <span className="font-medium">Contact:</span>
+                    <p className="text-muted-foreground mt-1">
+                      {draft.user_info.fullName}
+                      {draft.user_info.email && ` • ${draft.user_info.email}`}
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-            ))
+                )}
+
+                {/* Price */}
+                {draft.total_price ? (
+                  <div className="text-sm">
+                    <span className="font-medium">Estimated Price:</span>
+                    <span className="ml-2 text-primary font-semibold">${draft.total_price}</span>
+                  </div>
+                ) : null}
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-2">
+                  <Button onClick={handleResumeDraft} className="flex-1">
+                    <Play className="h-4 w-4 mr-2" />
+                    Continue Booking
+                    <ChevronRight className="h-4 w-4 ml-2" />
+                  </Button>
+                  <Button
+                    onClick={handleDeleteDraft}
+                    variant="outline"
+                    size="icon"
+                    disabled={deleting}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
 
-        <div className="flex justify-end pt-4 border-t">
+        <div className="flex justify-between border-t pt-4">
+          <Button variant="ghost" onClick={onClose}>
+            Start Fresh
+          </Button>
           <Button variant="outline" onClick={onClose}>
-            {t('common.close')}
+            Close
           </Button>
         </div>
       </DialogContent>

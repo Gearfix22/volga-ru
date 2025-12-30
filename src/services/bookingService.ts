@@ -21,6 +21,7 @@ export interface BookingStatusUpdate {
 }
 
 // Auto-save draft booking functionality
+// SINGLE DRAFT PER USER - prevents duplicates
 export const saveDraftBooking = async (
   serviceType: string,
   serviceDetails: ServiceDetails,
@@ -35,11 +36,13 @@ export const saveDraftBooking = async (
   }
 
   try {
+    // Check for ANY existing draft for this user (single draft per user)
     const { data: existing } = await supabase
       .from('draft_bookings')
       .select('*')
       .eq('user_id', user.id)
-      .eq('service_type', serviceType)
+      .order('updated_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     const draftData = {
@@ -52,6 +55,7 @@ export const saveDraftBooking = async (
     };
 
     if (existing) {
+      // Update existing draft (even if service type changed)
       const { data, error } = await supabase
         .from('draft_bookings')
         .update(draftData)
@@ -62,6 +66,7 @@ export const saveDraftBooking = async (
       if (error) throw error;
       return data;
     } else {
+      // Create new draft
       const { data, error } = await supabase
         .from('draft_bookings')
         .insert(draftData)
@@ -77,20 +82,48 @@ export const saveDraftBooking = async (
   }
 };
 
-export const getDraftBookings = async (): Promise<DraftBooking[]> => {
+// Get the latest draft for user (should only be one)
+export const getLatestDraft = async (): Promise<DraftBooking | null> => {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
-    throw new Error('User must be authenticated');
+    return null;
   }
 
   const { data, error } = await supabase
     .from('draft_bookings')
     .select('*')
     .eq('user_id', user.id)
-    .order('updated_at', { ascending: false });
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error getting latest draft:', error);
+    return null;
+  }
+  return data;
+};
+
+// Legacy function - returns array but should only have 0-1 drafts
+export const getDraftBookings = async (): Promise<DraftBooking[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('draft_bookings')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('updated_at', { ascending: false })
+    .limit(1);
+
+  if (error) {
+    console.error('Error getting drafts:', error);
+    return [];
+  }
   return data || [];
 };
 
