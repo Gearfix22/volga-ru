@@ -224,8 +224,8 @@ const EnhancedBooking = () => {
   const validateForm = (): boolean => {
     if (!serviceType) {
       toast({
-        title: 'Service Required',
-        description: 'Please select a service type',
+        title: t('booking.serviceRequired'),
+        description: t('booking.pleaseSelectService'),
         variant: "destructive"
       });
       return false;
@@ -238,8 +238,8 @@ const EnhancedBooking = () => {
 
     if (!userInfo.fullName || !userInfo.email || !userInfo.phone) {
       toast({
-        title: 'Contact Information Required',
-        description: 'Please fill in all required contact fields',
+        title: t('booking.contactInfoRequired'),
+        description: t('booking.fillAllContactFields'),
         variant: "destructive"
       });
       return false;
@@ -249,8 +249,8 @@ const EnhancedBooking = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userInfo.email)) {
       toast({
-        title: 'Invalid Email',
-        description: 'Please enter a valid email address',
+        title: t('booking.invalidEmail'),
+        description: t('booking.enterValidEmail'),
         variant: "destructive"
       });
       return false;
@@ -260,8 +260,8 @@ const EnhancedBooking = () => {
     const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
     if (!phoneRegex.test(userInfo.phone.replace(/[\s\-\(\)]/g, ''))) {
       toast({
-        title: 'Invalid Phone Number',
-        description: 'Please enter a valid phone number',
+        title: t('booking.invalidPhone'),
+        description: t('booking.enterValidPhone'),
         variant: "destructive"
       });
       return false;
@@ -348,8 +348,8 @@ const EnhancedBooking = () => {
     });
 
     toast({
-      title: t('bookingDetailsSaved'),
-      description: t('proceedingToPayment'),
+      title: t('booking.bookingDetailsSaved'),
+      description: t('booking.proceedingToPayment'),
     });
 
     navigate('/enhanced-payment', {
@@ -419,12 +419,12 @@ const EnhancedBooking = () => {
             
             <div className="text-center mb-8">
               <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-                {t('bookYourService')}
+                {t('booking.bookYourService')}
               </h1>
               <p className="text-xl text-slate-600 dark:text-slate-400">
                 {isPreSelected 
-                  ? t('completeBookingDetails', { serviceType })
-                  : t('chooseServiceDetails')
+                  ? t('booking.completeBookingDetails', { serviceType })
+                  : t('booking.chooseServiceDetails')
                 }
               </p>
             </div>
@@ -457,7 +457,7 @@ const EnhancedBooking = () => {
                   <>
                     <div>
                       <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-4">
-                        {t('serviceTypeDetails', { serviceType })}
+                        {t('booking.serviceTypeDetails', { serviceType })}
                       </h2>
                       <ServiceDetailsForm
                         serviceType={serviceType}
@@ -479,22 +479,22 @@ const EnhancedBooking = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <User className="h-5 w-5" />
-                      {t('contactInformation')}
+                      {t('booking.contactInformation')}
                     </CardTitle>
-                    <CardDescription>{t('contactInfoDesc')}</CardDescription>
+                    <CardDescription>{t('booking.contactInfoDesc')}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="fullName" className="flex items-center gap-2">
                           <User className="h-4 w-4" />
-                          {t('fullName')} *
+                          {t('booking.fullName')} *
                         </Label>
                         <Input
                           id="fullName"
                           value={userInfo.fullName}
                           onChange={(e) => updateUserInfo('fullName', e.target.value)}
-                          placeholder={t('enterFullName')}
+                          placeholder={t('booking.enterFullName')}
                           maxLength={100}
                           className="focus:ring-2 focus:ring-primary"
                         />
@@ -502,14 +502,14 @@ const EnhancedBooking = () => {
                       <div className="space-y-2">
                         <Label htmlFor="email" className="flex items-center gap-2">
                           <Mail className="h-4 w-4" />
-                          {t('emailAddress')} *
+                          {t('booking.emailAddress')} *
                         </Label>
                         <Input
                           id="email"
                           type="email"
                           value={userInfo.email}
                           onChange={(e) => updateUserInfo('email', e.target.value)}
-                          placeholder={t('enterEmail')}
+                          placeholder={t('booking.enterEmail')}
                           maxLength={255}
                           className="focus:ring-2 focus:ring-primary"
                         />
@@ -519,14 +519,14 @@ const EnhancedBooking = () => {
                       <div className="space-y-2">
                         <Label htmlFor="phone" className="flex items-center gap-2">
                           <Phone className="h-4 w-4" />
-                          {t('phoneNumber')} *
+                          {t('booking.phoneNumber')} *
                         </Label>
                         <Input
                           id="phone"
                           type="tel"
                           value={userInfo.phone}
                           onChange={(e) => updateUserInfo('phone', e.target.value)}
-                          placeholder={t('enterPhone')}
+                          placeholder={t('booking.enterPhone')}
                           maxLength={20}
                           className="focus:ring-2 focus:ring-primary"
                         />
@@ -534,16 +534,16 @@ const EnhancedBooking = () => {
                       <div className="space-y-2">
                         <Label htmlFor="language" className="flex items-center gap-2">
                           <Globe className="h-4 w-4" />
-                          {t('preferredLanguage')}
+                          {t('booking.preferredLanguage')}
                         </Label>
                         <Select value={userInfo.language} onValueChange={(value) => updateUserInfo('language', value)}>
                           <SelectTrigger className="focus:ring-2 focus:ring-primary">
-                            <SelectValue placeholder={t('selectLanguage')} />
+                            <SelectValue placeholder={t('booking.selectLanguage')} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="english">{t('english')}</SelectItem>
-                            <SelectItem value="arabic">{t('arabic')}</SelectItem>
-                            <SelectItem value="russian">{t('russian')}</SelectItem>
+                            <SelectItem value="english">{t('common.english')}</SelectItem>
+                            <SelectItem value="arabic">{t('common.arabic')}</SelectItem>
+                            <SelectItem value="russian">{t('common.russian')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -553,7 +553,7 @@ const EnhancedBooking = () => {
                     {serviceType === 'Driver' && (
                       <div className="flex items-center gap-2 pt-4 border-t text-sm text-muted-foreground">
                         <Car className="h-4 w-4 text-primary" />
-                        <span>A professional driver is included with this service</span>
+                        <span>{t('booking.driverIncluded')}</span>
                       </div>
                     )}
                   </CardContent>
@@ -567,7 +567,7 @@ const EnhancedBooking = () => {
                     className="px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
                     disabled={!serviceType || !userInfo.fullName || !userInfo.email || !userInfo.phone}
                   >
-                    {t('proceedToPayment')}
+                    {t('booking.proceedToPayment')}
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </div>
