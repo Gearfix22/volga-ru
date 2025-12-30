@@ -1,5 +1,22 @@
 import { supabase } from '@/integrations/supabase/client';
-import { logAdminAction } from './adminService';
+
+// Log admin action helper
+async function logAdminAction(actionType: string, targetId: string | null, targetTable: string, payload: any) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    await supabase.from('admin_logs').insert({
+      admin_id: user.id,
+      action_type: actionType,
+      target_id: targetId,
+      target_table: targetTable,
+      payload
+    });
+  } catch (error) {
+    console.error('Error logging admin action:', error);
+  }
+}
 
 export interface Service {
   id: string;

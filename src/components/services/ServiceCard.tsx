@@ -1,34 +1,27 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LucideIcon, Check } from 'lucide-react';
+import { ServiceData } from '@/services/servicesService';
 
 interface ServiceCardProps {
-  service: {
-    id: string;
-    category: string;
-    title: string;
-    description: string;
-    icon: LucideIcon;
-    image: string;
-    features: string[];
-    pricing: string;
-    hasFixedPrice: boolean;
-  };
+  service: ServiceData;
+  icon: LucideIcon;
+  pricing: string;
   index: number;
 }
 
-export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
+export const ServiceCard: React.FC<ServiceCardProps> = ({ service, icon: Icon, pricing, index }) => {
   const navigate = useNavigate();
-  const Icon = service.icon;
 
   const handleBookNow = () => {
-    // Navigate directly with the new service type (Driver, Accommodation, Events)
-    navigate(`/enhanced-booking?service=${service.id}`);
+    // Navigate with service type for booking flow
+    navigate(`/enhanced-booking?service=${service.type}`);
   };
+
+  const hasFixedPrice = service.type === 'Driver';
 
   return (
     <Card 
@@ -37,8 +30,8 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
     >
       <div className="relative h-40 lg:h-48 overflow-hidden">
         <img 
-          src={service.image} 
-          alt={service.title}
+          src={service.image_url || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=300&fit=crop'} 
+          alt={service.name}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
@@ -49,17 +42,17 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
         </div>
         <div className="absolute top-4 right-4">
           <Badge 
-            variant={service.hasFixedPrice ? "default" : "secondary"} 
-            className={service.hasFixedPrice ? 'bg-green-600 text-white' : 'bg-amber-600 text-white'}
+            variant={hasFixedPrice ? "default" : "secondary"} 
+            className={hasFixedPrice ? 'bg-green-600 text-white' : 'bg-amber-600 text-white'}
           >
-            {service.pricing}
+            {pricing}
           </Badge>
         </div>
       </div>
       
       <CardHeader className="p-4 lg:p-6 flex-grow">
         <CardTitle className="text-lg lg:text-xl font-bold text-foreground leading-tight group-hover:text-brand-primary transition-colors">
-          {service.title}
+          {service.name}
         </CardTitle>
         <CardDescription className="text-muted-foreground text-sm lg:text-base leading-relaxed">
           {service.description}
@@ -68,7 +61,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, index }) => {
       
       <CardContent className="space-y-4 p-4 lg:p-6 pt-0 mt-auto">
         <div className="space-y-2">
-          {service.features.map((feature, featureIndex) => (
+          {service.features.slice(0, 4).map((feature, featureIndex) => (
             <div key={featureIndex} className="flex items-center text-sm text-muted-foreground">
               <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
               {feature}

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ServiceCard } from './ServiceCard';
-import { Car, Building2, Ticket, UserCheck, LucideIcon } from 'lucide-react';
-import { getServices, ServiceData } from '@/services/servicesService';
-import { Loader2 } from 'lucide-react';
+import { Car, Building2, Ticket, UserCheck, LucideIcon, Loader2 } from 'lucide-react';
+import { getServices, ServiceData, getPricingText } from '@/services/servicesService';
 
 interface ServicesGridProps {
   activeCategory: string;
@@ -32,7 +31,7 @@ export const ServicesGrid: React.FC<ServicesGridProps> = ({ activeCategory }) =>
 
   const filteredServices = activeCategory === 'all' 
     ? services 
-    : services.filter(service => service.category === activeCategory);
+    : services.filter(service => service.type === activeCategory);
 
   if (loading) {
     return (
@@ -42,15 +41,22 @@ export const ServicesGrid: React.FC<ServicesGridProps> = ({ activeCategory }) =>
     );
   }
 
+  if (filteredServices.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        No services available in this category.
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 animate-slide-up animation-delay-400 px-4 sm:px-0">
       {filteredServices.map((service, index) => (
         <ServiceCard
           key={service.id}
-          service={{
-            ...service,
-            icon: ICONS[service.id] || Car
-          }}
+          service={service}
+          icon={ICONS[service.type] || Car}
+          pricing={getPricingText(service)}
           index={index}
         />
       ))}
