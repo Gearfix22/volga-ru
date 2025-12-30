@@ -127,7 +127,8 @@
     "deleted": "Deleted",
     "draftDeleted": "Draft booking removed successfully",
     "failedToLoad": "Failed to load your bookings",
-    "failedToDelete": "Failed to delete draft"
+    "failedToDelete": "Failed to delete draft",
+    "note": "Note"
   },
   "pages": {
     "aboutUs": "About Volga Services",

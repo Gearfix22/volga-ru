@@ -21,7 +21,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
   serviceDetails,
   onUpdateDetail
 }) => {
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const details = serviceDetails as any;
 
   // SERVICE 1: Driver Only Booking Form
@@ -31,25 +31,25 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
       <div className="space-y-3">
         <Label className="flex items-center gap-2 text-base font-semibold">
           <Car className="h-4 w-4" />
-          Trip Type *
+          {t('booking.tripType')} *
         </Label>
         <RadioGroup 
           value={details.tripType || 'one-way'} 
           onValueChange={(value) => onUpdateDetail('tripType', value)}
-          className="flex gap-4"
+          className={`flex gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}
         >
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="one-way" id="one-way" />
             <Label htmlFor="one-way" className="flex items-center gap-2 cursor-pointer">
               <ArrowRight className="h-4 w-4" />
-              One Way
+              {t('booking.oneWay')}
             </Label>
           </div>
           <div className="flex items-center space-x-2">
             <RadioGroupItem value="round-trip" id="round-trip" />
             <Label htmlFor="round-trip" className="flex items-center gap-2 cursor-pointer">
               <ArrowLeftRight className="h-4 w-4" />
-              Round Trip
+              {t('booking.roundTrip')}
             </Label>
           </div>
         </RadioGroup>
@@ -60,26 +60,26 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
         <div className="space-y-2">
           <Label htmlFor="pickupLocation" className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-green-500" />
-            Pickup Location *
+            {t('booking.pickupLocation')} *
           </Label>
           <Input
             id="pickupLocation"
             value={details.pickupLocation || ''}
             onChange={(e) => onUpdateDetail('pickupLocation', e.target.value)}
-            placeholder="Enter pickup address"
+            placeholder={t('booking.enterPickupLocation')}
             maxLength={200}
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="dropoffLocation" className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-red-500" />
-            Drop-off Location *
+            {t('booking.dropoffLocation')} *
           </Label>
           <Input
             id="dropoffLocation"
             value={details.dropoffLocation || ''}
             onChange={(e) => onUpdateDetail('dropoffLocation', e.target.value)}
-            placeholder="Enter destination"
+            placeholder={t('booking.enterDropoffLocation')}
             maxLength={200}
           />
         </div>
@@ -90,7 +90,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
         <div className="space-y-2">
           <Label htmlFor="pickupDate" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Pickup Date *
+            {t('booking.pickupDate')} *
           </Label>
           <Input
             id="pickupDate"
@@ -103,7 +103,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
         <div className="space-y-2">
           <Label htmlFor="pickupTime" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            Pickup Time *
+            {t('booking.pickupTime')} *
           </Label>
           <Input
             id="pickupTime"
@@ -120,7 +120,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
           <div className="space-y-2">
             <Label htmlFor="returnDate" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              Return Date *
+              {t('booking.returnDate')} *
             </Label>
             <Input
               id="returnDate"
@@ -133,7 +133,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
           <div className="space-y-2">
             <Label htmlFor="returnTime" className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              Return Time *
+              {t('booking.returnTime')} *
             </Label>
             <Input
               id="returnTime"
@@ -150,35 +150,37 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
         <div className="space-y-2">
           <Label htmlFor="vehicleType" className="flex items-center gap-2">
             <Car className="h-4 w-4" />
-            Vehicle Type *
+            {t('booking.vehicleType')} *
           </Label>
           <Select value={details.vehicleType || ''} onValueChange={(value) => onUpdateDetail('vehicleType', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select vehicle" />
+              <SelectValue placeholder={t('booking.selectVehicleType')} />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="economy">Economy Car</SelectItem>
-              <SelectItem value="comfort">Comfort Car</SelectItem>
-              <SelectItem value="business">Business Class</SelectItem>
-              <SelectItem value="suv">SUV</SelectItem>
-              <SelectItem value="minivan">Minivan (7 seats)</SelectItem>
-              <SelectItem value="van">Van (12 seats)</SelectItem>
-              <SelectItem value="bus">Bus (25+ seats)</SelectItem>
+            <SelectContent className="bg-background border shadow-lg z-50">
+              <SelectItem value="economy">{t('booking.economyCar')}</SelectItem>
+              <SelectItem value="comfort">{t('booking.comfortCar')}</SelectItem>
+              <SelectItem value="business">{t('booking.businessClass')}</SelectItem>
+              <SelectItem value="suv">{t('booking.suv')}</SelectItem>
+              <SelectItem value="minivan">{t('booking.minivanSeats')}</SelectItem>
+              <SelectItem value="van">{t('booking.vanSeats')}</SelectItem>
+              <SelectItem value="bus">{t('booking.busSeats')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="passengers" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Number of Passengers *
+            {t('booking.passengers')} *
           </Label>
           <Select value={details.passengers || ''} onValueChange={(value) => onUpdateDetail('passengers', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select passengers" />
+              <SelectValue placeholder={t('booking.selectPassengers')} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50">
               {[1,2,3,4,5,6,7,8,10,12,15,20,25,30].map(num => (
-                <SelectItem key={num} value={num.toString()}>{num} {num > 1 ? 'passengers' : 'passenger'}</SelectItem>
+                <SelectItem key={num} value={num.toString()}>
+                  {num} {num > 1 ? t('booking.passengerPlural') : t('booking.passengerSingular')}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -186,12 +188,12 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="specialRequests">Special Requests</Label>
+        <Label htmlFor="specialRequests">{t('booking.specialRequests')}</Label>
         <Textarea
           id="specialRequests"
           value={details.specialRequests || ''}
           onChange={(e) => onUpdateDetail('specialRequests', e.target.value)}
-          placeholder="Any special requirements (child seat, luggage, etc.)"
+          placeholder={t('booking.driverSpecialRequestsPlaceholder')}
           rows={3}
           maxLength={500}
         />
@@ -204,20 +206,20 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
     <div className="space-y-6">
       <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
         <p className="text-sm text-amber-200">
-          <strong>Note:</strong> Final price will be set by admin based on your requirements. You will be contacted to confirm the price before proceeding.
+          <strong>{t('common.note')}:</strong> {t('booking.accommodationNote')}
         </p>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="location" className="flex items-center gap-2">
           <MapPin className="h-4 w-4" />
-          Location / City *
+          {t('booking.location')} *
         </Label>
         <Input
           id="location"
           value={details.location || ''}
           onChange={(e) => onUpdateDetail('location', e.target.value)}
-          placeholder="Enter city or area"
+          placeholder={t('booking.enterLocation')}
           maxLength={200}
         />
       </div>
@@ -226,7 +228,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
         <div className="space-y-2">
           <Label htmlFor="checkIn" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Check-in Date *
+            {t('booking.checkIn')} *
           </Label>
           <Input
             id="checkIn"
@@ -239,7 +241,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
         <div className="space-y-2">
           <Label htmlFor="checkOut" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Check-out Date *
+            {t('booking.checkOut')} *
           </Label>
           <Input
             id="checkOut"
@@ -255,15 +257,17 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
         <div className="space-y-2">
           <Label htmlFor="guests" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Number of Guests *
+            {t('booking.guests')} *
           </Label>
           <Select value={details.guests || ''} onValueChange={(value) => onUpdateDetail('guests', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select guests" />
+              <SelectValue placeholder={t('booking.selectGuests')} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50">
               {[1,2,3,4,5,6,7,8,10,12,15,20].map(num => (
-                <SelectItem key={num} value={num.toString()}>{num} {num > 1 ? 'guests' : 'guest'}</SelectItem>
+                <SelectItem key={num} value={num.toString()}>
+                  {num} {num > 1 ? t('booking.guestPlural') : t('booking.guestSingular')}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -271,31 +275,31 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
         <div className="space-y-2">
           <Label htmlFor="roomPreference" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
-            Room Preference
+            {t('booking.roomPreference')}
           </Label>
           <Select value={details.roomPreference || ''} onValueChange={(value) => onUpdateDetail('roomPreference', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select room type" />
+              <SelectValue placeholder={t('booking.selectRoomPreference')} />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="standard">Standard Room</SelectItem>
-              <SelectItem value="deluxe">Deluxe Room</SelectItem>
-              <SelectItem value="suite">Suite</SelectItem>
-              <SelectItem value="family">Family Room</SelectItem>
-              <SelectItem value="apartment">Apartment</SelectItem>
-              <SelectItem value="any">Any Available</SelectItem>
+            <SelectContent className="bg-background border shadow-lg z-50">
+              <SelectItem value="standard">{t('booking.standardRoom')}</SelectItem>
+              <SelectItem value="deluxe">{t('booking.deluxeRoom')}</SelectItem>
+              <SelectItem value="suite">{t('booking.suite')}</SelectItem>
+              <SelectItem value="family">{t('booking.familyRoom')}</SelectItem>
+              <SelectItem value="apartment">{t('booking.apartment')}</SelectItem>
+              <SelectItem value="any">{t('booking.anyAvailable')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="specialRequests">Special Requests</Label>
+        <Label htmlFor="specialRequests">{t('booking.specialRequests')}</Label>
         <Textarea
           id="specialRequests"
           value={details.specialRequests || ''}
           onChange={(e) => onUpdateDetail('specialRequests', e.target.value)}
-          placeholder="Describe your requirements (budget range, amenities, location preferences, etc.)"
+          placeholder={t('booking.accommodationSpecialRequests')}
           rows={4}
           maxLength={1000}
         />
@@ -308,20 +312,20 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
     <div className="space-y-6">
       <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
         <p className="text-sm text-amber-200">
-          <strong>Note:</strong> Final price will be set by admin based on event availability and requirements. You will be contacted to confirm the price before proceeding.
+          <strong>{t('common.note')}:</strong> {t('booking.eventsNote')}
         </p>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="eventType" className="flex items-center gap-2">
           <Ticket className="h-4 w-4" />
-          Event Type *
+          {t('booking.eventType')} *
         </Label>
         <Select value={details.eventType || ''} onValueChange={(value) => onUpdateDetail('eventType', value)}>
           <SelectTrigger>
-            <SelectValue placeholder="Select event type" />
+            <SelectValue placeholder={t('booking.selectEventType')} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-background border shadow-lg z-50">
             {EVENT_TYPES.map(event => (
               <SelectItem key={event.id} value={event.id}>{event.label}</SelectItem>
             ))}
@@ -331,12 +335,12 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
 
       {details.eventType === 'other' && (
         <div className="space-y-2">
-          <Label htmlFor="eventName">Event Name *</Label>
+          <Label htmlFor="eventName">{t('booking.eventNameCustom')} *</Label>
           <Input
             id="eventName"
             value={details.eventName || ''}
             onChange={(e) => onUpdateDetail('eventName', e.target.value)}
-            placeholder="Describe the event you're looking for"
+            placeholder={t('booking.eventNamePlaceholder')}
             maxLength={200}
           />
         </div>
@@ -345,13 +349,13 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
       <div className="space-y-2">
         <Label htmlFor="location" className="flex items-center gap-2">
           <MapPin className="h-4 w-4" />
-          Location / City *
+          {t('booking.location')} *
         </Label>
         <Input
           id="location"
           value={details.location || ''}
           onChange={(e) => onUpdateDetail('location', e.target.value)}
-          placeholder="Enter city or venue"
+          placeholder={t('booking.enterCityOrVenue')}
           maxLength={200}
         />
       </div>
@@ -360,7 +364,7 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
         <div className="space-y-2">
           <Label htmlFor="date" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            Preferred Date *
+            {t('booking.preferredDate')} *
           </Label>
           <Input
             id="date"
@@ -373,15 +377,17 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
         <div className="space-y-2">
           <Label htmlFor="numberOfPeople" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Number of People *
+            {t('booking.numberOfPeople')} *
           </Label>
           <Select value={details.numberOfPeople || ''} onValueChange={(value) => onUpdateDetail('numberOfPeople', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Select number" />
+              <SelectValue placeholder={t('booking.selectNumberOfPeople')} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background border shadow-lg z-50">
               {[1,2,3,4,5,6,7,8,10,12,15,20,25,30,50].map(num => (
-                <SelectItem key={num} value={num.toString()}>{num} {num > 1 ? 'people' : 'person'}</SelectItem>
+                <SelectItem key={num} value={num.toString()}>
+                  {num} {num > 1 ? t('booking.personPlural') : t('booking.personSingular')}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -389,12 +395,12 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="specialRequests">Special Requests</Label>
+        <Label htmlFor="specialRequests">{t('booking.specialRequests')}</Label>
         <Textarea
           id="specialRequests"
           value={details.specialRequests || ''}
           onChange={(e) => onUpdateDetail('specialRequests', e.target.value)}
-          placeholder="Any special requirements, preferences, or questions"
+          placeholder={t('booking.eventsSpecialRequests')}
           rows={4}
           maxLength={1000}
         />

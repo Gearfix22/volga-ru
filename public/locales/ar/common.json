@@ -127,7 +127,8 @@
     "deleted": "تم الحذف",
     "draftDeleted": "تم حذف مسودة الحجز بنجاح",
     "failedToLoad": "فشل في تحميل حجوزاتك",
-    "failedToDelete": "فشل في حذف المسودة"
+    "failedToDelete": "فشل في حذف المسودة",
+    "note": "ملاحظة"
   },
   "pages": {
     "aboutUs": "من نحن",

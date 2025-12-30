@@ -25,44 +25,44 @@ export const ServiceTypeSelector: React.FC<ServiceTypeSelectorProps> = ({
   const services = [
     {
       id: 'Driver',
-      label: 'Driver Only Booking',
+      labelKey: 'booking.driverOnlyBooking',
       icon: Car,
-      description: 'Professional driver service for one-way or round trips',
+      descriptionKey: 'booking.driverOnlyDesc',
       features: [
-        'One-way or round trip',
-        'Professional drivers',
-        'Airport transfers',
-        'City transportation'
+        'booking.oneWayOrRoundTrip',
+        'booking.professionalDrivers',
+        'booking.airportTransfers',
+        'booking.cityTransportation'
       ],
-      pricing: `From $${SERVICE_PRICING.Driver.basePrice} USD`,
+      pricing: `${t('booking.fromPrice', { price: SERVICE_PRICING.Driver.basePrice })}`,
       hasFixedPrice: true
     },
     {
       id: 'Accommodation',
-      label: 'Accommodation Booking',
+      labelKey: 'booking.accommodationBooking',
       icon: Building2,
-      description: 'Hotels, apartments, and lodging reservations',
+      descriptionKey: 'booking.accommodationDesc',
       features: [
-        'Hotels & Resorts',
-        'Apartments',
-        'Guest houses',
-        'Custom requests'
+        'booking.hotelsResorts',
+        'booking.apartments',
+        'booking.guestHouses',
+        'booking.customRequests'
       ],
-      pricing: 'Price set by admin',
+      pricing: t('booking.priceSetByAdmin'),
       hasFixedPrice: false
     },
     {
       id: 'Events',
-      label: 'Events & Entertainment',
+      labelKey: 'booking.eventsEntertainment',
       icon: Ticket,
-      description: 'Tickets and experiences for attractions and events',
+      descriptionKey: 'booking.eventsDesc',
       features: [
-        'Circus & Shows',
-        'Museums & Parks',
-        'City Tours',
-        'Cable Cars & Opera'
+        'booking.circusShows',
+        'booking.museumsParks',
+        'booking.cityTours',
+        'booking.cableCarsOpera'
       ],
-      pricing: 'Price set by admin',
+      pricing: t('booking.priceSetByAdmin'),
       hasFixedPrice: false
     }
   ];
@@ -72,15 +72,15 @@ export const ServiceTypeSelector: React.FC<ServiceTypeSelectorProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-white">
           <DollarSign className="h-5 w-5 text-coastal-blue" />
-          Select Service Type
+          {t('booking.selectServiceType')}
         </CardTitle>
         <CardDescription className="text-coastal-pearl">
-          Choose the service you need
+          {t('booking.chooseServiceYouNeed')}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {services.map(({ id, label, icon: Icon, description, features, pricing, hasFixedPrice }) => (
+          {services.map(({ id, labelKey, icon: Icon, descriptionKey, features, pricing, hasFixedPrice }) => (
             <Card
               key={id}
               className={`cursor-pointer transition-all duration-300 hover:shadow-glow hover:scale-105 ${
@@ -91,7 +91,7 @@ export const ServiceTypeSelector: React.FC<ServiceTypeSelectorProps> = ({
               onClick={() => onSelectService(id)}
               role="button"
               tabIndex={0}
-              aria-label={`Select ${label} service`}
+              aria-label={`Select ${t(labelKey)} service`}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
@@ -109,18 +109,18 @@ export const ServiceTypeSelector: React.FC<ServiceTypeSelectorProps> = ({
                     }`}>
                       <Icon className="h-6 w-6" />
                     </div>
-                    <h3 className="font-semibold text-lg text-white">{label}</h3>
+                    <h3 className="font-semibold text-lg text-white">{t(labelKey)}</h3>
                   </div>
                   
                   <p className="text-sm text-coastal-pearl leading-relaxed">
-                    {description}
+                    {t(descriptionKey)}
                   </p>
                   
                   <div className="space-y-1">
-                    {features.map((feature, index) => (
+                    {features.map((featureKey, index) => (
                       <div key={index} className="flex items-center gap-2 text-xs text-coastal-sage">
                         <div className="w-1.5 h-1.5 bg-coastal-blue rounded-full" />
-                        {feature}
+                        {t(featureKey)}
                       </div>
                     ))}
                   </div>
