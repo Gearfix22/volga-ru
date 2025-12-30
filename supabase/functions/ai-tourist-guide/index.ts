@@ -49,8 +49,16 @@ serve(async (req) => {
 
     const languageInstructions: Record<string, string> = {
       en: 'Respond in English.',
-      ar: 'Respond in Arabic (العربية). Use right-to-left text.',
+      ar: 'Respond in Arabic (العربية). Use Modern Standard Arabic or Saudi dialect when appropriate. Write naturally in Arabic script.',
       ru: 'Respond in Russian (Русский).',
+      fr: 'Respond in French (Français).',
+      de: 'Respond in German (Deutsch).',
+      es: 'Respond in Spanish (Español).',
+      zh: 'Respond in Chinese (中文).',
+      hi: 'Respond in Hindi (हिन्दी).',
+      ur: 'Respond in Urdu (اردو).',
+      tr: 'Respond in Turkish (Türkçe).',
+      fa: 'Respond in Persian/Farsi (فارسی).',
     };
 
     const systemPrompt = `You are a friendly AI Tourist Guide assistant. Your role is to help tourists with questions about local services, events, transportation, and provide travel recommendations.
