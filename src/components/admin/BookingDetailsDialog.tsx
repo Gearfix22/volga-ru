@@ -35,7 +35,19 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
 
   if (!booking) return null;
 
+  // Check if price editing is allowed (only before payment confirmation)
+  const isPaid = booking.payment_status === 'paid';
+  const canEditPrice = !isPaid;
+
   const handleEditPrice = () => {
+    if (!canEditPrice) {
+      toast({
+        title: 'Price Locked',
+        description: 'Cannot edit price after payment is confirmed',
+        variant: 'destructive'
+      });
+      return;
+    }
     setPriceValue(booking.total_price?.toString() || '0');
     setEditingPrice(true);
   };
@@ -46,6 +58,17 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
   };
 
   const handleSavePrice = async () => {
+    // Double-check payment status before saving
+    if (!canEditPrice) {
+      toast({
+        title: 'Price Locked',
+        description: 'Cannot update price after payment confirmation',
+        variant: 'destructive'
+      });
+      setEditingPrice(false);
+      return;
+    }
+
     const trimmedValue = priceValue.trim();
     
     if (!trimmedValue) {
@@ -92,12 +115,16 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
       
       setEditingPrice(false);
       setPriceValue('');
-      onPriceUpdated?.();
+      onPriceUpdated?.(); // Triggers instant UI refresh
     } catch (error: any) {
       console.error('Price update error:', error);
+      // Handle payment-blocked error specifically
+      const errorMessage = error.message?.includes('payment') 
+        ? 'Price is locked after payment confirmation'
+        : error.message || 'Failed to save price. Please try again.';
       toast({
         title: 'Error Updating Price',
-        description: error.message || 'Failed to save price. Please try again.',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
@@ -224,14 +251,20 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
                     <p className="text-lg font-bold text-primary">
                       ${booking.total_price?.toFixed(2) || '0.00'}
                     </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleEditPrice}
-                    >
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit Price
-                    </Button>
+                    {canEditPrice ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleEditPrice}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit Price
+                      </Button>
+                    ) : (
+                      <Badge variant="secondary" className="text-xs">
+                        Locked (Paid)
+                      </Badge>
+                    )}
                   </div>
                 )}
               </div>

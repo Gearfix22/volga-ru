@@ -227,6 +227,32 @@ serve(async (req) => {
       const body = await req.json()
       const { status, payment_status, admin_notes, total_price, assigned_driver_id } = body
 
+      // Fetch current booking to check payment status before allowing price update
+      const { data: currentBooking, error: fetchError } = await supabaseAdmin
+        .from('bookings')
+        .select('payment_status, total_price')
+        .eq('id', bookingId)
+        .maybeSingle()
+
+      if (fetchError || !currentBooking) {
+        return new Response(JSON.stringify({ error: 'Booking not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      // CRITICAL: Block price updates after payment is confirmed
+      if (total_price !== undefined && currentBooking.payment_status === 'paid') {
+        console.error(`Price update blocked for booking ${bookingId} - payment already confirmed`)
+        return new Response(JSON.stringify({ 
+          error: 'Cannot update price after payment confirmation',
+          code: 'PAYMENT_CONFIRMED'
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
       const updateData: any = { updated_at: new Date().toISOString() }
       if (status) updateData.status = status
       if (payment_status) updateData.payment_status = payment_status
@@ -247,11 +273,11 @@ serve(async (req) => {
         action_type: 'booking_updated',
         target_id: bookingId,
         target_table: 'bookings',
-        payload: updateData
+        payload: { ...updateData, old_price: currentBooking.total_price }
       })
 
       console.log(`Booking ${bookingId} updated by admin ${user.id}`)
-      return new Response(JSON.stringify({ success: true }), {
+      return new Response(JSON.stringify({ success: true, booking: { ...currentBooking, ...updateData } }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
