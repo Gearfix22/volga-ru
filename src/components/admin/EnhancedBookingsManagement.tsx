@@ -29,13 +29,15 @@ import {
   AlertCircle,
   RefreshCw,
   Trash2,
-  Car
+  Car,
+  MapPin
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { BookingDetailsDialog } from './BookingDetailsDialog';
 import { RejectBookingModal } from './RejectBookingModal';
 import { DriverAssignmentSelect } from './DriverAssignmentSelect';
+import { GuideAssignmentSelect } from './GuideAssignmentSelect';
 import { BookingStatusTimeline } from '@/components/booking/BookingStatusTimeline';
 import {
   Select,
@@ -68,6 +70,7 @@ interface Booking {
   payment_method: string | null;
   transaction_id: string | null;
   assigned_driver_id: string | null;
+  assigned_guide_id: string | null;
   driver_required: boolean;
 }
 
@@ -559,6 +562,7 @@ export const EnhancedBookingsManagement = () => {
                         <TableHead>Status</TableHead>
                         <TableHead>Payment</TableHead>
                         <TableHead>Driver</TableHead>
+                        <TableHead>Guide</TableHead>
                         <TableHead>Notes</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -566,7 +570,7 @@ export const EnhancedBookingsManagement = () => {
                     <TableBody>
                       {filteredBookings.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                          <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                             No bookings found
                           </TableCell>
                         </TableRow>
@@ -707,6 +711,18 @@ export const EnhancedBookingsManagement = () => {
                                 />
                               ) : (
                                 <span className="text-sm text-muted-foreground">Not required</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {booking.service_type === 'tourist_guide' ? (
+                                <GuideAssignmentSelect
+                                  bookingId={booking.id}
+                                  currentGuideId={booking.assigned_guide_id}
+                                  onAssigned={fetchBookings}
+                                  disabled={actionLoading === booking.id || booking.status === 'cancelled' || booking.status === 'completed' || booking.status === 'pending'}
+                                />
+                              ) : (
+                                <span className="text-sm text-muted-foreground">N/A</span>
                               )}
                             </TableCell>
                             <TableCell>
