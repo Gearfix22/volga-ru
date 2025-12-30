@@ -18,7 +18,8 @@ import {
 import { Users, Search, Phone, Shield, CheckCircle, XCircle, Calendar, Edit, Trash2, UserX, RefreshCw, Car } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { updateUserProfile, updateUserRole, disableUser, deleteUser, logAdminAction } from '@/services/adminService';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { updateUserProfile, updateUserRole, disableUser, deleteUser } from '@/services/adminService';
 
 interface UserProfile {
   id: string;
@@ -33,6 +34,7 @@ interface UserProfile {
 
 export const UsersManagement = () => {
   const { toast } = useToast();
+  const { t, isRTL } = useLanguage();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,8 +100,8 @@ export const UsersManagement = () => {
     } catch (error: any) {
       console.error('Error fetching users:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load users',
+        title: t('common.error'),
+        description: t('dashboard.failedToLoadUsers'),
         variant: 'destructive'
       });
     } finally {
@@ -122,25 +124,23 @@ export const UsersManagement = () => {
     try {
       setActionLoading(editingUser.id);
       
-      // Update profile
       await updateUserProfile(editingUser.id, {
         full_name: editFullName,
         phone: editPhone,
         phone_verified: editVerified
       });
 
-      // Update role if changed
       const currentRole = editingUser.roles.includes('admin') ? 'admin' : 
                           editingUser.roles.includes('driver') ? 'driver' : 'user';
       if (editRole !== currentRole) {
         await updateUserRole(editingUser.id, editRole);
       }
 
-      toast({ title: 'Success', description: 'User updated successfully' });
+      toast({ title: t('common.success'), description: t('dashboard.userUpdated') });
       setEditDialogOpen(false);
       fetchUsers();
     } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
     } finally {
       setActionLoading(null);
     }
@@ -158,12 +158,12 @@ export const UsersManagement = () => {
       setActionLoading(userToDelete.id);
       await disableUser(userToDelete.id);
       
-      toast({ title: 'Success', description: 'User has been disabled' });
+      toast({ title: t('common.success'), description: t('dashboard.userDisabled') });
       setDeleteDialogOpen(false);
       setUserToDelete(null);
       fetchUsers();
     } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
     } finally {
       setActionLoading(null);
     }
@@ -176,12 +176,12 @@ export const UsersManagement = () => {
       setActionLoading(userToDelete.id);
       await deleteUser(userToDelete.id);
       
-      toast({ title: 'Success', description: 'User has been permanently deleted' });
+      toast({ title: t('common.success'), description: t('dashboard.userDeleted') });
       setDeleteDialogOpen(false);
       setUserToDelete(null);
       fetchUsers();
     } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
     } finally {
       setActionLoading(null);
     }
@@ -193,12 +193,12 @@ export const UsersManagement = () => {
       await updateUserProfile(user.id, { phone_verified: !user.phone_verified });
       
       toast({ 
-        title: 'Success', 
-        description: `Phone ${!user.phone_verified ? 'verified' : 'unverified'} for ${user.full_name || 'user'}` 
+        title: t('common.success'), 
+        description: `${!user.phone_verified ? t('dashboard.phoneVerifiedFor') : t('dashboard.phoneUnverifiedFor')} ${user.full_name || t('dashboard.user')}` 
       });
       fetchUsers();
     } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: t('common.error'), description: error.message, variant: 'destructive' });
     } finally {
       setActionLoading(null);
     }
@@ -212,35 +212,35 @@ export const UsersManagement = () => {
 
   const getRoleBadge = (roles: string[]) => {
     if (roles.includes('admin')) {
-      return <Badge variant="destructive"><Shield className="h-3 w-3 mr-1" />Admin</Badge>;
+      return <Badge variant="destructive"><Shield className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />{t('dashboard.admin')}</Badge>;
     }
     if (roles.includes('driver')) {
-      return <Badge variant="default" className="bg-blue-600"><Car className="h-3 w-3 mr-1" />Driver</Badge>;
+      return <Badge variant="default" className="bg-blue-600"><Car className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />{t('dashboard.driver')}</Badge>;
     }
-    return <Badge variant="secondary">Customer</Badge>;
+    return <Badge variant="secondary">{t('dashboard.customer')}</Badge>;
   };
 
   return (
     <>
       <Card>
         <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 ${isRTL ? 'md:flex-row-reverse' : ''}`}>
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <Users className="h-5 w-5" />
-                Users Management
+                {t('dashboard.usersManagement')}
               </CardTitle>
               <CardDescription>
-                View, edit, and manage registered users
+                {t('dashboard.viewAndManageAllUsers')}
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Button variant="outline" size="sm" onClick={fetchUsers} disabled={loading}>
-                <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
+                <RefreshCw className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'} ${loading ? 'animate-spin' : ''}`} />
+                {t('dashboard.refresh')}
               </Button>
               <Badge variant="outline" className="text-lg px-4 py-2">
-                {filteredUsers.length} Users
+                {filteredUsers.length} {t('dashboard.users')}
               </Badge>
             </div>
           </div>
@@ -248,12 +248,12 @@ export const UsersManagement = () => {
         <CardContent>
           <div className="mb-6">
             <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground`} />
               <Input
-                placeholder="Search by name, phone, or ID..."
+                placeholder={t('dashboard.searchByNameEmailPhone')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className={isRTL ? 'pr-10' : 'pl-10'}
               />
             </div>
           </div>
@@ -261,28 +261,28 @@ export const UsersManagement = () => {
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-4 text-muted-foreground">Loading users...</p>
+              <p className="mt-4 text-muted-foreground">{t('dashboard.loadingUsers')}</p>
             </div>
           ) : (
             <div className="border rounded-lg overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Phone Number</TableHead>
-                    <TableHead>Verified</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Bookings</TableHead>
-                    <TableHead>Total Spent</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t('dashboard.user')}</TableHead>
+                    <TableHead>{t('dashboard.phoneNumber')}</TableHead>
+                    <TableHead>{t('dashboard.verified')}</TableHead>
+                    <TableHead>{t('dashboard.role')}</TableHead>
+                    <TableHead>{t('dashboard.bookings')}</TableHead>
+                    <TableHead>{t('dashboard.totalSpent')}</TableHead>
+                    <TableHead>{t('dashboard.joined')}</TableHead>
+                    <TableHead>{t('dashboard.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredUsers.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                        No users found
+                        {t('dashboard.noUsersFound')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -291,7 +291,7 @@ export const UsersManagement = () => {
                         <TableCell>
                           <div className="space-y-1">
                             <div className="font-medium">
-                              {user.full_name || 'Unnamed User'}
+                              {user.full_name || t('dashboard.unnamedUser')}
                             </div>
                             <div className="text-xs text-muted-foreground font-mono">
                               {user.id.slice(0, 8)}...
@@ -299,7 +299,7 @@ export const UsersManagement = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                             <Phone className="h-4 w-4 text-muted-foreground" />
                             <span className="font-mono font-semibold text-primary">
                               {user.phone || 'N/A'}
@@ -315,13 +315,13 @@ export const UsersManagement = () => {
                           >
                             {user.phone_verified ? (
                               <Badge variant="default" className="bg-green-600 cursor-pointer">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Verified
+                                <CheckCircle className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                                {t('dashboard.verified')}
                               </Badge>
                             ) : (
                               <Badge variant="secondary" className="cursor-pointer">
-                                <XCircle className="h-3 w-3 mr-1" />
-                                Unverified
+                                <XCircle className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                                {t('dashboard.unverified')}
                               </Badge>
                             )}
                           </Button>
@@ -334,7 +334,7 @@ export const UsersManagement = () => {
                           ${user.total_spent?.toFixed(2) || '0.00'}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <div className={`flex items-center gap-1 text-sm text-muted-foreground ${isRTL ? 'flex-row-reverse' : ''}`}>
                             <Calendar className="h-3 w-3" />
                             {new Date(user.created_at).toLocaleDateString()}
                           </div>
@@ -374,28 +374,28 @@ export const UsersManagement = () => {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-            <DialogDescription>Update user details and permissions</DialogDescription>
+            <DialogTitle>{t('dashboard.editUser')}</DialogTitle>
+            <DialogDescription>{t('dashboard.updateUserDetails')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>Full Name</Label>
+              <Label>{t('dashboard.fullName')}</Label>
               <Input value={editFullName} onChange={(e) => setEditFullName(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Phone Number</Label>
+              <Label>{t('dashboard.phoneNumber')}</Label>
               <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Role</Label>
+              <Label>{t('dashboard.role')}</Label>
               <Select value={editRole} onValueChange={(v) => setEditRole(v as any)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">Customer</SelectItem>
-                  <SelectItem value="driver">Driver</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                <SelectContent className="bg-background border shadow-lg z-50">
+                  <SelectItem value="user">{t('dashboard.customer')}</SelectItem>
+                  <SelectItem value="driver">{t('dashboard.driver')}</SelectItem>
+                  <SelectItem value="admin">{t('dashboard.admin')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -407,13 +407,13 @@ export const UsersManagement = () => {
                 onChange={(e) => setEditVerified(e.target.checked)}
                 className="rounded"
               />
-              <Label htmlFor="verified">Phone Verified</Label>
+              <Label htmlFor="verified">{t('dashboard.phoneVerified')}</Label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>{t('dashboard.cancel')}</Button>
             <Button onClick={handleSaveUser} disabled={actionLoading !== null}>
-              Save Changes
+              {t('dashboard.saveChanges')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -423,23 +423,23 @@ export const UsersManagement = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete User Account</AlertDialogTitle>
+            <AlertDialogTitle>{t('dashboard.deleteUserAccount')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Choose an action for "{userToDelete?.full_name || 'this user'}":
+              {t('dashboard.deleteUserDescription')}
               <ul className="mt-2 space-y-1 text-sm">
-                <li><strong>Disable:</strong> User loses access but data is preserved</li>
-                <li><strong>Delete:</strong> Permanently removes user and all their data</li>
+                <li><strong>{t('dashboard.disableUser')}:</strong> {t('dashboard.disableDescription')}</li>
+                <li><strong>{t('dashboard.deletePermanently')}:</strong> {t('dashboard.deleteDescription')}</li>
               </ul>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('dashboard.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDisableUser} className="bg-yellow-600 text-white hover:bg-yellow-700">
-              Disable User
+              {t('dashboard.disableUser')}
             </AlertDialogAction>
             <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground">
-              <Trash2 className="h-4 w-4 mr-1" />
-              Delete Permanently
+              <Trash2 className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+              {t('dashboard.deletePermanently')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
