@@ -68,6 +68,36 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_guide_logs: {
+        Row: {
+          assistant_response: string
+          created_at: string
+          id: string
+          language: string
+          session_id: string
+          user_id: string | null
+          user_message: string
+        }
+        Insert: {
+          assistant_response: string
+          created_at?: string
+          id?: string
+          language?: string
+          session_id: string
+          user_id?: string | null
+          user_message: string
+        }
+        Update: {
+          assistant_response?: string
+          created_at?: string
+          id?: string
+          language?: string
+          session_id?: string
+          user_id?: string | null
+          user_message?: string
+        }
+        Relationships: []
+      }
       auth_sessions: {
         Row: {
           created_at: string
