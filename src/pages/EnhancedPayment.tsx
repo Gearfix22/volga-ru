@@ -38,7 +38,7 @@ const EnhancedPayment = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const { user } = useAuth();
   
   const bookingData = location.state?.bookingData as BookingData;
@@ -94,22 +94,22 @@ const EnhancedPayment = () => {
   const paymentMethods = [
     {
       id: 'cash' as const,
-      name: 'Cash on Arrival',
+      name: t('paymentMethods.cashOnArrival'),
       icon: Banknote,
-      description: 'Pay when you receive the service',
+      description: t('messages.cashOnArrivalDescription'),
       recommended: true
     },
     {
       id: 'stripe' as const,
-      name: 'Visa / Credit Card',
+      name: t('paymentMethods.creditCard'),
       icon: CreditCard,
-      description: 'Secure payment with Visa, Mastercard, or Amex'
+      description: t('messages.creditCardDescription')
     },
     {
       id: 'bank-transfer' as const,
-      name: 'Bank Transfer',
+      name: t('paymentMethods.bankTransfer'),
       icon: Building2,
-      description: 'Direct bank transfer with verification'
+      description: t('payment.bankTransferNote')
     }
   ];
 
@@ -337,35 +337,35 @@ const EnhancedPayment = () => {
   const renderBookingDetails = () => (
     <Card className="backdrop-blur-sm bg-white/90 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-700 sticky top-24">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-xl">
+        <CardTitle className={`flex items-center gap-2 text-xl ${isRTL ? 'flex-row-reverse' : ''}`}>
           <CheckCircle className="h-6 w-6 text-green-600" />
-          Booking Summary
+          {t('payment.bookingSummary')}
         </CardTitle>
-        <CardDescription>Review your booking details</CardDescription>
+        <CardDescription>{t('messages.reviewBookingDetails')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b">
-            <span className="text-muted-foreground">Service:</span>
+          <div className={`flex items-center justify-between pb-2 border-b ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <span className="text-muted-foreground">{t('dashboard.serviceType')}:</span>
             <Badge variant="secondary" className="font-semibold">{bookingData.serviceType}</Badge>
           </div>
-          <div className="flex items-center justify-between pb-2 border-b">
-            <span className="text-muted-foreground">Customer:</span>
+          <div className={`flex items-center justify-between pb-2 border-b ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <span className="text-muted-foreground">{t('messages.customerInformation')}:</span>
             <span className="font-medium">{bookingData.userInfo.fullName}</span>
           </div>
-          <div className="flex items-center justify-between pb-2 border-b">
-            <span className="text-muted-foreground">Email:</span>
+          <div className={`flex items-center justify-between pb-2 border-b ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <span className="text-muted-foreground">{t('footer.email')}:</span>
             <span className="text-sm">{bookingData.userInfo.email}</span>
           </div>
-          <div className="flex items-center justify-between pb-2 border-b">
-            <span className="text-muted-foreground">Phone:</span>
+          <div className={`flex items-center justify-between pb-2 border-b ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <span className="text-muted-foreground">{t('footer.phone')}:</span>
             <span className="text-sm">{bookingData.userInfo.phone}</span>
           </div>
         </div>
         
         {/* Currency Selector */}
         <div className="border-t-2 pt-4 mt-4">
-          <Label className="text-sm font-medium mb-2 block">Select Currency</Label>
+          <Label className="text-sm font-medium mb-2 block">{t('booking.selectCurrency')}</Label>
           <CurrencySelector
             selectedCurrency={selectedCurrency}
             onCurrencyChange={setSelectedCurrency}
@@ -373,9 +373,9 @@ const EnhancedPayment = () => {
         </div>
         
         <div className="border-t-2 pt-4 mt-4">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-semibold">Total Amount:</span>
-            <div className="text-right">
+          <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <span className="text-lg font-semibold">{t('messages.paymentAmount')}:</span>
+            <div className={`text-${isRTL ? 'left' : 'right'}`}>
               {selectedCurrency !== 'USD' && (
                 <span className="text-sm text-muted-foreground block">
                   (${finalAmount.toFixed(2)} USD)
@@ -392,7 +392,7 @@ const EnhancedPayment = () => {
         <Alert className="mt-4">
           <Shield className="h-4 w-4" />
           <AlertDescription className="text-xs">
-            Your information is secure and will only be used to process this booking.
+            {t('messages.securePayment')}
           </AlertDescription>
         </Alert>
       </CardContent>
@@ -402,11 +402,11 @@ const EnhancedPayment = () => {
   const renderPaymentMethodSelector = () => (
     <Card className="backdrop-blur-sm bg-white/90 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-700">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-xl">
+        <CardTitle className={`flex items-center gap-2 text-xl ${isRTL ? 'flex-row-reverse' : ''}`}>
           <DollarSign className="h-6 w-6 text-primary" />
-          Select Payment Method
+          {t('payment.paymentMethod')}
         </CardTitle>
-        <CardDescription>Choose your preferred payment option</CardDescription>
+        <CardDescription>{t('payment.choosePaymentMethod')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {paymentMethods.map((method) => {
@@ -415,23 +415,23 @@ const EnhancedPayment = () => {
           return (
             <div
               key={method.id}
-              className={`relative flex items-center p-5 border-2 rounded-xl cursor-pointer transition-all hover:shadow-md ${
+              className={`relative flex items-center p-5 border-2 rounded-xl cursor-pointer transition-all hover:shadow-md ${isRTL ? 'flex-row-reverse' : ''} ${
                 isSelected
                   ? 'border-primary bg-primary/10 shadow-lg'
                   : 'border-slate-200 dark:border-slate-700 hover:border-primary/50'
               }`}
               onClick={() => setSelectedMethod(method.id)}
             >
-              <div className="flex items-start space-x-4 flex-1">
+              <div className={`flex items-start space-x-4 flex-1 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 <div className={`p-3 rounded-lg ${isSelected ? 'bg-primary/20' : 'bg-slate-100 dark:bg-slate-800'}`}>
                   <Icon className={`h-6 w-6 ${isSelected ? 'text-primary' : 'text-slate-600 dark:text-slate-400'}`} />
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className={`flex items-center gap-2 mb-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <span className={`font-semibold ${isSelected ? 'text-primary' : ''}`}>{method.name}</span>
                     {method.recommended && (
                       <Badge variant="default" className="text-xs bg-green-600">
-                        Recommended
+                        {t('messages.recommended')}
                       </Badge>
                     )}
                   </div>
@@ -633,12 +633,12 @@ const EnhancedPayment = () => {
               <BackButton className="text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800" />
             </div>
             
-            <div className="text-center mb-10">
+            <div className={`text-center mb-10 ${isRTL ? 'rtl' : ''}`}>
               <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                Complete Your Payment
+                {t('messages.completeBookingSecure')}
               </h1>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Choose your preferred payment method to finalize your booking
+                {t('payment.choosePaymentMethod')}
               </p>
             </div>
 
