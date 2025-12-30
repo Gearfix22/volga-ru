@@ -4,14 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
   Select,
   SelectContent,
   SelectItem,
@@ -24,7 +16,6 @@ import {
   Eye,
   CheckCircle,
   XCircle,
-  Clock,
   Calendar
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,6 +24,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ResponsiveTable } from '@/components/ui/responsive-table';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import { getStatusTranslationKey, getPaymentStatusTranslationKey, getServiceTypeTranslationKey } from '@/utils/translationUtils';
 
 interface Booking {
   id: string;
@@ -46,7 +38,7 @@ interface Booking {
 }
 
 const BookingsManagement = () => {
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const { hasRole } = useAuth();
   const { toast } = useToast();
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -60,7 +52,6 @@ const BookingsManagement = () => {
     if (hasRole('admin')) {
       fetchBookings();
       
-      // Set up real-time subscription
       const channel = supabase
         .channel('admin-bookings-table')
         .on('postgres_changes', { 
@@ -94,8 +85,8 @@ const BookingsManagement = () => {
     } catch (error) {
       console.error('Error fetching bookings:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to fetch bookings',
+        title: t('common.error'),
+        description: t('dashboard.failedToLoadBookings'),
         variant: 'destructive'
       });
     } finally {
@@ -106,7 +97,6 @@ const BookingsManagement = () => {
   const filterBookings = () => {
     let filtered = bookings;
 
-    // Search filter
     if (searchQuery) {
       filtered = filtered.filter(booking =>
         booking.service_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -115,12 +105,10 @@ const BookingsManagement = () => {
       );
     }
 
-    // Status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(booking => booking.status === statusFilter);
     }
 
-    // Payment filter
     if (paymentFilter !== 'all') {
       filtered = filtered.filter(booking => booking.payment_status === paymentFilter);
     }
@@ -138,14 +126,14 @@ const BookingsManagement = () => {
       if (error) throw error;
 
       toast({
-        title: 'Success',
-        description: `Booking status updated to ${newStatus}`,
+        title: t('common.success'),
+        description: t('dashboard.bookingStatusUpdated'),
       });
     } catch (error) {
       console.error('Error updating booking:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to update booking status',
+        title: t('common.error'),
+        description: t('dashboard.failedToLoadBookings'),
         variant: 'destructive'
       });
     }
@@ -169,58 +157,58 @@ const BookingsManagement = () => {
 
   if (!hasRole('admin')) {
     return (
-      <DashboardLayout title="Access Denied">
+      <DashboardLayout title={t('dashboard.accessDenied')}>
         <div className="text-center py-8">
-          <p className="text-muted-foreground">You don't have permission to access this page.</p>
+          <p className="text-muted-foreground">{t('dashboard.noPermission')}</p>
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout title="Bookings Management">
+    <DashboardLayout title={t('dashboard.bookingsManagement')}>
       <div className="space-y-6">
         {/* Filters */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Filter className="h-5 w-5" />
-              Filters & Search
+              {t('dashboard.filtersAndSearch')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-3 h-4 w-4 text-muted-foreground`} />
                 <Input
-                  placeholder="Search bookings..."
+                  placeholder={t('dashboard.searchBookings')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className={isRTL ? 'pr-10' : 'pl-10'}
                 />
               </div>
               
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Filter by status" />
+                  <SelectValue placeholder={t('dashboard.filterByStatus')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="confirmed">Confirmed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectContent className="bg-background border shadow-lg z-50">
+                  <SelectItem value="all">{t('dashboard.allStatuses')}</SelectItem>
+                  <SelectItem value="pending">{t('dashboard.statusPending')}</SelectItem>
+                  <SelectItem value="confirmed">{t('dashboard.statusConfirmed')}</SelectItem>
+                  <SelectItem value="cancelled">{t('dashboard.statusCancelled')}</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={paymentFilter} onValueChange={setPaymentFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Filter by payment" />
+                  <SelectValue placeholder={t('dashboard.filterByPayment')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Payments</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
+                <SelectContent className="bg-background border shadow-lg z-50">
+                  <SelectItem value="all">{t('dashboard.allPayments')}</SelectItem>
+                  <SelectItem value="paid">{t('dashboard.statusPaid')}</SelectItem>
+                  <SelectItem value="pending">{t('dashboard.statusPending')}</SelectItem>
+                  <SelectItem value="failed">{t('dashboard.statusFailed')}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -229,7 +217,7 @@ const BookingsManagement = () => {
                 setStatusFilter('all');
                 setPaymentFilter('all');
               }}>
-                Clear Filters
+                {t('dashboard.clearFilters')}
               </Button>
             </div>
           </CardContent>
@@ -238,9 +226,9 @@ const BookingsManagement = () => {
         {/* Bookings Table */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Calendar className="h-5 w-5" />
-              All Bookings ({filteredBookings.length})
+              {t('dashboard.allBookings')} ({filteredBookings.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -250,43 +238,48 @@ const BookingsManagement = () => {
               columns={[
                 {
                   key: 'id',
-                  label: 'ID',
+                  label: t('dashboard.id'),
                   render: (value) => (
                     <span className="font-mono text-sm">{value.slice(0, 8)}...</span>
                   )
                 },
                 {
                   key: 'service_type',
-                  label: 'Service',
-                  className: 'font-medium'
+                  label: t('dashboard.service'),
+                  className: 'font-medium',
+                  render: (value) => t(getServiceTypeTranslationKey(value))
                 },
                 {
                   key: 'user_info',
-                  label: 'Customer',
+                  label: t('dashboard.customer'),
                   render: (value) => value?.fullName || value?.email || 'N/A'
                 },
                 {
                   key: 'total_price',
-                  label: 'Amount',
+                  label: t('dashboard.amount'),
                   render: (value) => `$${value?.toFixed(2) || '0.00'}`
                 },
                 {
                   key: 'status',
-                  label: 'Status',
+                  label: t('dashboard.status'),
                   render: (value) => (
-                    <Badge className={getStatusColor(value)}>{value}</Badge>
+                    <Badge className={getStatusColor(value)}>
+                      {t(getStatusTranslationKey(value))}
+                    </Badge>
                   )
                 },
                 {
                   key: 'payment_status',
-                  label: 'Payment',
+                  label: t('dashboard.payment'),
                   render: (value) => (
-                    <Badge className={getStatusColor(value)}>{value}</Badge>
+                    <Badge className={getStatusColor(value)}>
+                      {t(getPaymentStatusTranslationKey(value))}
+                    </Badge>
                   )
                 },
                 {
                   key: 'created_at',
-                  label: 'Date',
+                  label: t('dashboard.date'),
                   render: (value) => new Date(value).toLocaleDateString()
                 }
               ]}
@@ -318,7 +311,7 @@ const BookingsManagement = () => {
               emptyState={
                 <div className="text-center py-8">
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No bookings found</p>
+                  <p className="text-muted-foreground">{t('dashboard.noBookingsFound')}</p>
                 </div>
               }
             />

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb';
@@ -21,6 +22,7 @@ type TabType = 'overview' | 'bookings' | 'payments' | 'pricing' | 'drivers' | 'g
 
 const AdminPanel = () => {
   const { user, loading, hasRole } = useAuth();
+  const { t, isRTL } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const activeTab = (searchParams.get('tab') as TabType) || 'overview';
@@ -42,28 +44,28 @@ const AdminPanel = () => {
 
   const getTitleForTab = (tab: TabType) => {
     const titles: Record<TabType, string> = {
-      overview: 'Overview',
-      bookings: 'Bookings',
-      payments: 'Payments',
-      pricing: 'Price Negotiations',
-      drivers: 'Drivers',
-      guides: 'Guides',
-      services: 'Services',
-      map: 'Live Map',
-      users: 'Users',
-      logs: 'Logs',
+      overview: t('dashboard.overview'),
+      bookings: t('dashboard.bookings'),
+      payments: t('dashboard.payments'),
+      pricing: t('dashboard.priceNegotiations'),
+      drivers: t('dashboard.drivers'),
+      guides: t('dashboard.guides'),
+      services: t('dashboard.services'),
+      map: t('dashboard.liveMap'),
+      users: t('dashboard.users'),
+      logs: t('dashboard.logs'),
     };
-    return titles[tab] || 'Admin Panel';
+    return titles[tab] || t('dashboard.adminPanel');
   };
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className={`flex min-h-screen w-full ${isRTL ? 'flex-row-reverse' : ''}`}>
         <AdminSidebar />
         <SidebarInset className="flex-1">
-          <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
+          <header className={`sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <SidebarTrigger className={isRTL ? '-mr-1' : '-ml-1'} />
+            <Separator orientation="vertical" className={`${isRTL ? 'ml-2' : 'mr-2'} h-4`} />
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem>
