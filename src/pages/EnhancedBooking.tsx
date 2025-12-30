@@ -22,7 +22,7 @@ import { ServiceDetailsForm } from '@/components/booking/ServiceDetailsForm';
 import { PricingDisplay } from '@/components/booking/PricingDisplay';
 import { BookingFormTracker } from '@/components/booking/BookingFormTracker';
 import { useDataTracking } from '@/hooks/useDataTracking';
-import { saveDraftBooking, getDraftBookings, DraftBooking } from '@/services/bookingService';
+import { saveDraftBooking, getLatestDraft, deleteDraftBooking, DraftBooking } from '@/services/bookingService';
 import { supabase } from '@/integrations/supabase/client';
 import { useServiceValidation } from '@/hooks/useServiceValidation';
 import type { ServiceDetails, UserInfo } from '@/types/booking';
@@ -126,32 +126,32 @@ const EnhancedBooking = () => {
     }
   }, [serviceFromUrl, location.state]);
 
-  // Check for existing drafts on mount
+  // Check for existing draft on mount (only if not already resuming)
   useEffect(() => {
     if (user && !location.state?.resumeDraft) {
-      checkForExistingDrafts();
+      checkForExistingDraft();
     }
   }, [user, location.state]);
 
-  // Auto-save functionality
+  // Auto-save functionality - debounced
   useEffect(() => {
-    if (user && serviceType && (Object.keys(serviceDetails).length > 0 || userInfo.fullName)) {
+    if (user && serviceType) {
       const timer = setTimeout(() => {
         autoSave();
-      }, 10000); // Auto-save after 10 seconds of inactivity
+      }, 5000); // Auto-save after 5 seconds of inactivity
 
       return () => clearTimeout(timer);
     }
   }, [serviceType, serviceDetails, userInfo, user]);
 
-  const checkForExistingDrafts = async () => {
+  const checkForExistingDraft = async () => {
     try {
-      const drafts = await getDraftBookings();
-      if (drafts.length > 0) {
+      const draft = await getLatestDraft();
+      if (draft) {
         setShowResumeDialog(true);
       }
     } catch (error) {
-      console.error('Error checking for drafts:', error);
+      console.error('Error checking for draft:', error);
     }
   };
 
