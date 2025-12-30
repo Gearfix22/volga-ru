@@ -6,6 +6,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Valid booking statuses and their allowed transitions
+const VALID_STATUSES = ['requested', 'admin_review', 'priced', 'payment_pending', 'paid', 'completed', 'cancelled'] as const
+type BookingStatus = typeof VALID_STATUSES[number]
+
+const STATUS_TRANSITIONS: Record<string, string[]> = {
+  'requested': ['admin_review', 'cancelled'],
+  'admin_review': ['priced', 'cancelled'],
+  'priced': ['payment_pending', 'cancelled'],
+  'payment_pending': ['paid', 'cancelled'],
+  'paid': ['completed', 'cancelled'],
+  'completed': [], // Terminal state
+  'cancelled': [], // Terminal state
+}
+
+function isValidTransition(currentStatus: string, newStatus: string): boolean {
+  // Allow same status (no-op)
+  if (currentStatus === newStatus) return true
+  
+  const allowedTransitions = STATUS_TRANSITIONS[currentStatus] || []
+  return allowedTransitions.includes(newStatus)
+}
+
+function getValidNextStatuses(currentStatus: string): string[] {
+  return STATUS_TRANSITIONS[currentStatus] || []
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -132,7 +158,7 @@ serve(async (req) => {
       })
     }
 
-    // POST /admin-bookings/:id/confirm - Confirm booking
+    // POST /admin-bookings/:id/confirm - Move to admin_review (legacy confirm action)
     if (method === 'POST' && bookingId && action === 'confirm') {
       const { data: booking, error: fetchError } = await supabaseAdmin
         .from('bookings')
@@ -148,12 +174,28 @@ serve(async (req) => {
       }
 
       const oldStatus = booking.status
+      
+      // Determine next valid status based on current status
+      let newStatus = 'admin_review'
+      if (oldStatus === 'requested') {
+        newStatus = 'admin_review'
+      } else if (oldStatus === 'admin_review') {
+        newStatus = 'priced' // Move to priced after admin reviews
+      } else if (!isValidTransition(oldStatus, 'admin_review')) {
+        return new Response(JSON.stringify({ 
+          error: `Cannot confirm booking in '${oldStatus}' status`,
+          valid_transitions: getValidNextStatuses(oldStatus)
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
 
       // Update booking status
       const { error: updateError } = await supabaseAdmin
         .from('bookings')
         .update({ 
-          status: 'confirmed', 
+          status: newStatus, 
           updated_at: new Date().toISOString() 
         })
         .eq('id', bookingId)
@@ -163,19 +205,19 @@ serve(async (req) => {
       // Log admin action
       await supabaseAdmin.from('admin_logs').insert({
         admin_id: user.id,
-        action_type: 'booking_confirmed',
+        action_type: 'booking_status_changed',
         target_id: bookingId,
         target_table: 'bookings',
-        payload: { old_status: oldStatus, new_status: 'confirmed' }
+        payload: { old_status: oldStatus, new_status: newStatus }
       })
 
-      console.log(`Booking ${bookingId} confirmed by admin ${user.id}`)
-      return new Response(JSON.stringify({ success: true, status: 'confirmed' }), {
+      console.log(`Booking ${bookingId} status changed: ${oldStatus} → ${newStatus} by admin ${user.id}`)
+      return new Response(JSON.stringify({ success: true, status: newStatus, old_status: oldStatus }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    // POST /admin-bookings/:id/reject - Reject booking
+    // POST /admin-bookings/:id/reject - Cancel booking
     if (method === 'POST' && bookingId && action === 'reject') {
       const body = await req.json()
       const reason = body.reason || 'No reason provided'
@@ -194,6 +236,17 @@ serve(async (req) => {
       }
 
       const oldStatus = booking.status
+      
+      // Validate transition to cancelled
+      if (!isValidTransition(oldStatus, 'cancelled')) {
+        return new Response(JSON.stringify({ 
+          error: `Cannot cancel booking in '${oldStatus}' status - already finalized`,
+          code: 'CANNOT_CANCEL'
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
 
       // Update booking status and add reason to admin_notes
       const { error: updateError } = await supabaseAdmin
@@ -210,14 +263,14 @@ serve(async (req) => {
       // Log admin action
       await supabaseAdmin.from('admin_logs').insert({
         admin_id: user.id,
-        action_type: 'booking_rejected',
+        action_type: 'booking_cancelled',
         target_id: bookingId,
         target_table: 'bookings',
         payload: { old_status: oldStatus, new_status: 'cancelled', reason }
       })
 
-      console.log(`Booking ${bookingId} rejected by admin ${user.id}. Reason: ${reason}`)
-      return new Response(JSON.stringify({ success: true, status: 'cancelled' }), {
+      console.log(`Booking ${bookingId} cancelled by admin ${user.id}. Reason: ${reason}`)
+      return new Response(JSON.stringify({ success: true, status: 'cancelled', old_status: oldStatus }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
@@ -227,10 +280,10 @@ serve(async (req) => {
       const body = await req.json()
       const { status, payment_status, admin_notes, total_price, assigned_driver_id } = body
 
-      // Fetch current booking to check payment status before allowing price update
+      // Fetch current booking to check status and payment before updates
       const { data: currentBooking, error: fetchError } = await supabaseAdmin
         .from('bookings')
-        .select('payment_status, total_price')
+        .select('status, payment_status, total_price')
         .eq('id', bookingId)
         .maybeSingle()
 
@@ -241,8 +294,24 @@ serve(async (req) => {
         })
       }
 
-      // CRITICAL: Block price updates after payment is confirmed
-      if (total_price !== undefined && currentBooking.payment_status === 'paid') {
+      // CRITICAL: Validate status transition
+      if (status && status !== currentBooking.status) {
+        if (!isValidTransition(currentBooking.status, status)) {
+          const validNext = getValidNextStatuses(currentBooking.status)
+          console.error(`Invalid status transition: ${currentBooking.status} → ${status}`)
+          return new Response(JSON.stringify({ 
+            error: `Invalid status transition from '${currentBooking.status}' to '${status}'`,
+            code: 'INVALID_TRANSITION',
+            valid_transitions: validNext
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+      }
+
+      // CRITICAL: Block price updates after payment is confirmed (status = 'paid')
+      if (total_price !== undefined && (currentBooking.status === 'paid' || currentBooking.status === 'completed')) {
         console.error(`Price update blocked for booking ${bookingId} - payment already confirmed`)
         return new Response(JSON.stringify({ 
           error: 'Cannot update price after payment confirmation',
@@ -254,6 +323,8 @@ serve(async (req) => {
       }
 
       const updateData: any = { updated_at: new Date().toISOString() }
+      const oldStatus = currentBooking.status
+      
       if (status) updateData.status = status
       if (payment_status) updateData.payment_status = payment_status
       if (admin_notes !== undefined) updateData.admin_notes = admin_notes
@@ -267,16 +338,20 @@ serve(async (req) => {
 
       if (updateError) throw updateError
 
-      // Log admin action
+      // Log admin action with status transition details
       await supabaseAdmin.from('admin_logs').insert({
         admin_id: user.id,
-        action_type: 'booking_updated',
+        action_type: status ? 'booking_status_changed' : 'booking_updated',
         target_id: bookingId,
         target_table: 'bookings',
-        payload: { ...updateData, old_price: currentBooking.total_price }
+        payload: { 
+          ...updateData, 
+          old_status: oldStatus,
+          old_price: currentBooking.total_price 
+        }
       })
 
-      console.log(`Booking ${bookingId} updated by admin ${user.id}`)
+      console.log(`Booking ${bookingId} updated by admin ${user.id}. Status: ${oldStatus} → ${status || oldStatus}`)
       return new Response(JSON.stringify({ success: true, booking: { ...currentBooking, ...updateData } }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })

@@ -1,4 +1,4 @@
-import { Check, Clock, FileText, CheckCircle2, Car, Ban } from 'lucide-react';
+import { Check, Clock, FileText, CheckCircle2, DollarSign, CreditCard, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BookingStatusTimelineProps {
@@ -8,38 +8,37 @@ interface BookingStatusTimelineProps {
 }
 
 /**
- * NORMALIZED BOOKING LIFECYCLE:
- * REQUESTED → ADMIN_REVIEW → DRIVER_ASSIGNED → DRIVER_CONFIRMED → IN_PROGRESS → COMPLETED → PAID/CLOSED
+ * NORMALIZED BOOKING STATUS FLOW:
+ * requested → admin_review → priced → payment_pending → paid → completed
  * 
- * Status mapping:
- * - pending = REQUESTED (customer submitted booking)
- * - confirmed = ADMIN_REVIEW passed, awaiting driver assignment
- * - assigned = DRIVER_ASSIGNED (admin assigned driver)
- * - accepted = DRIVER_CONFIRMED (driver accepted)
- * - on_trip/active = IN_PROGRESS
- * - completed = COMPLETED
- * - paid = PAID/CLOSED
+ * Each status represents a clear stage in the booking lifecycle:
+ * - requested: Customer submitted booking request
+ * - admin_review: Admin is reviewing the request
+ * - priced: Admin has set the price, awaiting customer confirmation
+ * - payment_pending: Customer confirmed price, payment in progress
+ * - paid: Payment confirmed
+ * - completed: Service delivered
+ * - cancelled: Booking cancelled (terminal state)
  */
 const STATUS_FLOW = [
-  { key: 'pending', label: 'Requested', icon: FileText, description: 'Booking submitted' },
-  { key: 'confirmed', label: 'Confirmed', icon: Check, description: 'Admin confirmed' },
-  { key: 'assigned', label: 'Driver Assigned', icon: Car, description: 'Driver assigned' },
-  { key: 'accepted', label: 'Driver Confirmed', icon: CheckCircle2, description: 'Driver accepted' },
-  { key: 'on_trip', label: 'In Progress', icon: Car, description: 'Trip in progress' },
-  { key: 'completed', label: 'Completed', icon: CheckCircle2, description: 'Service completed' },
+  { key: 'requested', label: 'Requested', icon: FileText, description: 'Booking submitted' },
+  { key: 'admin_review', label: 'Under Review', icon: Clock, description: 'Admin reviewing' },
+  { key: 'priced', label: 'Price Set', icon: DollarSign, description: 'Price confirmed by admin' },
+  { key: 'payment_pending', label: 'Awaiting Payment', icon: CreditCard, description: 'Payment in progress' },
+  { key: 'paid', label: 'Paid', icon: CheckCircle2, description: 'Payment confirmed' },
+  { key: 'completed', label: 'Completed', icon: Check, description: 'Service delivered' },
 ];
 
 const STATUS_INDEX: Record<string, number> = {
   draft: 0,
-  pending: 0,
-  confirmed: 1,
-  assigned: 2,
-  accepted: 3,
-  active: 4,
-  on_trip: 4,
-  in_progress: 4,
+  requested: 0,
+  pending: 0, // Legacy mapping
+  admin_review: 1,
+  confirmed: 1, // Legacy mapping
+  priced: 2,
+  payment_pending: 3,
+  paid: 4,
   completed: 5,
-  paid: 5,
   closed: 5,
   cancelled: -1,
   rejected: -1,
