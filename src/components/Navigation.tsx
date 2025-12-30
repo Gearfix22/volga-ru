@@ -147,7 +147,7 @@ export const Navigation: React.FC = () => {
                     className="flex items-center gap-2 w-full text-left px-4 py-3 text-sm font-medium rounded-md text-foreground hover:text-brand-accent hover:bg-brand-accent/5"
                   >
                     <Car className="h-4 w-4" />
-                    Driver Login
+                    {t('roles.driver')}
                   </button>
                   <button
                     onClick={() => {
@@ -157,7 +157,7 @@ export const Navigation: React.FC = () => {
                     className="flex items-center gap-2 w-full text-left px-4 py-3 text-sm font-medium rounded-md text-foreground hover:text-brand-accent hover:bg-brand-accent/5"
                   >
                     <UserCheck className="h-4 w-4" />
-                    Guide Login
+                    {t('roles.guide')}
                   </button>
                 </>
               )}

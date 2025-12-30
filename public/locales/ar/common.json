@@ -547,5 +547,62 @@
     "modernTealDesc": "تصميم عصري معاصر",
     "russianElegance": "الأناقة الروسية",
     "russianEleganceDesc": "أسلوب فاخر كلاسيكي"
+  },
+  "status": {
+    "pending": "قيد الانتظار",
+    "confirmed": "مؤكد",
+    "completed": "مكتمل",
+    "cancelled": "ملغي",
+    "rejected": "مرفوض",
+    "assigned": "معين",
+    "accepted": "مقبول",
+    "onTrip": "في الرحلة",
+    "onTheWay": "في الطريق",
+    "unknown": "غير معروف"
+  },
+  "paymentStatus": {
+    "pending": "قيد الانتظار",
+    "paid": "مدفوع",
+    "failed": "فشل",
+    "refunded": "مسترد",
+    "awaitingVerification": "في انتظار التحقق",
+    "unknown": "غير معروف"
+  },
+  "serviceTypes": {
+    "transportation": "النقل",
+    "driver": "خدمة السائق",
+    "hotel": "حجز فندق",
+    "accommodation": "الإقامة",
+    "event": "حجز فعالية",
+    "events": "الفعاليات",
+    "customTrip": "رحلة مخصصة",
+    "guide": "مرشد سياحي",
+    "unknown": "خدمة غير معروفة"
+  },
+  "roles": {
+    "admin": "مدير",
+    "moderator": "مشرف",
+    "user": "مستخدم",
+    "driver": "سائق",
+    "guide": "مرشد",
+    "unknown": "غير معروف"
+  },
+  "hero": {
+    "welcome": "مرحباً بك في فولغا",
+    "subtitle": "اكتشف خدمات السفر المميزة بتميز شخصي",
+    "bookAppointment": "احجز موعد",
+    "premiumService": "خدمة مميزة",
+    "multilingualSupport": "دعم متعدد اللغات",
+    "secureBooking": "حجز آمن"
+  },
+  "home": {
+    "ourPremiumServices": "خدماتنا المميزة",
+    "servicesDescription": "استمتع بالسفر الفاخر مع مجموعتنا الشاملة من الخدمات في أجمل وجهات روسيا.",
+    "premiumTransport": "النقل الفاخر",
+    "premiumTransportDesc": "سيارات فاخرة مع سائقين محترفين لرحلات مريحة.",
+    "luxuryHotels": "فنادق فاخرة",
+    "luxuryHotelsDesc": "إقامة 5 نجوم في مواقع متميزة في جميع أنحاء روسيا.",
+    "culturalEvents": "الفعاليات الثقافية",
+    "culturalEventsDesc": "وصول حصري لأفضل التجارب الثقافية في روسيا."
   }
 }

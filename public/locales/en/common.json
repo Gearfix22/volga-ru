@@ -569,5 +569,87 @@
     "modernTealDesc": "Fresh, contemporary design",
     "russianElegance": "Russian Elegance",
     "russianEleganceDesc": "Classic luxury style"
+  },
+  "status": {
+    "pending": "Pending",
+    "confirmed": "Confirmed",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "rejected": "Rejected",
+    "assigned": "Assigned",
+    "accepted": "Accepted",
+    "onTrip": "On Trip",
+    "onTheWay": "On The Way",
+    "unknown": "Unknown"
+  },
+  "paymentStatus": {
+    "pending": "Pending",
+    "paid": "Paid",
+    "failed": "Failed",
+    "refunded": "Refunded",
+    "awaitingVerification": "Awaiting Verification",
+    "unknown": "Unknown"
+  },
+  "serviceTypes": {
+    "transportation": "Transportation",
+    "driver": "Driver Service",
+    "hotel": "Hotel Reservation",
+    "accommodation": "Accommodation",
+    "event": "Event Booking",
+    "events": "Events",
+    "customTrip": "Custom Trip",
+    "guide": "Tourist Guide",
+    "unknown": "Unknown Service"
+  },
+  "vehicleTypes": {
+    "sedan": "Sedan",
+    "suv": "SUV",
+    "minivan": "Minivan",
+    "bus": "Bus",
+    "luxury": "Luxury Vehicle",
+    "economy": "Economy",
+    "unknown": "Unknown"
+  },
+  "roomTypes": {
+    "single": "Single Room",
+    "double": "Double Room",
+    "suite": "Suite",
+    "family": "Family Room",
+    "deluxe": "Deluxe Room",
+    "unknown": "Unknown"
+  },
+  "roles": {
+    "admin": "Administrator",
+    "moderator": "Moderator",
+    "user": "User",
+    "driver": "Driver",
+    "guide": "Guide",
+    "unknown": "Unknown"
+  },
+  "paymentMethods": {
+    "creditCard": "Credit Card",
+    "bankTransfer": "Bank Transfer",
+    "paypal": "PayPal",
+    "cash": "Cash",
+    "cashOnArrival": "Cash on Arrival",
+    "unknown": "Unknown"
+  },
+  "hero": {
+    "welcome": "Welcome to Volga",
+    "subtitle": "Discover Premium Travel Services with Personalized Excellence",
+    "bookAppointment": "Book Appointment",
+    "premiumService": "Premium Service",
+    "multilingualSupport": "Multilingual Support",
+    "secureBooking": "Secure Booking"
+  },
+  "home": {
+    "ourPremiumServices": "Our Premium Services",
+    "servicesDescription": "Experience luxury travel with our comprehensive suite of services across Russia's most beautiful destinations.",
+    "premiumTransport": "Premium Transport",
+    "premiumTransportDesc": "Luxury vehicles with professional drivers for comfortable journeys.",
+    "luxuryHotels": "Luxury Hotels",
+    "luxuryHotelsDesc": "5-star accommodations in prime locations across Russia.",
+    "culturalEvents": "Cultural Events",
+    "culturalEventsDesc": "Exclusive access to Russia's finest cultural experiences."
   }
 }

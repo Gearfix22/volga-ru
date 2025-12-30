@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export const Footer: React.FC = () => {
-  const { language } = useLanguage();
+  const { t, language, isRTL } = useLanguage();
 
   const whatsappNumber = '+79522212903';
   const whatsappUrl = `https://wa.me/${whatsappNumber.replace(/\+/g, '')}`;
@@ -13,25 +13,25 @@ export const Footer: React.FC = () => {
   const contactInfo = [
     {
       icon: Phone,
-      label: 'Phone',
+      label: t('footer.phone'),
       value: '+7 952 221 29 03',
       href: `tel:${whatsappNumber}`,
     },
     {
       icon: Mail,
-      label: 'Email',
+      label: t('footer.email'),
       value: 'info@volgaservices.com',
       href: 'mailto:info@volgaservices.com',
     },
     {
       icon: Globe,
-      label: 'Website',
+      label: t('footer.website'),
       value: 'www.volgaservices.com',
       href: 'https://www.volgaservices.com',
     },
     {
       icon: MapPin,
-      label: 'Address',
+      label: t('footer.address'),
       value: language === 'ru' 
         ? 'обл. Ленинградская, р-н. Всеволожский, г. Мурино, ул. Шувалова, д. 11, кв.'
         : 'Leningrad Region, Vsevolozhsky District, Murino, Shuvalov St., 11',
@@ -58,7 +58,7 @@ export const Footer: React.FC = () => {
       <div className="absolute inset-0 bg-black/60"></div>
       
       <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 ${isRTL ? 'text-right' : ''}`}>
           {/* Company Info */}
           <div className="space-y-4 sm:space-y-6">
             <div>
@@ -68,7 +68,7 @@ export const Footer: React.FC = () => {
               </h3>
               <p className="text-white/90 text-sm leading-relaxed"
                  style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}>
-                Premium travel and tourism services in Russia. Your trusted partner for unforgettable experiences.
+                {t('footer.description')}
               </p>
             </div>
             
@@ -81,11 +81,11 @@ export const Footer: React.FC = () => {
                 href={whatsappUrl} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="flex items-center justify-center"
+                className={`flex items-center justify-center ${isRTL ? 'flex-row-reverse' : ''}`}
                 aria-label="Open WhatsApp chat with Volga Services"
               >
-                <Phone className="h-4 w-4 mr-2" aria-hidden="true" />
-                Chat on WhatsApp
+                <Phone className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} aria-hidden="true" />
+                {t('footer.whatsapp')}
               </a>
             </Button>
           </div>
@@ -93,10 +93,10 @@ export const Footer: React.FC = () => {
           {/* Contact Information */}
           <div className="space-y-4 sm:space-y-6">
             <h3 className="text-white font-bold text-lg sm:text-xl"
-                style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)' }}>Contact Information</h3>
+                style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)' }}>{t('footer.contactInfo')}</h3>
             <div className="space-y-3 sm:space-y-4">
               {contactInfo.map((item, index) => (
-                <div key={index} className="flex items-start space-x-3">
+                <div key={index} className={`flex items-start space-x-3 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
                   <item.icon className="h-4 w-4 sm:h-5 sm:w-5 text-white mt-1 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="text-white/70 text-xs font-medium uppercase"
@@ -124,17 +124,17 @@ export const Footer: React.FC = () => {
           {/* Business Information */}
           <div className="space-y-4 sm:space-y-6">
             <h3 className="text-white font-bold text-lg sm:text-xl"
-                style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)' }}>Business Information</h3>
+                style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)' }}>{t('footer.businessInfo')}</h3>
             <div className="space-y-3 sm:space-y-4">
               <div>
                 <p className="text-white/70 text-xs font-medium uppercase"
-                   style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)' }}>Tax Number</p>
+                   style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)' }}>{t('footer.taxNumber')}</p>
                 <p className="text-white font-mono text-base sm:text-lg font-semibold"
                    style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}>4706086543</p>
               </div>
               <div>
                 <p className="text-white/70 text-xs font-medium uppercase"
-                   style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)' }}>Registration Number</p>
+                   style={{ textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)' }}>{t('footer.registrationNumber')}</p>
                 <p className="text-white font-mono text-base sm:text-lg font-semibold"
                    style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}>1254700002831</p>
               </div>
@@ -144,8 +144,8 @@ export const Footer: React.FC = () => {
           {/* Social Media */}
           <div className="space-y-4 sm:space-y-6">
             <h3 className="text-white font-bold text-lg sm:text-xl"
-                style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)' }}>Follow Us</h3>
-            <div className="flex space-x-3 sm:space-x-4">
+                style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)' }}>{t('footer.followUs')}</h3>
+            <div className={`flex space-x-3 sm:space-x-4 ${isRTL ? 'flex-row-reverse space-x-reverse justify-end' : ''}`}>
               {socialLinks.map((social, index) => (
                 <a
                   key={index}
@@ -164,17 +164,17 @@ export const Footer: React.FC = () => {
 
         {/* Bottom Bar */}
         <div className="border-t border-white/20 mt-8 sm:mt-12 pt-6 sm:pt-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
             <p className="text-white/90 text-sm text-center sm:text-left"
                style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}>
-              © 2024 <span className="text-white font-semibold">Volga Services</span>. All Rights Reserved.
+              © 2024 <span className="text-white font-semibold">Volga Services</span>. {t('footer.allRightsReserved')}
             </p>
             <Link 
               to="/privacy-policy" 
-              className="flex items-center gap-2 text-white/80 hover:text-white text-sm transition-colors"
+              className={`flex items-center gap-2 text-white/80 hover:text-white text-sm transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
             >
               <Shield className="h-4 w-4" />
-              Privacy Policy
+              {t('common.privacyPolicy')}
             </Link>
           </div>
         </div>
