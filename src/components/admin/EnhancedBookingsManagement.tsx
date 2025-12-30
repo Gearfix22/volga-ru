@@ -720,6 +720,12 @@ export const EnhancedBookingsManagement = () => {
                                   currentGuideId={booking.assigned_guide_id}
                                   onAssigned={fetchBookings}
                                   disabled={actionLoading === booking.id || booking.status === 'cancelled' || booking.status === 'completed' || booking.status === 'pending'}
+                                  tourDetails={{
+                                    tour_date: booking.service_details?.tour_date,
+                                    tour_start_time: booking.service_details?.tour_start_time,
+                                    tour_area: booking.service_details?.tour_area,
+                                    guide_language: booking.service_details?.guide_language,
+                                  }}
                                 />
                               ) : (
                                 <span className="text-sm text-muted-foreground">N/A</span>

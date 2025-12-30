@@ -244,6 +244,78 @@ export async function getAvailableGuides(
     .filter((item): item is Guide & { availability: GuideAvailability } => item !== null);
 }
 
+// Find best available guide for a booking based on tour details
+export async function findBestAvailableGuide(
+  tourDate: string,
+  tourTime: string,
+  language?: string,
+  area?: string
+): Promise<Guide | null> {
+  // Parse the tour date to get day of week (0 = Sunday, 6 = Saturday)
+  const date = new Date(tourDate);
+  const dayOfWeek = date.getDay();
+
+  // Get all guides with availability that matches criteria
+  const availableGuides = await getAvailableGuides(language, area, dayOfWeek, tourTime);
+
+  if (availableGuides.length === 0) {
+    // Fallback: try without time constraint
+    const guidesWithoutTime = await getAvailableGuides(language, area, dayOfWeek);
+    if (guidesWithoutTime.length > 0) {
+      return guidesWithoutTime[0];
+    }
+
+    // Fallback: try without area constraint
+    const guidesWithoutArea = await getAvailableGuides(language, undefined, dayOfWeek, tourTime);
+    if (guidesWithoutArea.length > 0) {
+      return guidesWithoutArea[0];
+    }
+
+    // Fallback: try with just language
+    const guidesWithLanguage = await getAvailableGuides(language);
+    if (guidesWithLanguage.length > 0) {
+      return guidesWithLanguage[0];
+    }
+
+    // Last fallback: return any active guide
+    const { data: anyGuide } = await supabase
+      .from('guides')
+      .select('*')
+      .eq('status', 'active')
+      .limit(1)
+      .maybeSingle();
+    
+    return anyGuide as Guide | null;
+  }
+
+  // Score guides based on match quality
+  const scoredGuides = availableGuides.map(guide => {
+    let score = 0;
+    
+    // Language match from guide's main languages
+    if (language && guide.languages?.includes(language)) {
+      score += 3;
+    }
+    
+    // Area match from availability
+    if (area && guide.availability.service_areas?.includes(area)) {
+      score += 2;
+    }
+    
+    // Prefer guides with lower hourly rate for cost efficiency
+    if (guide.hourly_rate) {
+      score += Math.max(0, 100 - guide.hourly_rate) / 100;
+    }
+    
+    return { guide, score };
+  });
+
+  // Sort by score descending and return the best match
+  scoredGuides.sort((a, b) => b.score - a.score);
+  
+  return scoredGuides[0]?.guide || null;
+}
+
 // Update guide location
 export async function updateGuideLocation(
   guideId: string,

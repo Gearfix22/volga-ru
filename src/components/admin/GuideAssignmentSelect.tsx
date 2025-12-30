@@ -7,9 +7,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { User, UserCheck, Wand2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { User, UserCheck, Wand2, Clock, MapPin, Languages } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { findBestAvailableGuide, getAvailableGuides } from '@/services/guideService';
 
 interface Guide {
   id: string;
@@ -21,11 +23,24 @@ interface Guide {
   hourly_rate: number | null;
 }
 
+interface GuideWithAvailability extends Guide {
+  isAvailable?: boolean;
+  matchScore?: number;
+}
+
+interface TourDetails {
+  tour_date?: string;
+  tour_start_time?: string;
+  tour_area?: string;
+  guide_language?: string;
+}
+
 interface GuideAssignmentSelectProps {
   bookingId: string;
   currentGuideId: string | null;
   onAssigned: () => void;
   disabled?: boolean;
+  tourDetails?: TourDetails;
 }
 
 export const GuideAssignmentSelect: React.FC<GuideAssignmentSelectProps> = ({
@@ -33,26 +48,61 @@ export const GuideAssignmentSelect: React.FC<GuideAssignmentSelectProps> = ({
   currentGuideId,
   onAssigned,
   disabled = false,
+  tourDetails,
 }) => {
   const { toast } = useToast();
-  const [guides, setGuides] = useState<Guide[]>([]);
+  const [guides, setGuides] = useState<GuideWithAvailability[]>([]);
   const [loading, setLoading] = useState(false);
   const [autoAssigning, setAutoAssigning] = useState(false);
 
   useEffect(() => {
-    loadGuides();
-  }, []);
+    loadGuidesWithAvailability();
+  }, [tourDetails]);
 
-  const loadGuides = async () => {
+  const loadGuidesWithAvailability = async () => {
     try {
-      const { data, error } = await supabase
+      // Get all active guides
+      const { data: allGuides, error } = await supabase
         .from('guides')
         .select('*')
         .eq('status', 'active')
         .order('full_name', { ascending: true });
 
       if (error) throw error;
-      setGuides(data || []);
+
+      if (!tourDetails?.tour_date || !tourDetails?.tour_start_time) {
+        setGuides(allGuides || []);
+        return;
+      }
+
+      // Get available guides for the tour time
+      const date = new Date(tourDetails.tour_date);
+      const dayOfWeek = date.getDay();
+      
+      const availableGuides = await getAvailableGuides(
+        tourDetails.guide_language,
+        tourDetails.tour_area,
+        dayOfWeek,
+        tourDetails.tour_start_time
+      );
+
+      const availableGuideIds = new Set(availableGuides.map(g => g.id));
+
+      // Mark guides with availability status
+      const guidesWithStatus: GuideWithAvailability[] = (allGuides || []).map(guide => ({
+        ...guide,
+        isAvailable: availableGuideIds.has(guide.id),
+        matchScore: availableGuides.find(g => g.id === guide.id) ? 1 : 0
+      }));
+
+      // Sort: available guides first
+      guidesWithStatus.sort((a, b) => {
+        if (a.isAvailable && !b.isAvailable) return -1;
+        if (!a.isAvailable && b.isAvailable) return 1;
+        return a.full_name.localeCompare(b.full_name);
+      });
+
+      setGuides(guidesWithStatus);
     } catch (error) {
       console.error('Error loading guides:', error);
     }
@@ -117,9 +167,32 @@ export const GuideAssignmentSelect: React.FC<GuideAssignmentSelectProps> = ({
 
     setAutoAssigning(true);
     try {
-      // Simple auto-assign: pick the first available guide
-      // Could be enhanced with availability checking
-      const selectedGuide = guides[0];
+      let selectedGuide: Guide | null = null;
+
+      // Use availability-based selection if tour details are provided
+      if (tourDetails?.tour_date && tourDetails?.tour_start_time) {
+        selectedGuide = await findBestAvailableGuide(
+          tourDetails.tour_date,
+          tourDetails.tour_start_time,
+          tourDetails.guide_language,
+          tourDetails.tour_area
+        );
+      }
+
+      // Fallback to first available guide
+      if (!selectedGuide) {
+        const availableGuide = guides.find(g => g.isAvailable);
+        selectedGuide = availableGuide || guides[0];
+      }
+
+      if (!selectedGuide) {
+        toast({
+          title: 'No Matching Guide',
+          description: 'Could not find a guide matching the tour requirements',
+          variant: 'destructive',
+        });
+        return;
+      }
       
       const { error } = await supabase
         .from('bookings')
@@ -139,13 +212,22 @@ export const GuideAssignmentSelect: React.FC<GuideAssignmentSelectProps> = ({
           action_type: 'guide_auto_assigned',
           target_id: bookingId,
           target_table: 'bookings',
-          payload: { guide_id: selectedGuide.id, guide_name: selectedGuide.full_name }
+          payload: { 
+            guide_id: selectedGuide.id, 
+            guide_name: selectedGuide.full_name,
+            matched_criteria: {
+              tour_date: tourDetails?.tour_date,
+              tour_time: tourDetails?.tour_start_time,
+              language: tourDetails?.guide_language,
+              area: tourDetails?.tour_area
+            }
+          }
         });
       }
 
       toast({
         title: 'Guide Auto-Assigned',
-        description: `${selectedGuide.full_name} has been assigned and notified`,
+        description: `${selectedGuide.full_name} has been assigned based on availability`,
       });
       onAssigned();
     } catch (error: any) {
@@ -196,7 +278,19 @@ export const GuideAssignmentSelect: React.FC<GuideAssignmentSelectProps> = ({
               <SelectItem key={guide.id} value={guide.id}>
                 <span className="flex items-center gap-2">
                   <User className="h-3 w-3" />
-                  {guide.full_name}
+                  <span className={!guide.isAvailable && tourDetails?.tour_date ? 'text-muted-foreground' : ''}>
+                    {guide.full_name}
+                  </span>
+                  {guide.isAvailable && tourDetails?.tour_date && (
+                    <Badge variant="outline" className="text-xs px-1 py-0 text-green-600 border-green-300">
+                      Available
+                    </Badge>
+                  )}
+                  {!guide.isAvailable && tourDetails?.tour_date && (
+                    <Badge variant="outline" className="text-xs px-1 py-0 text-muted-foreground">
+                      Busy
+                    </Badge>
+                  )}
                   {guide.languages && guide.languages.length > 0 && (
                     <span className="text-xs text-muted-foreground">
                       ({guide.languages.slice(0, 2).join(', ')})
