@@ -269,6 +269,13 @@ export type Database = {
             referencedRelation: "guides"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_driver"
+            columns: ["assigned_driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
         ]
       }
       contact_submissions: {
@@ -508,6 +515,7 @@ export type Database = {
           driver_id: string
           heading: number | null
           id: string
+          is_active: boolean | null
           latitude: number
           longitude: number
           speed: number | null
@@ -520,6 +528,7 @@ export type Database = {
           driver_id: string
           heading?: number | null
           id?: string
+          is_active?: boolean | null
           latitude: number
           longitude: number
           speed?: number | null
@@ -532,6 +541,7 @@ export type Database = {
           driver_id?: string
           heading?: number | null
           id?: string
+          is_active?: boolean | null
           latitude?: number
           longitude?: number
           speed?: number | null
@@ -711,6 +721,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "event_bookings_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_event_booking"
             columns: ["booking_id"]
             isOneToOne: false
             referencedRelation: "bookings"
@@ -1018,6 +1035,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_hotel_booking"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "hotel_bookings_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
@@ -1068,33 +1092,6 @@ export type Database = {
           room_type?: string
           star_rating?: number | null
           updated_at?: string | null
-        }
-        Relationships: []
-      }
-      login_attempts: {
-        Row: {
-          attempt_type: string
-          created_at: string
-          id: string
-          identifier: string
-          ip_address: string | null
-          success: boolean
-        }
-        Insert: {
-          attempt_type: string
-          created_at?: string
-          id?: string
-          identifier: string
-          ip_address?: string | null
-          success?: boolean
-        }
-        Update: {
-          attempt_type?: string
-          created_at?: string
-          id?: string
-          identifier?: string
-          ip_address?: string | null
-          success?: boolean
         }
         Relationships: []
       }
@@ -1357,6 +1354,7 @@ export type Database = {
           image_url: string | null
           is_active: boolean | null
           name: string
+          service_type: string | null
           type: string
           updated_at: string | null
         }
@@ -1371,6 +1369,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean | null
           name: string
+          service_type?: string | null
           type: string
           updated_at?: string | null
         }
@@ -1385,6 +1384,7 @@ export type Database = {
           image_url?: string | null
           is_active?: boolean | null
           name?: string
+          service_type?: string | null
           type?: string
           updated_at?: string | null
         }
@@ -1440,6 +1440,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_guide_booking"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tourist_guide_bookings_booking_id_fkey"
             columns: ["booking_id"]
             isOneToOne: false
@@ -1483,6 +1490,13 @@ export type Database = {
           vehicle_type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_transport_booking"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transportation_bookings_booking_id_fkey"
             columns: ["booking_id"]
@@ -1621,6 +1635,7 @@ export type Database = {
     }
     Functions: {
       cleanup_old_login_attempts: { Args: never; Returns: undefined }
+      current_user_roles: { Args: never; Returns: string[] }
       has_admin_permission: {
         Args: {
           _permission: Database["public"]["Enums"]["admin_permission"]
@@ -1642,6 +1657,9 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: never; Returns: boolean }
+      is_driver: { Args: never; Returns: boolean }
+      is_guide: { Args: never; Returns: boolean }
     }
     Enums: {
       admin_permission:

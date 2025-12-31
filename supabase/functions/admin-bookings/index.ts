@@ -7,17 +7,20 @@ const corsHeaders = {
 }
 
 // Valid booking statuses and their allowed transitions
-const VALID_STATUSES = ['requested', 'admin_review', 'priced', 'payment_pending', 'paid', 'completed', 'cancelled'] as const
+// ALIGNED WITH FRONTEND: pending → confirmed → assigned → accepted → on_trip → completed → paid
+const VALID_STATUSES = ['pending', 'confirmed', 'assigned', 'accepted', 'on_trip', 'completed', 'paid', 'cancelled', 'rejected'] as const
 type BookingStatus = typeof VALID_STATUSES[number]
 
 const STATUS_TRANSITIONS: Record<string, string[]> = {
-  'requested': ['admin_review', 'cancelled'],
-  'admin_review': ['priced', 'cancelled'],
-  'priced': ['payment_pending', 'cancelled'],
-  'payment_pending': ['paid', 'cancelled'],
-  'paid': ['completed', 'cancelled'],
-  'completed': [], // Terminal state
+  'pending': ['confirmed', 'cancelled', 'rejected'],
+  'confirmed': ['assigned', 'cancelled', 'rejected'],
+  'assigned': ['accepted', 'confirmed', 'cancelled', 'rejected'], // Can go back to confirmed if driver rejects
+  'accepted': ['on_trip', 'cancelled'],
+  'on_trip': ['completed', 'cancelled'],
+  'completed': ['paid'],
+  'paid': [], // Terminal state
   'cancelled': [], // Terminal state
+  'rejected': [], // Terminal state
 }
 
 function isValidTransition(currentStatus: string, newStatus: string): boolean {
@@ -158,7 +161,7 @@ serve(async (req) => {
       })
     }
 
-    // POST /admin-bookings/:id/confirm - Move to admin_review (legacy confirm action)
+    // POST /admin-bookings/:id/confirm - Confirm booking (move from pending to confirmed)
     if (method === 'POST' && bookingId && action === 'confirm') {
       const { data: booking, error: fetchError } = await supabaseAdmin
         .from('bookings')
@@ -176,12 +179,10 @@ serve(async (req) => {
       const oldStatus = booking.status
       
       // Determine next valid status based on current status
-      let newStatus = 'admin_review'
-      if (oldStatus === 'requested') {
-        newStatus = 'admin_review'
-      } else if (oldStatus === 'admin_review') {
-        newStatus = 'priced' // Move to priced after admin reviews
-      } else if (!isValidTransition(oldStatus, 'admin_review')) {
+      let newStatus = 'confirmed'
+      if (oldStatus === 'pending') {
+        newStatus = 'confirmed'
+      } else if (!isValidTransition(oldStatus, 'confirmed')) {
         return new Response(JSON.stringify({ 
           error: `Cannot confirm booking in '${oldStatus}' status`,
           valid_transitions: getValidNextStatuses(oldStatus)
