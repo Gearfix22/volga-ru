@@ -100,11 +100,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   };
 
   const requestPasswordReset = async (email: string) => {
-    const { error } = await import('@/lib/supabase').then(({ supabase }) =>
-      supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/dashboard/settings',
-      })
-    );
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/dashboard/settings',
+    });
     return { error };
   };
 
