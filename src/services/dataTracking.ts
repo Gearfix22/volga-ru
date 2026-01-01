@@ -1,5 +1,4 @@
-
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 // Page visit tracking
 export const trackPageVisit = async (pageUrl: string, pageTitle?: string) => {
