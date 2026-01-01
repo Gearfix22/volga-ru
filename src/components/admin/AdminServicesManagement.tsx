@@ -110,10 +110,20 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
   };
 
   const handleSave = async () => {
-    if (!formData.name || !formData.type) {
+    // Strict validation matching services table columns
+    if (!formData.name.trim()) {
       toast({
         title: 'Validation Error',
-        description: 'Name and type are required.',
+        description: 'Service name is required.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!formData.type) {
+      toast({
+        title: 'Validation Error',
+        description: 'Service type is required.',
         variant: 'destructive'
       });
       return;
@@ -121,13 +131,14 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
 
     setIsSaving(true);
     try {
+      // Build service data matching Supabase services table columns exactly
       const serviceData = {
-        name: formData.name,
+        name: formData.name.trim(),
         type: formData.type,
-        description: formData.description || null,
-        base_price: formData.base_price || null,
-        image_url: formData.image_url || null,
-        features: formData.features ? formData.features.split(',').map(f => f.trim()) : null,
+        description: formData.description.trim() || null,
+        base_price: formData.base_price > 0 ? formData.base_price : null,
+        image_url: formData.image_url.trim() || null,
+        features: formData.features ? formData.features.split(',').map(f => f.trim()).filter(f => f) : null,
         is_active: formData.is_active,
         category_id: formData.category_id || null,
         display_order: formData.display_order
@@ -140,7 +151,7 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
           description: `${formData.name} has been updated.`
         });
       } else {
-        await createService(serviceData as any);
+        await createService(serviceData as Omit<Service, 'id' | 'created_at' | 'updated_at'>);
         toast({
           title: 'Service Created',
           description: `${formData.name} has been created.`
@@ -150,10 +161,12 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
       setIsDialogOpen(false);
       loadData();
       onRefresh?.();
-    } catch (error) {
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Unknown error occurred';
+      console.error('Supabase service save error:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to save service.',
+        title: 'Failed to Save Service',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
@@ -169,8 +182,8 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
 
     setIsDeleting(serviceId);
     try {
-      const success = await deleteService(serviceId);
-      if (success) {
+      const result = await deleteService(serviceId);
+      if (result.success) {
         toast({
           title: 'Service Deleted',
           description: 'The service has been removed.'
@@ -178,9 +191,10 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
         loadData();
         onRefresh?.();
       } else {
+        console.error('Delete service failed:', result.error);
         toast({
-          title: 'Error',
-          description: 'Failed to delete service. Check admin permissions.',
+          title: 'Failed to Delete Service',
+          description: result.error || 'Check admin permissions.',
           variant: 'destructive'
         });
       }
@@ -192,8 +206,8 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
   const handleToggleStatus = async (service: Service) => {
     setIsToggling(service.id);
     try {
-      const success = await toggleServiceStatus(service.id, !service.is_active);
-      if (success) {
+      const result = await toggleServiceStatus(service.id, !service.is_active);
+      if (result.success) {
         toast({
           title: service.is_active ? 'Service Deactivated' : 'Service Activated',
           description: `${service.name} is now ${service.is_active ? 'inactive' : 'active'}.`
@@ -201,9 +215,10 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
         loadData();
         onRefresh?.();
       } else {
+        console.error('Toggle service status failed:', result.error);
         toast({
-          title: 'Error',
-          description: 'Failed to update service status.',
+          title: 'Failed to Update Status',
+          description: result.error || 'Check admin permissions.',
           variant: 'destructive'
         });
       }
