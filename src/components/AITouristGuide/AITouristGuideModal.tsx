@@ -234,17 +234,8 @@ export const AITouristGuideModal: React.FC<AITouristGuideModalProps> = ({ isOpen
     }
   };
 
-  // Auto-send after voice input
-  useEffect(() => {
-    if (!isListening && input.trim() && recognitionRef.current) {
-      const timer = setTimeout(() => {
-        if (input.trim()) {
-          sendMessage(input.trim());
-        }
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [isListening, input]);
+  // Voice input fills the text field - user must click send manually
+  // No auto-send on voice input - user controls when to send
 
   if (!isOpen) return null;
 

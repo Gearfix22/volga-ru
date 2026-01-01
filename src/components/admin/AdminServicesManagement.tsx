@@ -161,35 +161,54 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
     }
   };
 
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isToggling, setIsToggling] = useState<string | null>(null);
+
   const handleDelete = async (serviceId: string) => {
     if (!confirm('Are you sure you want to delete this service?')) return;
 
-    const success = await deleteService(serviceId);
-    if (success) {
-      toast({
-        title: 'Service Deleted',
-        description: 'The service has been removed.'
-      });
-      loadData();
-      onRefresh?.();
-    } else {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete service.',
-        variant: 'destructive'
-      });
+    setIsDeleting(serviceId);
+    try {
+      const success = await deleteService(serviceId);
+      if (success) {
+        toast({
+          title: 'Service Deleted',
+          description: 'The service has been removed.'
+        });
+        loadData();
+        onRefresh?.();
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to delete service. Check admin permissions.',
+          variant: 'destructive'
+        });
+      }
+    } finally {
+      setIsDeleting(null);
     }
   };
 
   const handleToggleStatus = async (service: Service) => {
-    const success = await toggleServiceStatus(service.id, !service.is_active);
-    if (success) {
-      toast({
-        title: service.is_active ? 'Service Deactivated' : 'Service Activated',
-        description: `${service.name} is now ${service.is_active ? 'inactive' : 'active'}.`
-      });
-      loadData();
-      onRefresh?.();
+    setIsToggling(service.id);
+    try {
+      const success = await toggleServiceStatus(service.id, !service.is_active);
+      if (success) {
+        toast({
+          title: service.is_active ? 'Service Deactivated' : 'Service Activated',
+          description: `${service.name} is now ${service.is_active ? 'inactive' : 'active'}.`
+        });
+        loadData();
+        onRefresh?.();
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to update service status.',
+          variant: 'destructive'
+        });
+      }
+    } finally {
+      setIsToggling(null);
     }
   };
 
@@ -266,6 +285,7 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                     <Switch
                       checked={service.is_active}
                       onCheckedChange={() => handleToggleStatus(service)}
+                      disabled={isToggling === service.id}
                     />
                   </TableCell>
                   <TableCell className="text-right">
@@ -274,6 +294,7 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                         variant="ghost"
                         size="icon"
                         onClick={() => handleOpenDialog(service)}
+                        disabled={isSaving}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -282,8 +303,13 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                         size="icon"
                         className="text-destructive"
                         onClick={() => handleDelete(service.id)}
+                        disabled={isDeleting === service.id}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {isDeleting === service.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </TableCell>
