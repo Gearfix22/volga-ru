@@ -128,35 +128,35 @@ export async function updateService(serviceId: string, updates: Partial<Service>
 }
 
 // Delete service (admin)
-export async function deleteService(serviceId: string): Promise<boolean> {
+export async function deleteService(serviceId: string): Promise<{ success: boolean; error?: string }> {
   const { error } = await supabase
     .from('services')
     .delete()
     .eq('id', serviceId);
 
   if (error) {
-    console.error('Error deleting service:', error);
-    return false;
+    console.error('Supabase delete service error:', error);
+    return { success: false, error: error.message };
   }
 
   await logAdminAction('service_deleted', serviceId, 'services', {});
-  return true;
+  return { success: true };
 }
 
 // Toggle service active status
-export async function toggleServiceStatus(serviceId: string, isActive: boolean): Promise<boolean> {
+export async function toggleServiceStatus(serviceId: string, isActive: boolean): Promise<{ success: boolean; error?: string }> {
   const { error } = await supabase
     .from('services')
     .update({ is_active: isActive, updated_at: new Date().toISOString() })
     .eq('id', serviceId);
 
   if (error) {
-    console.error('Error toggling service status:', error);
-    return false;
+    console.error('Supabase toggle service status error:', error);
+    return { success: false, error: error.message };
   }
 
   await logAdminAction(isActive ? 'service_activated' : 'service_deactivated', serviceId, 'services', {});
-  return true;
+  return { success: true };
 }
 
 // Reorder services
