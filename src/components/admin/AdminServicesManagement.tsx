@@ -370,9 +370,10 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                 <Select
                   value={formData.type}
                   onValueChange={(value) => setFormData({ ...formData, type: value })}
+                  required
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
+                  <SelectTrigger className={!formData.type ? 'border-destructive' : ''}>
+                    <SelectValue placeholder="Select type *" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Driver">Transportation</SelectItem>
@@ -381,6 +382,9 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                     <SelectItem value="Guide">Tourist Guide</SelectItem>
                   </SelectContent>
                 </Select>
+                {!formData.type && (
+                  <p className="text-xs text-destructive mt-1">Service type is required</p>
+                )}
               </div>
             </div>
 
@@ -472,7 +476,7 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
+            <Button onClick={handleSave} disabled={isSaving || !formData.name.trim() || !formData.type}>
               {isSaving ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (

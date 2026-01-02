@@ -19,6 +19,7 @@ const Auth = () => {
   const { signUp, signIn, resetPassword, updatePassword, user, loading, session, hasRole } = useAuth();
   const { toast } = useToast();
   
+  // Only Customer and Admin tabs - Driver/Guide login via header menu
   const [activeTab, setActiveTab] = useState('customer');
   const [customerMode, setCustomerMode] = useState<'login' | 'signup'>('login');
   const [isLoading, setIsLoading] = useState(false);
