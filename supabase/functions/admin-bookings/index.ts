@@ -589,9 +589,13 @@ serve(async (req) => {
       await supabaseAdmin.from('transportation_bookings').delete().eq('booking_id', bookingId)
       await supabaseAdmin.from('event_bookings').delete().eq('booking_id', bookingId)
       await supabaseAdmin.from('custom_trip_bookings').delete().eq('booking_id', bookingId)
+      await supabaseAdmin.from('tourist_guide_bookings').delete().eq('booking_id', bookingId)
       await supabaseAdmin.from('payment_receipts').delete().eq('booking_id', bookingId)
       await supabaseAdmin.from('booking_status_history').delete().eq('booking_id', bookingId)
       await supabaseAdmin.from('notifications').delete().eq('booking_id', bookingId)
+      await supabaseAdmin.from('customer_notifications').delete().eq('booking_id', bookingId)
+      await supabaseAdmin.from('driver_notifications').delete().eq('booking_id', bookingId)
+      await supabaseAdmin.from('guide_notifications').delete().eq('booking_id', bookingId)
 
       // Delete the booking
       const { error: deleteError } = await supabaseAdmin

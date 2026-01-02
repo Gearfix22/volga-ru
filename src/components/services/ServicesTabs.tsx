@@ -13,7 +13,7 @@ export const ServicesTabs: React.FC<ServicesTabsProps> = ({ activeCategory, setA
   return (
     <nav className="flex justify-center mb-4 sm:mb-6 lg:mb-8 animate-slide-up animation-delay-200 px-1 sm:px-2" role="navigation" aria-label="Service categories">
       <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full max-w-3xl">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 coastal-glass border-white/20 h-auto p-0.5 gap-0.5 sm:gap-1">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 coastal-glass border-white/20 h-auto p-0.5 gap-0.5 sm:gap-1">
           {categories.map((category) => (
             <TabsTrigger
               key={category.id}

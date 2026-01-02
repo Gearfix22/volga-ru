@@ -643,18 +643,22 @@ export const EnhancedBookingsManagement = () => {
                               ) : (
                                 <div className="flex items-center gap-1">
                                   <span className="font-semibold">${booking.total_price?.toFixed(2) || '0.00'}</span>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="h-7 px-2 ml-1"
-                                    onClick={() => {
-                                      setEditingPrice(booking.id);
-                                      setPriceValue(booking.total_price?.toString() || '0');
-                                    }}
-                                  >
-                                    <Edit className="h-3 w-3 mr-1" />
-                                    Edit
-                                  </Button>
+                                  {/* Allow price edit before payment is completed */}
+                                  {booking.payment_status !== 'paid' && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-7 px-2 ml-1"
+                                      onClick={() => {
+                                        setEditingPrice(booking.id);
+                                        setPriceValue(booking.total_price?.toString() || '0');
+                                      }}
+                                      disabled={actionLoading === booking.id}
+                                    >
+                                      <Edit className="h-3 w-3 mr-1" />
+                                      Edit
+                                    </Button>
+                                  )}
                                 </div>
                               )}
                             </TableCell>
@@ -714,7 +718,7 @@ export const EnhancedBookingsManagement = () => {
                               )}
                             </TableCell>
                             <TableCell>
-                              {booking.service_type === 'tourist_guide' ? (
+                              {booking.service_type === 'tourist_guide' || booking.service_type === 'Guide' ? (
                                 <GuideAssignmentSelect
                                   bookingId={booking.id}
                                   currentGuideId={booking.assigned_guide_id}
