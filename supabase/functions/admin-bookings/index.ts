@@ -7,18 +7,17 @@ const corsHeaders = {
 }
 
 // Valid booking statuses and their allowed transitions
-// ALIGNED WITH FRONTEND: pending → confirmed → assigned → accepted → on_trip → completed → paid
-const VALID_STATUSES = ['pending', 'confirmed', 'assigned', 'accepted', 'on_trip', 'completed', 'paid', 'cancelled', 'rejected'] as const
+// ALIGNED WITH FRONTEND: draft → pending_admin_review → awaiting_payment → paid → in_progress → completed
+const VALID_STATUSES = ['draft', 'pending_admin_review', 'awaiting_payment', 'paid', 'in_progress', 'completed', 'cancelled', 'rejected'] as const
 type BookingStatus = typeof VALID_STATUSES[number]
 
 const STATUS_TRANSITIONS: Record<string, string[]> = {
-  'pending': ['confirmed', 'cancelled', 'rejected'],
-  'confirmed': ['assigned', 'cancelled', 'rejected'],
-  'assigned': ['accepted', 'confirmed', 'cancelled', 'rejected'], // Can go back to confirmed if driver rejects
-  'accepted': ['on_trip', 'cancelled'],
-  'on_trip': ['completed', 'cancelled'],
-  'completed': ['paid'],
-  'paid': [], // Terminal state
+  'draft': ['pending_admin_review', 'cancelled'],
+  'pending_admin_review': ['awaiting_payment', 'cancelled', 'rejected'],
+  'awaiting_payment': ['paid', 'cancelled'],
+  'paid': ['in_progress'], // Price locked after this point
+  'in_progress': ['completed', 'cancelled'],
+  'completed': [], // Terminal state
   'cancelled': [], // Terminal state
   'rejected': [], // Terminal state
 }
@@ -311,12 +310,13 @@ serve(async (req) => {
         }
       }
 
-      // CRITICAL: Block price updates after payment is confirmed (status = 'paid')
-      if (total_price !== undefined && (currentBooking.status === 'paid' || currentBooking.status === 'completed')) {
-        console.error(`Price update blocked for booking ${bookingId} - payment already confirmed`)
+      // CRITICAL: Block price updates after payment (status = 'paid', 'in_progress', or 'completed')
+      const lockedStatuses = ['paid', 'in_progress', 'completed']
+      if (total_price !== undefined && lockedStatuses.includes(currentBooking.status)) {
+        console.error(`Price update blocked for booking ${bookingId} - booking is in ${currentBooking.status} status`)
         return new Response(JSON.stringify({ 
-          error: 'Cannot update price after payment confirmation',
-          code: 'PAYMENT_CONFIRMED'
+          error: 'Cannot update price after payment',
+          code: 'PRICE_LOCKED'
         }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
