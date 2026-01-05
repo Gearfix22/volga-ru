@@ -61,6 +61,7 @@ export interface BookingData {
   userInfo: UserInfo;
   customAmount?: number;
   totalPrice?: number;
+  admin_final_price?: number; // Admin-set price (source of truth for payments)
   paymentMethod?: PaymentMethod | string;
   transactionId?: string;
   paidAmount?: number;

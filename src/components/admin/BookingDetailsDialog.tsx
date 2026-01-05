@@ -102,6 +102,7 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
 
     try {
       setSaving(true);
+      // Admin price edits use total_price which now updates admin_final_price on backend
       const result = await updateBooking(booking.id, { total_price: newPrice });
       
       if (!result.success) {
@@ -109,8 +110,8 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
       }
       
       toast({
-        title: 'Price Updated',
-        description: `Price set to $${newPrice.toFixed(2)}`,
+        title: 'Admin Price Updated',
+        description: `Admin final price set to $${newPrice.toFixed(2)}`,
       });
       
       setEditingPrice(false);
@@ -131,6 +132,9 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
       setSaving(false);
     }
   };
+
+  // Display admin_final_price if set, otherwise total_price
+  const displayPrice = booking.admin_final_price ?? booking.total_price;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -249,7 +253,7 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
                 ) : (
                   <div className="flex items-center gap-2">
                     <p className="text-lg font-bold text-primary">
-                      ${booking.total_price?.toFixed(2) || '0.00'}
+                      ${displayPrice?.toFixed(2) || '0.00'}
                     </p>
                     {canEditPrice ? (
                       <Button

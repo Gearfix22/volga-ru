@@ -168,6 +168,7 @@ export type Database = {
       }
       bookings: {
         Row: {
+          admin_final_price: number | null
           admin_notes: string | null
           assigned_driver_id: string | null
           assigned_guide_id: string | null
@@ -181,10 +182,12 @@ export type Database = {
           driver_response_at: string | null
           id: string
           original_price_usd: number | null
+          paid_price: number | null
           payment_method: string | null
           payment_status: string | null
           price_confirmed: boolean | null
           price_confirmed_at: string | null
+          quoted_price: number | null
           requires_verification: boolean | null
           service_details: Json | null
           service_type: string
@@ -197,6 +200,7 @@ export type Database = {
           user_info: Json
         }
         Insert: {
+          admin_final_price?: number | null
           admin_notes?: string | null
           assigned_driver_id?: string | null
           assigned_guide_id?: string | null
@@ -210,10 +214,12 @@ export type Database = {
           driver_response_at?: string | null
           id?: string
           original_price_usd?: number | null
+          paid_price?: number | null
           payment_method?: string | null
           payment_status?: string | null
           price_confirmed?: boolean | null
           price_confirmed_at?: string | null
+          quoted_price?: number | null
           requires_verification?: boolean | null
           service_details?: Json | null
           service_type: string
@@ -226,6 +232,7 @@ export type Database = {
           user_info: Json
         }
         Update: {
+          admin_final_price?: number | null
           admin_notes?: string | null
           assigned_driver_id?: string | null
           assigned_guide_id?: string | null
@@ -239,10 +246,12 @@ export type Database = {
           driver_response_at?: string | null
           id?: string
           original_price_usd?: number | null
+          paid_price?: number | null
           payment_method?: string | null
           payment_status?: string | null
           price_confirmed?: boolean | null
           price_confirmed_at?: string | null
+          quoted_price?: number | null
           requires_verification?: boolean | null
           service_details?: Json | null
           service_type?: string
@@ -1370,7 +1379,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           service_type?: string | null
-          type: string
+          type?: string
           updated_at?: string | null
         }
         Update: {

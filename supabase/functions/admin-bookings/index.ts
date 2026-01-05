@@ -329,7 +329,11 @@ serve(async (req) => {
       if (status) updateData.status = status
       if (payment_status) updateData.payment_status = payment_status
       if (admin_notes !== undefined) updateData.admin_notes = admin_notes
-      if (total_price !== undefined) updateData.total_price = total_price
+      // Admin price edits update admin_final_price (source of truth for admin pricing)
+      if (total_price !== undefined) {
+        updateData.admin_final_price = total_price
+        updateData.total_price = total_price // Keep total_price synced
+      }
       if (assigned_driver_id !== undefined) updateData.assigned_driver_id = assigned_driver_id
 
       const { error: updateError } = await supabaseAdmin
