@@ -132,9 +132,11 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
     setIsSaving(true);
     try {
       // Build service data matching Supabase services table columns exactly
+      // CRITICAL: Only use columns that exist in services table
+      // Do NOT use: price, status (these don't exist)
       const serviceData = {
         name: formData.name.trim(),
-        type: formData.type,
+        type: formData.type, // REQUIRED - always send
         description: formData.description.trim() || null,
         base_price: formData.base_price > 0 ? formData.base_price : null,
         image_url: formData.image_url.trim() || null,
@@ -159,16 +161,18 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
       }
 
       setIsDialogOpen(false);
-      loadData();
+      await loadData(); // Refetch after update
       onRefresh?.();
     } catch (error: any) {
       const errorMessage = error?.message || 'Unknown error occurred';
       console.error('Supabase service save error:', error);
+      // Prevent 404 routing - show toast instead
       toast({
         title: 'Failed to Save Service',
         description: errorMessage,
         variant: 'destructive'
       });
+      // DO NOT navigate on error - stay on page
     } finally {
       setIsSaving(false);
     }
@@ -188,7 +192,7 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
           title: 'Service Deleted',
           description: 'The service has been removed.'
         });
-        loadData();
+        await loadData(); // Refetch after delete
         onRefresh?.();
       } else {
         console.error('Delete service failed:', result.error);
@@ -198,6 +202,12 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
           variant: 'destructive'
         });
       }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to delete service',
+        variant: 'destructive'
+      });
     } finally {
       setIsDeleting(null);
     }
@@ -212,7 +222,7 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
           title: service.is_active ? 'Service Deactivated' : 'Service Activated',
           description: `${service.name} is now ${service.is_active ? 'inactive' : 'active'}.`
         });
-        loadData();
+        await loadData(); // Refetch after toggle
         onRefresh?.();
       } else {
         console.error('Toggle service status failed:', result.error);
@@ -222,6 +232,12 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
           variant: 'destructive'
         });
       }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error?.message || 'Failed to update status',
+        variant: 'destructive'
+      });
     } finally {
       setIsToggling(null);
     }

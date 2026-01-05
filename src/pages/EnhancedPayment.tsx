@@ -44,12 +44,15 @@ const EnhancedPayment = () => {
   const bookingData = location.state?.bookingData as BookingData;
   const draftId = location.state?.draftId as string;
   
+  // Use admin_final_price if set, otherwise fall back to totalPrice
+  const effectivePrice = bookingData?.admin_final_price ?? bookingData?.totalPrice ?? 0;
+  
   const [selectedMethod, setSelectedMethod] = useState<'cash' | 'stripe' | 'bank-transfer'>('cash');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState(bookingData?.totalPrice?.toString() || '');
+  const [paymentAmount, setPaymentAmount] = useState(effectivePrice.toString());
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>('USD');
   const [currencyRates, setCurrencyRates] = useState<CurrencyRate[]>([]);
-  const [convertedAmount, setConvertedAmount] = useState<number>(bookingData?.totalPrice || 0);
+  const [convertedAmount, setConvertedAmount] = useState<number>(effectivePrice);
 
   // Stripe payment form fields
   const [cardNumber, setCardNumber] = useState('');
