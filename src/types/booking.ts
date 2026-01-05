@@ -4,10 +4,9 @@ export type ServiceType = 'Driver' | 'Accommodation' | 'Events';
 // Unified booking status flow
 /**
  * NORMALIZED BOOKING LIFECYCLE:
- * pending (REQUESTED) → confirmed (ADMIN_REVIEW) → assigned (DRIVER_ASSIGNED) 
- * → accepted (DRIVER_CONFIRMED) → on_trip (IN_PROGRESS) → completed → paid/closed
+ * draft → pending_admin_review → awaiting_payment → paid → in_progress → completed
  */
-export type BookingStatus = 'pending' | 'confirmed' | 'assigned' | 'accepted' | 'on_trip' | 'completed' | 'paid' | 'cancelled' | 'rejected';
+export type BookingStatus = 'draft' | 'pending_admin_review' | 'awaiting_payment' | 'paid' | 'in_progress' | 'completed' | 'cancelled' | 'rejected';
 
 // Payment methods
 export type PaymentMethod = 'visa' | 'cash';

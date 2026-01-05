@@ -44,15 +44,15 @@ const EnhancedPayment = () => {
   const bookingData = location.state?.bookingData as BookingData;
   const draftId = location.state?.draftId as string;
   
-  // Use admin_final_price if set, otherwise fall back to totalPrice
-  const effectivePrice = bookingData?.admin_final_price ?? bookingData?.totalPrice ?? 0;
-  
+  // CRITICAL: Use admin_final_price as the ONLY payable price
+  const payablePrice = bookingData?.admin_final_price;
+  const hasPayablePrice = payablePrice !== undefined && payablePrice !== null && payablePrice > 0;
   const [selectedMethod, setSelectedMethod] = useState<'cash' | 'stripe' | 'bank-transfer'>('cash');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState(effectivePrice.toString());
+  const [paymentAmount, setPaymentAmount] = useState(hasPayablePrice ? payablePrice.toString() : '0');
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>('USD');
   const [currencyRates, setCurrencyRates] = useState<CurrencyRate[]>([]);
-  const [convertedAmount, setConvertedAmount] = useState<number>(effectivePrice);
+  const [convertedAmount, setConvertedAmount] = useState<number>(payablePrice || 0);
 
   // Stripe payment form fields
   const [cardNumber, setCardNumber] = useState('');
@@ -85,14 +85,26 @@ const EnhancedPayment = () => {
         variant: 'destructive'
       });
       navigate('/enhanced-booking');
+      return;
     }
-  }, [bookingData, navigate, t, toast]);
+    
+    // Check if admin has set the price
+    if (!hasPayablePrice) {
+      toast({
+        title: 'Price Not Set',
+        description: 'Admin must set the final price before payment can proceed.',
+        variant: 'destructive'
+      });
+      navigate('/user-dashboard');
+    }
+  }, [bookingData, hasPayablePrice, navigate, t, toast]);
 
-  if (!bookingData) {
+  if (!bookingData || !hasPayablePrice) {
     return null;
   }
 
-  const finalAmount = parseFloat(paymentAmount) || 0;
+  // Use admin_final_price as the payment amount (locked, non-editable)
+  const finalAmount = payablePrice;
 
   const paymentMethods = [
     {

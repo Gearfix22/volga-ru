@@ -2,7 +2,7 @@
  * BOOKING WORKFLOW - Strict Status Transitions
  * 
  * Normalized booking lifecycle:
- * pending → confirmed → assigned → accepted → on_trip → completed → paid
+ * draft → pending_admin_review → awaiting_payment → paid → in_progress → completed
  * 
  * Any status can transition to: cancelled, rejected
  */
@@ -11,39 +11,36 @@ import { BookingStatus } from '@/types/booking';
 
 // Valid status transitions map
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  pending: ['confirmed', 'cancelled', 'rejected'],
-  confirmed: ['assigned', 'cancelled', 'rejected'],
-  assigned: ['accepted', 'confirmed', 'cancelled', 'rejected'], // Can go back to confirmed if driver rejects
-  accepted: ['on_trip', 'cancelled'],
-  on_trip: ['completed', 'cancelled'],
-  completed: ['paid'],
-  paid: [], // Terminal state
+  draft: ['pending_admin_review', 'cancelled'],
+  pending_admin_review: ['awaiting_payment', 'cancelled', 'rejected'],
+  awaiting_payment: ['paid', 'cancelled'],
+  paid: ['in_progress'], // Price locked after this point
+  in_progress: ['completed', 'cancelled'],
+  completed: [], // Terminal state
   cancelled: [], // Terminal state
   rejected: [], // Terminal state
 };
 
 // Human-readable status labels
 export const STATUS_LABELS: Record<string, string> = {
-  pending: 'Pending Review',
-  confirmed: 'Confirmed',
-  assigned: 'Driver Assigned',
-  accepted: 'Driver Accepted',
-  on_trip: 'In Progress',
+  draft: 'Draft',
+  pending_admin_review: 'Pending Admin Review',
+  awaiting_payment: 'Awaiting Payment',
+  paid: 'Paid',
+  in_progress: 'In Progress',
   completed: 'Completed',
-  paid: 'Paid & Closed',
   cancelled: 'Cancelled',
   rejected: 'Rejected',
 };
 
 // Status colors for UI
 export const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300',
-  confirmed: 'bg-blue-500/20 text-blue-700 dark:text-blue-300',
-  assigned: 'bg-purple-500/20 text-purple-700 dark:text-purple-300',
-  accepted: 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300',
-  on_trip: 'bg-orange-500/20 text-orange-700 dark:text-orange-300',
-  completed: 'bg-green-500/20 text-green-700 dark:text-green-300',
-  paid: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300',
+  draft: 'bg-gray-500/20 text-gray-700 dark:text-gray-300',
+  pending_admin_review: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300',
+  awaiting_payment: 'bg-blue-500/20 text-blue-700 dark:text-blue-300',
+  paid: 'bg-green-500/20 text-green-700 dark:text-green-300',
+  in_progress: 'bg-orange-500/20 text-orange-700 dark:text-orange-300',
+  completed: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300',
   cancelled: 'bg-red-500/20 text-red-700 dark:text-red-300',
   rejected: 'bg-red-500/20 text-red-700 dark:text-red-300',
 };
@@ -66,14 +63,13 @@ export function getValidNextStatuses(currentStatus: string): string[] {
 /**
  * Validate and get the appropriate next status based on action
  */
-export function getNextStatus(currentStatus: string, action: 'confirm' | 'assign' | 'accept' | 'start' | 'complete' | 'pay' | 'cancel' | 'reject'): string | null {
+export function getNextStatus(currentStatus: string, action: 'review' | 'set_price' | 'pay' | 'start' | 'complete' | 'cancel' | 'reject'): string | null {
   const actionToStatus: Record<string, string> = {
-    confirm: 'confirmed',
-    assign: 'assigned',
-    accept: 'accepted',
-    start: 'on_trip',
-    complete: 'completed',
+    review: 'pending_admin_review',
+    set_price: 'awaiting_payment',
     pay: 'paid',
+    start: 'in_progress',
+    complete: 'completed',
     cancel: 'cancelled',
     reject: 'rejected',
   };
@@ -83,7 +79,7 @@ export function getNextStatus(currentStatus: string, action: 'confirm' | 'assign
 
   // Cancel and reject can happen from most states
   if (action === 'cancel' || action === 'reject') {
-    const terminalStates = ['completed', 'paid', 'cancelled', 'rejected'];
+    const terminalStates = ['completed', 'cancelled', 'rejected'];
     if (terminalStates.includes(currentStatus)) {
       return null; // Can't cancel/reject terminal states
     }
@@ -106,15 +102,21 @@ export function requiresDriverAssignment(serviceType: string): boolean {
 }
 
 /**
- * Check if booking can accept payment
+ * Check if booking can accept payment - only in awaiting_payment status with admin_final_price set
  */
-export function canAcceptPayment(status: string, priceConfirmed: boolean, totalPrice: number | null): boolean {
-  // Must have price set and confirmed
-  if (!totalPrice || totalPrice <= 0) return false;
-  if (!priceConfirmed) return false;
-  
-  // Can pay in pending or confirmed states
-  return ['pending', 'confirmed'].includes(status);
+export function canAcceptPayment(status: string, adminFinalPrice: number | null): boolean {
+  // Must be in awaiting_payment status with admin price set
+  if (status !== 'awaiting_payment') return false;
+  if (!adminFinalPrice || adminFinalPrice <= 0) return false;
+  return true;
+}
+
+/**
+ * Check if price can be edited (only before payment)
+ */
+export function canEditPrice(status: string): boolean {
+  const editableStatuses = ['draft', 'pending_admin_review', 'awaiting_payment'];
+  return editableStatuses.includes(status);
 }
 
 /**
@@ -128,7 +130,8 @@ export function getStatusBadgeVariant(status: string): 'default' | 'secondary' |
     case 'cancelled':
     case 'rejected':
       return 'destructive';
-    case 'pending':
+    case 'draft':
+    case 'pending_admin_review':
       return 'outline';
     default:
       return 'secondary';

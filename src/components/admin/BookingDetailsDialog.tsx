@@ -35,20 +35,20 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
 
   if (!booking) return null;
 
-  // Check if price editing is allowed (only before payment confirmation)
-  const isPaid = booking.payment_status === 'paid';
-  const canEditPrice = !isPaid;
+  // Check if price editing is allowed (only before payment - status is not 'paid', 'in_progress', or 'completed')
+  const isPaidOrLater = ['paid', 'in_progress', 'completed'].includes(booking.status);
+  const canEditPriceFlag = !isPaidOrLater;
 
   const handleEditPrice = () => {
-    if (!canEditPrice) {
+    if (!canEditPriceFlag) {
       toast({
         title: 'Price Locked',
-        description: 'Cannot edit price after payment is confirmed',
+        description: 'Cannot edit price after payment',
         variant: 'destructive'
       });
       return;
     }
-    setPriceValue(booking.total_price?.toString() || '0');
+    setPriceValue((booking.admin_final_price ?? booking.total_price)?.toString() || '0');
     setEditingPrice(true);
   };
 
@@ -59,10 +59,10 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
 
   const handleSavePrice = async () => {
     // Double-check payment status before saving
-    if (!canEditPrice) {
+    if (!canEditPriceFlag) {
       toast({
         title: 'Price Locked',
-        description: 'Cannot update price after payment confirmation',
+        description: 'Cannot update price after payment',
         variant: 'destructive'
       });
       setEditingPrice(false);
@@ -255,7 +255,7 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
                     <p className="text-lg font-bold text-primary">
                       ${displayPrice?.toFixed(2) || '0.00'}
                     </p>
-                    {canEditPrice ? (
+                    {canEditPriceFlag ? (
                       <Button
                         size="sm"
                         variant="outline"
