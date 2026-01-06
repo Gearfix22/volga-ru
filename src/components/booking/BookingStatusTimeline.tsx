@@ -1,4 +1,4 @@
-import { Check, Clock, FileText, CheckCircle2, DollarSign, CreditCard, Ban } from 'lucide-react';
+import { Check, Clock, FileText, CheckCircle2, DollarSign, CreditCard, Ban, Car } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BookingStatusTimelineProps {
@@ -8,45 +8,43 @@ interface BookingStatusTimelineProps {
 }
 
 /**
- * NORMALIZED BOOKING STATUS FLOW:
- * requested → admin_review → priced → payment_pending → paid → completed
+ * FINAL BOOKING WORKFLOW STATUS TIMELINE:
  * 
- * Each status represents a clear stage in the booking lifecycle:
- * - requested: Customer submitted booking request
- * - admin_review: Admin is reviewing the request
- * - priced: Admin has set the price, awaiting customer confirmation
- * - payment_pending: Customer confirmed price, payment in progress
- * - paid: Payment confirmed
- * - completed: Service delivered
- * - cancelled: Booking cancelled (terminal state)
+ * 1. draft → Customer selecting service (quoted_price = services.base_price)
+ * 2. under_review → Customer confirmed, waiting for admin to set price
+ * 3. awaiting_customer_confirmation → Admin set admin_final_price, customer must confirm
+ * 4. paid → Customer paid (paid_price = admin_final_price, price LOCKED)
+ * 5. in_progress → Driver/guide assigned, service ongoing
+ * 6. completed → Service completed
+ * 
+ * Terminal states: cancelled, rejected
  */
 const STATUS_FLOW = [
-  { key: 'requested', label: 'Requested', icon: FileText, description: 'Booking submitted' },
-  { key: 'admin_review', label: 'Under Review', icon: Clock, description: 'Admin reviewing' },
-  { key: 'priced', label: 'Price Set', icon: DollarSign, description: 'Price confirmed by admin' },
-  { key: 'payment_pending', label: 'Awaiting Payment', icon: CreditCard, description: 'Payment in progress' },
-  { key: 'paid', label: 'Paid', icon: CheckCircle2, description: 'Payment confirmed' },
-  { key: 'completed', label: 'Completed', icon: Check, description: 'Service delivered' },
+  { key: 'draft', label: 'Draft', icon: FileText, description: 'Booking created' },
+  { key: 'under_review', label: 'Under Review', icon: Clock, description: 'Admin reviewing' },
+  { key: 'awaiting_customer_confirmation', label: 'Price Set', icon: DollarSign, description: 'Awaiting customer confirmation' },
+  { key: 'paid', label: 'Paid', icon: CreditCard, description: 'Payment confirmed' },
+  { key: 'in_progress', label: 'In Progress', icon: Car, description: 'Service in progress' },
+  { key: 'completed', label: 'Completed', icon: CheckCircle2, description: 'Service delivered' },
 ];
 
 const STATUS_INDEX: Record<string, number> = {
   draft: 0,
-  requested: 0,
-  pending: 0, // Legacy mapping
-  admin_review: 1,
-  confirmed: 1, // Legacy mapping
-  priced: 2,
-  payment_pending: 3,
-  paid: 4,
+  under_review: 1,
+  awaiting_customer_confirmation: 2,
+  paid: 3,
+  in_progress: 4,
   completed: 5,
-  closed: 5,
+  // Legacy mappings
+  pending: 1,
+  confirmed: 2,
   cancelled: -1,
   rejected: -1,
 };
 
 export function BookingStatusTimeline({ currentStatus, className, compact = false }: BookingStatusTimelineProps) {
-  const normalizedStatus = currentStatus?.toLowerCase() || 'pending';
-  const currentIndex = STATUS_INDEX[normalizedStatus] ?? 1; // Default to pending
+  const normalizedStatus = currentStatus?.toLowerCase() || 'draft';
+  const currentIndex = STATUS_INDEX[normalizedStatus] ?? 0;
   const isCancelled = normalizedStatus === 'cancelled' || normalizedStatus === 'rejected';
 
   if (isCancelled) {

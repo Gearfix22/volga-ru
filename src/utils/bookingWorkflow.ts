@@ -1,20 +1,24 @@
 /**
- * BOOKING WORKFLOW - Strict Status Transitions
+ * FINAL BOOKING WORKFLOW - Strict Status Transitions
  * 
- * Normalized booking lifecycle:
- * draft → pending_admin_review → awaiting_payment → paid → in_progress → completed
+ * 1. draft → Customer selecting service (quoted_price = services.base_price)
+ * 2. under_review → Customer confirmed, waiting for admin to set price
+ * 3. awaiting_customer_confirmation → Admin set admin_final_price, customer must confirm
+ * 4. paid → Customer paid (paid_price = admin_final_price, price LOCKED)
+ * 5. in_progress → Driver/guide assigned, service ongoing
+ * 6. completed → Service completed
  * 
- * Any status can transition to: cancelled, rejected
+ * Terminal states: cancelled, rejected
  */
 
 import { BookingStatus } from '@/types/booking';
 
 // Valid status transitions map
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  draft: ['pending_admin_review', 'cancelled'],
-  pending_admin_review: ['awaiting_payment', 'cancelled', 'rejected'],
-  awaiting_payment: ['paid', 'cancelled'],
-  paid: ['in_progress'], // Price locked after this point
+  draft: ['under_review', 'cancelled'],
+  under_review: ['awaiting_customer_confirmation', 'cancelled', 'rejected'],
+  awaiting_customer_confirmation: ['paid', 'cancelled'],
+  paid: ['in_progress'],
   in_progress: ['completed', 'cancelled'],
   completed: [], // Terminal state
   cancelled: [], // Terminal state
@@ -24,8 +28,8 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 // Human-readable status labels
 export const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft',
-  pending_admin_review: 'Pending Admin Review',
-  awaiting_payment: 'Awaiting Payment',
+  under_review: 'Under Review',
+  awaiting_customer_confirmation: 'Awaiting Customer Confirmation',
   paid: 'Paid',
   in_progress: 'In Progress',
   completed: 'Completed',
@@ -36,8 +40,8 @@ export const STATUS_LABELS: Record<string, string> = {
 // Status colors for UI
 export const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-gray-500/20 text-gray-700 dark:text-gray-300',
-  pending_admin_review: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300',
-  awaiting_payment: 'bg-blue-500/20 text-blue-700 dark:text-blue-300',
+  under_review: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300',
+  awaiting_customer_confirmation: 'bg-blue-500/20 text-blue-700 dark:text-blue-300',
   paid: 'bg-green-500/20 text-green-700 dark:text-green-300',
   in_progress: 'bg-orange-500/20 text-orange-700 dark:text-orange-300',
   completed: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300',
@@ -63,10 +67,13 @@ export function getValidNextStatuses(currentStatus: string): string[] {
 /**
  * Validate and get the appropriate next status based on action
  */
-export function getNextStatus(currentStatus: string, action: 'review' | 'set_price' | 'pay' | 'start' | 'complete' | 'cancel' | 'reject'): string | null {
+export function getNextStatus(
+  currentStatus: string, 
+  action: 'submit' | 'set_price' | 'pay' | 'start' | 'complete' | 'cancel' | 'reject'
+): string | null {
   const actionToStatus: Record<string, string> = {
-    review: 'pending_admin_review',
-    set_price: 'awaiting_payment',
+    submit: 'under_review',
+    set_price: 'awaiting_customer_confirmation',
     pay: 'paid',
     start: 'in_progress',
     complete: 'completed',
@@ -102,21 +109,38 @@ export function requiresDriverAssignment(serviceType: string): boolean {
 }
 
 /**
- * Check if booking can accept payment - only in awaiting_payment status with admin_final_price set
+ * Check if booking requires guide assignment
+ */
+export function requiresGuideAssignment(serviceType: string): boolean {
+  return serviceType === 'Guide' || serviceType === 'tourist_guide';
+}
+
+/**
+ * CRITICAL: Customer can ONLY pay if:
+ * 1. Status is 'awaiting_customer_confirmation'
+ * 2. admin_final_price is set and > 0
  */
 export function canAcceptPayment(status: string, adminFinalPrice: number | null): boolean {
-  // Must be in awaiting_payment status with admin price set
-  if (status !== 'awaiting_payment') return false;
+  if (status !== 'awaiting_customer_confirmation') return false;
   if (!adminFinalPrice || adminFinalPrice <= 0) return false;
   return true;
 }
 
 /**
- * Check if price can be edited (only before payment)
+ * CRITICAL: Admin can ONLY edit price BEFORE payment
+ * (i.e., status is draft, under_review, or awaiting_customer_confirmation)
  */
 export function canEditPrice(status: string): boolean {
-  const editableStatuses = ['draft', 'pending_admin_review', 'awaiting_payment'];
+  const editableStatuses = ['draft', 'under_review', 'awaiting_customer_confirmation'];
   return editableStatuses.includes(status);
+}
+
+/**
+ * Check if price is locked (after payment)
+ */
+export function isPriceLocked(status: string): boolean {
+  const lockedStatuses = ['paid', 'in_progress', 'completed'];
+  return lockedStatuses.includes(status);
 }
 
 /**
@@ -131,7 +155,7 @@ export function getStatusBadgeVariant(status: string): 'default' | 'secondary' |
     case 'rejected':
       return 'destructive';
     case 'draft':
-    case 'pending_admin_review':
+    case 'under_review':
       return 'outline';
     default:
       return 'secondary';

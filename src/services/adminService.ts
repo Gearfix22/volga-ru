@@ -98,7 +98,7 @@ export async function rejectBooking(bookingId: string, reason: string): Promise<
 // PUT /admin-bookings/:id - Update booking fields
 export async function updateBooking(
   bookingId: string, 
-  updates: { status?: string; payment_status?: string; admin_notes?: string; total_price?: number }
+  updates: { status?: string; payment_status?: string; admin_notes?: string; admin_final_price?: number; assigned_driver_id?: string; assigned_guide_id?: string }
 ): Promise<AdminApiResponse> {
   const headers = await getAuthHeaders();
   const response = await fetch(`${EDGE_FUNCTION_URL}/${bookingId}`, {

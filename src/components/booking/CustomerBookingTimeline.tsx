@@ -1,8 +1,8 @@
-import { Check, Clock, FileText, CheckCircle2, Car, User, CreditCard, Ban, Loader2 } from 'lucide-react';
+import { Check, Clock, FileText, CheckCircle2, Car, DollarSign, CreditCard, Ban, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow, addMinutes, addHours, format } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 
 interface CustomerBookingTimelineProps {
   booking: {
@@ -12,6 +12,7 @@ interface CustomerBookingTimelineProps {
     updated_at?: string;
     service_type: string;
     total_price?: number;
+    admin_final_price?: number;
     payment_status?: string;
     assigned_driver_id?: string;
   };
@@ -20,117 +21,81 @@ interface CustomerBookingTimelineProps {
 }
 
 /**
- * CUSTOMER BOOKING LIFECYCLE with estimated times:
- * 1. REQUESTED (pending) - Customer submitted booking - Instant
- * 2. CONFIRMED (confirmed) - Admin reviewed and confirmed - ~5-15 min
- * 3. DRIVER_ASSIGNED (assigned) - Driver has been assigned - ~15-30 min
- * 4. DRIVER_CONFIRMED (accepted) - Driver accepted the trip - ~5-10 min
- * 5. IN_PROGRESS (on_trip) - Trip is ongoing - varies
- * 6. COMPLETED (completed) - Service delivered - varies
- * 7. PAID (paid) - Payment confirmed - instant to 24h
+ * FINAL CUSTOMER BOOKING WORKFLOW:
+ * 1. DRAFT - Customer creating booking
+ * 2. UNDER_REVIEW - Customer confirmed, waiting for admin to set price
+ * 3. AWAITING_CUSTOMER_CONFIRMATION - Admin set price, waiting for customer to pay
+ * 4. PAID - Customer completed payment
+ * 5. IN_PROGRESS - Driver/guide assigned, service ongoing
+ * 6. COMPLETED - Service delivered
  */
 const TIMELINE_STAGES = [
   { 
-    key: 'pending', 
-    label: 'Booking Requested', 
+    key: 'draft', 
+    label: 'Booking Created', 
     icon: FileText, 
-    description: 'Your booking has been submitted',
-    estimatedTime: 'Instant',
+    description: 'Your booking has been created',
+    estimatedTime: 'Now',
     color: 'text-blue-600'
   },
   { 
-    key: 'confirmed', 
-    label: 'Booking Confirmed', 
-    icon: Check, 
-    description: 'Admin has confirmed your booking',
-    estimatedTime: '5-15 minutes',
-    color: 'text-emerald-600'
-  },
-  { 
-    key: 'assigned', 
-    label: 'Driver Assigned', 
-    icon: User, 
-    description: 'A driver has been assigned to your trip',
+    key: 'under_review', 
+    label: 'Under Review', 
+    icon: Clock, 
+    description: 'Admin is reviewing your booking and setting the price',
     estimatedTime: '15-30 minutes',
-    color: 'text-violet-600'
-  },
-  { 
-    key: 'accepted', 
-    label: 'Driver Confirmed', 
-    icon: CheckCircle2, 
-    description: 'Driver has accepted your booking',
-    estimatedTime: '5-10 minutes',
-    color: 'text-indigo-600'
-  },
-  { 
-    key: 'on_trip', 
-    label: 'In Progress', 
-    icon: Car, 
-    description: 'Your trip is currently in progress',
-    estimatedTime: 'Varies by service',
     color: 'text-amber-600'
   },
   { 
-    key: 'completed', 
-    label: 'Completed', 
-    icon: CheckCircle2, 
-    description: 'Service has been completed',
-    estimatedTime: 'Upon arrival',
-    color: 'text-green-600'
+    key: 'awaiting_customer_confirmation', 
+    label: 'Price Set', 
+    icon: DollarSign, 
+    description: 'Admin has set your price. Please confirm and pay.',
+    estimatedTime: 'Action required',
+    color: 'text-violet-600'
   },
   { 
     key: 'paid', 
     label: 'Payment Complete', 
     icon: CreditCard, 
-    description: 'Payment has been received',
-    estimatedTime: 'Instant to 24 hours',
-    color: 'text-teal-600'
+    description: 'Your payment has been confirmed',
+    estimatedTime: 'Instant',
+    color: 'text-green-600'
+  },
+  { 
+    key: 'in_progress', 
+    label: 'In Progress', 
+    icon: Car, 
+    description: 'Your service is currently being provided',
+    estimatedTime: 'Varies by service',
+    color: 'text-indigo-600'
+  },
+  { 
+    key: 'completed', 
+    label: 'Completed', 
+    icon: CheckCircle2, 
+    description: 'Service has been completed successfully',
+    estimatedTime: 'Upon completion',
+    color: 'text-emerald-600'
   },
 ];
 
 const STATUS_INDEX: Record<string, number> = {
   draft: 0,
-  pending: 0,
-  confirmed: 1,
-  assigned: 2,
-  accepted: 3,
-  active: 4,
-  on_trip: 4,
+  under_review: 1,
+  awaiting_customer_confirmation: 2,
+  paid: 3,
   in_progress: 4,
   completed: 5,
-  paid: 6,
-  closed: 6,
+  // Legacy mappings
+  pending: 1,
+  confirmed: 2,
   cancelled: -1,
   rejected: -1,
 };
 
-function getEstimatedCompletionTime(status: string, createdAt: string): string {
-  const created = new Date(createdAt);
-  const statusIdx = STATUS_INDEX[status] ?? 0;
-  
-  // Estimate based on current status
-  switch (statusIdx) {
-    case 0: // pending
-      return format(addMinutes(created, 15), 'h:mm a');
-    case 1: // confirmed
-      return format(addMinutes(created, 45), 'h:mm a');
-    case 2: // assigned
-      return format(addHours(created, 1), 'h:mm a');
-    case 3: // accepted
-      return format(addHours(created, 2), 'h:mm a');
-    case 4: // on_trip
-      return 'In progress';
-    case 5: // completed
-      return 'Completed';
-    case 6: // paid
-      return 'Paid';
-    default:
-      return 'N/A';
-  }
-}
-
 export function CustomerBookingTimeline({ booking, className, showEstimates = true }: CustomerBookingTimelineProps) {
-  const normalizedStatus = booking.status?.toLowerCase() || 'pending';
+  const normalizedStatus = booking.status?.toLowerCase() || 'draft';
   const currentIndex = STATUS_INDEX[normalizedStatus] ?? 0;
   const isCancelled = normalizedStatus === 'cancelled' || normalizedStatus === 'rejected';
 
@@ -154,8 +119,12 @@ export function CustomerBookingTimeline({ booking, className, showEstimates = tr
 
   const timeSinceCreated = formatDistanceToNow(new Date(booking.created_at), { addSuffix: true });
 
+  // Check if customer needs to take action
+  const needsCustomerAction = normalizedStatus === 'awaiting_customer_confirmation';
+  const hasAdminPrice = booking.admin_final_price && booking.admin_final_price > 0;
+
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn("overflow-hidden", needsCustomerAction && "border-primary/50", className)}>
       <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-primary/10">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
@@ -166,10 +135,15 @@ export function CustomerBookingTimeline({ booking, className, showEstimates = tr
             Created {timeSinceCreated}
           </Badge>
         </div>
-        {showEstimates && currentIndex < 5 && (
-          <p className="text-sm text-muted-foreground mt-1">
-            Estimated next update: <span className="font-medium text-foreground">{getEstimatedCompletionTime(normalizedStatus, booking.created_at)}</span>
-          </p>
+        {needsCustomerAction && hasAdminPrice && (
+          <div className="mt-2 p-2 bg-primary/10 rounded-lg">
+            <p className="text-sm font-medium text-primary">
+              💰 Admin has set your price: ${booking.admin_final_price?.toFixed(2)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Please confirm and proceed to payment.
+            </p>
+          </div>
         )}
       </CardHeader>
       <CardContent className="pt-6">

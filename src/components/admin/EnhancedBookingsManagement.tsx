@@ -361,8 +361,8 @@ export const EnhancedBookingsManagement = () => {
         b.id === bookingId ? { ...b, total_price: newPrice } : b
       ));
       
-      // Make API call
-      const result = await updateBooking(bookingId, { total_price: newPrice });
+      // FINAL WORKFLOW: Use admin_final_price
+      const result = await updateBooking(bookingId, { admin_final_price: newPrice });
       
       if (!result.success) {
         // Rollback on failure
@@ -374,11 +374,14 @@ export const EnhancedBookingsManagement = () => {
       
       toast({
         title: 'Price Updated',
-        description: `Price set to $${newPrice.toFixed(2)}`,
+        description: `Admin final price set to $${newPrice.toFixed(2)}`,
       });
       
       setEditingPrice(null);
       setPriceValue('');
+      
+      // Refetch to get updated data
+      fetchBookings();
     } catch (error: any) {
       console.error('Price update error:', error);
       toast({
@@ -437,20 +440,19 @@ export const EnhancedBookingsManagement = () => {
   });
 
   const getStatusBadge = (status: string) => {
-    // Normalized booking lifecycle statuses
+    // FINAL WORKFLOW status labels
     const config: Record<string, { variant: any; icon: any; label: string }> = {
-      pending: { variant: 'secondary', icon: Clock, label: 'Requested' },
-      confirmed: { variant: 'default', icon: CheckCircle, label: 'Confirmed' },
-      assigned: { variant: 'default', icon: Car, label: 'Driver Assigned' },
-      accepted: { variant: 'default', icon: CheckCircle, label: 'Driver Confirmed' },
-      on_trip: { variant: 'default', icon: Car, label: 'In Progress' },
-      active: { variant: 'default', icon: Car, label: 'In Progress' },
+      draft: { variant: 'secondary', icon: Clock, label: 'Draft' },
+      under_review: { variant: 'secondary', icon: Clock, label: 'Under Review' },
+      awaiting_customer_confirmation: { variant: 'default', icon: AlertCircle, label: 'Awaiting Confirmation' },
+      paid: { variant: 'default', icon: CheckCircle, label: 'Paid' },
       in_progress: { variant: 'default', icon: Car, label: 'In Progress' },
       completed: { variant: 'outline', icon: CheckCircle, label: 'Completed' },
-      paid: { variant: 'outline', icon: CheckCircle, label: 'Paid' },
       cancelled: { variant: 'destructive', icon: XCircle, label: 'Cancelled' },
       rejected: { variant: 'destructive', icon: XCircle, label: 'Rejected' },
-      pending_verification: { variant: 'secondary', icon: Clock, label: 'Pending Verification' },
+      // Legacy support
+      pending: { variant: 'secondary', icon: Clock, label: 'Pending' },
+      confirmed: { variant: 'default', icon: CheckCircle, label: 'Confirmed' },
     };
 
     const { variant, icon: Icon, label } = config[status] || { variant: 'secondary', icon: Clock, label: status };

@@ -6,26 +6,38 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Valid booking statuses and their allowed transitions
-// ALIGNED WITH FRONTEND: draft → pending_admin_review → awaiting_payment → paid → in_progress → completed
-const VALID_STATUSES = ['draft', 'pending_admin_review', 'awaiting_payment', 'paid', 'in_progress', 'completed', 'cancelled', 'rejected'] as const
+/**
+ * FINAL BOOKING WORKFLOW STATUS TRANSITIONS:
+ * 
+ * draft → under_review → awaiting_customer_confirmation → paid → in_progress → completed
+ * 
+ * Terminal states: cancelled, rejected
+ */
+const VALID_STATUSES = [
+  'draft', 
+  'under_review', 
+  'awaiting_customer_confirmation', 
+  'paid', 
+  'in_progress', 
+  'completed', 
+  'cancelled', 
+  'rejected'
+] as const
 type BookingStatus = typeof VALID_STATUSES[number]
 
 const STATUS_TRANSITIONS: Record<string, string[]> = {
-  'draft': ['pending_admin_review', 'cancelled'],
-  'pending_admin_review': ['awaiting_payment', 'cancelled', 'rejected'],
-  'awaiting_payment': ['paid', 'cancelled'],
-  'paid': ['in_progress'], // Price locked after this point
+  'draft': ['under_review', 'cancelled'],
+  'under_review': ['awaiting_customer_confirmation', 'cancelled', 'rejected'],
+  'awaiting_customer_confirmation': ['paid', 'cancelled'],
+  'paid': ['in_progress'],
   'in_progress': ['completed', 'cancelled'],
-  'completed': [], // Terminal state
-  'cancelled': [], // Terminal state
-  'rejected': [], // Terminal state
+  'completed': [],
+  'cancelled': [],
+  'rejected': [],
 }
 
 function isValidTransition(currentStatus: string, newStatus: string): boolean {
-  // Allow same status (no-op)
   if (currentStatus === newStatus) return true
-  
   const allowedTransitions = STATUS_TRANSITIONS[currentStatus] || []
   return allowedTransitions.includes(newStatus)
 }
@@ -35,7 +47,6 @@ function getValidNextStatuses(currentStatus: string): string[] {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -44,35 +55,29 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     
-    // Get auth token from request
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      console.error('No authorization header provided')
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    // Create client with user's token for auth check
     const supabaseUser = createClient(supabaseUrl, supabaseServiceKey, {
       global: { headers: { Authorization: authHeader } }
     })
     
-    // Verify user and get their ID
     const { data: { user }, error: authError } = await supabaseUser.auth.getUser(
       authHeader.replace('Bearer ', '')
     )
     
     if (authError || !user) {
-      console.error('Auth error:', authError)
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    // Check if user has admin role using service role client
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
     
     const { data: roleData, error: roleError } = await supabaseAdmin
@@ -83,21 +88,15 @@ serve(async (req) => {
       .maybeSingle()
 
     if (roleError || !roleData) {
-      console.error('User is not admin:', user.id, roleError)
       return new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    console.log('Admin access verified for user:', user.id)
-
     const url = new URL(req.url)
     const pathParts = url.pathname.split('/').filter(Boolean)
     const method = req.method
-
-    // Parse booking ID from path if present
-    // Expected paths: /admin-bookings, /admin-bookings/:id, /admin-bookings/:id/confirm, etc.
     const bookingId = pathParts.length > 1 ? pathParts[1] : null
     const action = pathParts.length > 2 ? pathParts[2] : null
 
@@ -105,41 +104,24 @@ serve(async (req) => {
     if (method === 'GET' && !bookingId) {
       const status = url.searchParams.get('status')
       const paymentStatus = url.searchParams.get('payment_status')
-      const startDate = url.searchParams.get('start_date')
-      const endDate = url.searchParams.get('end_date')
 
       let query = supabaseAdmin
         .from('bookings')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (status && status !== 'all') {
-        query = query.eq('status', status)
-      }
-      if (paymentStatus && paymentStatus !== 'all') {
-        query = query.eq('payment_status', paymentStatus)
-      }
-      if (startDate) {
-        query = query.gte('created_at', startDate)
-      }
-      if (endDate) {
-        query = query.lte('created_at', endDate)
-      }
+      if (status && status !== 'all') query = query.eq('status', status)
+      if (paymentStatus && paymentStatus !== 'all') query = query.eq('payment_status', paymentStatus)
 
       const { data, error } = await query
+      if (error) throw error
 
-      if (error) {
-        console.error('Error fetching bookings:', error)
-        throw error
-      }
-
-      console.log(`Fetched ${data?.length || 0} bookings`)
       return new Response(JSON.stringify({ bookings: data }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    // GET /admin-bookings/:id - Get single booking
+    // GET /admin-bookings/:id
     if (method === 'GET' && bookingId && !action) {
       const { data, error } = await supabaseAdmin
         .from('bookings')
@@ -160,7 +142,88 @@ serve(async (req) => {
       })
     }
 
-    // POST /admin-bookings/:id/confirm - Confirm booking (move from pending to confirmed)
+    // POST /admin-bookings/:id/set-price - Admin sets price and moves to awaiting_customer_confirmation
+    if (method === 'POST' && bookingId && action === 'set-price') {
+      const body = await req.json()
+      const { price, admin_notes } = body
+
+      if (typeof price !== 'number' || price <= 0) {
+        return new Response(JSON.stringify({ error: 'Valid price is required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      const { data: booking, error: fetchError } = await supabaseAdmin
+        .from('bookings')
+        .select('status, admin_final_price')
+        .eq('id', bookingId)
+        .maybeSingle()
+
+      if (fetchError || !booking) {
+        return new Response(JSON.stringify({ error: 'Booking not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      // Can only set price if status allows it
+      const editableStatuses = ['draft', 'under_review', 'awaiting_customer_confirmation']
+      if (!editableStatuses.includes(booking.status)) {
+        return new Response(JSON.stringify({ 
+          error: `Cannot set price for booking in '${booking.status}' status`,
+          code: 'PRICE_LOCKED'
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      const updateData: any = {
+        admin_final_price: price,
+        status: 'awaiting_customer_confirmation',
+        updated_at: new Date().toISOString()
+      }
+      if (admin_notes) updateData.admin_notes = admin_notes
+
+      const { error: updateError } = await supabaseAdmin
+        .from('bookings')
+        .update(updateData)
+        .eq('id', bookingId)
+
+      if (updateError) throw updateError
+
+      await supabaseAdmin.from('admin_logs').insert({
+        admin_id: user.id,
+        action_type: 'price_set',
+        target_id: bookingId,
+        target_table: 'bookings',
+        payload: { price, old_status: booking.status, new_status: 'awaiting_customer_confirmation' }
+      })
+
+      // Notify customer about price
+      const { data: bookingData } = await supabaseAdmin
+        .from('bookings')
+        .select('user_id')
+        .eq('id', bookingId)
+        .single()
+
+      if (bookingData?.user_id) {
+        await supabaseAdmin.from('customer_notifications').insert({
+          user_id: bookingData.user_id,
+          booking_id: bookingId,
+          type: 'price_set',
+          title: 'Price Confirmed',
+          message: `Your booking price has been set to $${price}. Please confirm and proceed to payment.`
+        })
+      }
+
+      return new Response(JSON.stringify({ success: true, price, status: 'awaiting_customer_confirmation' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // POST /admin-bookings/:id/confirm - Move to under_review (legacy support)
     if (method === 'POST' && bookingId && action === 'confirm') {
       const { data: booking, error: fetchError } = await supabaseAdmin
         .from('bookings')
@@ -176,12 +239,9 @@ serve(async (req) => {
       }
 
       const oldStatus = booking.status
-      
-      // Determine next valid status based on current status
-      let newStatus = 'confirmed'
-      if (oldStatus === 'pending') {
-        newStatus = 'confirmed'
-      } else if (!isValidTransition(oldStatus, 'confirmed')) {
+      const newStatus = 'under_review'
+
+      if (!isValidTransition(oldStatus, newStatus) && oldStatus !== 'pending') {
         return new Response(JSON.stringify({ 
           error: `Cannot confirm booking in '${oldStatus}' status`,
           valid_transitions: getValidNextStatuses(oldStatus)
@@ -191,18 +251,13 @@ serve(async (req) => {
         })
       }
 
-      // Update booking status
       const { error: updateError } = await supabaseAdmin
         .from('bookings')
-        .update({ 
-          status: newStatus, 
-          updated_at: new Date().toISOString() 
-        })
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
         .eq('id', bookingId)
 
       if (updateError) throw updateError
 
-      // Log admin action
       await supabaseAdmin.from('admin_logs').insert({
         admin_id: user.id,
         action_type: 'booking_status_changed',
@@ -211,20 +266,19 @@ serve(async (req) => {
         payload: { old_status: oldStatus, new_status: newStatus }
       })
 
-      console.log(`Booking ${bookingId} status changed: ${oldStatus} → ${newStatus} by admin ${user.id}`)
-      return new Response(JSON.stringify({ success: true, status: newStatus, old_status: oldStatus }), {
+      return new Response(JSON.stringify({ success: true, status: newStatus }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    // POST /admin-bookings/:id/reject - Cancel booking
+    // POST /admin-bookings/:id/reject
     if (method === 'POST' && bookingId && action === 'reject') {
       const body = await req.json()
       const reason = body.reason || 'No reason provided'
 
       const { data: booking, error: fetchError } = await supabaseAdmin
         .from('bookings')
-        .select('status')
+        .select('status, user_id')
         .eq('id', bookingId)
         .maybeSingle()
 
@@ -236,23 +290,21 @@ serve(async (req) => {
       }
 
       const oldStatus = booking.status
+      const terminalStates = ['completed', 'cancelled', 'rejected']
       
-      // Validate transition to cancelled
-      if (!isValidTransition(oldStatus, 'cancelled')) {
+      if (terminalStates.includes(oldStatus)) {
         return new Response(JSON.stringify({ 
-          error: `Cannot cancel booking in '${oldStatus}' status - already finalized`,
-          code: 'CANNOT_CANCEL'
+          error: `Cannot reject booking in '${oldStatus}' status`
         }), {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
       }
 
-      // Update booking status and add reason to admin_notes
       const { error: updateError } = await supabaseAdmin
         .from('bookings')
         .update({ 
-          status: 'cancelled',
+          status: 'rejected',
           admin_notes: `Rejected: ${reason}`,
           updated_at: new Date().toISOString() 
         })
@@ -260,17 +312,26 @@ serve(async (req) => {
 
       if (updateError) throw updateError
 
-      // Log admin action
+      // Notify customer
+      if (booking.user_id) {
+        await supabaseAdmin.from('customer_notifications').insert({
+          user_id: booking.user_id,
+          booking_id: bookingId,
+          type: 'booking_rejected',
+          title: 'Booking Rejected',
+          message: `Your booking has been rejected. Reason: ${reason}`
+        })
+      }
+
       await supabaseAdmin.from('admin_logs').insert({
         admin_id: user.id,
-        action_type: 'booking_cancelled',
+        action_type: 'booking_rejected',
         target_id: bookingId,
         target_table: 'bookings',
-        payload: { old_status: oldStatus, new_status: 'cancelled', reason }
+        payload: { old_status: oldStatus, reason }
       })
 
-      console.log(`Booking ${bookingId} cancelled by admin ${user.id}. Reason: ${reason}`)
-      return new Response(JSON.stringify({ success: true, status: 'cancelled', old_status: oldStatus }), {
+      return new Response(JSON.stringify({ success: true, status: 'rejected' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
@@ -278,12 +339,11 @@ serve(async (req) => {
     // PUT /admin-bookings/:id - Update booking
     if (method === 'PUT' && bookingId && !action) {
       const body = await req.json()
-      const { status, payment_status, admin_notes, total_price, assigned_driver_id } = body
+      const { status, payment_status, admin_notes, admin_final_price, assigned_driver_id, assigned_guide_id } = body
 
-      // Fetch current booking to check status and payment before updates
       const { data: currentBooking, error: fetchError } = await supabaseAdmin
         .from('bookings')
-        .select('status, payment_status, total_price')
+        .select('status, payment_status, admin_final_price, quoted_price')
         .eq('id', bookingId)
         .maybeSingle()
 
@@ -294,15 +354,13 @@ serve(async (req) => {
         })
       }
 
-      // CRITICAL: Validate status transition
+      // Validate status transition
       if (status && status !== currentBooking.status) {
         if (!isValidTransition(currentBooking.status, status)) {
-          const validNext = getValidNextStatuses(currentBooking.status)
-          console.error(`Invalid status transition: ${currentBooking.status} → ${status}`)
           return new Response(JSON.stringify({ 
             error: `Invalid status transition from '${currentBooking.status}' to '${status}'`,
             code: 'INVALID_TRANSITION',
-            valid_transitions: validNext
+            valid_transitions: getValidNextStatuses(currentBooking.status)
           }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -310,10 +368,9 @@ serve(async (req) => {
         }
       }
 
-      // CRITICAL: Block price updates after payment (status = 'paid', 'in_progress', or 'completed')
+      // CRITICAL: Block price updates after payment
       const lockedStatuses = ['paid', 'in_progress', 'completed']
-      if (total_price !== undefined && lockedStatuses.includes(currentBooking.status)) {
-        console.error(`Price update blocked for booking ${bookingId} - booking is in ${currentBooking.status} status`)
+      if (admin_final_price !== undefined && lockedStatuses.includes(currentBooking.status)) {
         return new Response(JSON.stringify({ 
           error: 'Cannot update price after payment',
           code: 'PRICE_LOCKED'
@@ -324,17 +381,13 @@ serve(async (req) => {
       }
 
       const updateData: any = { updated_at: new Date().toISOString() }
-      const oldStatus = currentBooking.status
       
       if (status) updateData.status = status
       if (payment_status) updateData.payment_status = payment_status
       if (admin_notes !== undefined) updateData.admin_notes = admin_notes
-      // Admin price edits update admin_final_price (source of truth for admin pricing)
-      if (total_price !== undefined) {
-        updateData.admin_final_price = total_price
-        updateData.total_price = total_price // Keep total_price synced
-      }
+      if (admin_final_price !== undefined) updateData.admin_final_price = admin_final_price
       if (assigned_driver_id !== undefined) updateData.assigned_driver_id = assigned_driver_id
+      if (assigned_guide_id !== undefined) updateData.assigned_guide_id = assigned_guide_id
 
       const { error: updateError } = await supabaseAdmin
         .from('bookings')
@@ -343,31 +396,49 @@ serve(async (req) => {
 
       if (updateError) throw updateError
 
-      // Log admin action with status transition details
       await supabaseAdmin.from('admin_logs').insert({
         admin_id: user.id,
         action_type: status ? 'booking_status_changed' : 'booking_updated',
         target_id: bookingId,
         target_table: 'bookings',
-        payload: { 
-          ...updateData, 
-          old_status: oldStatus,
-          old_price: currentBooking.total_price 
-        }
+        payload: { ...updateData, old_status: currentBooking.status }
       })
 
-      console.log(`Booking ${bookingId} updated by admin ${user.id}. Status: ${oldStatus} → ${status || oldStatus}`)
       return new Response(JSON.stringify({ success: true, booking: { ...currentBooking, ...updateData } }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    // POST /admin-bookings/:id/assign-driver - Assign driver to booking
+    // POST /admin-bookings/:id/payment - Update payment status
+    if (method === 'POST' && bookingId && action === 'payment') {
+      const body = await req.json()
+      const { payment_status } = body
+
+      const { error: updateError } = await supabaseAdmin
+        .from('bookings')
+        .update({ payment_status, updated_at: new Date().toISOString() })
+        .eq('id', bookingId)
+
+      if (updateError) throw updateError
+
+      await supabaseAdmin.from('admin_logs').insert({
+        admin_id: user.id,
+        action_type: 'payment_status_updated',
+        target_id: bookingId,
+        target_table: 'bookings',
+        payload: { payment_status }
+      })
+
+      return new Response(JSON.stringify({ success: true, payment_status }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // POST /admin-bookings/:id/assign-driver
     if (method === 'POST' && bookingId && action === 'assign-driver') {
       const body = await req.json()
       const { driver_id } = body
 
-      // Validate driver exists and is active if provided
       if (driver_id) {
         const { data: driver, error: driverError } = await supabaseAdmin
           .from('drivers')
@@ -390,10 +461,9 @@ serve(async (req) => {
         }
       }
 
-      // Get current booking for logging
       const { data: booking, error: fetchError } = await supabaseAdmin
         .from('bookings')
-        .select('assigned_driver_id')
+        .select('assigned_driver_id, status')
         .eq('id', bookingId)
         .maybeSingle()
 
@@ -404,138 +474,78 @@ serve(async (req) => {
         })
       }
 
-      const oldDriverId = booking.assigned_driver_id
+      const updateData: any = {
+        assigned_driver_id: driver_id,
+        driver_response: driver_id ? 'pending' : null,
+        updated_at: new Date().toISOString()
+      }
 
-      // Update booking with driver assignment - CRITICAL: Set status to 'assigned' and driver_response to 'pending'
+      // If booking is 'paid' and driver assigned, move to 'in_progress'
+      if (driver_id && booking.status === 'paid') {
+        updateData.status = 'in_progress'
+      }
+
       const { error: updateError } = await supabaseAdmin
         .from('bookings')
-        .update({ 
-          assigned_driver_id: driver_id,
-          status: driver_id ? 'assigned' : 'confirmed', // Set to assigned when driver is assigned, back to confirmed if unassigned
-          driver_response: driver_id ? 'pending' : null, // Reset driver response when assigned
-          updated_at: new Date().toISOString() 
-        })
+        .update(updateData)
         .eq('id', bookingId)
 
       if (updateError) throw updateError
 
-      // Log admin action
+      // Notify driver
+      if (driver_id) {
+        await supabaseAdmin.from('driver_notifications').insert({
+          driver_id: driver_id,
+          booking_id: bookingId,
+          type: 'new_assignment',
+          title: 'New Booking Assignment',
+          message: 'You have been assigned to a new booking.'
+        })
+      }
+
       await supabaseAdmin.from('admin_logs').insert({
         admin_id: user.id,
         action_type: 'driver_assigned',
         target_id: bookingId,
         target_table: 'bookings',
-        payload: { 
-          old_driver_id: oldDriverId, 
-          new_driver_id: driver_id 
-        }
+        payload: { old_driver_id: booking.assigned_driver_id, new_driver_id: driver_id }
       })
 
-      console.log(`Driver ${driver_id} assigned to booking ${bookingId} by admin ${user.id}`)
       return new Response(JSON.stringify({ success: true, driver_id }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    // POST /admin-bookings/:id/auto-assign - Auto-assign available driver
-    if (method === 'POST' && bookingId && action === 'auto-assign') {
-      // Find an available driver (active status, least assignments)
-      const { data: drivers, error: driversError } = await supabaseAdmin
-        .from('drivers')
-        .select('id, full_name')
-        .eq('status', 'active')
-
-      if (driversError || !drivers || drivers.length === 0) {
-        return new Response(JSON.stringify({ error: 'No available drivers' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
-      // Get assignment counts for each driver
-      const driverAssignments = await Promise.all(
-        drivers.map(async (driver) => {
-          const { count } = await supabaseAdmin
-            .from('bookings')
-            .select('*', { count: 'exact', head: true })
-            .eq('assigned_driver_id', driver.id)
-            .in('status', ['pending', 'confirmed'])
-
-          return { ...driver, assignmentCount: count || 0 }
-        })
-      )
-
-      // Sort by assignment count and pick the driver with least assignments
-      driverAssignments.sort((a, b) => a.assignmentCount - b.assignmentCount)
-      const selectedDriver = driverAssignments[0]
-
-      // Get current booking for logging
-      const { data: booking, error: fetchError } = await supabaseAdmin
-        .from('bookings')
-        .select('assigned_driver_id')
-        .eq('id', bookingId)
-        .maybeSingle()
-
-      if (fetchError || !booking) {
-        return new Response(JSON.stringify({ error: 'Booking not found' }), {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
-      const oldDriverId = booking.assigned_driver_id
-
-      // Update booking with driver assignment - CRITICAL: Set status to 'assigned' and driver_response to 'pending'
-      const { error: updateError } = await supabaseAdmin
-        .from('bookings')
-        .update({ 
-          assigned_driver_id: selectedDriver.id,
-          status: 'assigned', // Set to assigned when driver is auto-assigned
-          driver_response: 'pending', // Reset driver response
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', bookingId)
-
-      if (updateError) throw updateError
-
-      // Log admin action
-      await supabaseAdmin.from('admin_logs').insert({
-        admin_id: user.id,
-        action_type: 'driver_auto_assigned',
-        target_id: bookingId,
-        target_table: 'bookings',
-        payload: { 
-          old_driver_id: oldDriverId, 
-          new_driver_id: selectedDriver.id,
-          driver_name: selectedDriver.full_name
-        }
-      })
-
-      console.log(`Driver ${selectedDriver.full_name} auto-assigned to booking ${bookingId}`)
-      return new Response(JSON.stringify({ 
-        success: true, 
-        driver_id: selectedDriver.id,
-        driver_name: selectedDriver.full_name
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
-
-    // POST /admin-bookings/:id/payment - Update payment status
-    if (method === 'POST' && bookingId && action === 'payment') {
+    // POST /admin-bookings/:id/assign-guide
+    if (method === 'POST' && bookingId && action === 'assign-guide') {
       const body = await req.json()
-      const { payment_status } = body
+      const { guide_id } = body
 
-      if (!payment_status) {
-        return new Response(JSON.stringify({ error: 'payment_status required' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+      if (guide_id) {
+        const { data: guide, error: guideError } = await supabaseAdmin
+          .from('guides')
+          .select('id, full_name, status')
+          .eq('id', guide_id)
+          .maybeSingle()
+
+        if (guideError || !guide) {
+          return new Response(JSON.stringify({ error: 'Guide not found' }), {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
+
+        if (guide.status !== 'active') {
+          return new Response(JSON.stringify({ error: 'Guide is not available' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
       }
 
       const { data: booking, error: fetchError } = await supabaseAdmin
         .from('bookings')
-        .select('payment_status')
+        .select('assigned_guide_id, status')
         .eq('id', bookingId)
         .maybeSingle()
 
@@ -546,79 +556,77 @@ serve(async (req) => {
         })
       }
 
-      const oldPaymentStatus = booking.payment_status
+      const updateData: any = {
+        assigned_guide_id: guide_id,
+        updated_at: new Date().toISOString()
+      }
+
+      // If booking is 'paid' and guide assigned, move to 'in_progress'
+      if (guide_id && booking.status === 'paid') {
+        updateData.status = 'in_progress'
+      }
 
       const { error: updateError } = await supabaseAdmin
         .from('bookings')
-        .update({ 
-          payment_status, 
-          updated_at: new Date().toISOString() 
-        })
+        .update(updateData)
         .eq('id', bookingId)
 
       if (updateError) throw updateError
 
-      // Log admin action
+      // Notify guide
+      if (guide_id) {
+        await supabaseAdmin.from('guide_notifications').insert({
+          guide_id: guide_id,
+          booking_id: bookingId,
+          type: 'new_assignment',
+          title: 'New Booking Assignment',
+          message: 'You have been assigned to a new booking.'
+        })
+      }
+
       await supabaseAdmin.from('admin_logs').insert({
         admin_id: user.id,
-        action_type: 'payment_status_updated',
+        action_type: 'guide_assigned',
         target_id: bookingId,
         target_table: 'bookings',
-        payload: { old_payment_status: oldPaymentStatus, new_payment_status: payment_status }
+        payload: { old_guide_id: booking.assigned_guide_id, new_guide_id: guide_id }
       })
 
-      console.log(`Payment status for ${bookingId} updated to ${payment_status} by admin ${user.id}`)
-      return new Response(JSON.stringify({ success: true, payment_status }), {
+      return new Response(JSON.stringify({ success: true, guide_id }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
-    // DELETE /admin-bookings/:id - Delete booking
+    // DELETE /admin-bookings/:id
     if (method === 'DELETE' && bookingId && !action) {
-      const { data: booking, error: fetchError } = await supabaseAdmin
-        .from('bookings')
-        .select('*')
-        .eq('id', bookingId)
-        .maybeSingle()
-
-      if (fetchError || !booking) {
-        return new Response(JSON.stringify({ error: 'Booking not found' }), {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
       // Delete related records first
-      await supabaseAdmin.from('hotel_bookings').delete().eq('booking_id', bookingId)
       await supabaseAdmin.from('transportation_bookings').delete().eq('booking_id', bookingId)
+      await supabaseAdmin.from('hotel_bookings').delete().eq('booking_id', bookingId)
       await supabaseAdmin.from('event_bookings').delete().eq('booking_id', bookingId)
       await supabaseAdmin.from('custom_trip_bookings').delete().eq('booking_id', bookingId)
       await supabaseAdmin.from('tourist_guide_bookings').delete().eq('booking_id', bookingId)
-      await supabaseAdmin.from('payment_receipts').delete().eq('booking_id', bookingId)
       await supabaseAdmin.from('booking_status_history').delete().eq('booking_id', bookingId)
-      await supabaseAdmin.from('notifications').delete().eq('booking_id', bookingId)
+      await supabaseAdmin.from('payment_receipts').delete().eq('booking_id', bookingId)
       await supabaseAdmin.from('customer_notifications').delete().eq('booking_id', bookingId)
       await supabaseAdmin.from('driver_notifications').delete().eq('booking_id', bookingId)
       await supabaseAdmin.from('guide_notifications').delete().eq('booking_id', bookingId)
+      await supabaseAdmin.from('notifications').delete().eq('booking_id', bookingId)
 
-      // Delete the booking
-      const { error: deleteError } = await supabaseAdmin
+      const { error } = await supabaseAdmin
         .from('bookings')
         .delete()
         .eq('id', bookingId)
 
-      if (deleteError) throw deleteError
+      if (error) throw error
 
-      // Log admin action
       await supabaseAdmin.from('admin_logs').insert({
         admin_id: user.id,
         action_type: 'booking_deleted',
         target_id: bookingId,
         target_table: 'bookings',
-        payload: { deleted_booking: booking }
+        payload: {}
       })
 
-      console.log(`Booking ${bookingId} deleted by admin ${user.id}`)
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
@@ -630,8 +638,8 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('Error in admin-bookings function:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Admin bookings error:', error)
+    return new Response(JSON.stringify({ error: error.message || 'Internal server error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
