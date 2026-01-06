@@ -35,9 +35,10 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
 
   if (!booking) return null;
 
-  // Check if price editing is allowed (only before payment - status is not 'paid', 'in_progress', or 'completed')
-  const isPaidOrLater = ['paid', 'in_progress', 'completed'].includes(booking.status);
-  const canEditPriceFlag = !isPaidOrLater;
+  // FINAL WORKFLOW: Admin can only edit price before payment
+  // Price is locked once status is 'paid', 'in_progress', or 'completed'
+  const lockedStatuses = ['paid', 'in_progress', 'completed'];
+  const canEditPriceFlag = !lockedStatuses.includes(booking.status);
 
   const handleEditPrice = () => {
     if (!canEditPriceFlag) {
@@ -102,8 +103,8 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
 
     try {
       setSaving(true);
-      // Admin price edits use total_price which now updates admin_final_price on backend
-      const result = await updateBooking(booking.id, { total_price: newPrice });
+      // FINAL WORKFLOW: Admin edits admin_final_price directly
+      const result = await updateBooking(booking.id, { admin_final_price: newPrice });
       
       if (!result.success) {
         throw new Error('Failed to update price');

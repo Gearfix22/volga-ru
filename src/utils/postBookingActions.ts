@@ -86,10 +86,10 @@ Preferred Language: ${bookingData.userInfo.language}
 === PAYMENT DETAILS ===
 Payment Method: ${bookingData.paymentMethod || 'Cash on Arrival'}
 Total Amount: $${paymentAmount} USD
-${bookingData.totalPrice ? `Original Price: $${bookingData.totalPrice}` : ''}
+${bookingData.admin_final_price ? `Admin Final Price: $${bookingData.admin_final_price}` : ''}
+${bookingData.quoted_price ? `Quoted Price: $${bookingData.quoted_price}` : ''}
 
 === ADDITIONAL NOTES ===
-${bookingData.customAmount ? `Custom amount was entered: $${bookingData.customAmount}` : ''}
 
 Please process this booking and contact the customer to confirm the service arrangements.
 

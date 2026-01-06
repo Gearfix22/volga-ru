@@ -1,15 +1,32 @@
-// Service Types - exactly 3 services
-export type ServiceType = 'Driver' | 'Accommodation' | 'Events';
+// Service Types - exactly 4 services
+export type ServiceType = 'Driver' | 'Accommodation' | 'Events' | 'Guide';
 
-// Unified booking status flow
 /**
- * NORMALIZED BOOKING LIFECYCLE:
- * draft → pending_admin_review → awaiting_payment → paid → in_progress → completed
+ * FINAL BOOKING WORKFLOW:
+ * 
+ * 1. Customer selects service → status = 'draft', quoted_price = services.base_price
+ * 2. Customer confirms (NO PAYMENT) → status = 'under_review'
+ * 3. Admin reviews and sets price → admin_final_price set, status = 'awaiting_customer_confirmation'
+ * 4. Customer confirms price → proceeds to payment
+ * 5. Payment successful → paid_price = admin_final_price, payment_status = 'paid', status = 'paid'
+ * 6. Admin assigns driver/guide → status = 'in_progress'
+ * 7. Service completed → status = 'completed'
  */
-export type BookingStatus = 'draft' | 'pending_admin_review' | 'awaiting_payment' | 'paid' | 'in_progress' | 'completed' | 'cancelled' | 'rejected';
+export type BookingStatus = 
+  | 'draft'                         // Customer selecting service
+  | 'under_review'                  // Customer confirmed, waiting for admin review
+  | 'awaiting_customer_confirmation' // Admin set price, waiting for customer
+  | 'paid'                          // Customer paid
+  | 'in_progress'                   // Driver/guide assigned, service ongoing
+  | 'completed'                     // Service completed
+  | 'cancelled'                     // Cancelled by admin or customer
+  | 'rejected';                     // Rejected by admin
 
 // Payment methods
-export type PaymentMethod = 'visa' | 'cash';
+export type PaymentMethod = 'visa' | 'cash' | 'bank_transfer';
+
+// Payment status
+export type PaymentStatus = 'pending' | 'awaiting_payment' | 'paid' | 'refunded';
 
 // Driver booking details (one-way or round trip)
 export interface DriverBookingDetails {
@@ -58,13 +75,14 @@ export interface BookingData {
   serviceType: ServiceType | string;
   serviceDetails: ServiceDetails;
   userInfo: UserInfo;
-  customAmount?: number;
-  totalPrice?: number;
-  admin_final_price?: number; // Admin-set price (source of truth for payments)
+  quoted_price?: number;          // Initial price from services.base_price
+  admin_final_price?: number;     // Admin-set price (source of truth for payments)
+  paid_price?: number;            // Amount actually paid
+  totalPrice?: number;            // Legacy field - use admin_final_price instead
   paymentMethod?: PaymentMethod | string;
   transactionId?: string;
-  paidAmount?: number;
   status?: BookingStatus | string;
+  payment_status?: PaymentStatus | string;
   driverRequired?: boolean;
 }
 
@@ -74,21 +92,27 @@ export type HotelDetails = AccommodationDetails;
 export type EventDetails = EventsDetails;
 export type TripDetails = Record<string, unknown>;
 
-// Pricing rules
+// Pricing rules - services.base_price is reference only
 export const SERVICE_PRICING = {
   Driver: {
-    basePrice: 50, // USD minimum
+    basePrice: 50, // USD minimum reference
     hasFixedPrice: true,
     adminCanEdit: true
   },
   Accommodation: {
-    basePrice: 0, // No fixed price
+    basePrice: 0, // Admin sets price
     hasFixedPrice: false,
     adminCanEdit: true,
     requiresAdminPricing: true
   },
   Events: {
-    basePrice: 0, // No fixed price
+    basePrice: 0, // Admin sets price
+    hasFixedPrice: false,
+    adminCanEdit: true,
+    requiresAdminPricing: true
+  },
+  Guide: {
+    basePrice: 50, // USD per hour reference
     hasFixedPrice: false,
     adminCanEdit: true,
     requiresAdminPricing: true

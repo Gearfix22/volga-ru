@@ -162,16 +162,15 @@ export const deleteDraftBooking = async (id: string): Promise<void> => {
 };
 
 /**
- * UNIFIED BOOKING CREATION
+ * FINAL BOOKING WORKFLOW:
  * 
- * NORMALIZED STATUS FLOW:
- * pending (REQUESTED) → confirmed (ADMIN_REVIEW) → assigned (DRIVER_ASSIGNED) 
- * → accepted (DRIVER_CONFIRMED) → on_trip (IN_PROGRESS) → completed → paid/closed
- * 
- * Payment rules:
- * - Visa/Credit Card: Auto-confirm (status: confirmed), notify driver when assigned
- * - Cash on arrival: status: pending, admin must confirm
- * - Bank Transfer: status: pending, requires verification
+ * 1. Customer selects service → status = 'draft', quoted_price = services.base_price
+ * 2. Customer confirms (NO PAYMENT) → status = 'under_review'
+ * 3. Admin reviews and sets price → admin_final_price set, status = 'awaiting_customer_confirmation'
+ * 4. Customer confirms price → proceeds to payment
+ * 5. Payment successful → paid_price = admin_final_price, payment_status = 'paid', status = 'paid'
+ * 6. Admin assigns driver/guide → status = 'in_progress'
+ * 7. Service completed → status = 'completed'
  */
 export const createEnhancedBooking = async (
   bookingData: BookingData,
@@ -191,46 +190,28 @@ export const createEnhancedBooking = async (
   }
 
   try {
-    // Determine status based on payment method
-    let bookingStatus = 'pending'; // Default = REQUESTED
-    let paymentStatus = 'pending';
-    let requiresVerification = false;
+    /**
+     * FINAL WORKFLOW: When customer pays, booking moves to 'paid' status
+     * - paid_price = admin_final_price (the amount customer actually paid)
+     * - payment_status = 'paid'
+     * - status = 'paid'
+     */
+    const adminFinalPrice = bookingData.admin_final_price;
+    const paidPrice = adminFinalPrice || paymentInfo.totalPrice;
     
-    const normalizedPaymentMethod = paymentInfo.paymentMethod.toLowerCase();
+    // CRITICAL: Customer should only pay if admin_final_price is set
+    if (!adminFinalPrice || adminFinalPrice <= 0) {
+      throw new Error('Cannot process payment: Admin has not set the final price');
+    }
     
-    // VISA / Credit Card = auto-confirm, moves to ADMIN_REVIEW
-    if (normalizedPaymentMethod.includes('visa') || 
-        normalizedPaymentMethod.includes('credit') || 
-        normalizedPaymentMethod.includes('card') ||
-        normalizedPaymentMethod.includes('stripe')) {
-      bookingStatus = 'confirmed'; // ADMIN_REVIEW - ready for driver assignment
-      paymentStatus = 'paid';
-    }
-    // Cash = pending for admin (REQUESTED)
-    else if (normalizedPaymentMethod.includes('cash')) {
-      bookingStatus = 'pending';
-      paymentStatus = 'cash_on_delivery';
-    }
-    // Bank Transfer = pending verification (REQUESTED)
-    else if (normalizedPaymentMethod.includes('bank')) {
-      bookingStatus = 'pending';
-      paymentStatus = 'awaiting_verification';
-      requiresVerification = true;
-    }
+    // After payment, status is always 'paid'
+    const bookingStatus = 'paid';
+    const paymentStatusValue = 'paid';
 
-    // Check if service requires admin pricing (Accommodation, Events)
-    const requiresAdminPricing = bookingData.serviceType === 'Accommodation' || bookingData.serviceType === 'Events';
-    
-    // For services requiring admin pricing, always start as pending
-    if (requiresAdminPricing && paymentInfo.totalPrice === 0) {
-      bookingStatus = 'pending';
-      paymentStatus = 'awaiting_quote';
-    }
-
-    // Driver service ALWAYS requires a driver - no user toggle needed
+    // Driver service ALWAYS requires a driver
     const driverRequired = bookingData.serviceType === 'Driver';
 
-    // Create main booking record
+    // Create main booking record with PAID status
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .insert({
@@ -239,10 +220,13 @@ export const createEnhancedBooking = async (
         user_info: bookingData.userInfo as any,
         payment_method: paymentInfo.paymentMethod,
         transaction_id: paymentInfo.transactionId,
-        total_price: paymentInfo.totalPrice,
+        quoted_price: bookingData.quoted_price || null,
+        admin_final_price: adminFinalPrice,
+        paid_price: paidPrice,
+        total_price: paidPrice,
         status: bookingStatus,
-        payment_status: paymentStatus,
-        requires_verification: requiresVerification,
+        payment_status: paymentStatusValue,
+        requires_verification: false,
         admin_notes: paymentInfo.adminNotes,
         customer_notes: paymentInfo.customerNotes,
         service_details: bookingData.serviceDetails as any,
@@ -256,7 +240,7 @@ export const createEnhancedBooking = async (
     // Insert into corresponding details table based on service type
     await insertServiceDetails(booking.id, bookingData);
 
-    console.log(`Booking created: ${booking.id}, Status: ${bookingStatus}, Payment: ${paymentStatus}`);
+    console.log(`Booking created: ${booking.id}, Status: ${bookingStatus}, Payment: ${paymentStatusValue}`);
 
     return booking;
   } catch (error) {
@@ -450,7 +434,56 @@ export const completeDraftBooking = async (draftId: string): Promise<void> => {
   await deleteDraftBooking(draftId);
 };
 
-// Admin: Set price for booking (Accommodation/Events)
+/**
+ * WORKFLOW STEP 1: Create draft booking with quoted_price from services.base_price
+ */
+export const createDraftBookingWithQuote = async (
+  serviceType: string,
+  serviceDetails: any,
+  userInfo: any,
+  quotedPrice: number
+): Promise<any> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User must be authenticated');
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .insert({
+      user_id: user.id,
+      service_type: serviceType,
+      service_details: serviceDetails,
+      user_info: userInfo,
+      quoted_price: quotedPrice,
+      status: 'draft',
+      payment_status: 'pending',
+      driver_required: serviceType === 'Driver'
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+/**
+ * WORKFLOW STEP 2: Customer confirms booking → status = 'under_review'
+ */
+export const submitBookingForReview = async (bookingId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('bookings')
+    .update({
+      status: 'under_review',
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', bookingId);
+
+  if (error) throw error;
+};
+
+/**
+ * WORKFLOW STEP 3: Admin sets price → admin_final_price, status = 'awaiting_customer_confirmation'
+ * This is done via the edge function: POST /admin-bookings/:id/set-price
+ */
 export const setBookingPrice = async (
   bookingId: string,
   price: number,
@@ -459,21 +492,27 @@ export const setBookingPrice = async (
   const { error } = await supabase
     .from('bookings')
     .update({
-      total_price: price,
+      admin_final_price: price,
+      status: 'awaiting_customer_confirmation',
       admin_notes: adminNotes,
-      payment_status: 'awaiting_payment' // Price set, waiting for customer payment
+      updated_at: new Date().toISOString()
     })
     .eq('id', bookingId);
 
   if (error) throw error;
 };
 
-// Admin: Confirm booking (for cash payments)
+/**
+ * WORKFLOW STEP 4: Customer confirms price and proceeds to payment
+ * (Payment processing is handled in EnhancedPayment.tsx)
+ */
+
+// Admin: Confirm booking (legacy support)
 export const confirmBooking = async (bookingId: string): Promise<void> => {
   const { error } = await supabase
     .from('bookings')
     .update({
-      status: 'confirmed'
+      status: 'under_review'
     })
     .eq('id', bookingId);
 
