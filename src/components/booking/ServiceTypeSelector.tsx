@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Car, Building2, Ticket, DollarSign } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { SERVICE_PRICING } from '@/types/booking';
 
 interface ServiceTypeSelectorProps {
   serviceType: string;
@@ -22,6 +21,7 @@ export const ServiceTypeSelector: React.FC<ServiceTypeSelectorProps> = ({
     return null;
   }
 
+  // All services have admin-set pricing - no hardcoded prices
   const services = [
     {
       id: 'Driver',
@@ -34,8 +34,8 @@ export const ServiceTypeSelector: React.FC<ServiceTypeSelectorProps> = ({
         'booking.airportTransfers',
         'booking.cityTransportation'
       ],
-      pricing: `${t('booking.fromPrice', { price: SERVICE_PRICING.Driver.basePrice })}`,
-      hasFixedPrice: true
+      pricing: t('booking.priceSetByAdmin'),
+      hasFixedPrice: false
     },
     {
       id: 'Accommodation',

@@ -42,6 +42,7 @@ const EnhancedConfirmation = () => {
     paymentMethod?: string;
     transactionId?: string;
     paidAmount?: number;
+    totalPrice?: number;
     status?: string;
     receiptUrl?: string;
   };

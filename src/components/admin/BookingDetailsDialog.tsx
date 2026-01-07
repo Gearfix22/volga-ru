@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,11 +9,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { User, Mail, Phone, Calendar, DollarSign, FileText, Car, Edit, Save, X } from 'lucide-react';
+import { User, Mail, Phone, Calendar, DollarSign, FileText, Car, Edit, Save, X, Loader2 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { BookingStatusTimeline } from '@/components/booking/BookingStatusTimeline';
+import { getBookingPrice, setBookingPrice } from '@/services/bookingPriceService';
 import { updateBooking } from '@/services/adminService';
 import { useToast } from '@/hooks/use-toast';
+import { isPriceLocked } from '@/utils/bookingWorkflow';
 
 interface BookingDetailsDialogProps {
   booking: any;
@@ -32,13 +34,28 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceValue, setPriceValue] = useState('');
   const [saving, setSaving] = useState(false);
+  const [adminPrice, setAdminPrice] = useState<number | null>(null);
+  const [loadingPrice, setLoadingPrice] = useState(true);
+
+  // Fetch admin price from booking_prices table
+  useEffect(() => {
+    const fetchPrice = async () => {
+      if (booking?.id) {
+        setLoadingPrice(true);
+        const priceData = await getBookingPrice(booking.id);
+        setAdminPrice(priceData?.admin_price || null);
+        setLoadingPrice(false);
+      }
+    };
+    if (open && booking?.id) {
+      fetchPrice();
+    }
+  }, [booking?.id, open]);
 
   if (!booking) return null;
 
-  // FINAL WORKFLOW: Admin can only edit price before payment
   // Price is locked once status is 'paid', 'in_progress', or 'completed'
-  const lockedStatuses = ['paid', 'in_progress', 'completed'];
-  const canEditPriceFlag = !lockedStatuses.includes(booking.status);
+  const canEditPriceFlag = !isPriceLocked(booking.status);
 
   const handleEditPrice = () => {
     if (!canEditPriceFlag) {
@@ -49,7 +66,7 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
       });
       return;
     }
-    setPriceValue((booking.admin_final_price ?? booking.total_price)?.toString() || '0');
+    setPriceValue(adminPrice?.toString() || '0');
     setEditingPrice(true);
   };
 
@@ -59,7 +76,6 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
   };
 
   const handleSavePrice = async () => {
-    // Double-check payment status before saving
     if (!canEditPriceFlag) {
       toast({
         title: 'Price Locked',
@@ -103,39 +119,39 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
 
     try {
       setSaving(true);
-      // FINAL WORKFLOW: Admin edits admin_final_price directly
-      const result = await updateBooking(booking.id, { admin_final_price: newPrice });
+      
+      // Set price in booking_prices table (the ONLY source of truth)
+      const result = await setBookingPrice(booking.id, newPrice);
       
       if (!result.success) {
-        throw new Error('Failed to update price');
+        throw new Error(result.error || 'Failed to update price');
+      }
+
+      // Update booking status to price_set if currently pending_admin
+      if (booking.status === 'pending_admin' || booking.status === 'draft') {
+        await updateBooking(booking.id, { status: 'price_set' });
       }
       
       toast({
-        title: 'Admin Price Updated',
-        description: `Admin final price set to $${newPrice.toFixed(2)}`,
+        title: 'Price Updated',
+        description: `Price set to $${newPrice.toFixed(2)}`,
       });
       
+      setAdminPrice(newPrice);
       setEditingPrice(false);
       setPriceValue('');
       onPriceUpdated?.(); // Triggers instant UI refresh
     } catch (error: any) {
       console.error('Price update error:', error);
-      // Handle payment-blocked error specifically
-      const errorMessage = error.message?.includes('payment') 
-        ? 'Price is locked after payment confirmation'
-        : error.message || 'Failed to save price. Please try again.';
       toast({
         title: 'Error Updating Price',
-        description: errorMessage,
+        description: error.message || 'Failed to save price. Please try again.',
         variant: 'destructive'
       });
     } finally {
       setSaving(false);
     }
   };
-
-  // Display admin_final_price if set, otherwise total_price
-  const displayPrice = booking.admin_final_price ?? booking.total_price;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -221,9 +237,14 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
               <div className="space-y-2">
                 <span className="text-sm font-medium flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
-                  Total Price:
+                  Admin Price (Payable):
                 </span>
-                {editingPrice ? (
+                {loadingPrice ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm text-muted-foreground">Loading...</span>
+                  </div>
+                ) : editingPrice ? (
                   <div className="flex items-center gap-2">
                     <Input
                       type="number"
@@ -254,7 +275,7 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
                 ) : (
                   <div className="flex items-center gap-2">
                     <p className="text-lg font-bold text-primary">
-                      ${displayPrice?.toFixed(2) || '0.00'}
+                      {adminPrice ? `$${adminPrice.toFixed(2)}` : 'Not set'}
                     </p>
                     {canEditPriceFlag ? (
                       <Button
@@ -263,7 +284,7 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
                         onClick={handleEditPrice}
                       >
                         <Edit className="h-4 w-4 mr-1" />
-                        Edit Price
+                        {adminPrice ? 'Edit Price' : 'Set Price'}
                       </Button>
                     ) : (
                       <Badge variant="secondary" className="text-xs">

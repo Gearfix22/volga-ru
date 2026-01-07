@@ -31,6 +31,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { createBooking } from '@/services/database';
 import { completeDraftBooking, createEnhancedBooking } from '@/services/bookingService';
+import { getBookingPrice } from '@/services/bookingPriceService';
 import { convertFromUSD, getCurrencyRates, type CurrencyCode, type CurrencyRate } from '@/services/currencyService';
 import type { BookingData } from '@/types/booking';
 
@@ -42,17 +43,16 @@ const EnhancedPayment = () => {
   const { user } = useAuth();
   
   const bookingData = location.state?.bookingData as BookingData;
+  const bookingId = location.state?.bookingId as string;
   const draftId = location.state?.draftId as string;
   
-  // CRITICAL: Use admin_final_price as the ONLY payable price
-  const payablePrice = bookingData?.admin_final_price;
-  const hasPayablePrice = payablePrice !== undefined && payablePrice !== null && payablePrice > 0;
+  const [payablePrice, setPayablePrice] = useState<number | null>(null);
+  const [priceLoading, setPriceLoading] = useState(true);
   const [selectedMethod, setSelectedMethod] = useState<'cash' | 'stripe' | 'bank-transfer'>('cash');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState(hasPayablePrice ? payablePrice.toString() : '0');
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>('USD');
   const [currencyRates, setCurrencyRates] = useState<CurrencyRate[]>([]);
-  const [convertedAmount, setConvertedAmount] = useState<number>(payablePrice || 0);
+  const [convertedAmount, setConvertedAmount] = useState<number>(0);
 
   // Stripe payment form fields
   const [cardNumber, setCardNumber] = useState('');
@@ -60,22 +60,33 @@ const EnhancedPayment = () => {
   const [cvv, setCvv] = useState('');
   const [cardholderName, setCardholderName] = useState('');
 
-  // Load currency rates
+  // Load currency rates and booking price
   useEffect(() => {
-    const loadRates = async () => {
+    const loadData = async () => {
       const rates = await getCurrencyRates();
       setCurrencyRates(rates);
+      
+      // Fetch admin price from booking_prices table
+      if (bookingId) {
+        const priceData = await getBookingPrice(bookingId);
+        if (priceData && priceData.admin_price > 0) {
+          setPayablePrice(priceData.admin_price);
+        }
+      }
+      setPriceLoading(false);
     };
-    loadRates();
-  }, []);
+    loadData();
+  }, [bookingId]);
 
   // Update converted amount when currency changes
   useEffect(() => {
-    const baseAmount = parseFloat(paymentAmount) || 0;
+    const baseAmount = payablePrice || 0;
     const rate = currencyRates.find(r => r.currency_code === selectedCurrency);
     const converted = rate ? convertFromUSD(baseAmount, rate.rate_to_usd) : baseAmount;
     setConvertedAmount(converted);
-  }, [selectedCurrency, paymentAmount, currencyRates]);
+  }, [selectedCurrency, payablePrice, currencyRates]);
+
+  const hasPayablePrice = payablePrice !== null && payablePrice > 0;
 
   useEffect(() => {
     if (!bookingData) {
@@ -87,24 +98,40 @@ const EnhancedPayment = () => {
       navigate('/enhanced-booking');
       return;
     }
-    
-    // Check if admin has set the price
-    if (!hasPayablePrice) {
-      toast({
-        title: 'Price Not Set',
-        description: 'Admin must set the final price before payment can proceed.',
-        variant: 'destructive'
-      });
-      navigate('/user-dashboard');
-    }
-  }, [bookingData, hasPayablePrice, navigate, t, toast]);
+  }, [bookingData, navigate, t, toast]);
 
-  if (!bookingData || !hasPayablePrice) {
-    return null;
+  // Show loading while fetching price
+  if (priceLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading payment details...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Use admin_final_price as the payment amount (locked, non-editable)
-  const finalAmount = payablePrice;
+  // Check if price has been set
+  if (!hasPayablePrice) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <h2 className="text-2xl font-bold mb-4">Price Not Set</h2>
+          <p className="text-muted-foreground mb-6">
+            Admin must set the final price before you can proceed with payment.
+            Please check back later or contact support.
+          </p>
+          <Button onClick={() => navigate('/user-dashboard')}>
+            Go to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Use admin price from booking_prices as the payment amount (locked, non-editable)
+  const finalAmount = payablePrice!;
 
   const paymentMethods = [
     {
@@ -497,11 +524,10 @@ const EnhancedPayment = () => {
                     id="amount"
                     type="number"
                     step="0.01"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="text-xl font-bold pl-10 h-14"
+                    value={finalAmount}
                     readOnly
+                    placeholder="0.00"
+                    className="text-xl font-bold pl-10 h-14 bg-muted"
                   />
                 </div>
               </div>
@@ -541,11 +567,10 @@ const EnhancedPayment = () => {
                       id="amount"
                       type="number"
                       step="0.01"
-                      value={paymentAmount}
-                      onChange={(e) => setPaymentAmount(e.target.value)}
-                      placeholder="0.00"
-                      className="text-xl font-bold pl-10 h-14"
+                      value={finalAmount}
                       readOnly
+                      placeholder="0.00"
+                      className="text-xl font-bold pl-10 h-14 bg-muted"
                     />
                   </div>
                 </div>

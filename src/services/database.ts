@@ -33,7 +33,7 @@ export const createBooking = async (bookingData: BookingData, paymentInfo: Payme
         user_info: bookingData.userInfo as any,
         payment_method: paymentInfo.paymentMethod,
         transaction_id: paymentInfo.transactionId,
-        total_price: bookingData.totalPrice || paymentInfo.totalPrice,
+        total_price: paymentInfo.totalPrice,
         status: 'confirmed',
         service_details: bookingData.serviceDetails as any
       })
