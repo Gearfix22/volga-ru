@@ -4,23 +4,26 @@ export type ServiceType = 'Driver' | 'Accommodation' | 'Events' | 'Guide';
 /**
  * FINAL BOOKING WORKFLOW:
  * 
- * 1. Customer selects service → status = 'draft', quoted_price = services.base_price
- * 2. Customer confirms (NO PAYMENT) → status = 'under_review'
- * 3. Admin reviews and sets price → admin_final_price set, status = 'awaiting_customer_confirmation'
- * 4. Customer confirms price → proceeds to payment
- * 5. Payment successful → paid_price = admin_final_price, payment_status = 'paid', status = 'paid'
+ * 1. Customer selects service → status = 'draft'
+ * 2. Customer confirms (NO PAYMENT) → status = 'pending_admin'
+ * 3. Admin reviews and sets price in booking_prices table → status = 'price_set'
+ * 4. Customer confirms price → status = 'awaiting_payment'
+ * 5. Payment successful → status = 'paid'
  * 6. Admin assigns driver/guide → status = 'in_progress'
  * 7. Service completed → status = 'completed'
+ * 
+ * PRICING: booking_prices.admin_price is the ONLY payable price
  */
 export type BookingStatus = 
-  | 'draft'                         // Customer selecting service
-  | 'under_review'                  // Customer confirmed, waiting for admin review
-  | 'awaiting_customer_confirmation' // Admin set price, waiting for customer
-  | 'paid'                          // Customer paid
-  | 'in_progress'                   // Driver/guide assigned, service ongoing
-  | 'completed'                     // Service completed
-  | 'cancelled'                     // Cancelled by admin or customer
-  | 'rejected';                     // Rejected by admin
+  | 'draft'                   // Customer selecting service
+  | 'pending_admin'           // Customer confirmed, waiting for admin to set price
+  | 'price_set'               // Admin set price in booking_prices
+  | 'awaiting_payment'        // Customer confirmed price, ready to pay
+  | 'paid'                    // Customer paid
+  | 'in_progress'             // Driver/guide assigned, service ongoing
+  | 'completed'               // Service completed
+  | 'cancelled'               // Cancelled by admin or customer
+  | 'rejected';               // Rejected by admin
 
 // Payment methods
 export type PaymentMethod = 'visa' | 'cash' | 'bank_transfer';
@@ -75,10 +78,8 @@ export interface BookingData {
   serviceType: ServiceType | string;
   serviceDetails: ServiceDetails;
   userInfo: UserInfo;
-  quoted_price?: number;          // Initial price from services.base_price
-  admin_final_price?: number;     // Admin-set price (source of truth for payments)
-  paid_price?: number;            // Amount actually paid
-  totalPrice?: number;            // Legacy field - use admin_final_price instead
+  // PRICING: Only booking_prices.admin_price is used for payment
+  // These fields are for display only, not used in payment logic
   paymentMethod?: PaymentMethod | string;
   transactionId?: string;
   status?: BookingStatus | string;
@@ -91,33 +92,6 @@ export type TransportationDetails = DriverBookingDetails;
 export type HotelDetails = AccommodationDetails;
 export type EventDetails = EventsDetails;
 export type TripDetails = Record<string, unknown>;
-
-// Pricing rules - services.base_price is reference only
-export const SERVICE_PRICING = {
-  Driver: {
-    basePrice: 50, // USD minimum reference
-    hasFixedPrice: true,
-    adminCanEdit: true
-  },
-  Accommodation: {
-    basePrice: 0, // Admin sets price
-    hasFixedPrice: false,
-    adminCanEdit: true,
-    requiresAdminPricing: true
-  },
-  Events: {
-    basePrice: 0, // Admin sets price
-    hasFixedPrice: false,
-    adminCanEdit: true,
-    requiresAdminPricing: true
-  },
-  Guide: {
-    basePrice: 50, // USD per hour reference
-    hasFixedPrice: false,
-    adminCanEdit: true,
-    requiresAdminPricing: true
-  }
-} as const;
 
 // Event types for Events & Entertainment service
 export const EVENT_TYPES = [

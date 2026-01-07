@@ -128,6 +128,35 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_prices: {
+        Row: {
+          admin_price: number
+          booking_id: string
+          created_at: string | null
+          currency: string | null
+        }
+        Insert: {
+          admin_price: number
+          booking_id: string
+          created_at?: string | null
+          currency?: string | null
+        }
+        Update: {
+          admin_price?: number
+          booking_id?: string
+          created_at?: string | null
+          currency?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_prices_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_status_history: {
         Row: {
           booking_id: string | null

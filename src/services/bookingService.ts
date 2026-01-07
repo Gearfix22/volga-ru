@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { BookingData, ServiceDetails, UserInfo, SERVICE_PRICING, ServiceType } from '@/types/booking';
+import { BookingData, ServiceDetails, UserInfo, ServiceType } from '@/types/booking';
 
 export interface DraftBooking {
   id: string;
@@ -181,6 +181,7 @@ export const createEnhancedBooking = async (
     requiresVerification?: boolean;
     adminNotes?: string;
     customerNotes?: string;
+    bookingId?: string; // Existing booking ID if updating
   }
 ): Promise<any> => {
   const { data: { user } } = await supabase.auth.getUser();
@@ -191,18 +192,9 @@ export const createEnhancedBooking = async (
 
   try {
     /**
-     * FINAL WORKFLOW: When customer pays, booking moves to 'paid' status
-     * - paid_price = admin_final_price (the amount customer actually paid)
-     * - payment_status = 'paid'
-     * - status = 'paid'
+     * FINAL WORKFLOW: Payment uses booking_prices.admin_price
+     * The price must be fetched from booking_prices table
      */
-    const adminFinalPrice = bookingData.admin_final_price;
-    const paidPrice = adminFinalPrice || paymentInfo.totalPrice;
-    
-    // CRITICAL: Customer should only pay if admin_final_price is set
-    if (!adminFinalPrice || adminFinalPrice <= 0) {
-      throw new Error('Cannot process payment: Admin has not set the final price');
-    }
     
     // After payment, status is always 'paid'
     const bookingStatus = 'paid';
@@ -220,13 +212,10 @@ export const createEnhancedBooking = async (
         user_info: bookingData.userInfo as any,
         payment_method: paymentInfo.paymentMethod,
         transaction_id: paymentInfo.transactionId,
-        quoted_price: bookingData.quoted_price || null,
-        admin_final_price: adminFinalPrice,
-        paid_price: paidPrice,
-        total_price: paidPrice,
+        total_price: paymentInfo.totalPrice,
         status: bookingStatus,
         payment_status: paymentStatusValue,
-        requires_verification: false,
+        requires_verification: paymentInfo.requiresVerification || false,
         admin_notes: paymentInfo.adminNotes,
         customer_notes: paymentInfo.customerNotes,
         service_details: bookingData.serviceDetails as any,

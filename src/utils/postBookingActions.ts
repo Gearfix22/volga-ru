@@ -86,8 +86,6 @@ Preferred Language: ${bookingData.userInfo.language}
 === PAYMENT DETAILS ===
 Payment Method: ${bookingData.paymentMethod || 'Cash on Arrival'}
 Total Amount: $${paymentAmount} USD
-${bookingData.admin_final_price ? `Admin Final Price: $${bookingData.admin_final_price}` : ''}
-${bookingData.quoted_price ? `Quoted Price: $${bookingData.quoted_price}` : ''}
 
 === ADDITIONAL NOTES ===
 
