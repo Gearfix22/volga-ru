@@ -145,7 +145,7 @@ serve(async (req) => {
     // POST /admin-bookings/:id/set-price - Admin sets price and moves to awaiting_customer_confirmation
     if (method === 'POST' && bookingId && action === 'set-price') {
       const body = await req.json()
-      const { price, admin_notes } = body
+      const { price, admin_notes, currency } = body
 
       if (typeof price !== 'number' || price <= 0) {
         return new Response(JSON.stringify({ error: 'Valid price is required' }), {
@@ -156,7 +156,7 @@ serve(async (req) => {
 
       const { data: booking, error: fetchError } = await supabaseAdmin
         .from('bookings')
-        .select('status, admin_final_price')
+        .select('status, admin_final_price, user_id')
         .eq('id', bookingId)
         .maybeSingle()
 
@@ -168,7 +168,7 @@ serve(async (req) => {
       }
 
       // Can only set price if status allows it
-      const editableStatuses = ['draft', 'under_review', 'awaiting_customer_confirmation']
+      const editableStatuses = ['draft', 'under_review', 'awaiting_customer_confirmation', 'pending']
       if (!editableStatuses.includes(booking.status)) {
         return new Response(JSON.stringify({ 
           error: `Cannot set price for booking in '${booking.status}' status`,
@@ -179,6 +179,26 @@ serve(async (req) => {
         })
       }
 
+      // Upsert into booking_prices table (single source of truth)
+      const { error: priceError } = await supabaseAdmin
+        .from('booking_prices')
+        .upsert({
+          booking_id: bookingId,
+          admin_price: price,
+          currency: currency || 'USD'
+        }, {
+          onConflict: 'booking_id'
+        })
+
+      if (priceError) {
+        console.error('Error setting booking price:', priceError)
+        return new Response(JSON.stringify({ error: 'Failed to set price' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      // Also update admin_final_price on bookings for backward compatibility
       const updateData: any = {
         admin_final_price: price,
         status: 'awaiting_customer_confirmation',
@@ -202,15 +222,9 @@ serve(async (req) => {
       })
 
       // Notify customer about price
-      const { data: bookingData } = await supabaseAdmin
-        .from('bookings')
-        .select('user_id')
-        .eq('id', bookingId)
-        .single()
-
-      if (bookingData?.user_id) {
+      if (booking.user_id) {
         await supabaseAdmin.from('customer_notifications').insert({
-          user_id: bookingData.user_id,
+          user_id: booking.user_id,
           booking_id: bookingId,
           type: 'price_set',
           title: 'Price Confirmed',
