@@ -28,7 +28,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({
 
   return (
     <ErrorBoundary>
-      <div className="relative min-h-screen overflow-hidden">
+      <div className="relative min-h-screen flex flex-col overflow-x-hidden overflow-y-auto">
         {/* Animated Background */}
         <AnimatedBackground />
         
@@ -38,12 +38,12 @@ export const PageContainer: React.FC<PageContainerProps> = ({
         {/* Main Content */}
         <main 
           className={cn(
-            'relative z-10 pb-4 sm:pb-6 lg:pb-8',
+            'relative z-10 flex-1 pb-4 sm:pb-6 lg:pb-8',
             paddingClasses[paddingTop],
             className
           )}
         >
-          <div className="container mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 max-w-7xl">
+          <div className="container mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 max-w-7xl w-full">
             {children}
           </div>
         </main>

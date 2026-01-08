@@ -8,23 +8,21 @@ interface BookingStatusTimelineProps {
 }
 
 /**
- * FINAL BOOKING WORKFLOW STATUS TIMELINE:
+ * FINAL BOOKING WORKFLOW STATUS TIMELINE - Aligned with Edge Function:
  * 
  * 1. draft → Customer selecting service
- * 2. pending_admin → Customer confirmed, waiting for admin to set price
- * 3. price_set → Admin set price in booking_prices table
- * 4. awaiting_payment → Customer confirmed price, ready to pay
- * 5. paid → Customer paid (price LOCKED)
- * 6. in_progress → Driver/guide assigned, service ongoing
- * 7. completed → Service completed
+ * 2. under_review → Customer confirmed, waiting for admin
+ * 3. awaiting_customer_confirmation → Admin set price, awaiting customer
+ * 4. paid → Customer paid (price LOCKED)
+ * 5. in_progress → Driver/guide assigned, service ongoing
+ * 6. completed → Service completed
  * 
  * Terminal states: cancelled, rejected
  */
 const STATUS_FLOW = [
   { key: 'draft', label: 'Draft', icon: FileText, description: 'Booking created' },
-  { key: 'pending_admin', label: 'Pending Admin', icon: Clock, description: 'Admin reviewing' },
-  { key: 'price_set', label: 'Price Set', icon: DollarSign, description: 'Admin set price' },
-  { key: 'awaiting_payment', label: 'Awaiting Payment', icon: CreditCard, description: 'Ready to pay' },
+  { key: 'under_review', label: 'Under Review', icon: Clock, description: 'Admin reviewing' },
+  { key: 'awaiting_customer_confirmation', label: 'Price Set', icon: DollarSign, description: 'Admin set price' },
   { key: 'paid', label: 'Paid', icon: CheckCircle2, description: 'Payment confirmed' },
   { key: 'in_progress', label: 'In Progress', icon: Car, description: 'Service in progress' },
   { key: 'completed', label: 'Completed', icon: Check, description: 'Service delivered' },
@@ -32,16 +30,16 @@ const STATUS_FLOW = [
 
 const STATUS_INDEX: Record<string, number> = {
   draft: 0,
-  pending_admin: 1,
-  price_set: 2,
-  awaiting_payment: 3,
-  paid: 4,
-  in_progress: 5,
-  completed: 6,
-  // Legacy mappings
   under_review: 1,
   awaiting_customer_confirmation: 2,
+  paid: 3,
+  in_progress: 4,
+  completed: 5,
+  // Legacy mappings
   pending: 1,
+  pending_admin: 1,
+  price_set: 2,
+  awaiting_payment: 2,
   confirmed: 2,
   cancelled: -1,
   rejected: -1,

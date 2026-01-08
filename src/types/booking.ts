@@ -5,25 +5,24 @@ export type ServiceType = 'Driver' | 'Accommodation' | 'Events' | 'Guide';
  * FINAL BOOKING WORKFLOW:
  * 
  * 1. Customer selects service → status = 'draft'
- * 2. Customer confirms (NO PAYMENT) → status = 'pending_admin'
- * 3. Admin reviews and sets price in booking_prices table → status = 'price_set'
- * 4. Customer confirms price → status = 'awaiting_payment'
- * 5. Payment successful → status = 'paid'
- * 6. Admin assigns driver/guide → status = 'in_progress'
- * 7. Service completed → status = 'completed'
+ * 2. Customer confirms (NO PAYMENT) → status = 'under_review'
+ * 3. Admin reviews and sets price → status = 'awaiting_customer_confirmation'
+ * 4. Customer confirms and pays → status = 'paid'
+ * 5. Admin assigns driver/guide → status = 'in_progress'
+ * 6. Service completed → status = 'completed'
  * 
  * PRICING: booking_prices.admin_price is the ONLY payable price
  */
 export type BookingStatus = 
-  | 'draft'                   // Customer selecting service
-  | 'pending_admin'           // Customer confirmed, waiting for admin to set price
-  | 'price_set'               // Admin set price in booking_prices
-  | 'awaiting_payment'        // Customer confirmed price, ready to pay
-  | 'paid'                    // Customer paid
-  | 'in_progress'             // Driver/guide assigned, service ongoing
-  | 'completed'               // Service completed
-  | 'cancelled'               // Cancelled by admin or customer
-  | 'rejected';               // Rejected by admin
+  | 'draft'                           // Customer selecting service
+  | 'pending'                         // Legacy - treated as under_review
+  | 'under_review'                    // Customer confirmed, waiting for admin
+  | 'awaiting_customer_confirmation'  // Admin set price, awaiting customer confirmation
+  | 'paid'                            // Customer paid
+  | 'in_progress'                     // Driver/guide assigned, service ongoing
+  | 'completed'                       // Service completed
+  | 'cancelled'                       // Cancelled by admin or customer
+  | 'rejected';                       // Rejected by admin
 
 // Payment methods
 export type PaymentMethod = 'visa' | 'cash' | 'bank_transfer';
