@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,19 +7,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  Plus, 
-  Pencil, 
-  Trash2, 
-  GripVertical,
-  Image,
-  Loader2,
-  Save,
-  X
-} from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, Image, Loader2, Save, X, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   getAllServices,
   getAllCategories,
@@ -27,10 +19,16 @@ import {
   updateService,
   deleteService,
   toggleServiceStatus,
-  createCategory,
-  type Service,
-  type ServiceCategory
 } from '@/services/adminServicesManager';
+import type { Service, ServiceCategory } from '@/types/service';
+import {
+  DEFAULT_SERVICE_FORM,
+  SERVICE_TYPE_OPTIONS,
+  validateServicePayload,
+  formToPayload,
+  serviceToForm,
+  type ServiceFormData
+} from '@/types/service';
 
 interface AdminServicesManagementProps {
   onRefresh?: () => void;
@@ -44,19 +42,10 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-
-  // Form state
-  const [formData, setFormData] = useState({
-    name: '',
-    type: '',
-    description: '',
-    base_price: 0,
-    image_url: '',
-    features: '',
-    is_active: true,
-    category_id: '',
-    display_order: 0
-  });
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isToggling, setIsToggling] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<ServiceFormData>(DEFAULT_SERVICE_FORM);
 
   useEffect(() => {
     loadData();
@@ -73,57 +62,38 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
       setCategories(categoriesData);
     } catch (error) {
       console.error('Error loading data:', error);
+      toast({
+        title: 'Error Loading Data',
+        description: error instanceof Error ? error.message : 'Failed to load services',
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleOpenDialog = (service?: Service) => {
+    setFormError(null);
     if (service) {
       setEditingService(service);
-      setFormData({
-        name: service.name,
-        type: service.type,
-        description: service.description || '',
-        base_price: service.base_price || 0,
-        image_url: service.image_url || '',
-        features: service.features?.join(', ') || '',
-        is_active: service.is_active,
-        category_id: service.category_id || '',
-        display_order: service.display_order
-      });
+      setFormData(serviceToForm(service, services.length));
     } else {
       setEditingService(null);
-      setFormData({
-        name: '',
-        type: '',
-        description: '',
-        base_price: 0,
-        image_url: '',
-        features: '',
-        is_active: true,
-        category_id: '',
-        display_order: services.length
-      });
+      setFormData({ ...DEFAULT_SERVICE_FORM, display_order: services.length });
     }
     setIsDialogOpen(true);
   };
 
   const handleSave = async () => {
-    // Strict validation matching services table columns
-    if (!formData.name.trim()) {
+    setFormError(null);
+    
+    // Validate form data
+    const validation = validateServicePayload(formData);
+    if (!validation.valid) {
+      setFormError(validation.errors.join('. '));
       toast({
         title: 'Validation Error',
-        description: 'Service name is required.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (!formData.type) {
-      toast({
-        title: 'Validation Error',
-        description: 'Service type is required.',
+        description: validation.errors.join('. '),
         variant: 'destructive'
       });
       return;
@@ -131,29 +101,16 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
 
     setIsSaving(true);
     try {
-      // Build service data matching Supabase services table columns exactly
-      // CRITICAL: Only use columns that exist in services table
-      // Do NOT use: price, status (these don't exist)
-      const serviceData = {
-        name: formData.name.trim(),
-        type: formData.type, // REQUIRED - always send
-        description: formData.description.trim() || null,
-        base_price: formData.base_price > 0 ? formData.base_price : null,
-        image_url: formData.image_url.trim() || null,
-        features: formData.features ? formData.features.split(',').map(f => f.trim()).filter(f => f) : null,
-        is_active: formData.is_active,
-        category_id: formData.category_id || null,
-        display_order: formData.display_order
-      };
+      const payload = formToPayload(formData);
 
       if (editingService) {
-        await updateService(editingService.id, serviceData);
+        await updateService(editingService.id, payload);
         toast({
           title: 'Service Updated',
           description: `${formData.name} has been updated.`
         });
       } else {
-        await createService(serviceData as Omit<Service, 'id' | 'created_at' | 'updated_at'>);
+        await createService(payload);
         toast({
           title: 'Service Created',
           description: `${formData.name} has been created.`
@@ -161,25 +118,22 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
       }
 
       setIsDialogOpen(false);
-      await loadData(); // Refetch after update
+      await loadData();
       onRefresh?.();
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Unknown error occurred';
-      console.error('Supabase service save error:', error);
-      // Prevent 404 routing - show toast instead
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Service save error:', error);
+      setFormError(errorMessage);
       toast({
         title: 'Failed to Save Service',
         description: errorMessage,
         variant: 'destructive'
       });
-      // DO NOT navigate on error - stay on page
+      // Stay on dialog - do NOT close or navigate
     } finally {
       setIsSaving(false);
     }
   };
-
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
-  const [isToggling, setIsToggling] = useState<string | null>(null);
 
   const handleDelete = async (serviceId: string) => {
     if (!confirm('Are you sure you want to delete this service?')) return;
@@ -192,20 +146,19 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
           title: 'Service Deleted',
           description: 'The service has been removed.'
         });
-        await loadData(); // Refetch after delete
+        await loadData();
         onRefresh?.();
       } else {
-        console.error('Delete service failed:', result.error);
         toast({
           title: 'Failed to Delete Service',
           description: result.error || 'Check admin permissions.',
           variant: 'destructive'
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Error',
-        description: error?.message || 'Failed to delete service',
+        description: error instanceof Error ? error.message : 'Failed to delete service',
         variant: 'destructive'
       });
     } finally {
@@ -222,20 +175,19 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
           title: service.is_active ? 'Service Deactivated' : 'Service Activated',
           description: `${service.name} is now ${service.is_active ? 'inactive' : 'active'}.`
         });
-        await loadData(); // Refetch after toggle
+        await loadData();
         onRefresh?.();
       } else {
-        console.error('Toggle service status failed:', result.error);
         toast({
           title: 'Failed to Update Status',
           description: result.error || 'Check admin permissions.',
           variant: 'destructive'
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Error',
-        description: error?.message || 'Failed to update status',
+        description: error instanceof Error ? error.message : 'Failed to update status',
         variant: 'destructive'
       });
     } finally {
@@ -255,7 +207,7 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-2xl font-bold">Services Management</h2>
           <p className="text-muted-foreground">Add, edit, and manage your services</p>
@@ -267,20 +219,20 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
       </div>
 
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">#</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Price</TableHead>
+                <TableHead>Base Price</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {services.map((service, index) => (
+              {services.map((service) => (
                 <TableRow key={service.id}>
                   <TableCell>
                     <GripVertical className="h-4 w-4 text-muted-foreground" />
@@ -359,19 +311,29 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
       </Card>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        if (!open) setFormError(null);
+        setIsDialogOpen(open);
+      }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingService ? 'Edit Service' : 'Add New Service'}
             </DialogTitle>
             <DialogDescription>
-              Fill in the details below to {editingService ? 'update' : 'create'} a service.
+              Fill in the details below. Fields marked with * are required.
             </DialogDescription>
           </DialogHeader>
 
+          {formError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{formError}</AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Service Name *</Label>
                 <Input
@@ -379,6 +341,7 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g., Premium Transport"
+                  className={!formData.name.trim() && formError ? 'border-destructive' : ''}
                 />
               </div>
               <div className="space-y-2">
@@ -386,20 +349,20 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                 <Select
                   value={formData.type}
                   onValueChange={(value) => setFormData({ ...formData, type: value })}
-                  required
                 >
                   <SelectTrigger className={!formData.type ? 'border-destructive' : ''}>
                     <SelectValue placeholder="Select type *" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Driver">Transportation</SelectItem>
-                    <SelectItem value="Accommodation">Accommodation</SelectItem>
-                    <SelectItem value="Events">Events & Activities</SelectItem>
-                    <SelectItem value="Guide">Tourist Guide</SelectItem>
+                    {SERVICE_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {!formData.type && (
-                  <p className="text-xs text-destructive mt-1">Service type is required</p>
+                  <p className="text-xs text-destructive">Service type is required</p>
                 )}
               </div>
             </div>
@@ -415,12 +378,14 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="base_price">Base Price (USD)</Label>
                 <Input
                   id="base_price"
                   type="number"
+                  min="0"
+                  step="0.01"
                   value={formData.base_price}
                   onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) || 0 })}
                   placeholder="0.00"
@@ -431,6 +396,7 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                 <Input
                   id="display_order"
                   type="number"
+                  min="0"
                   value={formData.display_order}
                   onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
                 />
@@ -487,12 +453,15 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
             </div>
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>
               <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={isSaving || !formData.name.trim() || !formData.type}>
+            <Button 
+              onClick={handleSave} 
+              disabled={isSaving || !formData.name.trim() || !formData.type}
+            >
               {isSaving ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (

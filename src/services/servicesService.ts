@@ -1,7 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { ServiceType } from '@/types/service';
 
-// Service types - single source of truth from Supabase
-export type ServiceType = 'Driver' | 'Accommodation' | 'Events' | 'Guide';
+// Re-export types
+export type { ServiceType };
 
 export interface ServiceData {
   id: string;
