@@ -1,4 +1,13 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { 
+  Service, 
+  ServiceCategory, 
+  CreateServicePayload, 
+  UpdateServicePayload 
+} from '@/types/service';
+
+// Re-export types for backward compatibility
+export type { Service, ServiceCategory };
 
 // Log admin action helper
 async function logAdminAction(actionType: string, targetId: string | null, targetTable: string, payload: any) {
@@ -16,31 +25,6 @@ async function logAdminAction(actionType: string, targetId: string | null, targe
   } catch (error) {
     console.error('Error logging admin action:', error);
   }
-}
-
-export interface Service {
-  id: string;
-  name: string;
-  type: string;
-  description: string | null;
-  base_price: number | null;
-  image_url: string | null;
-  features: string[] | null;
-  is_active: boolean;
-  category_id: string | null;
-  display_order: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ServiceCategory {
-  id: string;
-  category_name: string;
-  description: string | null;
-  icon_name: string | null;
-  display_order: number;
-  is_active: boolean;
-  created_at: string;
 }
 
 // Get all services (admin)
@@ -91,15 +75,39 @@ export async function getServiceById(serviceId: string): Promise<Service | null>
 }
 
 // Create service (admin)
-export async function createService(service: Omit<Service, 'id' | 'created_at' | 'updated_at'>): Promise<Service> {
+// CRITICAL: Only use columns that exist in services table:
+// name, type, description, base_price, image_url, features, is_active, category_id, display_order
+// Do NOT use: price, status (these columns don't exist)
+export async function createService(payload: CreateServicePayload): Promise<Service> {
+  // Validate required fields
+  if (!payload.name?.trim()) {
+    throw new Error('Service name is required');
+  }
+  if (!payload.type) {
+    throw new Error('Service type is required');
+  }
+
+  // Build insert payload with ONLY valid columns
+  const insertData = {
+    name: payload.name.trim(),
+    type: payload.type,
+    description: payload.description ?? null,
+    base_price: payload.base_price ?? null,
+    image_url: payload.image_url ?? null,
+    features: payload.features ?? null,
+    is_active: payload.is_active ?? true,
+    category_id: payload.category_id ?? null,
+    display_order: payload.display_order ?? 0
+  };
+
   const { data, error } = await supabase
     .from('services')
-    .insert(service)
+    .insert(insertData)
     .select()
     .single();
 
   if (error) {
-    console.error('Error creating service:', error);
+    console.error('Supabase create service error:', error);
     throw new Error(`Failed to create service: ${error.message}`);
   }
 
@@ -107,19 +115,34 @@ export async function createService(service: Omit<Service, 'id' | 'created_at' |
     throw new Error('Service created but no data returned');
   }
 
-  await logAdminAction('service_created', data.id, 'services', { name: service.name });
+  await logAdminAction('service_created', data.id, 'services', { name: payload.name });
   return data as Service;
 }
 
 // Update service (admin)
-export async function updateService(serviceId: string, updates: Partial<Service>): Promise<boolean> {
+export async function updateService(serviceId: string, updates: UpdateServicePayload): Promise<boolean> {
+  // Build update payload with ONLY valid columns
+  const updateData: Record<string, any> = {
+    updated_at: new Date().toISOString()
+  };
+
+  if (updates.name !== undefined) updateData.name = updates.name.trim();
+  if (updates.type !== undefined) updateData.type = updates.type;
+  if (updates.description !== undefined) updateData.description = updates.description;
+  if (updates.base_price !== undefined) updateData.base_price = updates.base_price;
+  if (updates.image_url !== undefined) updateData.image_url = updates.image_url;
+  if (updates.features !== undefined) updateData.features = updates.features;
+  if (updates.is_active !== undefined) updateData.is_active = updates.is_active;
+  if (updates.category_id !== undefined) updateData.category_id = updates.category_id;
+  if (updates.display_order !== undefined) updateData.display_order = updates.display_order;
+
   const { error } = await supabase
     .from('services')
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .update(updateData)
     .eq('id', serviceId);
 
   if (error) {
-    console.error('Error updating service:', error);
+    console.error('Supabase update service error:', error);
     throw new Error(`Failed to update service: ${error.message}`);
   }
 
