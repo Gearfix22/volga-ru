@@ -1,5 +1,6 @@
-// Service Types - exactly 4 services
-export type ServiceType = 'Driver' | 'Accommodation' | 'Events' | 'Guide';
+// Re-export ServiceType from central location to avoid duplication
+import type { ServiceType } from '@/types/service';
+export type { ServiceType };
 
 /**
  * FINAL BOOKING WORKFLOW:
