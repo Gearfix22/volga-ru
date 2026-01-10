@@ -39,6 +39,7 @@ import DriverDashboard from "./pages/DriverDashboard";
 import GuideLogin from "./pages/GuideLogin";
 import GuideDashboard from "./pages/GuideDashboard";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import { FloatingWhatsAppButton } from "./components/FloatingWhatsAppButton";
 import { AITouristGuideButton } from "./components/AITouristGuide";
 
@@ -81,8 +82,9 @@ const App = () => {
               <BrowserRouter>
               <WebViewWrapper>
               <Routes>
-                {/* Public Routes */}
+                {/* Public Routes - No auth required */}
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
                 
                 {/* Customer Pages - Protected from driver-only users */}
                 <Route path="/" element={
