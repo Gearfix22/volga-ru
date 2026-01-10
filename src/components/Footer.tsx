@@ -167,15 +167,23 @@ export const Footer: React.FC = () => {
           <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
             <p className="text-white/90 text-sm text-center sm:text-left"
                style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}>
-              © 2024 <span className="text-white font-semibold">Volga Services</span>. {t('footer.allRightsReserved')}
+              © 2026 <span className="text-white font-semibold">Volga Services</span>. {t('footer.allRightsReserved')}
             </p>
-            <Link 
-              to="/privacy-policy" 
-              className={`flex items-center gap-2 text-white/80 hover:text-white text-sm transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
-            >
-              <Shield className="h-4 w-4" />
-              {t('common.privacyPolicy')}
-            </Link>
+            <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <Link 
+                to="/privacy-policy" 
+                className={`flex items-center gap-2 text-white/80 hover:text-white text-sm transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
+              >
+                <Shield className="h-4 w-4" />
+                {t('common.privacyPolicy')}
+              </Link>
+              <Link 
+                to="/terms-of-service" 
+                className="text-white/80 hover:text-white text-sm transition-colors"
+              >
+                Terms of Service
+              </Link>
+            </div>
           </div>
         </div>
       </div>

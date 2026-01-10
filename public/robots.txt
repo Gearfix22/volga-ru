@@ -1,8 +1,20 @@
+# Volga Services - Premium Russian Tourism
+# https://volgaservices.com
+
 User-agent: Googlebot
 Allow: /
+Disallow: /admin
+Disallow: /admin-login
+Disallow: /driver-login
+Disallow: /driver-dashboard
+Disallow: /guide-login
+Disallow: /guide-dashboard
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin
+Disallow: /driver-dashboard
+Disallow: /guide-dashboard
 
 User-agent: Twitterbot
 Allow: /
@@ -12,3 +24,11 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /driver-*
+Disallow: /guide-*
+Disallow: /enhanced-payment
+Disallow: /profile-settings
+
+# Sitemap
+Sitemap: https://volgaservices.com/sitemap.xml
