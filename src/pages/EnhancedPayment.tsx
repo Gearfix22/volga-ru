@@ -31,7 +31,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { createBooking } from '@/services/database';
 import { completeDraftBooking, createEnhancedBooking } from '@/services/bookingService';
-import { getBookingPrice } from '@/services/bookingPriceService';
+import { canCustomerPay, getPayableAmount } from '@/services/bookingPriceWorkflowService';
 import { convertFromUSD, getCurrencyRates, type CurrencyCode, type CurrencyRate } from '@/services/currencyService';
 import type { BookingData } from '@/types/booking';
 
@@ -60,17 +60,20 @@ const EnhancedPayment = () => {
   const [cvv, setCvv] = useState('');
   const [cardholderName, setCardholderName] = useState('');
 
-  // Load currency rates and booking price
+  // Load currency rates and booking price from booking_price_workflow
   useEffect(() => {
     const loadData = async () => {
       const rates = await getCurrencyRates();
       setCurrencyRates(rates);
       
-      // Fetch admin price from booking_prices table
+      // Fetch approved price from booking_price_workflow (ONLY when status='approved' AND locked=true)
       if (bookingId) {
-        const priceData = await getBookingPrice(bookingId);
-        if (priceData && priceData.admin_price > 0) {
-          setPayablePrice(priceData.admin_price);
+        const payCheck = await canCustomerPay(bookingId);
+        if (payCheck.canPay && payCheck.amount) {
+          setPayablePrice(payCheck.amount);
+        } else {
+          // Price not ready for payment
+          setPayablePrice(null);
         }
       }
       setPriceLoading(false);

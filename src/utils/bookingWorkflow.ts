@@ -1,21 +1,22 @@
 /**
- * FINAL BOOKING WORKFLOW - Aligned with Edge Function
+ * FINAL BOOKING WORKFLOW - Aligned with booking_price_workflow
  * 
  * 1. draft → Customer selecting service
  * 2. under_review → Customer confirmed, waiting for admin
- * 3. awaiting_customer_confirmation → Admin set price, awaiting customer
+ * 3. awaiting_customer_confirmation → Admin approved price (locked = true)
  * 4. paid → Customer paid (price LOCKED)
  * 5. in_progress → Driver/guide assigned, service ongoing
  * 6. completed → Service completed
  * 
  * Terminal states: cancelled, rejected
  * 
- * PRICING: booking_prices.admin_price is the ONLY payable price
+ * PRICING: booking_price_workflow.approved_price is the ONLY payable price
+ * Payment page opens ONLY when status = 'approved' AND locked = true
  */
 
 import { BookingStatus } from '@/types/booking';
 
-// Valid status transitions map - aligned with edge function
+// Valid status transitions map
 const VALID_TRANSITIONS: Record<string, string[]> = {
   draft: ['under_review', 'cancelled'],
   pending: ['under_review', 'cancelled'], // Legacy support
@@ -74,11 +75,12 @@ export function getValidNextStatuses(currentStatus: string): string[] {
  */
 export function getNextStatus(
   currentStatus: string, 
-  action: 'submit' | 'set_price' | 'pay' | 'start' | 'complete' | 'cancel' | 'reject'
+  action: 'submit' | 'set_price' | 'approve_price' | 'pay' | 'start' | 'complete' | 'cancel' | 'reject'
 ): string | null {
   const actionToStatus: Record<string, string> = {
     submit: 'under_review',
-    set_price: 'awaiting_customer_confirmation',
+    set_price: 'under_review', // Price set but not approved yet
+    approve_price: 'awaiting_customer_confirmation', // Price approved and locked
     pay: 'paid',
     start: 'in_progress',
     complete: 'completed',
@@ -123,27 +125,33 @@ export function requiresGuideAssignment(serviceType: string): boolean {
 /**
  * CRITICAL: Customer can ONLY pay if:
  * 1. Status is 'awaiting_customer_confirmation'
- * 2. booking_prices.admin_price is set
+ * 2. booking_price_workflow.status = 'approved' AND locked = true
  */
-export function canAcceptPayment(status: string, hasAdminPrice: boolean): boolean {
+export function canAcceptPayment(status: string, priceApproved: boolean, priceLocked: boolean): boolean {
   if (status !== 'awaiting_customer_confirmation') return false;
-  if (!hasAdminPrice) return false;
+  if (!priceApproved) return false;
+  if (!priceLocked) return false;
   return true;
 }
 
 /**
- * CRITICAL: Admin can ONLY edit price BEFORE payment
- * (i.e., status is draft, pending, under_review, or awaiting_customer_confirmation)
+ * CRITICAL: Admin can ONLY edit price when locked = false
  */
-export function canEditPrice(status: string): boolean {
-  const editableStatuses = ['draft', 'pending', 'under_review', 'awaiting_customer_confirmation'];
-  return editableStatuses.includes(status);
+export function canEditPrice(priceLocked: boolean): boolean {
+  return !priceLocked;
 }
 
 /**
- * Check if price is locked (after payment)
+ * Check if price is locked (after approval)
  */
-export function isPriceLocked(status: string): boolean {
+export function isPriceLocked(priceLocked: boolean): boolean {
+  return priceLocked;
+}
+
+/**
+ * Legacy: Check if price is locked based on booking status
+ */
+export function isPriceLockedByStatus(status: string): boolean {
   const lockedStatuses = ['paid', 'in_progress', 'completed'];
   return lockedStatuses.includes(status);
 }
