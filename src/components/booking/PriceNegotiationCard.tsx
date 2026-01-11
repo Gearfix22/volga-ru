@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   DollarSign, 
@@ -10,7 +9,8 @@ import {
   X, 
   MessageCircle,
   ArrowRight,
-  Loader2
+  Loader2,
+  Lock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -49,9 +49,9 @@ const PriceNegotiationCard: React.FC<PriceNegotiationCardProps> = ({
 
   const handleConfirmPrice = async () => {
     setIsSubmitting(true);
-    const success = await confirmPrice(bookingId);
+    const result = await confirmPrice(bookingId);
     
-    if (success) {
+    if (result.success) {
       toast({
         title: 'Price Confirmed',
         description: 'You can now proceed with payment.'
@@ -61,7 +61,7 @@ const PriceNegotiationCard: React.FC<PriceNegotiationCardProps> = ({
     } else {
       toast({
         title: 'Error',
-        description: 'Failed to confirm price.',
+        description: result.error || 'Failed to confirm price.',
         variant: 'destructive'
       });
     }
@@ -80,9 +80,9 @@ const PriceNegotiationCard: React.FC<PriceNegotiationCardProps> = ({
     }
 
     setIsSubmitting(true);
-    const success = await proposePrice(bookingId, amount);
+    const result = await proposePrice(bookingId, amount);
     
-    if (success) {
+    if (result.success) {
       toast({
         title: 'Counter-Proposal Sent',
         description: 'Your price proposal has been sent to the admin for review.'
@@ -93,7 +93,7 @@ const PriceNegotiationCard: React.FC<PriceNegotiationCardProps> = ({
     } else {
       toast({
         title: 'Error',
-        description: 'Failed to send proposal.',
+        description: result.error || 'Failed to send proposal.',
         variant: 'destructive'
       });
     }
@@ -114,30 +114,39 @@ const PriceNegotiationCard: React.FC<PriceNegotiationCardProps> = ({
     return null;
   }
 
-  // Price already confirmed
-  if (data.priceConfirmed) {
+  // Price approved and locked - ready for payment
+  if (data.priceLocked && data.priceApproved && data.approvedPrice) {
     return (
       <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300">
-            <Check className="h-5 w-5" />
-            Price Confirmed
+            <Lock className="h-5 w-5" />
+            Price Approved & Locked
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-2xl font-bold text-green-800 dark:text-green-200">
-            ${data.adminPrice?.toFixed(2)}
+            ${data.approvedPrice.toFixed(2)}
           </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Confirmed on {new Date(data.priceConfirmedAt!).toLocaleString()}
-          </p>
+          {data.approvedAt && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Approved on {new Date(data.approvedAt).toLocaleString()}
+            </p>
+          )}
+          <Button 
+            onClick={onPriceConfirmed}
+            className="w-full mt-4"
+          >
+            <Check className="h-4 w-4 mr-2" />
+            Proceed to Payment
+          </Button>
         </CardContent>
       </Card>
     );
   }
 
   // Waiting for admin price
-  if (!data.adminPrice) {
+  if (!data.proposedPrice) {
     return (
       <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-800">
         <CardHeader className="pb-2">
@@ -167,8 +176,8 @@ const PriceNegotiationCard: React.FC<PriceNegotiationCardProps> = ({
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">Admin's Price:</span>
-            <span className="font-semibold">${data.adminPrice.toFixed(2)}</span>
+            <span className="text-muted-foreground">Admin's Proposed Price:</span>
+            <span className="font-semibold">${data.proposedPrice.toFixed(2)}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Your Proposal:</span>
@@ -186,48 +195,68 @@ const PriceNegotiationCard: React.FC<PriceNegotiationCardProps> = ({
     );
   }
 
-  // Admin has set price, waiting for customer action
+  // Admin has proposed price, waiting for approval or customer action
   return (
     <Card className="border-primary/20">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2">
           <DollarSign className="h-5 w-5 text-primary" />
-          Price Confirmation Required
+          Price Quote Available
         </CardTitle>
         <CardDescription>
-          Review and confirm the price to proceed with payment
+          {data.priceApproved 
+            ? 'Price has been approved. Proceed to payment.'
+            : 'Review the proposed price. Admin will approve before payment.'
+          }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="text-center py-4 bg-primary/5 rounded-lg">
-          <p className="text-sm text-muted-foreground mb-1">Quoted Price</p>
-          <p className="text-3xl font-bold text-primary">
-            ${data.adminPrice.toFixed(2)}
+          <p className="text-sm text-muted-foreground mb-1">
+            {data.priceApproved ? 'Approved Price' : 'Proposed Price'}
           </p>
+          <p className="text-3xl font-bold text-primary">
+            ${(data.approvedPrice || data.proposedPrice || 0).toFixed(2)}
+          </p>
+          {!data.priceLocked && (
+            <p className="text-xs text-muted-foreground mt-1">
+              (Awaiting admin approval)
+            </p>
+          )}
         </div>
 
         {!showProposal ? (
           <div className="flex flex-col gap-2">
-            <Button 
-              onClick={handleConfirmPrice}
-              disabled={isSubmitting}
-              className="w-full"
-            >
-              {isSubmitting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Check className="h-4 w-4 mr-2" />
-              )}
-              Accept Price & Proceed to Payment
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => setShowProposal(true)}
-              className="w-full"
-            >
-              <MessageCircle className="h-4 w-4 mr-2" />
-              Propose Different Price
-            </Button>
+            {data.priceLocked && data.priceApproved ? (
+              <Button 
+                onClick={handleConfirmPrice}
+                disabled={isSubmitting}
+                className="w-full"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4 mr-2" />
+                )}
+                Confirm & Proceed to Payment
+              </Button>
+            ) : (
+              <Alert>
+                <AlertDescription className="text-sm">
+                  Waiting for admin to approve the price before you can proceed.
+                </AlertDescription>
+              </Alert>
+            )}
+            {!data.priceLocked && (
+              <Button 
+                variant="outline"
+                onClick={() => setShowProposal(true)}
+                className="w-full"
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Propose Different Price
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-3">

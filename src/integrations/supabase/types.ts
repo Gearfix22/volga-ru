@@ -128,30 +128,95 @@ export type Database = {
         }
         Relationships: []
       }
-      booking_prices: {
+      booking_price_workflow: {
         Row: {
-          admin_price: number
+          approved_at: string | null
+          approved_by: string | null
+          approved_price: number | null
           booking_id: string
           created_at: string | null
-          currency: string | null
+          currency: string
+          id: string
+          locked: boolean
+          proposed_price: number
+          status: string
+          updated_at: string | null
         }
         Insert: {
-          admin_price: number
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_price?: number | null
           booking_id: string
           created_at?: string | null
-          currency?: string | null
+          currency?: string
+          id?: string
+          locked?: boolean
+          proposed_price: number
+          status?: string
+          updated_at?: string | null
         }
         Update: {
-          admin_price?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_price?: number | null
           booking_id?: string
           created_at?: string | null
-          currency?: string | null
+          currency?: string
+          id?: string
+          locked?: boolean
+          proposed_price?: number
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_price_workflow_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_prices: {
+        Row: {
+          amount: number
+          approved_price: number | null
+          booking_id: string
+          created_at: string
+          currency: string
+          id: string
+          locked: boolean | null
+          tax: number
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_price?: number | null
+          booking_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          locked?: boolean | null
+          tax?: number
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_price?: number | null
+          booking_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          locked?: boolean | null
+          tax?: number
+          updated_at?: string
         }
         Relationships: [
           {
             foreignKeyName: "booking_prices_booking_id_fkey"
             columns: ["booking_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
@@ -1133,6 +1198,66 @@ export type Database = {
         }
         Relationships: []
       }
+      i18n_keys: {
+        Row: {
+          key: string
+        }
+        Insert: {
+          key: string
+        }
+        Update: {
+          key?: string
+        }
+        Relationships: []
+      }
+      i18n_translations: {
+        Row: {
+          key: string
+          language_code: string
+          value: string
+        }
+        Insert: {
+          key: string
+          language_code: string
+          value: string
+        }
+        Update: {
+          key?: string
+          language_code?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "i18n_translations_key_fkey"
+            columns: ["key"]
+            isOneToOne: false
+            referencedRelation: "i18n_keys"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "i18n_translations_language_code_fkey"
+            columns: ["language_code"]
+            isOneToOne: false
+            referencedRelation: "languages"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      languages: {
+        Row: {
+          code: string
+          name: string
+        }
+        Insert: {
+          code: string
+          name: string
+        }
+        Update: {
+          code?: string
+          name?: string
+        }
+        Relationships: []
+      }
       newsletter_subscriptions: {
         Row: {
           created_at: string | null
@@ -1664,6 +1789,24 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      workflow_transitions: {
+        Row: {
+          from_status: string
+          role_required: string | null
+          to_status: string
+        }
+        Insert: {
+          from_status: string
+          role_required?: string | null
+          to_status: string
+        }
+        Update: {
+          from_status?: string
+          role_required?: string | null
+          to_status?: string
         }
         Relationships: []
       }

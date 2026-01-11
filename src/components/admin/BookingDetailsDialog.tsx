@@ -9,13 +9,12 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { User, Mail, Phone, Calendar, DollarSign, FileText, Car, Edit, Save, X, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, Calendar, DollarSign, FileText, Car, Edit, Save, X, Loader2, Lock, Check } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { BookingStatusTimeline } from '@/components/booking/BookingStatusTimeline';
-import { getBookingPrice, setBookingPrice } from '@/services/bookingPriceService';
+import { getPriceWorkflow, setProposedPrice, approvePrice, type PriceWorkflow } from '@/services/bookingPriceWorkflowService';
 import { updateBooking } from '@/services/adminService';
 import { useToast } from '@/hooks/use-toast';
-import { isPriceLocked } from '@/utils/bookingWorkflow';
 
 interface BookingDetailsDialogProps {
   booking: any;
@@ -34,16 +33,16 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceValue, setPriceValue] = useState('');
   const [saving, setSaving] = useState(false);
-  const [adminPrice, setAdminPrice] = useState<number | null>(null);
+  const [priceWorkflow, setPriceWorkflow] = useState<PriceWorkflow | null>(null);
   const [loadingPrice, setLoadingPrice] = useState(true);
 
-  // Fetch admin price from booking_prices table
+  // Fetch price workflow from booking_price_workflow table
   useEffect(() => {
     const fetchPrice = async () => {
       if (booking?.id) {
         setLoadingPrice(true);
-        const priceData = await getBookingPrice(booking.id);
-        setAdminPrice(priceData?.admin_price || null);
+        const workflow = await getPriceWorkflow(booking.id);
+        setPriceWorkflow(workflow);
         setLoadingPrice(false);
       }
     };
@@ -54,19 +53,20 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
 
   if (!booking) return null;
 
-  // Price is locked once status is 'paid', 'in_progress', or 'completed'
-  const canEditPriceFlag = !isPriceLocked(booking.status);
+  // Price is locked after approval
+  const canEditPriceFlag = !priceWorkflow?.locked;
+  const displayPrice = priceWorkflow?.approved_price || priceWorkflow?.proposed_price || null;
 
   const handleEditPrice = () => {
     if (!canEditPriceFlag) {
       toast({
         title: 'Price Locked',
-        description: 'Cannot edit price after payment',
+        description: 'Cannot edit price after approval',
         variant: 'destructive'
       });
       return;
     }
-    setPriceValue(adminPrice?.toString() || '0');
+    setPriceValue(priceWorkflow?.proposed_price?.toString() || '0');
     setEditingPrice(true);
   };
 
@@ -79,7 +79,7 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
     if (!canEditPriceFlag) {
       toast({
         title: 'Price Locked',
-        description: 'Cannot update price after payment',
+        description: 'Cannot update price after approval',
         variant: 'destructive'
       });
       setEditingPrice(false);
@@ -120,32 +120,68 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
     try {
       setSaving(true);
       
-      // Set price in booking_prices table (the ONLY source of truth)
-      const result = await setBookingPrice(booking.id, newPrice);
+      // Set proposed price in booking_price_workflow table
+      const result = await setProposedPrice(booking.id, newPrice);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to update price');
       }
-
-      // Update booking status to price_set if currently pending_admin
-      if (booking.status === 'pending_admin' || booking.status === 'draft') {
-        await updateBooking(booking.id, { status: 'price_set' });
-      }
       
       toast({
         title: 'Price Updated',
-        description: `Price set to $${newPrice.toFixed(2)}`,
+        description: `Proposed price set to $${newPrice.toFixed(2)}. Click "Approve" to lock the price.`,
       });
       
-      setAdminPrice(newPrice);
+      // Refresh workflow data
+      const updated = await getPriceWorkflow(booking.id);
+      setPriceWorkflow(updated);
       setEditingPrice(false);
       setPriceValue('');
-      onPriceUpdated?.(); // Triggers instant UI refresh
+      onPriceUpdated?.();
     } catch (error: any) {
       console.error('Price update error:', error);
       toast({
         title: 'Error Updating Price',
         description: error.message || 'Failed to save price. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleApprovePrice = async () => {
+    if (!priceWorkflow?.proposed_price) {
+      toast({
+        title: 'No Price Set',
+        description: 'Please set a proposed price first',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const result = await approvePrice(booking.id);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to approve price');
+      }
+      
+      toast({
+        title: 'Price Approved & Locked',
+        description: `Price of $${priceWorkflow.proposed_price.toFixed(2)} has been approved. Customer can now pay.`,
+      });
+      
+      // Refresh workflow data
+      const updated = await getPriceWorkflow(booking.id);
+      setPriceWorkflow(updated);
+      onPriceUpdated?.();
+    } catch (error: any) {
+      console.error('Price approval error:', error);
+      toast({
+        title: 'Error Approving Price',
+        description: error.message || 'Failed to approve price.',
         variant: 'destructive'
       });
     } finally {
@@ -237,7 +273,7 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
               <div className="space-y-2">
                 <span className="text-sm font-medium flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
-                  Admin Price (Payable):
+                  Price (from booking_price_workflow):
                 </span>
                 {loadingPrice ? (
                   <div className="flex items-center gap-2">
@@ -273,24 +309,50 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <p className="text-lg font-bold text-primary">
-                      {adminPrice ? `$${adminPrice.toFixed(2)}` : 'Not set'}
-                    </p>
-                    {canEditPriceFlag ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleEditPrice}
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        {adminPrice ? 'Edit Price' : 'Set Price'}
-                      </Button>
-                    ) : (
-                      <Badge variant="secondary" className="text-xs">
-                        Locked (Paid)
-                      </Badge>
-                    )}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <p className="text-lg font-bold text-primary">
+                        {displayPrice ? `$${displayPrice.toFixed(2)}` : 'Not set'}
+                      </p>
+                      {priceWorkflow?.locked ? (
+                        <Badge variant="default" className="text-xs bg-green-600">
+                          <Lock className="h-3 w-3 mr-1" />
+                          Approved
+                        </Badge>
+                      ) : priceWorkflow?.proposed_price ? (
+                        <Badge variant="secondary" className="text-xs">
+                          Proposed
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {canEditPriceFlag ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleEditPrice}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            {priceWorkflow?.proposed_price ? 'Edit' : 'Set Price'}
+                          </Button>
+                          {priceWorkflow?.proposed_price && !priceWorkflow.locked && (
+                            <Button
+                              size="sm"
+                              onClick={handleApprovePrice}
+                              disabled={saving}
+                            >
+                              <Check className="h-4 w-4 mr-1" />
+                              Approve & Lock
+                            </Button>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          Price locked - cannot edit
+                        </span>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
