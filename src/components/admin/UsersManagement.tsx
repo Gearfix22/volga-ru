@@ -47,7 +47,7 @@ export const UsersManagement = () => {
   // Edit form state
   const [editFullName, setEditFullName] = useState('');
   const [editPhone, setEditPhone] = useState('');
-  const [editRole, setEditRole] = useState<'admin' | 'user' | 'driver'>('user');
+  const [editRole, setEditRole] = useState<'admin' | 'user' | 'driver' | 'guide'>('user');
   const [editVerified, setEditVerified] = useState(false);
 
   useEffect(() => {
@@ -113,7 +113,7 @@ export const UsersManagement = () => {
     setEditingUser(user);
     setEditFullName(user.full_name || '');
     setEditPhone(user.phone || '');
-    setEditRole(user.roles.includes('admin') ? 'admin' : user.roles.includes('driver') ? 'driver' : 'user');
+    setEditRole(user.roles.includes('admin') ? 'admin' : user.roles.includes('driver') ? 'driver' : user.roles.includes('guide') ? 'guide' : 'user');
     setEditVerified(user.phone_verified);
     setEditDialogOpen(true);
   };
@@ -131,7 +131,8 @@ export const UsersManagement = () => {
       });
 
       const currentRole = editingUser.roles.includes('admin') ? 'admin' : 
-                          editingUser.roles.includes('driver') ? 'driver' : 'user';
+                          editingUser.roles.includes('driver') ? 'driver' : 
+                          editingUser.roles.includes('guide') ? 'guide' : 'user';
       if (editRole !== currentRole) {
         await updateUserRole(editingUser.id, editRole);
       }
@@ -216,6 +217,9 @@ export const UsersManagement = () => {
     }
     if (roles.includes('driver')) {
       return <Badge variant="default" className="bg-blue-600"><Car className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />{t('dashboard.driver')}</Badge>;
+    }
+    if (roles.includes('guide')) {
+      return <Badge variant="default" className="bg-emerald-600"><Users className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />{t('dashboard.guide')}</Badge>;
     }
     return <Badge variant="secondary">{t('dashboard.customer')}</Badge>;
   };
@@ -395,6 +399,7 @@ export const UsersManagement = () => {
                 <SelectContent className="bg-background border shadow-lg z-50">
                   <SelectItem value="user">{t('dashboard.customer')}</SelectItem>
                   <SelectItem value="driver">{t('dashboard.driver')}</SelectItem>
+                  <SelectItem value="guide">{t('dashboard.guide')}</SelectItem>
                   <SelectItem value="admin">{t('dashboard.admin')}</SelectItem>
                 </SelectContent>
               </Select>

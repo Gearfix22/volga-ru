@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getDraftBookings, deleteDraftBooking, type DraftBooking } from '@/services/bookingService';
 import { CustomerBookingTimeline } from '@/components/booking/CustomerBookingTimeline';
 import { getStatusTranslationKey, getServiceTypeTranslationKey } from '@/utils/translationUtils';
+import { canPayForBooking, getMultiplePaymentGuards } from '@/services/paymentGuardService';
 import { 
   Clock, 
   CheckCircle, 
@@ -34,6 +35,8 @@ interface Booking {
   total_price: number;
   created_at: string;
   service_details: any;
+  canPay?: boolean;
+  approvedPrice?: number | null;
 }
 
 // Expandable booking card with timeline
@@ -42,6 +45,8 @@ function BookingCardWithTimeline({ booking, onPayNow }: { booking: Booking; onPa
   const { t, isRTL } = useLanguage();
   
   const isActiveBooking = ['pending', 'confirmed', 'assigned', 'accepted', 'on_trip'].includes(booking.status);
+  // Use can_pay from v_booking_payment_guard
+  const canPayNow = booking.canPay === true;
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -88,7 +93,7 @@ function BookingCardWithTimeline({ booking, onPayNow }: { booking: Booking; onPa
           }>
             {t(getStatusTranslationKey(booking.status))}
           </Badge>
-          {booking.payment_status === 'pending' && (
+          {canPayNow && booking.payment_status !== 'paid' && (
             <Button size="sm" onClick={(e) => { e.stopPropagation(); onPayNow(booking); }}>
               <CreditCard className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
               {t('common.payNow')}
@@ -143,17 +148,28 @@ const UserDashboard = () => {
       if (bookingsError) throw bookingsError;
 
       const drafts = await getDraftBookings();
+      
+      // Fetch payment guards for all bookings from v_booking_payment_guard
+      const bookingIds = (bookingsData || []).map(b => b.id);
+      const paymentGuards = await getMultiplePaymentGuards(bookingIds);
 
-      setBookings(bookingsData || []);
+      // Enrich bookings with can_pay from v_booking_payment_guard
+      const enrichedBookings: Booking[] = (bookingsData || []).map(b => ({
+        ...b,
+        canPay: paymentGuards[b.id]?.can_pay ?? false,
+        approvedPrice: paymentGuards[b.id]?.approved_price ?? null
+      }));
+
+      setBookings(enrichedBookings);
       setDraftBookings(drafts);
 
-      const totalBookings = (bookingsData?.length || 0) + drafts.length;
-      const confirmedBookings = bookingsData?.filter(b => 
+      const totalBookings = enrichedBookings.length + drafts.length;
+      const confirmedBookings = enrichedBookings.filter(b => 
         b.status === 'confirmed' || b.status === 'completed'
-      ).length || 0;
-      const pendingBookings = bookingsData?.filter(b => 
+      ).length;
+      const pendingBookings = enrichedBookings.filter(b => 
         b.status === 'pending'
-      ).length || 0;
+      ).length;
 
       setStats({
         total: totalBookings,
@@ -199,8 +215,16 @@ const UserDashboard = () => {
   };
 
   const handlePayNow = (booking: Booking) => {
-    navigate('/payment', {
-      state: { bookingId: booking.id, amount: booking.total_price }
+    // Navigate to payment page with booking ID - price comes from v_booking_payment_guard
+    navigate('/enhanced-payment', {
+      state: { 
+        bookingId: booking.id, 
+        bookingData: {
+          serviceType: booking.service_type,
+          userInfo: { fullName: '', email: '', phone: '' }, // Will be fetched
+          serviceDetails: booking.service_details
+        }
+      }
     });
   };
 

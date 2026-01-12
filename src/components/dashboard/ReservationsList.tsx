@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, ChevronDown, ChevronUp, Car, DollarSign } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp, Car, DollarSign, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { DriverInfoCard } from '@/components/booking/DriverInfoCard';
 import { BookingStatusTimeline } from '@/components/booking/BookingStatusTimeline';
 import PriceNegotiationCard from '@/components/booking/PriceNegotiationCard';
+import { getMultiplePaymentGuards, type PaymentGuardData } from '@/services/paymentGuardService';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Collapsible,
   CollapsibleContent,
@@ -34,17 +36,57 @@ interface ReservationsListProps {
   bookings: Booking[];
   isLoading: boolean;
   error: any;
+  onRefresh?: () => void;
 }
 
 export const ReservationsList: React.FC<ReservationsListProps> = ({
   bookings,
   isLoading,
-  error
+  error,
+  onRefresh
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useLanguage();
   const [expandedBooking, setExpandedBooking] = useState<string | null>(null);
+  const [paymentGuards, setPaymentGuards] = useState<Record<string, PaymentGuardData>>({});
+
+  // Fetch payment guards from v_booking_payment_guard view
+  useEffect(() => {
+    const fetchPaymentGuards = async () => {
+      if (bookings.length === 0) return;
+      const guards = await getMultiplePaymentGuards(bookings.map(b => b.id));
+      setPaymentGuards(guards);
+    };
+    fetchPaymentGuards();
+  }, [bookings]);
+
+  // Subscribe to real-time updates for booking_price_workflow
+  useEffect(() => {
+    if (bookings.length === 0) return;
+    
+    const channel = supabase
+      .channel('reservations-price-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'booking_price_workflow'
+        },
+        async () => {
+          // Refetch payment guards when workflow changes
+          const guards = await getMultiplePaymentGuards(bookings.map(b => b.id));
+          setPaymentGuards(guards);
+          onRefresh?.();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [bookings, onRefresh]);
 
   if (isLoading) {
     return (
@@ -120,13 +162,42 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
   };
 
   const handlePayNow = (booking: Booking) => {
+    const guard = paymentGuards[booking.id];
+    if (!guard?.can_pay) {
+      toast({
+        title: "Payment Not Available",
+        description: "Price must be approved by admin before payment.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     toast({
       title: "Redirecting to Payment",
       description: "You'll complete payment for your selected booking.",
     });
-    navigate('/payment', {
-      state: { bookingId: booking.id, amount: booking.total_price }
+    navigate('/enhanced-payment', {
+      state: { 
+        bookingId: booking.id,
+        bookingData: {
+          serviceType: booking.service_type,
+          userInfo: { fullName: '', email: '', phone: '' },
+          serviceDetails: booking.service_details
+        }
+      }
     });
+  };
+
+  // Check if user can pay - from v_booking_payment_guard
+  const canPayForBooking = (booking: Booking): boolean => {
+    const guard = paymentGuards[booking.id];
+    return guard?.can_pay === true;
+  };
+
+  // Get approved price from v_booking_payment_guard
+  const getApprovedPrice = (booking: Booking): number | null => {
+    const guard = paymentGuards[booking.id];
+    return guard?.approved_price ?? null;
   };
 
   const hasDriver = (booking: Booking) => {
@@ -135,9 +206,9 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
   };
 
   const needsPriceAction = (booking: Booking) => {
-    return booking.status === 'pending' && 
-           booking.total_price && 
-           !booking.price_confirmed;
+    const guard = paymentGuards[booking.id];
+    // Show price action needed if no approved price yet
+    return !guard?.approved_price && booking.status === 'pending';
   };
 
   return (
@@ -199,10 +270,17 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                         
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <p className="font-semibold">${booking.total_price?.toFixed(2) || '0.00'}</p>
+                            {getApprovedPrice(booking) ? (
+                              <div className="flex items-center gap-1">
+                                <Lock className="h-3 w-3 text-green-600" />
+                                <p className="font-semibold text-green-600">${getApprovedPrice(booking)?.toFixed(2)}</p>
+                              </div>
+                            ) : (
+                              <p className="font-semibold">${booking.total_price?.toFixed(2) || '0.00'}</p>
+                            )}
                           </div>
                           
-                          {booking.status === "pending" && (
+                          {canPayForBooking(booking) && (
                             <Button 
                               variant="default"
                               size="sm"
