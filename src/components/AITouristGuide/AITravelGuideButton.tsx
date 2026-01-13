@@ -3,17 +3,44 @@ import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AITravelGuidePanel } from './AITravelGuidePanel';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
+/**
+ * AI Travel Guide Button Component
+ * زر مرشد السفر الذكي - يظهر فقط للمستخدمين المسجلين
+ * 
+ * Features:
+ * - Only visible for authenticated users
+ * - Hidden on admin, driver, and guide routes  
+ * - Maintains session state across page navigations
+ * - Supports RTL languages
+ */
 export const AITravelGuideButton: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { language } = useLanguage();
+  const { user, loading } = useAuth();
+  const location = useLocation();
 
+  // Labels in different languages
   const labels: Record<string, string> = {
     en: 'Travel Guide',
     ar: 'مرشد السفر',
     ru: 'Гид',
   };
+
+  // Hide on special routes
+  const isDriverRoute = location.pathname.startsWith('/driver');
+  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isGuideRoute = location.pathname.startsWith('/guide');
+  const isAuthRoute = location.pathname === '/auth';
+
+  // Only show for authenticated users, hide on special routes
+  // لا تظهر الزر إلا للمستخدمين المسجلين
+  if (loading || !user || isDriverRoute || isAdminRoute || isGuideRoute || isAuthRoute) {
+    return null;
+  }
 
   return (
     <>
@@ -29,7 +56,7 @@ export const AITravelGuideButton: React.FC = () => {
               ? "h-10 w-10 rounded-full p-0" 
               : "h-12 rounded-full px-4 gap-2"
           )}
-          aria-label="AI Travel Guide"
+          aria-label={labels[language] || labels.en}
         >
           <Sparkles className={cn("shrink-0", isOpen ? "h-4 w-4" : "h-5 w-5")} />
           {!isOpen && (
