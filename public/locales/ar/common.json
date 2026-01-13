@@ -157,7 +157,11 @@
     "draftDeleted": "تم حذف مسودة الحجز بنجاح",
     "failedToLoad": "فشل في تحميل حجوزاتك",
     "failedToDelete": "فشل في حذف المسودة",
-    "note": "ملاحظة"
+    "note": "ملاحظة",
+    "select": "اختر",
+    "noResults": "لا توجد نتائج",
+    "popular": "الأكثر شيوعاً",
+    "allCountries": "جميع البلدان"
   },
   "pages": {
     "aboutUs": "من نحن",

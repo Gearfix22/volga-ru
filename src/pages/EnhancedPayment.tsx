@@ -6,8 +6,7 @@ import { Footer } from '@/components/Footer';
 import { BackButton } from '@/components/BackButton';
 import { AuthRequiredWrapper } from '@/components/booking/AuthRequiredWrapper';
 import { BankTransferForm } from '@/components/payment/BankTransferForm';
-import { BankTransferInfo } from '@/components/payment/BankTransferInfo';
-import { CurrencySelector } from '@/components/booking/CurrencySelector';
+import { EnhancedCurrencySelector } from '@/components/booking/EnhancedCurrencySelector';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,10 +28,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { createBooking } from '@/services/database';
 import { completeDraftBooking, createEnhancedBooking } from '@/services/bookingService';
 import { canPayForBooking, subscribeToPaymentGuardChanges } from '@/services/paymentGuardService';
-import { convertFromUSD, getCurrencyRates, type CurrencyCode, type CurrencyRate } from '@/services/currencyService';
+import { convertFromUSD, getCurrencyRates, type CurrencyCode, type CurrencyRate, formatPrice } from '@/services/currencyService';
 import type { BookingData } from '@/types/booking';
 
 const EnhancedPayment = () => {
@@ -51,6 +49,7 @@ const EnhancedPayment = () => {
   const [selectedMethod, setSelectedMethod] = useState<'cash' | 'stripe' | 'bank-transfer'>('cash');
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>('USD');
+  const [selectedExchangeRate, setSelectedExchangeRate] = useState<number>(1);
   const [currencyRates, setCurrencyRates] = useState<CurrencyRate[]>([]);
   const [convertedAmount, setConvertedAmount] = useState<number>(0);
 
@@ -185,12 +184,16 @@ const EnhancedPayment = () => {
     setIsProcessing(true);
     try {
       const transactionId = `CASH-${Date.now()}`;
+      const convertedPrice = convertFromUSD(finalAmount, selectedExchangeRate);
       
-      // Create the booking using enhanced booking service
+      // Create the booking using enhanced booking service with currency audit
       await createEnhancedBooking(bookingData, {
         paymentMethod: 'Cash on Arrival',
         transactionId,
-        totalPrice: finalAmount
+        totalPrice: finalAmount,
+        paymentCurrency: selectedCurrency,
+        exchangeRateUsed: selectedExchangeRate,
+        finalPaidAmount: convertedPrice
       });
 
       // Complete draft if exists
@@ -253,12 +256,16 @@ const EnhancedPayment = () => {
     try {
       // For now, simulate Stripe payment (you would integrate real Stripe here)
       const transactionId = `STRIPE-${Date.now()}`;
+      const convertedPrice = convertFromUSD(finalAmount, selectedExchangeRate);
       
-      // Create the booking using enhanced booking service
+      // Create the booking using enhanced booking service with currency audit
       await createEnhancedBooking(bookingData, {
         paymentMethod: 'Credit Card',
         transactionId,
-        totalPrice: finalAmount
+        totalPrice: finalAmount,
+        paymentCurrency: selectedCurrency,
+        exchangeRateUsed: selectedExchangeRate,
+        finalPaidAmount: convertedPrice
       });
 
       // Complete draft if exists
@@ -339,14 +346,18 @@ const EnhancedPayment = () => {
         }
       }
       
-      // Create the booking with pending verification status
+      // Create the booking with pending verification status and currency audit
+      const convertedPrice = convertFromUSD(finalAmount, selectedExchangeRate);
       const booking = await createEnhancedBooking(bookingData, {
         paymentMethod: 'Bank Transfer',
         transactionId,
         totalPrice: finalAmount,
         requiresVerification: true,
         adminNotes: `Reference: ${transferDetails.referenceNumber}, Date: ${transferDetails.transferDate}`,
-        customerNotes: transferDetails.notes
+        customerNotes: transferDetails.notes,
+        paymentCurrency: selectedCurrency,
+        exchangeRateUsed: selectedExchangeRate,
+        finalPaidAmount: convertedPrice
       });
 
       // Save payment receipt record if file was uploaded
@@ -422,31 +433,19 @@ const EnhancedPayment = () => {
           </div>
         </div>
         
-        {/* Currency Selector */}
+        {/* Enhanced Currency Selector with Conversion Display */}
         <div className="border-t-2 pt-4 mt-4">
-          <Label className="text-sm font-medium mb-2 block">{t('booking.selectCurrency')}</Label>
-          <CurrencySelector
+          <EnhancedCurrencySelector
             selectedCurrency={selectedCurrency}
-            onCurrencyChange={setSelectedCurrency}
+            onCurrencyChange={(currency, rate) => {
+              setSelectedCurrency(currency);
+              setSelectedExchangeRate(rate);
+            }}
+            basePriceUSD={finalAmount}
+            label={t('payment.selectCurrency') || 'Select Currency'}
+            showConversion={true}
+            showRateInfo={true}
           />
-        </div>
-        
-        <div className="border-t-2 pt-4 mt-4">
-          <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <span className="text-lg font-semibold">{t('messages.paymentAmount')}:</span>
-            <div className={`text-${isRTL ? 'left' : 'right'}`}>
-              {selectedCurrency !== 'USD' && (
-                <span className="text-sm text-muted-foreground block">
-                  (${finalAmount.toFixed(2)} USD)
-                </span>
-              )}
-              <span className="text-2xl font-bold text-primary">
-                {currencyRates.find(r => r.currency_code === selectedCurrency)?.symbol || '$'}
-                {convertedAmount.toFixed(2)}
-                {selectedCurrency !== 'USD' && ` ${selectedCurrency}`}
-              </span>
-            </div>
-          </div>
         </div>
         <Alert className="mt-4">
           <Shield className="h-4 w-4" />
