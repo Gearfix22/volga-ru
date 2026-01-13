@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
-// Supported currencies: USD, SAR, EGP, RUB
-export type CurrencyCode = 'USD' | 'SAR' | 'EGP' | 'RUB';
+// Supported currencies: USD, EUR, SAR, EGP, RUB
+export type CurrencyCode = 'USD' | 'EUR' | 'SAR' | 'EGP' | 'RUB';
 
 export interface CurrencyRate {
   id: string;

@@ -40,8 +40,10 @@ export const CurrencySelector: React.FC<CurrencySelectorProps> = ({
   const getCurrencyFlag = (code: CurrencyCode) => {
     switch (code) {
       case 'USD': return '🇺🇸';
+      case 'EUR': return '🇪🇺';
       case 'SAR': return '🇸🇦';
       case 'EGP': return '🇪🇬';
+      case 'RUB': return '🇷🇺';
       default: return '💱';
     }
   };

@@ -157,7 +157,11 @@
     "draftDeleted": "Draft booking removed successfully",
     "failedToLoad": "Failed to load your bookings",
     "failedToDelete": "Failed to delete draft",
-    "note": "Note"
+    "note": "Note",
+    "select": "Select",
+    "noResults": "No results found",
+    "popular": "Popular",
+    "allCountries": "All Countries"
   },
   "pages": {
     "aboutUs": "About Volga Services",
@@ -757,7 +761,14 @@
     "processing": "Processing...",
     "confirmBankTransfer": "Confirm Bank Transfer",
     "bankTransferNote": "Your booking will be confirmed after admin verification",
-    "receiptUploadFailed": "Receipt upload failed, but booking was created"
+    "receiptUploadFailed": "Receipt upload failed, but booking was created",
+    "selectCurrency": "Select Payment Currency",
+    "basePrice": "Base Price (USD)",
+    "exchangeRate": "Exchange Rate",
+    "youWillPay": "You will pay",
+    "rateUpdated": "Rate updated",
+    "currencyConversionNote": "Final amount in your selected currency",
+    "paymentAuditNote": "Exchange rate at payment time is recorded for audit"
   },
   "theme": {
     "selectTheme": "Select color theme",

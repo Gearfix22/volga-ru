@@ -182,6 +182,10 @@ export const createEnhancedBooking = async (
     adminNotes?: string;
     customerNotes?: string;
     bookingId?: string; // Existing booking ID if updating
+    // NEW: Payment currency audit fields
+    paymentCurrency?: string;
+    exchangeRateUsed?: number;
+    finalPaidAmount?: number;
   }
 ): Promise<any> => {
   const { data: { user } } = await supabase.auth.getUser();
@@ -203,7 +207,7 @@ export const createEnhancedBooking = async (
     // Driver service ALWAYS requires a driver
     const driverRequired = bookingData.serviceType === 'Driver';
 
-    // Create main booking record with PAID status
+    // Create main booking record with PAID status and payment audit trail
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .insert({
@@ -219,7 +223,11 @@ export const createEnhancedBooking = async (
         admin_notes: paymentInfo.adminNotes,
         customer_notes: paymentInfo.customerNotes,
         service_details: bookingData.serviceDetails as any,
-        driver_required: driverRequired
+        driver_required: driverRequired,
+        // Payment currency audit fields
+        payment_currency: paymentInfo.paymentCurrency || 'USD',
+        exchange_rate_used: paymentInfo.exchangeRateUsed || 1,
+        final_paid_amount: paymentInfo.finalPaidAmount || paymentInfo.totalPrice
       })
       .select()
       .single();
@@ -229,7 +237,7 @@ export const createEnhancedBooking = async (
     // Insert into corresponding details table based on service type
     await insertServiceDetails(booking.id, bookingData);
 
-    console.log(`Booking created: ${booking.id}, Status: ${bookingStatus}, Payment: ${paymentStatusValue}`);
+    console.log(`Booking created: ${booking.id}, Status: ${bookingStatus}, Payment: ${paymentStatusValue}, Currency: ${paymentInfo.paymentCurrency || 'USD'}`);
 
     return booking;
   } catch (error) {
