@@ -5,7 +5,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from '@/hooks/use-toast';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { cn } from '@/lib/utils';
+
+/**
+ * AuthModal Component
+ * نموذج تسجيل الدخول / إنشاء حساب جديد
+ * 
+ * Features:
+ * - Multi-language support (i18n)
+ * - Multi-country phone input
+ * - RTL support for Arabic
+ * - Validation and error handling
+ */
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -16,14 +30,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<'sign-in' | 'sign-up' | 'forgot'>('sign-in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
+  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Phone input state
+  const [phoneData, setPhoneData] = useState({
+    phone: '',
+    countryCode: 'EG',
+    dialCode: '+20',
+    phoneE164: '',
+    isValid: false
+  });
+  
   const { signIn, signUp } = useAuth();
+  const { t, isRTL } = useLanguage();
 
   const resetState = () => {
     setEmail('');
     setPassword('');
-    setPhone('');
+    setFullName('');
+    setPhoneData({
+      phone: '',
+      countryCode: 'EG',
+      dialCode: '+20',
+      phoneE164: '',
+      isValid: false
+    });
     setLoading(false);
   };
 
@@ -36,38 +68,54 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         const { error } = await signIn(email, password);
         if (error) {
           toast({
-            title: 'Error',
+            title: t('auth.error'),
             description: error.message,
             variant: 'destructive',
           });
         } else {
           toast({
-            title: 'Success',
-            description: 'Logged in successfully!',
+            title: t('auth.success'),
+            description: t('auth.loggedInSuccessfully'),
           });
           onClose();
         }
       } else if (activeTab === 'sign-up') {
-        if (!phone.trim()) {
+        // Validate phone number
+        if (!phoneData.phoneE164 || !phoneData.isValid) {
           toast({
-            title: 'Error',
-            description: 'Phone number is required.',
+            title: t('auth.error'),
+            description: t('auth.invalidPhoneFormat'),
             variant: 'destructive',
           });
           setLoading(false);
           return;
         }
-        const { error } = await signUp(email, password, phone, '', 'user');
+        
+        const { error } = await signUp(email, password, phoneData.phoneE164, fullName, 'user');
         if (error) {
-          toast({
-            title: 'Error',
-            description: error.message,
-            variant: 'destructive',
-          });
+          if (error.code === 'EMAIL_EXISTS' || error.message === 'Email already registered') {
+            toast({
+              title: t('auth.signUpFailed'),
+              description: t('auth.emailAlreadyRegistered'),
+              variant: 'destructive',
+            });
+          } else if (error.code === 'PHONE_EXISTS' || error.message === 'Phone number already registered') {
+            toast({
+              title: t('auth.signUpFailed'),
+              description: t('auth.phoneAlreadyRegistered'),
+              variant: 'destructive',
+            });
+          } else {
+            toast({
+              title: t('auth.signUpFailed'),
+              description: error.message,
+              variant: 'destructive',
+            });
+          }
         } else {
           toast({
-            title: 'Success',
-            description: 'Please check your email to verify your account.',
+            title: t('auth.accountCreated'),
+            description: t('auth.checkEmailVerify'),
           });
           onClose();
         }
@@ -75,22 +123,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         const { error } = await requestPasswordReset(email);
         if (error) {
           toast({
-            title: 'Error',
+            title: t('auth.error'),
             description: error.message,
             variant: 'destructive',
           });
         } else {
           toast({
-            title: 'Success',
-            description: 'Password reset email sent. Please check your inbox.',
+            title: t('auth.success'),
+            description: t('auth.passwordResetSent'),
           });
           onClose();
         }
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred.',
+        title: t('auth.error'),
+        description: t('auth.unexpectedError'),
         variant: 'destructive',
       });
     } finally {
@@ -109,17 +157,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px]" dir={isRTL ? 'rtl' : 'ltr'}>
         <DialogHeader>
           <DialogTitle>
-            {activeTab === 'sign-in' && 'Sign In'}
-            {activeTab === 'sign-up' && 'Sign Up'}
-            {activeTab === 'forgot' && 'Forgot Password'}
+            {activeTab === 'sign-in' && t('auth.signIn')}
+            {activeTab === 'sign-up' && t('auth.signUp')}
+            {activeTab === 'forgot' && t('auth.forgotPassword')}
           </DialogTitle>
           <DialogDescription>
-            {activeTab === 'sign-in' && 'Welcome back! Please sign in to your account.'}
-            {activeTab === 'sign-up' && 'Create a new account to get started.'}
-            {activeTab === 'forgot' && 'Enter your email and we\'ll send you a reset link.'}
+            {activeTab === 'sign-in' && t('auth.signInWelcome')}
+            {activeTab === 'sign-up' && t('auth.signUpWelcome')}
+            {activeTab === 'forgot' && t('auth.forgotPasswordWelcome')}
           </DialogDescription>
         </DialogHeader>
 
@@ -134,7 +182,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               resetState();
             }}
           >
-            Sign In
+            {t('auth.signIn')}
           </Button>
           <Button
             type="button"
@@ -146,7 +194,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               resetState();
             }}
           >
-            Sign Up
+            {t('auth.signUp')}
           </Button>
           <Button
             type="button"
@@ -158,93 +206,140 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               resetState();
             }}
           >
-            Forgot Password
+            {t('auth.forgotPassword')}
           </Button>
         </div>
 
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">
-              {activeTab === 'sign-in' && 'Sign In'}
-              {activeTab === 'sign-up' && 'Create Account'}
-              {activeTab === 'forgot' && 'Reset Your Password'}
+              {activeTab === 'sign-in' && t('auth.signIn')}
+              {activeTab === 'sign-up' && t('auth.createAccount')}
+              {activeTab === 'forgot' && t('auth.resetYourPassword')}
             </CardTitle>
             <CardDescription>
-              {activeTab === 'sign-in'
-                ? 'Enter your credentials to access your account'
-                : activeTab === 'sign-up'
-                ? 'Enter your details to create a new account'
-                : 'We will email you a password reset link'}
+              {activeTab === 'sign-in' && t('auth.enterCredentials')}
+              {activeTab === 'sign-up' && t('auth.enterDetails')}
+              {activeTab === 'forgot' && t('auth.emailResetLink')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Full Name - Sign Up Only */}
+              {activeTab === 'sign-up' && (
+                <div className="space-y-2">
+                  <Label htmlFor="fullName" className={cn(isRTL && 'text-right block')}>
+                    {t('auth.fullName')}
+                  </Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder={t('auth.enterFullName')}
+                    required
+                    dir={isRTL ? 'rtl' : 'ltr'}
+                  />
+                </div>
+              )}
+              
+              {/* Email */}
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className={cn(isRTL && 'text-right block')}>
+                  {t('auth.emailAddress')}
+                </Label>
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
+                  placeholder={t('auth.enterEmailPlaceholder')}
                   required
+                  dir="ltr"
                 />
               </div>
+              
+              {/* Phone Number - Sign Up Only */}
               {activeTab === 'sign-up' && (
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+7 (999) 123-45-67"
-                    required
-                  />
-                </div>
+                <PhoneInput
+                  label={t('auth.phoneNumber')}
+                  value={phoneData.phone}
+                  countryCode={phoneData.countryCode}
+                  onChange={setPhoneData}
+                  required
+                  error={phoneData.phone && !phoneData.isValid ? t('auth.invalidPhoneFormat') : undefined}
+                />
               )}
+              
+              {/* Password - Not for Forgot */}
               {activeTab !== 'forgot' && (
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password" className={cn(isRTL && 'text-right block')}>
+                    {t('auth.password')}
+                  </Label>
                   <Input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
+                    placeholder={t('auth.enterPassword')}
                     required
+                    dir="ltr"
                   />
+                  {activeTab === 'sign-up' && (
+                    <p className="text-xs text-muted-foreground">
+                      {t('auth.passwordRequirements')}
+                    </p>
+                  )}
                 </div>
               )}
+              
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading
-                  ? 'Loading...'
+                  ? t('auth.loading')
                   : (activeTab === 'sign-in'
-                    ? 'Sign In'
+                    ? t('auth.signIn')
                     : activeTab === 'sign-up'
-                    ? 'Sign Up'
-                    : 'Send Reset Email')}
+                    ? t('auth.signUp')
+                    : t('auth.sendResetEmail'))}
               </Button>
             </form>
+            
             <div className="mt-4 text-center">
               {activeTab === 'sign-in' && (
-                <Button variant="link" onClick={() => { setActiveTab('sign-up'); resetState(); }} className="text-sm">
-                  Don't have an account? Sign up
+                <Button 
+                  variant="link" 
+                  onClick={() => { setActiveTab('sign-up'); resetState(); }} 
+                  className="text-sm"
+                >
+                  {t('auth.dontHaveAccount')}
                 </Button>
               )}
               {activeTab === 'sign-up' && (
-                <Button variant="link" onClick={() => { setActiveTab('sign-in'); resetState(); }} className="text-sm">
-                  Already have an account? Sign in
+                <Button 
+                  variant="link" 
+                  onClick={() => { setActiveTab('sign-in'); resetState(); }} 
+                  className="text-sm"
+                >
+                  {t('auth.alreadyHaveAccount')}
                 </Button>
               )}
               {(activeTab === 'sign-in' || activeTab === 'sign-up') && (
-                <Button variant="link" onClick={() => { setActiveTab('forgot'); resetState(); }} className="text-xs">
-                  Forgot password?
+                <Button 
+                  variant="link" 
+                  onClick={() => { setActiveTab('forgot'); resetState(); }} 
+                  className="text-xs"
+                >
+                  {t('auth.forgotPasswordLink')}
                 </Button>
               )}
               {activeTab === 'forgot' && (
-                <Button variant="link" onClick={() => { setActiveTab('sign-in'); resetState(); }} className="text-xs">
-                  Back to sign in
+                <Button 
+                  variant="link" 
+                  onClick={() => { setActiveTab('sign-in'); resetState(); }} 
+                  className="text-xs"
+                >
+                  {t('auth.backToSignIn')}
                 </Button>
               )}
             </div>
