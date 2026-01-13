@@ -23,7 +23,8 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, icon: Icon, p
     navigate(`/enhanced-booking?service=${service.type}`);
   };
 
-  const hasFixedPrice = service.type === 'Driver';
+  // Price is "fixed" if service has a base_price set in the database
+  const hasFixedPrice = service.base_price !== null && service.base_price > 0;
 
   return (
     <Card 
