@@ -3,10 +3,16 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { User, LogOut, Settings, Shield, Car, UserCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Link, useNavigate } from 'react-router-dom';
 
+/**
+ * User Menu Component
+ * قائمة المستخدم - تعمل بشكل ديناميكي مع اللغات المختلفة
+ */
 export const UserMenu: React.FC = () => {
   const { user, signOut, hasRole } = useAuth();
+  const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
 
   if (!user) {
@@ -15,10 +21,10 @@ export const UserMenu: React.FC = () => {
         asChild
         variant="outline"
         size="sm"
-        className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+        className="bg-background/10 border-border/50 text-foreground hover:bg-background/20"
       >
         <Link to="/auth">
-          Sign In
+          {t('auth.signIn')}
         </Link>
       </Button>
     );
@@ -31,16 +37,25 @@ export const UserMenu: React.FC = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-          <User className="h-4 w-4 mr-2" />
-          {user.email?.split('@')[0]}
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="bg-background/10 border-border/50 text-foreground hover:bg-background/20"
+        >
+          <User className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+          <span className="max-w-[100px] truncate">
+            {user.email?.split('@')[0] || t('common.unknown')}
+          </span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent 
+        align={isRTL ? 'start' : 'end'} 
+        className="w-56 bg-popover border-border"
+      >
         <DropdownMenuItem asChild>
-          <Link to="/user-dashboard" className="w-full">
-            <Settings className="h-4 w-4 mr-2" />
-            Dashboard
+          <Link to="/user-dashboard" className={`w-full flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <Settings className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+            {t('navbar.dashboard')}
           </Link>
         </DropdownMenuItem>
 
@@ -48,9 +63,9 @@ export const UserMenu: React.FC = () => {
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/admin" className="w-full">
-                <Shield className="h-4 w-4 mr-2" />
-                Admin Panel
+              <Link to="/admin" className={`w-full flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <Shield className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                {t('admin.adminPanel')}
               </Link>
             </DropdownMenuItem>
           </>
@@ -61,27 +76,36 @@ export const UserMenu: React.FC = () => {
           <>
             <DropdownMenuSeparator />
             <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Switch Mode
+              {t('roles.switchMode')}
             </DropdownMenuLabel>
             {canSwitchToDriver && (
-              <DropdownMenuItem onClick={() => navigate('/driver-dashboard')}>
-                <Car className="h-4 w-4 mr-2" />
-                Driver Mode
+              <DropdownMenuItem 
+                onClick={() => navigate('/driver-dashboard')}
+                className={isRTL ? 'flex-row-reverse' : ''}
+              >
+                <Car className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                {t('roles.driverMode')}
               </DropdownMenuItem>
             )}
             {canSwitchToGuide && (
-              <DropdownMenuItem onClick={() => navigate('/guide-dashboard')}>
-                <UserCheck className="h-4 w-4 mr-2" />
-                Guide Mode
+              <DropdownMenuItem 
+                onClick={() => navigate('/guide-dashboard')}
+                className={isRTL ? 'flex-row-reverse' : ''}
+              >
+                <UserCheck className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                {t('roles.guideMode')}
               </DropdownMenuItem>
             )}
           </>
         )}
 
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={signOut}>
-          <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
+        <DropdownMenuItem 
+          onClick={signOut}
+          className={isRTL ? 'flex-row-reverse' : ''}
+        >
+          <LogOut className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+          {t('auth.signOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

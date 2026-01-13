@@ -74,7 +74,7 @@ export const Navigation: React.FC = () => {
                   className="hidden sm:flex items-center gap-1 text-foreground hover:text-brand-accent"
                 >
                   <Car className="h-4 w-4" />
-                  <span className="hidden md:inline">Driver</span>
+                  <span className="hidden md:inline">{t('roles.driver')}</span>
                 </Button>
                 <Button
                   variant="ghost"
@@ -83,7 +83,7 @@ export const Navigation: React.FC = () => {
                   className="hidden sm:flex items-center gap-1 text-foreground hover:text-brand-accent"
                 >
                   <UserCheck className="h-4 w-4" />
-                  <span className="hidden md:inline">Guide</span>
+                  <span className="hidden md:inline">{t('roles.guide')}</span>
                 </Button>
               </>
             )}

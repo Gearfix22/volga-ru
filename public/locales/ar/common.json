@@ -791,7 +791,10 @@
     "user": "مستخدم",
     "driver": "سائق",
     "guide": "مرشد",
-    "unknown": "غير معروف"
+    "unknown": "غير معروف",
+    "switchMode": "تبديل الوضع",
+    "driverMode": "وضع السائق",
+    "guideMode": "وضع المرشد"
   },
   "hero": {
     "welcome": "مرحباً بك في فولغا",
