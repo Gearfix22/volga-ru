@@ -415,7 +415,17 @@
     "circusShows": "سيرك وعروض",
     "museumsParks": "متاحف وحدائق",
     "cityTours": "جولات المدينة",
-    "cableCarsOpera": "تلفريك وأوبرا"
+    "cableCarsOpera": "تلفريك وأوبرا",
+    "guideService": "مرشد سياحي",
+    "guideDesc": "مرشدين محترفين للجولات السياحية والرحلات",
+    "guideNote": "سيتم تحديد السعر النهائي بناءً على المدة والمتطلبات. سيتم التواصل معك للتأكيد.",
+    "guideSpecialRequests": "صف اهتماماتك، اللغات المفضلة، احتياجات الوصول، إلخ.",
+    "noServicesAvailable": "لا توجد خدمات متاحة حالياً. يرجى المحاولة لاحقاً.",
+    "loadingServices": "جاري تحميل الخدمات...",
+    "duration": "المدة",
+    "selectDuration": "اختر المدة",
+    "fullDay": "يوم كامل",
+    "custom": "مخصص"
   },
   "payment": {
     "paymentAndConfirmation": "الدفع والتأكيد",

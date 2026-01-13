@@ -93,6 +93,7 @@ export async function createService(payload: CreateServicePayload): Promise<Serv
     type: payload.type,
     description: payload.description ?? null,
     base_price: payload.base_price ?? null,
+    currency: payload.currency ?? 'USD',
     image_url: payload.image_url ?? null,
     features: payload.features ?? null,
     is_active: payload.is_active ?? true,
@@ -130,6 +131,7 @@ export async function updateService(serviceId: string, updates: UpdateServicePay
   if (updates.type !== undefined) updateData.type = updates.type;
   if (updates.description !== undefined) updateData.description = updates.description;
   if (updates.base_price !== undefined) updateData.base_price = updates.base_price;
+  if (updates.currency !== undefined) updateData.currency = updates.currency;
   if (updates.image_url !== undefined) updateData.image_url = updates.image_url;
   if (updates.features !== undefined) updateData.features = updates.features;
   if (updates.is_active !== undefined) updateData.is_active = updates.is_active;

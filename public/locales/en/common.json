@@ -356,7 +356,17 @@
     "circusShows": "Circus & Shows",
     "museumsParks": "Museums & Parks",
     "cityTours": "City Tours",
-    "cableCarsOpera": "Cable Cars & Opera"
+    "cableCarsOpera": "Cable Cars & Opera",
+    "guideService": "Tourist Guide",
+    "guideDesc": "Professional guides for city tours and excursions",
+    "guideNote": "Final price will be set by admin based on duration and requirements. You will be contacted to confirm.",
+    "guideSpecialRequests": "Describe your interests, preferred languages, accessibility needs, etc.",
+    "noServicesAvailable": "No services are currently available. Please check back later.",
+    "loadingServices": "Loading services...",
+    "duration": "Duration",
+    "selectDuration": "Select duration",
+    "fullDay": "Full Day",
+    "custom": "Custom"
   },
   "payment": {
     "paymentAndConfirmation": "Payment & Confirmation",
