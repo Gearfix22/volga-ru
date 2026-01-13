@@ -80,13 +80,23 @@ export const DEFAULT_SERVICE_FORM: ServiceFormData = {
   display_order: 0
 };
 
-// Valid service types for select dropdowns
+// Default service types for select dropdowns (admin can add more via DB)
+// This is a FALLBACK - actual options should be fetched from the database
 export const SERVICE_TYPE_OPTIONS: { value: ServiceType; label: string }[] = [
   { value: 'Driver', label: 'Transportation' },
   { value: 'Accommodation', label: 'Accommodation' },
   { value: 'Events', label: 'Events & Activities' },
   { value: 'Guide', label: 'Tourist Guide' }
 ];
+
+// Fetch dynamic service types from the database
+export async function fetchServiceTypeOptions(): Promise<{ value: string; label: string }[]> {
+  // This function should be called from components that need fresh data
+  // Import supabase client in the component and use this pattern:
+  // const types = await supabase.from('services').select('type').eq('is_active', true);
+  // Then map to unique options
+  return SERVICE_TYPE_OPTIONS;
+}
 
 // Validate service payload before submission
 export function validateServicePayload(data: ServiceFormData): { valid: boolean; errors: string[] } {

@@ -18,7 +18,7 @@ export interface ServiceData {
   category_id: string | null;
 }
 
-// Map service row to ServiceData
+// Map service row to ServiceData - fully dynamic from DB
 const mapService = (s: any): ServiceData => ({
   id: s.id,
   type: s.type as ServiceType,
@@ -32,6 +32,40 @@ const mapService = (s: any): ServiceData => ({
   display_order: s.display_order ?? 0,
   category_id: s.category_id
 });
+
+// Get service by ID - for booking flow
+export const getServiceById = async (id: string): Promise<ServiceData | null> => {
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !data) {
+    console.error('Error fetching service by ID:', error);
+    return null;
+  }
+
+  return mapService(data);
+};
+
+// Get service by type - for backward compatibility with booking flow
+export const getServiceByType = async (type: string): Promise<ServiceData | null> => {
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .eq('type', type)
+    .eq('is_active', true)
+    .order('display_order', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return mapService(data);
+};
 
 // Get all active services - ALWAYS from Supabase (no cache, no fallback)
 export const getServices = async (): Promise<ServiceData[]> => {
@@ -64,39 +98,7 @@ export const getAllServicesAdmin = async (): Promise<ServiceData[]> => {
   return (data || []).map(mapService);
 };
 
-// Get single service by ID
-export const getServiceById = async (id: string): Promise<ServiceData | null> => {
-  const { data, error } = await supabase
-    .from('services')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error || !data) {
-    console.error('Error fetching service:', error);
-    return null;
-  }
-
-  return mapService(data);
-};
-
-// Get service by type (first active match)
-export const getServiceByType = async (type: string): Promise<ServiceData | null> => {
-  const { data, error } = await supabase
-    .from('services')
-    .select('*')
-    .eq('type', type)
-    .eq('is_active', true)
-    .order('display_order', { ascending: true })
-    .limit(1)
-    .single();
-
-  if (error || !data) {
-    return null;
-  }
-
-  return mapService(data);
-};
+// REMOVED: Duplicate getServiceById - now defined at line 37
 
 // Get services by type
 export const getServicesByType = async (type: ServiceType): Promise<ServiceData[]> => {

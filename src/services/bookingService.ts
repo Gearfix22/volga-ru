@@ -208,15 +208,18 @@ export const createEnhancedBooking = async (
     const driverRequired = bookingData.serviceType === 'Driver';
 
     // Create main booking record with PAID status and payment audit trail
+    // The trigger will automatically populate service_id and price snapshot if service_type is provided
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .insert({
         user_id: user.id,
         service_type: bookingData.serviceType,
+        service_id: bookingData.serviceId || null, // FK to services table
         user_info: bookingData.userInfo as any,
         payment_method: paymentInfo.paymentMethod,
         transaction_id: paymentInfo.transactionId,
         total_price: paymentInfo.totalPrice,
+        currency: bookingData.currency || 'USD', // Currency from service
         status: bookingStatus,
         payment_status: paymentStatusValue,
         requires_verification: paymentInfo.requiresVerification || false,

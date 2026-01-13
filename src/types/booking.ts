@@ -76,8 +76,12 @@ export interface UserInfo {
 
 export interface BookingData {
   serviceType: ServiceType | string;
+  serviceId?: string | null; // FK reference to services table
   serviceDetails: ServiceDetails;
   userInfo: UserInfo;
+  // Dynamic pricing from services table
+  totalPrice?: number;
+  currency?: string;
   // PRICING: Only booking_prices.admin_price is used for payment
   // These fields are for display only, not used in payment logic
   paymentMethod?: PaymentMethod | string;

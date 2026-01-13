@@ -412,6 +412,7 @@ export type Database = {
           assigned_guide_id: string | null
           created_at: string | null
           currency: string | null
+          currency_snapshot: string | null
           customer_notes: string | null
           customer_proposed_price: number | null
           driver_notes: string | null
@@ -429,8 +430,10 @@ export type Database = {
           price_confirmed: boolean | null
           price_confirmed_at: string | null
           quoted_price: number | null
+          quoted_price_snapshot: number | null
           requires_verification: boolean | null
           service_details: Json | null
+          service_id: string | null
           service_type: string
           show_driver_to_customer: boolean | null
           status: string | null
@@ -447,6 +450,7 @@ export type Database = {
           assigned_guide_id?: string | null
           created_at?: string | null
           currency?: string | null
+          currency_snapshot?: string | null
           customer_notes?: string | null
           customer_proposed_price?: number | null
           driver_notes?: string | null
@@ -464,8 +468,10 @@ export type Database = {
           price_confirmed?: boolean | null
           price_confirmed_at?: string | null
           quoted_price?: number | null
+          quoted_price_snapshot?: number | null
           requires_verification?: boolean | null
           service_details?: Json | null
+          service_id?: string | null
           service_type: string
           show_driver_to_customer?: boolean | null
           status?: string | null
@@ -482,6 +488,7 @@ export type Database = {
           assigned_guide_id?: string | null
           created_at?: string | null
           currency?: string | null
+          currency_snapshot?: string | null
           customer_notes?: string | null
           customer_proposed_price?: number | null
           driver_notes?: string | null
@@ -499,8 +506,10 @@ export type Database = {
           price_confirmed?: boolean | null
           price_confirmed_at?: string | null
           quoted_price?: number | null
+          quoted_price_snapshot?: number | null
           requires_verification?: boolean | null
           service_details?: Json | null
+          service_id?: string | null
           service_type?: string
           show_driver_to_customer?: boolean | null
           status?: string | null
@@ -523,6 +532,13 @@ export type Database = {
             columns: ["assigned_guide_id"]
             isOneToOne: false
             referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
           {
@@ -2036,6 +2052,7 @@ export type Database = {
           base_price: number | null
           category_id: string | null
           created_at: string | null
+          currency: string
           description: string | null
           display_order: number | null
           features: string[] | null
@@ -2051,6 +2068,7 @@ export type Database = {
           base_price?: number | null
           category_id?: string | null
           created_at?: string | null
+          currency?: string
           description?: string | null
           display_order?: number | null
           features?: string[] | null
@@ -2066,6 +2084,7 @@ export type Database = {
           base_price?: number | null
           category_id?: string | null
           created_at?: string | null
+          currency?: string
           description?: string | null
           display_order?: number | null
           features?: string[] | null
@@ -2526,6 +2545,20 @@ export type Database = {
     Functions: {
       cleanup_old_login_attempts: { Args: never; Returns: undefined }
       current_user_roles: { Args: never; Returns: string[] }
+      get_service_by_type: {
+        Args: { p_type: string }
+        Returns: {
+          base_price: number
+          currency: string
+          description: string
+          features: string[]
+          id: string
+          image_url: string
+          is_active: boolean
+          name: string
+          type: string
+        }[]
+      }
       has_admin_permission: {
         Args: {
           _permission: Database["public"]["Enums"]["admin_permission"]
