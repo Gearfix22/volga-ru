@@ -144,7 +144,13 @@
     "select": "Выбрать",
     "noResults": "Результатов не найдено",
     "popular": "Популярные",
-    "allCountries": "Все страны"
+    "allCountries": "Все страны",
+    "notAvailable": "Н/Д",
+    "in": "в",
+    "at": "в",
+    "noDetails": "Нет данных",
+    "viewDetails": "Подробнее",
+    "errorLoadingReservations": "Ошибка загрузки бронирований"
   },
   "pages": {
     "aboutUs": "О нас",

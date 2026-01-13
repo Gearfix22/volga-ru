@@ -162,7 +162,13 @@
     "select": "Select",
     "noResults": "No results found",
     "popular": "Popular",
-    "allCountries": "All Countries"
+    "allCountries": "All Countries",
+    "notAvailable": "N/A",
+    "in": "in",
+    "at": "at",
+    "noDetails": "No details",
+    "viewDetails": "View details",
+    "errorLoadingReservations": "Error loading reservations"
   },
   "pages": {
     "aboutUs": "About Volga Services",

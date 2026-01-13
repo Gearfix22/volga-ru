@@ -163,18 +163,21 @@ export const UserDashboardContent = () => {
   };
 
   const formatServiceDetails = (serviceType: string, details: any) => {
-    if (!details) return 'N/A';
+    if (!details) return t('common.notAvailable');
     switch (serviceType) {
       case 'Transportation':
-        return `${details.pickup || details.pickupLocation || 'N/A'} → ${details.dropoff || details.dropoffLocation || 'N/A'}`;
+      case 'Driver':
+        return `${details.pickup || details.pickupLocation || t('common.notAvailable')} → ${details.dropoff || details.dropoffLocation || t('common.notAvailable')}`;
       case 'Hotels':
-        return `${details.city || 'N/A'} - ${details.hotel || details.hotelName || 'N/A'}`;
+      case 'Accommodation':
+        return `${details.city || t('common.notAvailable')} - ${details.hotel || details.hotelName || t('common.notAvailable')}`;
       case 'Events':
-        return `${details.eventName || 'N/A'}`;
+      case 'Events & Entertainment':
+        return `${details.eventName || t('common.notAvailable')}`;
       case 'Custom Trips':
-        return `${details.duration || 'N/A'} in ${details.regions || 'N/A'}`;
+        return `${details.duration || t('common.notAvailable')} ${t('common.in')} ${details.regions || t('common.notAvailable')}`;
       default:
-        return 'N/A';
+        return t('common.notAvailable');
     }
   };
 

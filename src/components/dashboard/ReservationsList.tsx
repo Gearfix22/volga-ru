@@ -10,6 +10,7 @@ import { DriverInfoCard } from '@/components/booking/DriverInfoCard';
 import { BookingStatusTimeline } from '@/components/booking/BookingStatusTimeline';
 import PriceNegotiationCard from '@/components/booking/PriceNegotiationCard';
 import { getMultiplePaymentGuards, type PaymentGuardData } from '@/services/paymentGuardService';
+import { getStatusTranslationKey, getServiceTypeTranslationKey } from '@/utils/translationUtils';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Collapsible,
@@ -106,7 +107,7 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
     return (
       <Card>
         <CardContent className="p-6">
-          <p className="text-destructive">Error loading reservations</p>
+          <p className="text-destructive">{t('common.errorLoadingReservations')}</p>
         </CardContent>
       </Card>
     );
@@ -132,32 +133,27 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
     }
   };
 
+  // Status labels now use translation keys - getStatusTranslationKey
   const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'on_trip':
-        return 'Driver On Trip';
-      case 'assigned':
-        return 'Driver Assigned';
-      case 'accepted':
-        return 'Driver Accepted';
-      default:
-        return status.charAt(0).toUpperCase() + status.slice(1);
-    }
+    return t(getStatusTranslationKey(status));
   };
 
   const formatServiceDetails = (serviceType: string, details: any) => {
-    if (!details) return 'No details';
+    if (!details) return t('common.noDetails');
     switch (serviceType) {
       case 'Transportation':
+      case 'Driver':
         return `${details.pickup || details.pickupLocation || ''} → ${details.dropoff || details.dropoffLocation || ''}`;
       case 'Hotels':
+      case 'Accommodation':
         return `${details.city || ''} - ${details.hotel || details.hotelName || ''}`;
       case 'Events':
-        return `${details.eventName || ''} at ${details.eventLocation || ''}`;
+      case 'Events & Entertainment':
+        return `${details.eventName || ''} ${details.eventLocation ? t('common.at') + ' ' + details.eventLocation : ''}`;
       case 'Custom Trips':
-        return `${details.duration || ''} in ${details.regions || ''}`;
+        return `${details.duration || ''} ${t('common.in')} ${details.regions || ''}`;
       default:
-        return 'View details';
+        return t('common.viewDetails');
     }
   };
 
@@ -237,7 +233,7 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                         <div className="flex items-center gap-4">
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium">{booking.service_type}</span>
+                              <span className="font-medium">{t(getServiceTypeTranslationKey(booking.service_type))}</span>
                               {hasDriver(booking) && (
                                 <Badge variant="outline" className="gap-1">
                                   <Car className="h-3 w-3" />
