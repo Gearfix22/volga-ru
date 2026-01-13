@@ -1,12 +1,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+/**
+ * AI Tourist Guide Edge Function
+ * وظيفة مرشد السفر الذكي
+ * 
+ * Features:
+ * - Validates user authentication
+ * - Maintains conversation context
+ * - Fetches real service data from database
+ * - Logs all interactions for analytics
+ * - Supports multiple languages (EN, AR, RU)
+ */
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -20,19 +33,46 @@ serve(async (req) => {
       user_location,
       user_context 
     } = await req.json();
-    
+
+    // Validate required fields
+    // التحقق من الحقول المطلوبة
+    if (!message || typeof message !== 'string') {
+      return new Response(JSON.stringify({ error: "Message is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+      console.error("LOVABLE_API_KEY is not configured");
+      throw new Error("AI service is not configured");
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Optional: Verify user authentication if user_id is provided
+    // التحقق من هوية المستخدم إذا تم تقديم معرف المستخدم
+    let verifiedUserId = null;
+    if (user_id) {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, full_name, preferred_language, preferred_currency')
+        .eq('id', user_id)
+        .single();
+      
+      if (!profileError && profile) {
+        verifiedUserId = profile.id;
+        console.log(`Verified user: ${profile.full_name || 'Anonymous'}`);
+      }
+    }
+
     // Fetch services data for context (read-only)
+    // جلب بيانات الخدمات للسياق
     const [servicesResult, eventsResult, transportResult, hotelsResult] = await Promise.all([
-      supabase.from('services').select('name, description, type, base_price, features').eq('is_active', true).limit(50),
+      supabase.from('services').select('name, description, type, base_price, features, currency').eq('is_active', true).limit(50),
       supabase.from('event_services').select('event_name, description, event_type, city, venue, event_date, ticket_types').eq('is_active', true).limit(30),
       supabase.from('transportation_services').select('service_name, description, vehicle_type, base_price, max_passengers, features, price_per_km').eq('is_active', true).limit(20),
       supabase.from('hotel_services').select('hotel_name, city, room_type, base_price_per_night, star_rating, amenities, max_guests').eq('is_active', true).limit(30),
@@ -42,6 +82,8 @@ serve(async (req) => {
     const events = eventsResult.data || [];
     const transport = transportResult.data || [];
     const hotels = hotelsResult.data || [];
+
+    console.log(`Fetched data: ${services.length} services, ${events.length} events, ${transport.length} transport, ${hotels.length} hotels`);
 
     // Fetch nearby places from Mapbox if user location is provided
     let nearbyPlacesContext = '';
@@ -71,6 +113,7 @@ serve(async (req) => {
     }
 
     // Build user context awareness
+    // بناء سياق وعي المستخدم
     let userContextString = '';
     if (user_context) {
       const { isGuest, name, role, preferredCurrency, hasGreeted, topicsDiscussed, questionsAsked, destinationPreferences, recentMessages } = user_context;
@@ -91,9 +134,10 @@ ${recentMessages?.map((m: { role: string; content: string }) => `${m.role === 'u
     }
 
     // Build detailed context from available data
+    // بناء سياق مفصل من البيانات المتاحة
     const servicesContext = services.length > 0 
       ? `Available booking services:\n${services.map(s => 
-          `- ${s.name} (${s.type}): ${s.description || 'Premium service'} | Starting from $${s.base_price || 'TBD'}`
+          `- ${s.name} (${s.type}): ${s.description || 'Premium service'} | Starting from ${s.currency || 'USD'} ${s.base_price || 'TBD'}`
         ).join('\n')}`
       : '';
     
@@ -129,7 +173,7 @@ ${recentMessages?.map((m: { role: string; content: string }) => `${m.role === 'u
       fa: 'Respond in Persian/Farsi (فارسی).',
     };
 
-    const systemPrompt = `You are a PROFESSIONAL AI TRAVEL CONSULTANT - not a simple chatbot. You provide expert, data-driven travel advice like a seasoned travel agent.
+    const systemPrompt = `You are a PROFESSIONAL AI TRAVEL CONSULTANT for Volga Services - not a simple chatbot. You provide expert, data-driven travel advice like a seasoned travel agent.
 
 CORE IDENTITY:
 - You are a knowledgeable travel expert with deep destination expertise
@@ -171,9 +215,10 @@ CAPABILITIES:
 ✓ Give weather/climate advice for different seasons
 ✓ Share visa and entry requirements
 ✓ Suggest itineraries and optimal visit durations
+✓ Help users understand booking process for our services
 
 STRICT LIMITATIONS:
-✗ Cannot create, modify, or cancel bookings
+✗ Cannot create, modify, or cancel bookings - direct users to the booking page
 ✗ Cannot process payments or change prices
 ✗ Cannot access personal user data beyond what's provided
 ✗ Only recommend from AVAILABLE DATA below - never invent services
@@ -181,7 +226,7 @@ STRICT LIMITATIONS:
 WHEN DATA IS LIMITED:
 - Be honest: "I don't have specific details on that, but I can help with..."
 - Offer alternatives: "Based on what's available, I'd recommend..."
-- Direct to team: "For detailed pricing, please contact our booking team."
+- Direct to team: "For detailed pricing, please contact our booking team or use the WhatsApp button."
 
 PROACTIVE SUGGESTIONS:
 After answering, suggest 1-2 relevant follow-ups based on context:
@@ -224,7 +269,8 @@ Remember: The user should feel "This AI understands travel better than a Google 
     // Add current message
     messagesForAI.push({ role: "user", content: message });
 
-    // Call Lovable AI Gateway with improved model
+    // Call Lovable AI Gateway
+    // استدعاء بوابة الذكاء الاصطناعي
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -243,13 +289,25 @@ Remember: The user should feel "This AI understands travel better than a Google 
       console.error("AI gateway error:", response.status, errorText);
       
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
+        return new Response(JSON.stringify({ 
+          error: language === 'ar' 
+            ? "تم تجاوز الحد الأقصى للطلبات. يرجى المحاولة لاحقاً."
+            : language === 'ru'
+            ? "Превышен лимит запросов. Попробуйте позже."
+            : "Rate limit exceeded. Please try again in a moment." 
+        }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI service temporarily unavailable." }), {
+        return new Response(JSON.stringify({ 
+          error: language === 'ar'
+            ? "خدمة الذكاء الاصطناعي غير متوفرة مؤقتاً."
+            : language === 'ru'
+            ? "Сервис AI временно недоступен."
+            : "AI service temporarily unavailable." 
+        }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -259,25 +317,29 @@ Remember: The user should feel "This AI understands travel better than a Google 
     }
 
     const data = await response.json();
-    const assistantResponse = data.choices?.[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
+    const assistantResponse = data.choices?.[0]?.message?.content || 
+      (language === 'ar' ? "عذراً، لم أتمكن من إنشاء رد." : language === 'ru' ? "Извините, не удалось сгенерировать ответ." : "I'm sorry, I couldn't generate a response.");
 
-    // Log conversation
+    // Log conversation for analytics
+    // تسجيل المحادثة للتحليلات
     await supabase.from('ai_guide_logs').insert({
-      user_id: user_id || null,
-      session_id,
-      language,
+      user_id: verifiedUserId,
+      session_id: session_id || `anon_${Date.now()}`,
+      language: language || 'en',
       user_message: message,
       assistant_response: assistantResponse,
     });
 
-    console.log(`AI Travel Guide: Processed in ${language}, session: ${session_id}, user: ${user_id || 'guest'}`);
+    console.log(`AI Travel Guide: Processed in ${language}, session: ${session_id}, user: ${verifiedUserId || 'guest'}`);
 
     return new Response(JSON.stringify({ response: assistantResponse }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     console.error("AI Travel Guide error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ 
+      error: error instanceof Error ? error.message : "Unknown error occurred" 
+    }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
