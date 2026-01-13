@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Pencil, Trash2, GripVertical, Image, Loader2, Save, X, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
 import {
   getAllServices,
   getAllCategories,
@@ -23,7 +24,6 @@ import {
 import type { Service, ServiceCategory } from '@/types/service';
 import {
   DEFAULT_SERVICE_FORM,
-  SERVICE_TYPE_OPTIONS,
   validateServicePayload,
   formToPayload,
   serviceToForm,
@@ -38,6 +38,8 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
   const { toast } = useToast();
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
+  const [currencies, setCurrencies] = useState<{ code: string; symbol: string }[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -54,12 +56,38 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
   const loadData = async () => {
     setLoading(true);
     try {
-      const [servicesData, categoriesData] = await Promise.all([
+      // Fetch all data in parallel - services, categories, currencies, and service types
+      const [servicesData, categoriesData, currencyRates] = await Promise.all([
         getAllServices(),
-        getAllCategories()
+        getAllCategories(),
+        // Fetch currencies from currency_rates table
+        supabase.from('currency_rates').select('currency_code, symbol').order('currency_code')
       ]);
+      
       setServices(servicesData);
       setCategories(categoriesData);
+      
+      // Set currencies from database
+      if (currencyRates.data && currencyRates.data.length > 0) {
+        setCurrencies(currencyRates.data.map(c => ({ code: c.currency_code, symbol: c.symbol })));
+      } else {
+        // Fallback currencies if none in DB
+        setCurrencies([
+          { code: 'USD', symbol: '$' },
+          { code: 'EUR', symbol: '€' },
+          { code: 'RUB', symbol: '₽' },
+          { code: 'SAR', symbol: 'ر.س' },
+          { code: 'EGP', symbol: '£' }
+        ]);
+      }
+      
+      // Extract unique service types from existing services
+      const uniqueTypes = [...new Set(servicesData.map(s => s.type))];
+      // Merge with default types
+      const defaultTypes = ['Driver', 'Accommodation', 'Events', 'Guide'];
+      const allTypes = [...new Set([...defaultTypes, ...uniqueTypes])];
+      setServiceTypes(allTypes);
+      
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
@@ -354,13 +382,24 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                     <SelectValue placeholder="Select type *" />
                   </SelectTrigger>
                   <SelectContent>
-                    {SERVICE_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
+                    {serviceTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
                       </SelectItem>
                     ))}
+                    {/* Allow custom type entry */}
+                    <SelectItem value="__custom__" className="text-muted-foreground italic">
+                      + Add custom type...
+                    </SelectItem>
                   </SelectContent>
                 </Select>
+                {formData.type === '__custom__' && (
+                  <Input
+                    placeholder="Enter custom service type"
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    className="mt-2"
+                  />
+                )}
                 {!formData.type && (
                   <p className="text-xs text-destructive">Service type is required</p>
                 )}
@@ -401,11 +440,11 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                     <SelectValue placeholder="Select currency" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="USD">🇺🇸 USD</SelectItem>
-                    <SelectItem value="EUR">🇪🇺 EUR</SelectItem>
-                    <SelectItem value="RUB">🇷🇺 RUB</SelectItem>
-                    <SelectItem value="SAR">🇸🇦 SAR</SelectItem>
-                    <SelectItem value="EGP">🇪🇬 EGP</SelectItem>
+                    {currencies.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.symbol} {c.code}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

@@ -23,6 +23,7 @@ import { PricingDisplay } from '@/components/booking/PricingDisplay';
 import { BookingFormTracker } from '@/components/booking/BookingFormTracker';
 import { useDataTracking } from '@/hooks/useDataTracking';
 import { saveDraftBooking, getLatestDraft, deleteDraftBooking, DraftBooking } from '@/services/bookingService';
+import { getServiceByType, ServiceData } from '@/services/servicesService';
 import { supabase } from '@/integrations/supabase/client';
 import { useServiceValidation } from '@/hooks/useServiceValidation';
 import type { ServiceDetails, UserInfo } from '@/types/booking';
@@ -38,6 +39,7 @@ const EnhancedBooking = () => {
   const [searchParams] = useSearchParams();
   
   const [serviceType, setServiceType] = useState('');
+  const [currentService, setCurrentService] = useState<ServiceData | null>(null);
   const [serviceDetails, setServiceDetails] = useState<ServiceDetails>({});
   const [userInfo, setUserInfo] = useState<UserInfo>({
     fullName: '',
@@ -106,10 +108,10 @@ const EnhancedBooking = () => {
     }
   }, [location.state, t, toast]);
 
-  // Pre-select service type from URL parameters
+  // Pre-select service type from URL parameters and fetch service data
   useEffect(() => {
     if (serviceFromUrl && !location.state?.resumeDraft) {
-      // New service types: Driver, Accommodation, Events
+      // Service type mapping for URL compatibility
       const serviceMap: { [key: string]: string } = {
         'driver': 'Driver',
         'transportation': 'Driver',
@@ -118,13 +120,29 @@ const EnhancedBooking = () => {
         'hotels': 'Accommodation',
         'event': 'Events',
         'events': 'Events',
-        'entertainment': 'Events'
+        'entertainment': 'Events',
+        'guide': 'Guide'
       };
       
       const mappedService = serviceMap[serviceFromUrl.toLowerCase()] || serviceFromUrl;
       setServiceType(mappedService);
     }
   }, [serviceFromUrl, location.state]);
+
+  // Fetch service data from database when service type changes
+  useEffect(() => {
+    const loadServiceData = async () => {
+      if (!serviceType) {
+        setCurrentService(null);
+        return;
+      }
+      
+      const service = await getServiceByType(serviceType);
+      setCurrentService(service);
+    };
+    
+    loadServiceData();
+  }, [serviceType]);
 
   // Check for existing draft on mount (only if not already resuming)
   useEffect(() => {
@@ -270,15 +288,19 @@ const EnhancedBooking = () => {
     return true;
   };
 
-  const calculatePrice = () => {
-    // New pricing: Driver has base price, others require admin pricing
-    const basePrices: { [key: string]: number } = {
-      'Driver': 50, // From $50 USD
-      'Accommodation': 0, // Price set by admin
-      'Events': 0 // Price set by admin
-    };
-    
-    return basePrices[serviceType] || 0;
+  // Calculate price from database service data - NO HARDCODED VALUES
+  const calculatePrice = (): number => {
+    // Price comes from the database via currentService
+    // If no service data or no base_price, return 0 (admin will set price)
+    if (!currentService || !currentService.base_price) {
+      return 0;
+    }
+    return currentService.base_price;
+  };
+
+  // Get currency from service data
+  const getServiceCurrency = (): string => {
+    return currentService?.currency || 'USD';
   };
 
   const handleManualSave = async () => {
@@ -330,13 +352,16 @@ const EnhancedBooking = () => {
     await autoSave();
 
     const totalPrice = calculatePrice();
+    const currency = getServiceCurrency();
     // Driver service ALWAYS includes a driver - no separate flag needed
     const driverRequired = serviceType === 'Driver';
     const bookingData = {
       serviceType,
+      serviceId: currentService?.id || null, // Include service_id for proper FK reference
       serviceDetails,
       userInfo,
       totalPrice,
+      currency,
       driverRequired
     };
 
