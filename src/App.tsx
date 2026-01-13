@@ -41,7 +41,7 @@ import GuideDashboard from "./pages/GuideDashboard";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import { FloatingWhatsAppButton } from "./components/FloatingWhatsAppButton";
-import { AITouristGuideButton } from "./components/AITouristGuide";
+import { AITravelGuideButton } from "./components/AITouristGuide";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -213,7 +213,7 @@ const App = () => {
               </Routes>
               </WebViewWrapper>
               <FloatingWhatsAppButton />
-              <AITouristGuideButton />
+              <AITravelGuideButton />
               </BrowserRouter>
             </ErrorBoundary>
           </LanguageProvider>
