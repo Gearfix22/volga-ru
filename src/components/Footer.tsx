@@ -3,38 +3,53 @@ import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Globe, Facebook, Instagram, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useContactInfo, useSocialSettings } from '@/hooks/useAppSettings';
 
 export const Footer: React.FC = () => {
   const { t, language, isRTL } = useLanguage();
+  const { data: contactData, loading: contactLoading } = useContactInfo();
+  const { data: socialData, loading: socialLoading } = useSocialSettings();
 
-  const whatsappNumber = '+79522212903';
-  const whatsappUrl = `https://wa.me/${whatsappNumber.replace(/\+/g, '')}`;
+  // Use dynamic values from database settings
+  const whatsappNumber = socialData?.whatsappNumber || '79522212903';
+  const whatsappUrl = `https://wa.me/${whatsappNumber}`;
+
+  // Get address based on current language
+  const getAddress = () => {
+    if (!contactData) return '';
+    switch (language) {
+      case 'ar':
+        return contactData.addressAr;
+      case 'ru':
+        return contactData.addressRu;
+      default:
+        return contactData.addressEn;
+    }
+  };
 
   const contactInfo = [
     {
       icon: Phone,
       label: t('footer.phone'),
-      value: '+7 952 221 29 03',
-      href: `tel:${whatsappNumber}`,
+      value: contactData?.phone || '+7 952 221 29 03',
+      href: `tel:${contactData?.phoneRaw || whatsappNumber}`,
     },
     {
       icon: Mail,
       label: t('footer.email'),
-      value: 'info@volgaservices.com',
-      href: 'mailto:info@volgaservices.com',
+      value: contactData?.email || 'info@volgaservices.com',
+      href: `mailto:${contactData?.email || 'info@volgaservices.com'}`,
     },
     {
       icon: Globe,
       label: t('footer.website'),
-      value: 'www.volgaservices.com',
-      href: 'https://www.volgaservices.com',
+      value: contactData?.website || 'www.volgaservices.com',
+      href: `https://${contactData?.website || 'www.volgaservices.com'}`,
     },
     {
       icon: MapPin,
       label: t('footer.address'),
-      value: language === 'ru' 
-        ? 'обл. Ленинградская, р-н. Всеволожский, г. Мурино, ул. Шувалова, д. 11, кв.'
-        : 'Leningrad Region, Vsevolozhsky District, Murino, Shuvalov St., 11',
+      value: getAddress(),
       href: '#',
     },
   ];
@@ -43,13 +58,17 @@ export const Footer: React.FC = () => {
     {
       icon: Facebook,
       label: 'Facebook',
-      href: 'https://www.facebook.com/profile.php?id=61574150824169',
+      href: socialData?.facebookUrl || 'https://www.facebook.com/profile.php?id=61574150824169',
     },
-    {
+    ...(socialData?.instagramUrl ? [{
+      icon: Instagram,
+      label: 'Instagram',
+      href: socialData.instagramUrl,
+    }] : [{
       icon: Instagram,
       label: 'Instagram',
       href: 'https://www.instagram.com/volga.services/',
-    },
+    }]),
   ];
 
   return (
@@ -64,7 +83,7 @@ export const Footer: React.FC = () => {
             <div>
               <h3 className="text-white font-bold text-xl sm:text-2xl mb-3 sm:mb-4 font-serif"
                   style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)' }}>
-                Volga Services
+                {contactData?.companyName || 'Volga Services'}
               </h3>
               <p className="text-white/90 text-sm leading-relaxed"
                  style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}>
@@ -82,7 +101,7 @@ export const Footer: React.FC = () => {
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className={`flex items-center justify-center ${isRTL ? 'flex-row-reverse' : ''}`}
-                aria-label="Open WhatsApp chat with Volga Services"
+                aria-label={`${t('footer.whatsapp')} ${contactData?.companyName || 'Volga Services'}`}
               >
                 <Phone className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} aria-hidden="true" />
                 {t('footer.whatsapp')}
@@ -167,7 +186,7 @@ export const Footer: React.FC = () => {
           <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
             <p className="text-white/90 text-sm text-center sm:text-left"
                style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}>
-              © 2026 <span className="text-white font-semibold">Volga Services</span>. {t('footer.allRightsReserved')}
+              © {new Date().getFullYear()} <span className="text-white font-semibold">{contactData?.companyName || 'Volga Services'}</span>. {t('footer.allRightsReserved')}
             </p>
             <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Link 
@@ -181,7 +200,7 @@ export const Footer: React.FC = () => {
                 to="/terms-of-service" 
                 className="text-white/80 hover:text-white text-sm transition-colors"
               >
-                Terms of Service
+                {t('common.termsOfService') || 'Terms of Service'}
               </Link>
             </div>
           </div>
