@@ -842,7 +842,10 @@
     "user": "User",
     "driver": "Driver",
     "guide": "Guide",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "switchMode": "Switch Mode",
+    "driverMode": "Driver Mode",
+    "guideMode": "Guide Mode"
   },
   "paymentMethods": {
     "creditCard": "Credit Card",
