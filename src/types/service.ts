@@ -3,8 +3,8 @@
  * Aligned with Supabase public.services table schema
  */
 
-// Valid service types from the database
-export type ServiceType = 'Driver' | 'Accommodation' | 'Events' | 'Guide';
+// Valid service types from the database - extensible via admin panel
+export type ServiceType = 'Driver' | 'Accommodation' | 'Events' | 'Guide' | string;
 
 // Service interface matching Supabase services table exactly
 export interface Service {
@@ -13,6 +13,7 @@ export interface Service {
   type: string; // Required, non-null in DB
   description: string | null;
   base_price: number | null;
+  currency: string; // Currency for base_price (USD, EUR, etc.)
   image_url: string | null;
   features: string[] | null;
   is_active: boolean;
@@ -40,6 +41,7 @@ export interface CreateServicePayload {
   type: string; // REQUIRED - must not be empty
   description?: string | null;
   base_price?: number | null;
+  currency?: string; // Currency for base_price
   image_url?: string | null;
   features?: string[] | null;
   is_active?: boolean;
@@ -56,6 +58,7 @@ export interface ServiceFormData {
   type: string;
   description: string;
   base_price: number;
+  currency: string;
   image_url: string;
   features: string;
   is_active: boolean;
@@ -69,6 +72,7 @@ export const DEFAULT_SERVICE_FORM: ServiceFormData = {
   type: '',
   description: '',
   base_price: 0,
+  currency: 'USD',
   image_url: '',
   features: '',
   is_active: true,
@@ -109,6 +113,7 @@ export function formToPayload(data: ServiceFormData): CreateServicePayload {
     type: data.type, // REQUIRED
     description: data.description?.trim() || null,
     base_price: data.base_price > 0 ? data.base_price : null,
+    currency: data.currency || 'USD',
     image_url: data.image_url?.trim() || null,
     features: data.features 
       ? data.features.split(',').map(f => f.trim()).filter(Boolean) 
@@ -126,6 +131,7 @@ export function serviceToForm(service: Service, defaultOrder: number = 0): Servi
     type: service.type,
     description: service.description || '',
     base_price: service.base_price || 0,
+    currency: service.currency || 'USD',
     image_url: service.image_url || '',
     features: service.features?.join(', ') || '',
     is_active: service.is_active,

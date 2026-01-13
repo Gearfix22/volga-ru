@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LucideIcon, Check } from 'lucide-react';
 import { ServiceData } from '@/services/servicesService';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ServiceCardProps {
   service: ServiceData;
@@ -15,6 +16,7 @@ interface ServiceCardProps {
 
 export const ServiceCard: React.FC<ServiceCardProps> = ({ service, icon: Icon, pricing, index }) => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const handleBookNow = () => {
     // Navigate with service type for booking flow
@@ -73,7 +75,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, icon: Icon, p
           onClick={handleBookNow}
           className="w-full bg-brand-secondary hover:bg-brand-secondary/90 text-brand-secondary-foreground text-sm lg:text-base py-2.5 shadow-lg hover:shadow-xl transition-all group-hover:scale-105"
         >
-          Book Now
+          {t('common.bookNow')}
         </Button>
       </CardContent>
     </Card>

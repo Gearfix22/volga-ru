@@ -378,9 +378,9 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="base_price">Base Price (USD)</Label>
+                <Label htmlFor="base_price">Base Price</Label>
                 <Input
                   id="base_price"
                   type="number"
@@ -390,6 +390,24 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                   onChange={(e) => setFormData({ ...formData, base_price: parseFloat(e.target.value) || 0 })}
                   placeholder="0.00"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency</Label>
+                <Select
+                  value={formData.currency || 'USD'}
+                  onValueChange={(value) => setFormData({ ...formData, currency: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">🇺🇸 USD</SelectItem>
+                    <SelectItem value="EUR">🇪🇺 EUR</SelectItem>
+                    <SelectItem value="RUB">🇷🇺 RUB</SelectItem>
+                    <SelectItem value="SAR">🇸🇦 SAR</SelectItem>
+                    <SelectItem value="EGP">🇪🇬 EGP</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="display_order">Display Order</Label>

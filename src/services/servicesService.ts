@@ -11,11 +11,27 @@ export interface ServiceData {
   description: string;
   features: string[];
   base_price: number | null;
+  currency: string;
   image_url: string | null;
   is_active: boolean;
   display_order: number;
   category_id: string | null;
 }
+
+// Map service row to ServiceData
+const mapService = (s: any): ServiceData => ({
+  id: s.id,
+  type: s.type as ServiceType,
+  name: s.name,
+  description: s.description || '',
+  features: s.features || [],
+  base_price: s.base_price,
+  currency: s.currency || 'USD',
+  image_url: s.image_url,
+  is_active: s.is_active ?? true,
+  display_order: s.display_order ?? 0,
+  category_id: s.category_id
+});
 
 // Get all active services - ALWAYS from Supabase (no cache, no fallback)
 export const getServices = async (): Promise<ServiceData[]> => {
@@ -30,18 +46,7 @@ export const getServices = async (): Promise<ServiceData[]> => {
     return [];
   }
 
-  return (data || []).map(s => ({
-    id: s.id,
-    type: s.type as ServiceType,
-    name: s.name,
-    description: s.description || '',
-    features: s.features || [],
-    base_price: s.base_price,
-    image_url: s.image_url,
-    is_active: s.is_active ?? true,
-    display_order: s.display_order ?? 0,
-    category_id: s.category_id
-  }));
+  return (data || []).map(mapService);
 };
 
 // Get all services including inactive (for admin)
@@ -56,18 +61,7 @@ export const getAllServicesAdmin = async (): Promise<ServiceData[]> => {
     return [];
   }
 
-  return (data || []).map(s => ({
-    id: s.id,
-    type: s.type as ServiceType,
-    name: s.name,
-    description: s.description || '',
-    features: s.features || [],
-    base_price: s.base_price,
-    image_url: s.image_url,
-    is_active: s.is_active ?? true,
-    display_order: s.display_order ?? 0,
-    category_id: s.category_id
-  }));
+  return (data || []).map(mapService);
 };
 
 // Get single service by ID
@@ -83,18 +77,25 @@ export const getServiceById = async (id: string): Promise<ServiceData | null> =>
     return null;
   }
 
-  return {
-    id: data.id,
-    type: data.type as ServiceType,
-    name: data.name,
-    description: data.description || '',
-    features: data.features || [],
-    base_price: data.base_price,
-    image_url: data.image_url,
-    is_active: data.is_active ?? true,
-    display_order: data.display_order ?? 0,
-    category_id: data.category_id
-  };
+  return mapService(data);
+};
+
+// Get service by type (first active match)
+export const getServiceByType = async (type: string): Promise<ServiceData | null> => {
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .eq('type', type)
+    .eq('is_active', true)
+    .order('display_order', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return mapService(data);
 };
 
 // Get services by type
@@ -111,21 +112,42 @@ export const getServicesByType = async (type: ServiceType): Promise<ServiceData[
     return [];
   }
 
-  return (data || []).map(s => ({
-    id: s.id,
-    type: s.type as ServiceType,
-    name: s.name,
-    description: s.description || '',
-    features: s.features || [],
-    base_price: s.base_price,
-    image_url: s.image_url,
-    is_active: s.is_active ?? true,
-    display_order: s.display_order ?? 0,
-    category_id: s.category_id
-  }));
+  return (data || []).map(mapService);
 };
 
-// Get service categories for tabs
+// Get unique service categories dynamically from database
+export const getServiceCategoriesDynamic = async (): Promise<{ id: string; label: string }[]> => {
+  const { data, error } = await supabase
+    .from('services')
+    .select('type')
+    .eq('is_active', true);
+
+  if (error) {
+    console.error('Error fetching service categories:', error);
+    return [{ id: 'all', label: 'All Services' }];
+  }
+
+  // Get unique types
+  const uniqueTypes = [...new Set((data || []).map(s => s.type))];
+  
+  // Map to labels
+  const typeLabels: Record<string, string> = {
+    'Driver': 'Transportation',
+    'Accommodation': 'Accommodation',
+    'Events': 'Activities & Events',
+    'Guide': 'Tourist Guide'
+  };
+
+  return [
+    { id: 'all', label: 'All Services' },
+    ...uniqueTypes.map(type => ({
+      id: type,
+      label: typeLabels[type] || type
+    }))
+  ];
+};
+
+// Static fallback for service categories
 export const getServiceCategories = (): { id: string; label: string }[] => {
   return [
     { id: 'all', label: 'All Services' },
@@ -138,11 +160,12 @@ export const getServiceCategories = (): { id: string; label: string }[] => {
 
 // Helper to get pricing display text
 export const getPricingText = (service: ServiceData): string => {
-  if (service.type === 'Driver') {
-    return `From $${service.base_price || 50} USD`;
-  }
-  if (service.type === 'Guide') {
-    return `From $${service.base_price || 50}/hr`;
+  if (service.base_price && service.base_price > 0) {
+    const currencySymbol = service.currency === 'USD' ? '$' : service.currency;
+    if (service.type === 'Guide') {
+      return `From ${currencySymbol}${service.base_price}/hr`;
+    }
+    return `From ${currencySymbol}${service.base_price}`;
   }
   return 'Quote by admin';
 };

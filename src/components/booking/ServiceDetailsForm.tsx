@@ -408,12 +408,104 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
     </div>
   );
 
+  // SERVICE 4: Tourist Guide Form
+  const renderGuideForm = () => (
+    <div className="space-y-6">
+      <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+        <p className="text-sm text-amber-200">
+          <strong>{t('common.note')}:</strong> {t('booking.guideNote')}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="location" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            {t('booking.location')} *
+          </Label>
+          <Input
+            id="location"
+            value={details.location || ''}
+            onChange={(e) => onUpdateDetail('location', e.target.value)}
+            placeholder={t('booking.enterCityOrVenue')}
+            maxLength={200}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="date" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            {t('booking.preferredDate')} *
+          </Label>
+          <Input
+            id="date"
+            type="date"
+            value={details.date || ''}
+            onChange={(e) => onUpdateDetail('date', e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="duration" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            {t('booking.duration')} *
+          </Label>
+          <Select value={details.duration || ''} onValueChange={(value) => onUpdateDetail('duration', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder={t('booking.selectDuration')} />
+            </SelectTrigger>
+            <SelectContent className="bg-background border shadow-lg z-50">
+              <SelectItem value="2">2 {t('common.hours')}</SelectItem>
+              <SelectItem value="4">4 {t('common.hours')}</SelectItem>
+              <SelectItem value="6">6 {t('common.hours')}</SelectItem>
+              <SelectItem value="8">{t('booking.fullDay')} (8 {t('common.hours')})</SelectItem>
+              <SelectItem value="custom">{t('booking.custom')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="numberOfPeople" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            {t('booking.numberOfPeople')} *
+          </Label>
+          <Select value={details.numberOfPeople || ''} onValueChange={(value) => onUpdateDetail('numberOfPeople', value)}>
+            <SelectTrigger>
+              <SelectValue placeholder={t('booking.selectNumberOfPeople')} />
+            </SelectTrigger>
+            <SelectContent className="bg-background border shadow-lg z-50">
+              {[1,2,3,4,5,6,7,8,10,12,15,20].map(num => (
+                <SelectItem key={num} value={num.toString()}>
+                  {num} {num > 1 ? t('booking.personPlural') : t('booking.personSingular')}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="specialRequests">{t('booking.specialRequests')}</Label>
+        <Textarea
+          id="specialRequests"
+          value={details.specialRequests || ''}
+          onChange={(e) => onUpdateDetail('specialRequests', e.target.value)}
+          placeholder={t('booking.guideSpecialRequests')}
+          rows={4}
+          maxLength={1000}
+        />
+      </div>
+    </div>
+  );
+
   return (
     <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
       <CardContent className="p-6">
         {serviceType === 'Driver' && renderDriverForm()}
         {serviceType === 'Accommodation' && renderAccommodationForm()}
         {serviceType === 'Events' && renderEventsForm()}
+        {serviceType === 'Guide' && renderGuideForm()}
       </CardContent>
     </Card>
   );
