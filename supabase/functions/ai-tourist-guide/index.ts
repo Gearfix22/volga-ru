@@ -12,7 +12,14 @@ serve(async (req) => {
   }
 
   try {
-    const { message, language, session_id, user_id, user_location } = await req.json();
+    const { 
+      message, 
+      language, 
+      session_id, 
+      user_id, 
+      user_location,
+      user_context 
+    } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -63,6 +70,26 @@ serve(async (req) => {
       }
     }
 
+    // Build user context awareness
+    let userContextString = '';
+    if (user_context) {
+      const { isGuest, name, role, preferredCurrency, hasGreeted, topicsDiscussed, questionsAsked, destinationPreferences, recentMessages } = user_context;
+      
+      userContextString = `
+USER CONTEXT (Use this to personalize your responses):
+- User Status: ${isGuest ? 'Guest (not logged in)' : `Logged in as ${role}`}
+${name ? `- User Name: ${name} (address them by name occasionally, but not every message)` : ''}
+- Preferred Currency: ${preferredCurrency || 'USD'}
+- Already Greeted: ${hasGreeted ? 'YES - Do NOT greet again, continue conversation naturally' : 'NO - This is the first interaction, greet warmly once'}
+${topicsDiscussed?.length > 0 ? `- Topics Already Discussed: ${topicsDiscussed.join(', ')} (avoid repeating same info unless asked)` : ''}
+${destinationPreferences?.length > 0 ? `- Destination Interests: ${destinationPreferences.join(', ')}` : ''}
+${questionsAsked?.length > 0 ? `- Recent Questions (avoid repetition): ${questionsAsked.slice(-3).join(' | ')}` : ''}
+
+CONVERSATION HISTORY (for context continuity):
+${recentMessages?.map((m: { role: string; content: string }) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content.substring(0, 100)}...`).join('\n') || 'No previous messages'}
+`;
+    }
+
     // Build detailed context from available data
     const servicesContext = services.length > 0 
       ? `Available booking services:\n${services.map(s => 
@@ -111,6 +138,16 @@ CORE IDENTITY:
 - You proactively suggest next steps and follow-up questions
 - You are confident, helpful, and never robotic
 
+${userContextString}
+
+CONVERSATION RULES (CRITICAL):
+1. If "Already Greeted" is YES: Do NOT say "Hello", "Hi", "Welcome", or any greeting. Continue the conversation naturally.
+2. If "Already Greeted" is NO: Greet ONCE warmly, then continue.
+3. NEVER repeat information you've already provided in the conversation history.
+4. Reference previous context when relevant: "As I mentioned earlier..." or "Building on your interest in..."
+5. Remember what the user has asked and their preferences throughout the conversation.
+6. For returning users, acknowledge their return: "Good to see you again!" (but only once per session)
+
 RESPONSE STYLE:
 - Keep responses CONCISE (under 100 words) for voice compatibility
 - Lead with the most valuable information first
@@ -138,13 +175,20 @@ CAPABILITIES:
 STRICT LIMITATIONS:
 ✗ Cannot create, modify, or cancel bookings
 ✗ Cannot process payments or change prices
-✗ Cannot access personal user data
+✗ Cannot access personal user data beyond what's provided
 ✗ Only recommend from AVAILABLE DATA below - never invent services
 
 WHEN DATA IS LIMITED:
 - Be honest: "I don't have specific details on that, but I can help with..."
 - Offer alternatives: "Based on what's available, I'd recommend..."
 - Direct to team: "For detailed pricing, please contact our booking team."
+
+PROACTIVE SUGGESTIONS:
+After answering, suggest 1-2 relevant follow-ups based on context:
+- If discussing hotels → suggest asking about nearby restaurants or transport
+- If discussing costs → offer to break down the budget further
+- If discussing activities → suggest optimal timing or combinations
+- Phrase as buttons the user can click: "Would you like to know about [X]?" or "Shall I find [Y]?"
 
 ${languageInstructions[language] || languageInstructions.en}
 
@@ -160,7 +204,25 @@ ${eventsContext || 'No events data currently available.'}
 
 ${servicesContext || 'No additional services currently available.'}
 
-Remember: The user should feel "This AI understands travel better than a Google search." Be the expert they need.`;
+Remember: The user should feel "This AI understands travel better than a Google search." Be the expert they need. Be conversational, not robotic.`;
+
+    // Build messages array with conversation history
+    const messagesForAI: { role: string; content: string }[] = [
+      { role: "system", content: systemPrompt },
+    ];
+
+    // Add recent conversation history for better context
+    if (user_context?.recentMessages && user_context.recentMessages.length > 0) {
+      user_context.recentMessages.forEach((m: { role: string; content: string }) => {
+        messagesForAI.push({
+          role: m.role,
+          content: m.content,
+        });
+      });
+    }
+
+    // Add current message
+    messagesForAI.push({ role: "user", content: message });
 
     // Call Lovable AI Gateway with improved model
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -171,11 +233,8 @@ Remember: The user should feel "This AI understands travel better than a Google 
       },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: message },
-        ],
-        max_tokens: 250,
+        messages: messagesForAI,
+        max_tokens: 300,
       }),
     });
 
@@ -211,7 +270,7 @@ Remember: The user should feel "This AI understands travel better than a Google 
       assistant_response: assistantResponse,
     });
 
-    console.log(`AI Travel Guide: Processed in ${language}, session: ${session_id}`);
+    console.log(`AI Travel Guide: Processed in ${language}, session: ${session_id}, user: ${user_id || 'guest'}`);
 
     return new Response(JSON.stringify({ response: assistantResponse }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
