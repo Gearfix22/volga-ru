@@ -98,6 +98,27 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_guide_sessions: {
+        Row: {
+          context: Json | null
+          created_at: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       auth_sessions: {
         Row: {
           created_at: string

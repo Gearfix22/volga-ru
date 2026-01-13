@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, EyeOff, Mail, Lock, User, Phone, CheckCircle, Sparkles, ArrowLeft, Shield, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { loginSchema, signupSchema } from '@/lib/validationSchemas';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 const Auth = () => {
   const navigate = useNavigate();
   const { signUp, signIn, resetPassword, updatePassword, user, loading, session, hasRole } = useAuth();
+  const { t, isRTL } = useLanguage();
   const { toast } = useToast();
   
   // Only Customer and Admin tabs - Driver/Guide login via header menu
@@ -85,7 +87,7 @@ const Auth = () => {
     if (!validation.success) {
       const firstError = validation.error.errors[0];
       toast({
-        title: 'Validation Error',
+        title: t('auth.error'),
         description: firstError.message,
         variant: 'destructive'
       });
@@ -99,34 +101,34 @@ const Auth = () => {
       if (error) {
         if (error.message === 'Invalid login credentials') {
           toast({
-            title: 'Login Failed',
-            description: 'Invalid email or password. Please try again.',
+            title: t('auth.loginFailed'),
+            description: t('auth.invalidCredentials'),
             variant: 'destructive'
           });
         } else if (error.message === 'Email not confirmed') {
           toast({
-            title: 'Email Not Confirmed',
-            description: 'Please check your email for the confirmation link.',
+            title: t('auth.emailNotConfirmed'),
+            description: t('auth.checkEmailVerify'),
             variant: 'destructive'
           });
         } else {
           toast({
-            title: 'Login Failed',
+            title: t('auth.loginFailed'),
             description: error.message,
             variant: 'destructive'
           });
         }
       } else {
         toast({
-          title: 'Login Successful',
-          description: 'Welcome back!',
+          title: t('auth.success'),
+          description: t('auth.loggedInSuccessfully'),
         });
         navigate('/');
       }
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'An unexpected error occurred.',
+        title: t('auth.error'),
+        description: error.message || t('auth.unexpectedError'),
         variant: 'destructive'
       });
     } finally {
@@ -148,7 +150,7 @@ const Auth = () => {
     if (!validation.success) {
       const firstError = validation.error.errors[0];
       toast({
-        title: 'Validation Error',
+        title: t('auth.error'),
         description: firstError.message,
         variant: 'destructive'
       });
@@ -167,35 +169,35 @@ const Auth = () => {
       if (error) {
         if (error.code === 'EMAIL_EXISTS' || error.message === 'User already registered' || error.message === 'Email already registered') {
           toast({
-            title: 'Sign Up Failed',
-            description: 'This email is already registered. Please use a different email or sign in.',
+            title: t('auth.signUpFailed'),
+            description: t('auth.emailAlreadyRegistered'),
             variant: 'destructive'
           });
         } else if (error.code === 'PHONE_EXISTS' || error.message === 'Phone number already registered' || error.status === 409) {
           toast({
-            title: 'Sign Up Failed',
-            description: 'This phone number is already registered. Please use a different phone number or sign in.',
+            title: t('auth.signUpFailed'),
+            description: t('auth.phoneAlreadyRegistered'),
             variant: 'destructive'
           });
         } else {
           toast({
-            title: 'Sign Up Failed',
+            title: t('auth.signUpFailed'),
             description: error.message,
             variant: 'destructive'
           });
         }
       } else {
         toast({
-          title: 'Account Created',
-          description: 'Please check your email to verify your account.',
+          title: t('auth.accountCreated'),
+          description: t('auth.checkEmailVerify'),
         });
         setCustomerMode('login');
         setLoginEmail(signupEmail);
       }
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'An unexpected error occurred.',
+        title: t('auth.error'),
+        description: error.message || t('auth.unexpectedError'),
         variant: 'destructive'
       });
     } finally {
@@ -208,8 +210,8 @@ const Auth = () => {
 
     if (!adminEmail.trim() || !adminPassword.trim()) {
       toast({
-        title: 'Validation Error',
-        description: 'Please enter email and password.',
+        title: t('auth.error'),
+        description: t('auth.fillAllFields'),
         variant: 'destructive'
       });
       return;
@@ -230,8 +232,8 @@ const Auth = () => {
 
       if (!data?.success) {
         toast({
-          title: 'Login Failed',
-          description: data?.error || 'Invalid credentials or insufficient permissions.',
+          title: t('auth.loginFailed'),
+          description: data?.error || t('auth.invalidCredentials'),
           variant: 'destructive'
         });
         return;
@@ -245,15 +247,15 @@ const Auth = () => {
       }
 
       toast({
-        title: 'Login Successful',
-        description: 'Welcome, Administrator!',
+        title: t('auth.success'),
+        description: t('auth.welcomeAdmin'),
       });
 
       navigate('/admin');
     } catch (error: any) {
       toast({
-        title: 'Login Failed',
-        description: error?.message || 'Invalid credentials.',
+        title: t('auth.loginFailed'),
+        description: error?.message || t('auth.invalidCredentials'),
         variant: 'destructive'
       });
     } finally {
@@ -266,8 +268,8 @@ const Auth = () => {
     
     if (!forgotEmail.trim()) {
       toast({
-        title: 'Validation Error',
-        description: 'Please enter your email address.',
+        title: t('auth.error'),
+        description: t('auth.enterEmailPlaceholder'),
         variant: 'destructive'
       });
       return;
@@ -279,21 +281,21 @@ const Auth = () => {
       
       if (error) {
         toast({
-          title: 'Error',
+          title: t('auth.error'),
           description: error.message,
           variant: 'destructive'
         });
       } else {
         setResetEmailSent(true);
         toast({
-          title: 'Email Sent',
-          description: 'Check your email for a password reset link.',
+          title: t('auth.success'),
+          description: t('auth.passwordResetSent'),
         });
       }
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'An unexpected error occurred.',
+        title: t('auth.error'),
+        description: error.message || t('auth.unexpectedError'),
         variant: 'destructive'
       });
     } finally {
@@ -306,8 +308,8 @@ const Auth = () => {
     
     if (newPassword.length < 8) {
       toast({
-        title: 'Validation Error',
-        description: 'Password must be at least 8 characters.',
+        title: t('auth.error'),
+        description: t('auth.passwordRequirements'),
         variant: 'destructive'
       });
       return;
@@ -315,8 +317,8 @@ const Auth = () => {
 
     if (newPassword !== confirmNewPassword) {
       toast({
-        title: 'Validation Error',
-        description: 'Passwords do not match.',
+        title: t('auth.error'),
+        description: t('auth.passwordsDoNotMatch'),
         variant: 'destructive'
       });
       return;
@@ -328,22 +330,22 @@ const Auth = () => {
       
       if (error) {
         toast({
-          title: 'Error',
+          title: t('auth.error'),
           description: error.message,
           variant: 'destructive'
         });
       } else {
         toast({
-          title: 'Password Updated',
-          description: 'Your password has been successfully updated.',
+          title: t('auth.success'),
+          description: t('auth.passwordUpdated'),
         });
         setIsRecoveryMode(false);
         navigate('/');
       }
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'An unexpected error occurred.',
+        title: t('auth.error'),
+        description: error.message || t('auth.unexpectedError'),
         variant: 'destructive'
       });
     } finally {
@@ -357,7 +359,7 @@ const Auth = () => {
         <AnimatedBackground />
         <div className="relative z-10 text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-lg text-muted-foreground">Loading...</p>
+          <p className="mt-4 text-lg text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -377,26 +379,26 @@ const Auth = () => {
                 <Lock className="h-8 w-8" />
               </div>
               <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-                Set New Password
+                {t('auth.setNewPassword')}
               </h1>
               <p className="text-lg text-muted-foreground">
-                Enter your new password below
+                {t('auth.enterNewPasswordBelow')}
               </p>
             </div>
 
             <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur-xl">
               <CardHeader className="pb-4">
-                <CardTitle className="text-xl text-center">Create New Password</CardTitle>
+                <CardTitle className="text-xl text-center">{t('auth.createNewPassword')}</CardTitle>
                 <CardDescription className="text-center">
-                  Your password must be at least 8 characters
+                  {t('auth.passwordRequirements')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleUpdatePassword} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="new-password" className="flex items-center gap-2 text-sm font-medium">
+                    <Label htmlFor="new-password" className={`flex items-center gap-2 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <Lock className="h-4 w-4 text-primary" />
-                      New Password
+                      {t('auth.newPassword')}
                     </Label>
                     <div className="relative">
                       <Input
@@ -404,7 +406,7 @@ const Auth = () => {
                         type={showPassword ? 'text' : 'password'}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter new password"
+                        placeholder={t('auth.enterNewPassword')}
                         required
                         minLength={8}
                         className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
@@ -413,7 +415,7 @@ const Auth = () => {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                        className={`absolute top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground ${isRTL ? 'left-0' : 'right-0'}`}
                         onClick={() => setShowPassword(!showPassword)}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -422,9 +424,9 @@ const Auth = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-new-password" className="flex items-center gap-2 text-sm font-medium">
+                    <Label htmlFor="confirm-new-password" className={`flex items-center gap-2 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
                       <Lock className="h-4 w-4 text-primary" />
-                      Confirm New Password
+                      {t('auth.confirmNewPassword')}
                     </Label>
                     <div className="relative">
                       <Input
@@ -432,7 +434,7 @@ const Auth = () => {
                         type={showConfirmPassword ? 'text' : 'password'}
                         value={confirmNewPassword}
                         onChange={(e) => setConfirmNewPassword(e.target.value)}
-                        placeholder="Confirm new password"
+                        placeholder={t('auth.confirmNewPassword')}
                         required
                         minLength={8}
                         className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
@@ -441,7 +443,7 @@ const Auth = () => {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                        className={`absolute top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground ${isRTL ? 'left-0' : 'right-0'}`}
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       >
                         {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -454,7 +456,7 @@ const Auth = () => {
                     className="w-full h-11 text-base font-semibold" 
                     disabled={isLoading}
                   >
-                    {isLoading ? 'Updating Password...' : 'Update Password'}
+                    {isLoading ? t('auth.loading') : t('auth.updatePassword')}
                   </Button>
                 </form>
               </CardContent>
@@ -479,22 +481,22 @@ const Auth = () => {
                 <Mail className="h-8 w-8" />
               </div>
               <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-                Reset Password
+                {t('auth.resetYourPassword')}
               </h1>
               <p className="text-lg text-muted-foreground">
-                {resetEmailSent ? 'Check your email for the reset link' : 'Enter your email to receive a reset link'}
+                {resetEmailSent ? t('auth.checkEmailForReset') : t('auth.emailResetLink')}
               </p>
             </div>
 
             <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur-xl">
               <CardHeader className="pb-4">
                 <CardTitle className="text-xl text-center">
-                  {resetEmailSent ? 'Email Sent!' : 'Forgot Password'}
+                  {resetEmailSent ? t('auth.emailSent') : t('auth.forgotPassword')}
                 </CardTitle>
                 <CardDescription className="text-center">
                   {resetEmailSent 
-                    ? 'We sent a password reset link to your email.'
-                    : 'Enter your email address and we\'ll send you a link to reset your password.'
+                    ? t('auth.passwordResetSent')
+                    : t('auth.forgotPasswordWelcome')
                   }
                 </CardDescription>
               </CardHeader>
@@ -504,7 +506,7 @@ const Auth = () => {
                     <Alert className="bg-primary/5 border-primary/20">
                       <CheckCircle className="h-4 w-4 text-primary" />
                       <AlertDescription className="text-sm">
-                        If an account exists with that email, you'll receive a password reset link shortly.
+                        {t('auth.passwordResetSent')}
                       </AlertDescription>
                     </Alert>
                     <Button 
@@ -516,23 +518,23 @@ const Auth = () => {
                         setForgotEmail('');
                       }}
                     >
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                      Back to Sign In
+                      <ArrowLeft className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                      {t('auth.backToSignIn')}
                     </Button>
                   </div>
                 ) : (
                   <form onSubmit={handleForgotPassword} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="forgot-email" className="flex items-center gap-2 text-sm font-medium">
+                      <Label htmlFor="forgot-email" className={`flex items-center gap-2 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
                         <Mail className="h-4 w-4 text-primary" />
-                        Email Address
+                        {t('auth.emailAddress')}
                       </Label>
                       <Input
                         id="forgot-email"
                         type="email"
                         value={forgotEmail}
                         onChange={(e) => setForgotEmail(e.target.value)}
-                        placeholder="you@example.com"
+                        placeholder={t('auth.enterEmailPlaceholder')}
                         required
                         className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
                       />
@@ -543,7 +545,7 @@ const Auth = () => {
                       className="w-full h-11 text-base font-semibold" 
                       disabled={isLoading}
                     >
-                      {isLoading ? 'Sending...' : 'Send Reset Link'}
+                      {isLoading ? t('auth.loading') : t('auth.sendResetEmail')}
                     </Button>
 
                     <Button 
@@ -552,8 +554,8 @@ const Auth = () => {
                       className="w-full h-11" 
                       onClick={() => setShowForgotPassword(false)}
                     >
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                      Back to Sign In
+                      <ArrowLeft className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                      {t('auth.backToSignIn')}
                     </Button>
                   </form>
                 )}
@@ -578,27 +580,27 @@ const Auth = () => {
               <Sparkles className="h-8 w-8" />
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-              Welcome to Volga Services
+              {t('auth.welcomeToVolga')}
             </h1>
             <p className="text-lg text-muted-foreground">
-              Sign in or create an account to continue
+              {t('auth.signInOrCreateAccount')}
             </p>
           </div>
 
           <Card className="shadow-2xl border-0 bg-card/95 backdrop-blur-xl">
             <CardHeader className="pb-4">
-              <CardTitle className="text-xl text-center">Account Access</CardTitle>
+              <CardTitle className="text-xl text-center">{t('auth.accountAccess')}</CardTitle>
               <CardDescription className="text-center">
-                Choose your account type
+                {t('auth.roleSelectionHint')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 {/* Only Customer tab - Admin/Driver/Guide use separate login pages */}
                 <div className="mb-6 text-center">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg">
+                  <div className={`inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <User className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium text-primary">Customer Account</span>
+                    <span className="text-sm font-medium text-primary">{t('auth.customerAccount')}</span>
                   </div>
                 </div>
                 
@@ -613,7 +615,7 @@ const Auth = () => {
                       className="flex-1"
                       onClick={() => setCustomerMode('login')}
                     >
-                      Sign In
+                      {t('auth.signIn')}
                     </Button>
                     <Button
                       type="button"
@@ -622,33 +624,33 @@ const Auth = () => {
                       className="flex-1"
                       onClick={() => setCustomerMode('signup')}
                     >
-                      Sign Up
+                      {t('auth.signUp')}
                     </Button>
                   </div>
 
                   {customerMode === 'login' ? (
                     <form onSubmit={handleLogin} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="login-email" className="flex items-center gap-2 text-sm font-medium">
+                        <Label htmlFor="login-email" className={`flex items-center gap-2 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
                           <Mail className="h-4 w-4 text-primary" />
-                          Email Address
+                          {t('auth.emailAddress')}
                         </Label>
                         <Input
                           id="login-email"
                           type="email"
                           value={loginEmail}
                           onChange={(e) => setLoginEmail(e.target.value)}
-                          placeholder="you@example.com"
+                          placeholder={t('auth.enterEmailPlaceholder')}
                           required
                           className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="login-password" className="flex items-center gap-2 text-sm font-medium">
+                        <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                          <Label htmlFor="login-password" className={`flex items-center gap-2 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
                             <Lock className="h-4 w-4 text-primary" />
-                            Password
+                            {t('auth.password')}
                           </Label>
                           <Button
                             type="button"
@@ -656,7 +658,7 @@ const Auth = () => {
                             className="h-auto p-0 text-sm text-primary hover:text-primary/80"
                             onClick={() => setShowForgotPassword(true)}
                           >
-                            Forgot password?
+                            {t('auth.forgotPasswordLink')}
                           </Button>
                         </div>
                         <div className="relative">
@@ -665,7 +667,7 @@ const Auth = () => {
                             type={showPassword ? 'text' : 'password'}
                             value={loginPassword}
                             onChange={(e) => setLoginPassword(e.target.value)}
-                            placeholder="Enter your password"
+                            placeholder={t('auth.enterPassword')}
                             required
                             className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
                           />
@@ -673,7 +675,7 @@ const Auth = () => {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                            className={`absolute top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground ${isRTL ? 'left-0' : 'right-0'}`}
                             onClick={() => setShowPassword(!showPassword)}
                           >
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -687,26 +689,26 @@ const Auth = () => {
                         disabled={isLoading}
                       >
                         {isLoading ? (
-                          <span className="flex items-center gap-2">
+                          <span className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            Signing In...
+                            {t('auth.signingIn')}
                           </span>
-                        ) : 'Sign In'}
+                        ) : t('auth.signIn')}
                       </Button>
                     </form>
                   ) : (
                     <form onSubmit={handleSignup} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="signup-name" className="flex items-center gap-2 text-sm font-medium">
+                        <Label htmlFor="signup-name" className={`flex items-center gap-2 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
                           <User className="h-4 w-4 text-primary" />
-                          Full Name
+                          {t('auth.fullName')}
                         </Label>
                         <Input
                           id="signup-name"
                           type="text"
                           value={fullName}
                           onChange={(e) => setFullName(e.target.value)}
-                          placeholder="John Doe"
+                          placeholder={t('auth.enterFullName')}
                           maxLength={100}
                           required
                           className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
@@ -714,16 +716,16 @@ const Auth = () => {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="signup-email" className="flex items-center gap-2 text-sm font-medium">
+                        <Label htmlFor="signup-email" className={`flex items-center gap-2 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
                           <Mail className="h-4 w-4 text-primary" />
-                          Email Address
+                          {t('auth.emailAddress')}
                         </Label>
                         <Input
                           id="signup-email"
                           type="email"
                           value={signupEmail}
                           onChange={(e) => setSignupEmail(e.target.value)}
-                          placeholder="you@example.com"
+                          placeholder={t('auth.enterEmailPlaceholder')}
                           maxLength={255}
                           required
                           className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
@@ -731,9 +733,9 @@ const Auth = () => {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="signup-phone" className="flex items-center gap-2 text-sm font-medium">
+                        <Label htmlFor="signup-phone" className={`flex items-center gap-2 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
                           <Phone className="h-4 w-4 text-primary" />
-                          Phone Number
+                          {t('auth.phoneNumber')}
                           <span className="text-destructive">*</span>
                         </Label>
                         <Input
@@ -747,14 +749,14 @@ const Auth = () => {
                           className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary"
                         />
                         <p className="text-xs text-muted-foreground">
-                          Include country code (e.g., +7 for Russia)
+                          {t('auth.phoneFormatHint')}
                         </p>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="signup-password" className="flex items-center gap-2 text-sm font-medium">
+                        <Label htmlFor="signup-password" className={`flex items-center gap-2 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
                           <Lock className="h-4 w-4 text-primary" />
-                          Password
+                          {t('auth.password')}
                         </Label>
                         <div className="relative">
                           <Input
@@ -762,7 +764,7 @@ const Auth = () => {
                             type={showPassword ? 'text' : 'password'}
                             value={signupPassword}
                             onChange={(e) => setSignupPassword(e.target.value)}
-                            placeholder="Create a strong password"
+                            placeholder={t('auth.createStrongPassword')}
                             required
                             className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
                           />
@@ -770,21 +772,21 @@ const Auth = () => {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                            className={`absolute top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground ${isRTL ? 'left-0' : 'right-0'}`}
                             onClick={() => setShowPassword(!showPassword)}
                           >
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Min 8 characters with uppercase, lowercase & numbers
+                          {t('auth.passwordRequirements')}
                         </p>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="confirm-password" className="flex items-center gap-2 text-sm font-medium">
+                        <Label htmlFor="confirm-password" className={`flex items-center gap-2 text-sm font-medium ${isRTL ? 'flex-row-reverse' : ''}`}>
                           <Lock className="h-4 w-4 text-primary" />
-                          Confirm Password
+                          {t('auth.confirmPassword')}
                         </Label>
                         <div className="relative">
                           <Input
@@ -792,7 +794,7 @@ const Auth = () => {
                             type={showConfirmPassword ? 'text' : 'password'}
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="Confirm your password"
+                            placeholder={t('auth.confirmYourPassword')}
                             required
                             className="h-11 bg-background/50 border-border/50 focus:border-primary focus:ring-primary pr-10"
                           />
@@ -800,7 +802,7 @@ const Auth = () => {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground"
+                            className={`absolute top-0 h-full px-3 hover:bg-transparent text-muted-foreground hover:text-foreground ${isRTL ? 'left-0' : 'right-0'}`}
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                           >
                             {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -814,11 +816,11 @@ const Auth = () => {
                         disabled={isLoading}
                       >
                         {isLoading ? (
-                          <span className="flex items-center gap-2">
+                          <span className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            Creating Account...
+                            {t('auth.creatingAccount')}
                           </span>
-                        ) : 'Create Account'}
+                        ) : t('auth.createAccount')}
                       </Button>
                     </form>
                   )}
