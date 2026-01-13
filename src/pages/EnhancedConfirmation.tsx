@@ -28,6 +28,7 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useSocialSettings } from '@/hooks/useAppSettings';
 import { supabase } from '@/integrations/supabase/client';
 import type { BookingData } from '@/types/booking';
 
@@ -37,7 +38,7 @@ const EnhancedConfirmation = () => {
   const { t } = useLanguage();
   const { user, hasRole } = useAuth();
   const { toast } = useToast();
-  
+  const { data: socialSettings } = useSocialSettings();
   const bookingData = location.state?.bookingData as BookingData & {
     paymentMethod?: string;
     transactionId?: string;
@@ -261,7 +262,8 @@ const EnhancedConfirmation = () => {
   };
 
   const handleWhatsAppContact = () => {
-    const phoneNumber = '+201030905969'; // Your WhatsApp business number
+    // Use dynamic WhatsApp number from app settings
+    const phoneNumber = socialSettings?.whatsappNumber || '79522212903';
     const message = generateWhatsAppMessage();
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
     window.open(whatsappUrl, '_blank');

@@ -1735,6 +1735,33 @@ export type Database = {
         }
         Relationships: []
       }
+      login_attempts: {
+        Row: {
+          attempt_type: string
+          created_at: string
+          id: string
+          identifier: string
+          ip_address: string | null
+          success: boolean | null
+        }
+        Insert: {
+          attempt_type?: string
+          created_at?: string
+          id?: string
+          identifier: string
+          ip_address?: string | null
+          success?: boolean | null
+        }
+        Update: {
+          attempt_type?: string
+          created_at?: string
+          id?: string
+          identifier?: string
+          ip_address?: string | null
+          success?: boolean | null
+        }
+        Relationships: []
+      }
       newsletter_subscriptions: {
         Row: {
           created_at: string | null

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getServiceCategories } from '@/services/servicesService';
+import { getServiceCategoriesDynamic, getServiceCategories } from '@/services/servicesService';
 
 interface ServicesTabsProps {
   activeCategory: string;
@@ -8,8 +8,18 @@ interface ServicesTabsProps {
 }
 
 export const ServicesTabs: React.FC<ServicesTabsProps> = ({ activeCategory, setActiveCategory }) => {
-  const categories = getServiceCategories();
-
+  const [categories, setCategories] = useState(getServiceCategories()); // Start with fallback
+  
+  // Fetch dynamic categories from database
+  useEffect(() => {
+    const loadCategories = async () => {
+      const dynamicCategories = await getServiceCategoriesDynamic();
+      if (dynamicCategories.length > 1) {
+        setCategories(dynamicCategories);
+      }
+    };
+    loadCategories();
+  }, []);
   return (
     <nav className="flex justify-center mb-4 sm:mb-6 lg:mb-8 animate-slide-up animation-delay-200 px-1 sm:px-2" role="navigation" aria-label="Service categories">
       <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full max-w-3xl">
