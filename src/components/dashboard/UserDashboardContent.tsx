@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { getDraftBookings, deleteDraftBooking, DraftBooking } from '@/services/bookingService';
+import { getStatusTranslationKey } from '@/utils/translationUtils';
 
 interface Booking {
   id: string;
@@ -50,6 +52,7 @@ export const UserDashboardContent = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('overview');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [draftBookings, setDraftBookings] = useState<DraftBooking[]>([]);
@@ -99,8 +102,8 @@ export const UserDashboardContent = () => {
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load your bookings',
+        title: t('common.error'),
+        description: t('common.failedToLoad'),
         variant: 'destructive'
       });
     } finally {
@@ -123,13 +126,13 @@ export const UserDashboardContent = () => {
       setDraftBookings(prev => prev.filter(d => d.id !== draftId));
       setStats(prev => ({ ...prev, drafts: prev.drafts - 1 }));
       toast({
-        title: 'Deleted',
-        description: 'Draft booking removed successfully'
+        title: t('common.deleted'),
+        description: t('common.draftDeleted')
       });
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to delete draft',
+        title: t('common.error'),
+        description: t('common.failedToDelete'),
         variant: 'destructive'
       });
     }
@@ -154,7 +157,7 @@ export const UserDashboardContent = () => {
     return (
       <Badge variant={variant}>
         <Icon className={`h-3 w-3 mr-1 ${color}`} />
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {t(getStatusTranslationKey(status))}
       </Badge>
     );
   };
@@ -163,9 +166,9 @@ export const UserDashboardContent = () => {
     if (!details) return 'N/A';
     switch (serviceType) {
       case 'Transportation':
-        return `${details.pickup || 'N/A'} → ${details.dropoff || 'N/A'}`;
+        return `${details.pickup || details.pickupLocation || 'N/A'} → ${details.dropoff || details.dropoffLocation || 'N/A'}`;
       case 'Hotels':
-        return `${details.city || 'N/A'} - ${details.hotel || 'N/A'}`;
+        return `${details.city || 'N/A'} - ${details.hotel || details.hotelName || 'N/A'}`;
       case 'Events':
         return `${details.eventName || 'N/A'}`;
       case 'Custom Trips':
@@ -183,7 +186,7 @@ export const UserDashboardContent = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Bookings</p>
+                <p className="text-sm text-muted-foreground">{t('userDashboard.totalBookings')}</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
               </div>
               <Calendar className="h-8 w-8 text-primary" />
@@ -194,7 +197,7 @@ export const UserDashboardContent = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Confirmed</p>
+                <p className="text-sm text-muted-foreground">{t('userDashboard.confirmed')}</p>
                 <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
@@ -205,7 +208,7 @@ export const UserDashboardContent = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Pending</p>
+                <p className="text-sm text-muted-foreground">{t('userDashboard.pending')}</p>
                 <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
               </div>
               <Clock className="h-8 w-8 text-yellow-600" />
@@ -216,7 +219,7 @@ export const UserDashboardContent = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Drafts</p>
+                <p className="text-sm text-muted-foreground">{t('userDashboard.drafts')}</p>
                 <p className="text-2xl font-bold text-orange-600">{stats.drafts}</p>
               </div>
               <FileEdit className="h-8 w-8 text-orange-600" />
@@ -229,10 +232,10 @@ export const UserDashboardContent = () => {
       <div className="flex flex-wrap gap-4">
         <Button onClick={() => navigate('/booking')} className="gap-2">
           <Plus className="h-4 w-4" />
-          New Booking
+          {t('userDashboard.newBooking')}
         </Button>
         <Button variant="outline" onClick={() => navigate('/services')} className="gap-2">
-          Browse Services
+          {t('userDashboard.browseServices')}
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
@@ -240,21 +243,21 @@ export const UserDashboardContent = () => {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3 max-w-lg">
-          <TabsTrigger value="overview">My Bookings</TabsTrigger>
+          <TabsTrigger value="overview">{t('userDashboard.myBookings')}</TabsTrigger>
           <TabsTrigger value="drafts">
-            Incomplete
+            {t('userDashboard.incomplete')}
             {stats.drafts > 0 && (
               <Badge variant="secondary" className="ml-2">{stats.drafts}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="history">{t('userDashboard.history')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Active Bookings</CardTitle>
-              <CardDescription>Your ongoing and confirmed reservations</CardDescription>
+              <CardTitle>{t('userDashboard.activeBookings')}</CardTitle>
+              <CardDescription>{t('userDashboard.ongoingReservations')}</CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -264,9 +267,9 @@ export const UserDashboardContent = () => {
               ) : bookings.filter(b => b.status !== 'cancelled' && b.status !== 'completed').length === 0 ? (
                 <div className="text-center py-8">
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No active bookings</p>
+                  <p className="text-muted-foreground">{t('emptyStates.noActiveBookings')}</p>
                   <Button className="mt-4" onClick={() => navigate('/booking')}>
-                    Make a Booking
+                    {t('userDashboard.makeBooking')}
                   </Button>
                 </div>
               ) : (
@@ -283,20 +286,20 @@ export const UserDashboardContent = () => {
                             {formatServiceDetails(booking.service_type, booking.service_details)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Booked on {new Date(booking.created_at).toLocaleDateString()}
+                            {t('userDashboard.bookedOn')} {new Date(booking.created_at).toLocaleDateString()}
                           </p>
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
                             <p className="font-semibold">${booking.total_price?.toFixed(2)}</p>
                             <p className="text-xs text-muted-foreground">
-                              Payment: {booking.payment_status}
+                              {t('userDashboard.payment')}: {t(getStatusTranslationKey(booking.payment_status))}
                             </p>
                           </div>
                           {booking.payment_status === 'pending' && (
                             <Button size="sm" onClick={() => handlePayNow(booking)}>
                               <CreditCard className="h-4 w-4 mr-1" />
-                              Pay Now
+                              {t('userDashboard.payNow')}
                             </Button>
                           )}
                         </div>
@@ -314,15 +317,15 @@ export const UserDashboardContent = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileEdit className="h-5 w-5" />
-                Incomplete Bookings
+                {t('userDashboard.incompleteBookings')}
               </CardTitle>
-              <CardDescription>Resume your saved booking drafts</CardDescription>
+              <CardDescription>{t('userDashboard.resumeDrafts')}</CardDescription>
             </CardHeader>
             <CardContent>
               {draftBookings.length === 0 ? (
                 <div className="text-center py-8">
                   <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No incomplete bookings</p>
+                  <p className="text-muted-foreground">{t('emptyStates.noIncompleteBookings')}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -335,16 +338,16 @@ export const UserDashboardContent = () => {
                             <Badge variant="secondary">{draft.booking_progress}</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Started on {new Date(draft.created_at).toLocaleDateString()}
+                            {t('userDashboard.startedOn')} {new Date(draft.created_at).toLocaleDateString()}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            Last updated: {new Date(draft.updated_at).toLocaleString()}
+                            {t('userDashboard.lastUpdated')}: {new Date(draft.updated_at).toLocaleString()}
                           </p>
                         </div>
                         <div className="flex gap-2">
                           <Button onClick={() => handleResumeBooking(draft)}>
                             <ArrowRight className="h-4 w-4 mr-1" />
-                            Resume
+                            {t('userDashboard.resume')}
                           </Button>
                           <Button 
                             variant="destructive" 
@@ -366,25 +369,25 @@ export const UserDashboardContent = () => {
         <TabsContent value="history" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Booking History</CardTitle>
-              <CardDescription>All your past reservations</CardDescription>
+              <CardTitle>{t('userDashboard.bookingHistory')}</CardTitle>
+              <CardDescription>{t('userDashboard.allPastReservations')}</CardDescription>
             </CardHeader>
             <CardContent>
               {bookings.length === 0 ? (
                 <div className="text-center py-8">
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No booking history</p>
+                  <p className="text-muted-foreground">{t('emptyStates.noBookingHistory')}</p>
                 </div>
               ) : (
                 <div className="border rounded-lg overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Service</TableHead>
-                        <TableHead>Details</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Amount</TableHead>
+                        <TableHead>{t('userDashboard.service')}</TableHead>
+                        <TableHead>{t('userDashboard.details')}</TableHead>
+                        <TableHead>{t('userDashboard.date')}</TableHead>
+                        <TableHead>{t('userDashboard.status')}</TableHead>
+                        <TableHead>{t('userDashboard.amount')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

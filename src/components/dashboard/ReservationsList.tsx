@@ -165,16 +165,16 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
     const guard = paymentGuards[booking.id];
     if (!guard?.can_pay) {
       toast({
-        title: "Payment Not Available",
-        description: "Price must be approved by admin before payment.",
+        title: t('userDashboard.paymentNotAvailable'),
+        description: t('userDashboard.priceApprovalRequired'),
         variant: "destructive"
       });
       return;
     }
     
     toast({
-      title: "Redirecting to Payment",
-      description: "You'll complete payment for your selected booking.",
+      title: t('userDashboard.redirectingToPayment'),
+      description: t('userDashboard.completePayment'),
     });
     navigate('/enhanced-payment', {
       state: { 
@@ -214,13 +214,13 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Reservation History</CardTitle>
+        <CardTitle>{t('userDashboard.reservationHistory')}</CardTitle>
       </CardHeader>
       <CardContent>
         {bookings.length === 0 ? (
           <div className="text-center py-8">
             <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No reservations found</p>
+            <p className="text-muted-foreground">{t('userDashboard.noReservations')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -241,18 +241,18 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                               {hasDriver(booking) && (
                                 <Badge variant="outline" className="gap-1">
                                   <Car className="h-3 w-3" />
-                                  Driver Assigned
+                                  {t('userDashboard.driverAssigned')}
                                 </Badge>
                               )}
                               {needsPriceAction(booking) && (
                                 <Badge variant="outline" className="gap-1 border-amber-400 text-amber-700 dark:text-amber-300">
                                   <DollarSign className="h-3 w-3" />
-                                  Price Action Needed
+                                  {t('userDashboard.priceActionNeeded')}
                                 </Badge>
                               )}
                               {booking.customer_proposed_price && (
                                 <Badge variant="outline" className="gap-1 border-blue-400 text-blue-700 dark:text-blue-300">
-                                  Proposal Pending
+                                  {t('userDashboard.proposalPending')}
                                 </Badge>
                               )}
                             </div>
@@ -289,7 +289,7 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                                 handlePayNow(booking);
                               }}
                             >
-                              Pay Now
+                              {t('userDashboard.payNow')}
                             </Button>
                           )}
                           
@@ -313,8 +313,8 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                           bookingId={booking.id}
                           onPriceConfirmed={() => {
                             toast({
-                              title: 'Price Confirmed',
-                              description: 'You can now proceed with payment.',
+                              title: t('userDashboard.priceConfirmed'),
+                              description: t('userDashboard.completePayment'),
                             });
                           }}
                         />
@@ -323,15 +323,15 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                       <div className="grid gap-4 md:grid-cols-2">
                         {/* Booking Details */}
                         <div className="space-y-2">
-                          <h4 className="font-medium text-sm">Booking Details</h4>
+                          <h4 className="font-medium text-sm">{t('userDashboard.bookingDetails')}</h4>
                           <div className="text-sm space-y-1 text-muted-foreground">
-                            <p>Booking ID: {booking.id.slice(0, 8)}...</p>
-                            <p>Created: {new Date(booking.created_at).toLocaleString()}</p>
+                            <p>{t('userDashboard.bookingId')}: {booking.id.slice(0, 8)}...</p>
+                            <p>{t('userDashboard.created')}: {new Date(booking.created_at).toLocaleString()}</p>
                             {booking.payment_method && (
-                              <p>Payment: {booking.payment_method}</p>
+                              <p>{t('userDashboard.payment')}: {booking.payment_method}</p>
                             )}
                             {booking.price_confirmed && (
-                              <p className="text-green-600 dark:text-green-400">✓ Price Confirmed</p>
+                              <p className="text-green-600 dark:text-green-400">✓ {t('userDashboard.priceConfirmed')}</p>
                             )}
                           </div>
                         </div>
