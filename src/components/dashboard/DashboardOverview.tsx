@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getUserBookings } from '@/services/database';
@@ -9,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, CreditCard, MapPin, Users, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useDataTracking } from '@/hooks/useDataTracking';
+import { getStatusTranslationKey, getServiceTypeTranslationKey } from '@/utils/translationUtils';
 
 export const DashboardOverview: React.FC = () => {
   const { user } = useAuth();
@@ -40,10 +40,10 @@ export const DashboardOverview: React.FC = () => {
     return (
       <div className="space-y-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-8 bg-muted rounded w-1/4"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+              <div key={i} className="h-32 bg-muted rounded"></div>
             ))}
           </div>
         </div>
@@ -61,10 +61,10 @@ export const DashboardOverview: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-foreground">
           {t('dashboard.welcomeBack')}, {getUserWelcomeName()}!
         </h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-muted-foreground">
           {t('dashboard.accountOverview')}
         </p>
       </div>
@@ -136,7 +136,7 @@ export const DashboardOverview: React.FC = () => {
               <div className={`w-3 h-3 rounded-full ${user?.email_confirmed_at ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
               <div>
                 <p className="text-sm font-medium">{t('dashboard.emailVerification')}</p>
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-muted-foreground">
                   {user?.email_confirmed_at ? t('dashboard.verified') : t('dashboard.pendingVerification')}
                 </p>
               </div>
@@ -145,7 +145,7 @@ export const DashboardOverview: React.FC = () => {
               <div className="w-3 h-3 rounded-full bg-green-500"></div>
               <div>
                 <p className="text-sm font-medium">{t('dashboard.accountActive')}</p>
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-muted-foreground">
                   {t('dashboard.since')} {user?.created_at ? new Date(user.created_at).toLocaleDateString() : t('common.unknown')}
                 </p>
               </div>
@@ -154,7 +154,7 @@ export const DashboardOverview: React.FC = () => {
               <div className="w-3 h-3 rounded-full bg-blue-500"></div>
               <div>
                 <p className="text-sm font-medium">{t('dashboard.lastLogin')}</p>
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-muted-foreground">
                   {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : t('common.unknown')}
                 </p>
               </div>
@@ -178,13 +178,13 @@ export const DashboardOverview: React.FC = () => {
         <CardContent>
           {error ? (
             <div className="text-center py-6">
-              <p className="text-red-500">{t('dashboard.errorLoadingReservations')}</p>
-              <p className="text-xs text-gray-500 mt-1">{t('dashboard.refreshPage')}</p>
+              <p className="text-destructive">{t('dashboard.errorLoadingReservations')}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('dashboard.refreshPage')}</p>
             </div>
           ) : recentBookings.length === 0 ? (
             <div className="text-center py-6">
-              <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">{t('dashboard.noReservations')}</p>
+              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">{t('dashboard.noReservations')}</p>
               <Link to="/booking">
                 <Button className="mt-4">{t('dashboard.firstBooking')}</Button>
               </Link>
@@ -194,11 +194,11 @@ export const DashboardOverview: React.FC = () => {
               {recentBookings.map((booking) => (
                 <div
                   key={booking.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div>
-                    <h4 className="font-medium">{booking.service_type}</h4>
-                    <p className="text-sm text-gray-600">
+                    <h4 className="font-medium">{t(getServiceTypeTranslationKey(booking.service_type))}</h4>
+                    <p className="text-sm text-muted-foreground">
                       {new Date(booking.created_at).toLocaleDateString()}
                     </p>
                   </div>
@@ -206,12 +206,12 @@ export const DashboardOverview: React.FC = () => {
                     <p className="font-medium">${booking.total_price}</p>
                     <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
                       booking.status === 'confirmed' 
-                        ? 'bg-green-100 text-green-800'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
                         : booking.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
+                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
                     }`}>
-                      {booking.status}
+                      {t(getStatusTranslationKey(booking.status))}
                     </span>
                   </div>
                 </div>

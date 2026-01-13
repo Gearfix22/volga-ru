@@ -162,7 +162,13 @@
     "select": "اختر",
     "noResults": "لا توجد نتائج",
     "popular": "الأكثر شيوعاً",
-    "allCountries": "جميع البلدان"
+    "allCountries": "جميع البلدان",
+    "notAvailable": "غير متوفر",
+    "in": "في",
+    "at": "في",
+    "noDetails": "لا توجد تفاصيل",
+    "viewDetails": "عرض التفاصيل",
+    "errorLoadingReservations": "خطأ في تحميل الحجوزات"
   },
   "pages": {
     "aboutUs": "من نحن",
