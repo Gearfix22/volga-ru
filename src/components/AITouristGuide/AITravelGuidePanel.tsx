@@ -1,19 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Loader2, Bot, User, Mic, MicOff, Volume2, VolumeX, ChevronDown, ChevronUp, Sparkles, MapPin, Calendar, DollarSign, Cloud, Ticket, Hotel } from 'lucide-react';
+import { X, Send, Loader2, User, Mic, MicOff, Volume2, VolumeX, ChevronDown, ChevronUp, Sparkles, MapPin, Calendar, DollarSign, Cloud, Ticket, Hotel, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAIGuideSession, AIGuideMessage } from '@/hooks/useAIGuideSession';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-  suggestions?: string[];
-}
 
 interface AITravelGuidePanelProps {
   isOpen: boolean;
@@ -68,13 +62,23 @@ const getSmartSuggestions = (language: string) => {
 
 export const AITravelGuidePanel: React.FC<AITravelGuidePanelProps> = ({ isOpen, onClose }) => {
   const { language } = useLanguage();
-  const { user } = useAuth();
   const { toast } = useToast();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const {
+    sessionId,
+    messages,
+    context,
+    userProfile,
+    isInitialized,
+    addMessage,
+    markGreeted,
+    clearSession,
+    getUserContextForAI,
+    persistToDatabase,
+  } = useAIGuideSession();
+
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
-  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   
   // Voice state
@@ -195,17 +199,27 @@ export const AITravelGuidePanel: React.FC<AITravelGuidePanelProps> = ({ isOpen, 
 
     setInput('');
     setIsExpanded(true);
-    setMessages(prev => [...prev, { role: 'user', content: textToSend }]);
+    
+    // Add user message to session
+    const userMessage: AIGuideMessage = {
+      role: 'user',
+      content: textToSend,
+      timestamp: Date.now(),
+    };
+    addMessage(userMessage);
     setIsLoading(true);
 
     try {
+      const userContext = getUserContextForAI();
+      
       const { data, error } = await supabase.functions.invoke('ai-tourist-guide', {
         body: {
           message: textToSend,
           language,
           session_id: sessionId,
-          user_id: user?.id || null,
+          user_id: userContext.userId,
           user_location: userLocation,
+          user_context: userContext,
         },
       });
 
@@ -217,13 +231,24 @@ export const AITravelGuidePanel: React.FC<AITravelGuidePanelProps> = ({ isOpen, 
       // Extract suggested follow-up questions from the response
       const suggestions = extractFollowUpQuestions(responseText, language);
       
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
+      // Add assistant message to session
+      const assistantMessage: AIGuideMessage = {
+        role: 'assistant',
         content: responseText,
-        suggestions 
-      }]);
+        timestamp: Date.now(),
+        suggestions,
+      };
+      addMessage(assistantMessage);
+      
+      // Mark as greeted after first successful interaction
+      if (!context.hasGreeted) {
+        markGreeted();
+      }
       
       speak(responseText);
+      
+      // Persist session after successful interaction
+      persistToDatabase();
     } catch (error: any) {
       console.error('AI Guide error:', error);
       const fallbackMessage = language === 'ar' 
@@ -238,7 +263,11 @@ export const AITravelGuidePanel: React.FC<AITravelGuidePanelProps> = ({ isOpen, 
         variant: 'destructive',
       });
       
-      setMessages(prev => [...prev, { role: 'assistant', content: fallbackMessage }]);
+      addMessage({
+        role: 'assistant',
+        content: fallbackMessage,
+        timestamp: Date.now(),
+      });
     } finally {
       setIsLoading(false);
     }
@@ -277,9 +306,34 @@ export const AITravelGuidePanel: React.FC<AITravelGuidePanelProps> = ({ isOpen, 
     sendMessage(query);
   };
 
+  const handleClearSession = () => {
+    clearSession();
+    toast({
+      title: language === 'ar' ? 'تم مسح المحادثة' : language === 'ru' ? 'Чат очищен' : 'Chat cleared',
+      description: language === 'ar' ? 'بدأت محادثة جديدة' : language === 'ru' ? 'Начат новый разговор' : 'Started a new conversation',
+    });
+  };
+
   if (!isOpen) return null;
 
   const smartSuggestions = getSmartSuggestions(language);
+
+  // Show loading state while session is initializing
+  if (!isInitialized) {
+    return (
+      <div 
+        className={cn(
+          "fixed z-40 transition-all duration-300 ease-in-out",
+          "bottom-20 left-4 right-4 sm:right-auto sm:w-96 h-auto"
+        )}
+        style={{ pointerEvents: 'auto' }}
+      >
+        <div className="bg-background/95 backdrop-blur-md rounded-xl shadow-2xl border border-border/50 p-4 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -308,11 +362,28 @@ export const AITravelGuidePanel: React.FC<AITravelGuidePanelProps> = ({ isOpen, 
                 {titles[language] || titles.en}
               </h3>
               <p className="text-[10px] text-muted-foreground">
-                {language === 'ar' ? 'مساعدك الشخصي للسفر' : language === 'ru' ? 'Ваш личный консультант' : 'Your personal travel expert'}
+                {userProfile?.full_name 
+                  ? (language === 'ar' ? `مرحباً، ${userProfile.full_name}` : language === 'ru' ? `Привет, ${userProfile.full_name}` : `Hi, ${userProfile.full_name}`)
+                  : (language === 'ar' ? 'مساعدك الشخصي للسفر' : language === 'ru' ? 'Ваш личный консультант' : 'Your personal travel expert')
+                }
               </p>
             </div>
           </div>
           <div className="flex items-center gap-1">
+            {messages.length > 0 && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClearSession();
+                }}
+                className="h-7 w-7"
+                title={language === 'ar' ? 'مسح المحادثة' : language === 'ru' ? 'Очистить чат' : 'Clear chat'}
+              >
+                <RotateCcw className="h-3 w-3" />
+              </Button>
+            )}
             {synthRef.current && (
               <Button 
                 variant="ghost" 
