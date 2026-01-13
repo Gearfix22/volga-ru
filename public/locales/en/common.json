@@ -95,7 +95,8 @@
     "confirmPassword": "Confirm Password",
     "confirmYourPassword": "Confirm your password",
     "signingIn": "Signing In...",
-    "creatingAccount": "Creating Account..."
+    "creatingAccount": "Creating Account...",
+    "searchCountry": "Search country..."
   },
   "footer": {
     "description": "Russia's premium tourist experience. VIP transportation, seamless hotel bookings, curated event access, and unforgettable Russian adventures.",
