@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { openExternalLink, isWebView } from '@/hooks/useWebViewCompat';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSocialSettings } from '@/hooks/useAppSettings';
 
 /**
  * Floating WhatsApp Button Component
@@ -15,13 +16,16 @@ import { useLanguage } from '@/contexts/LanguageContext';
  * - Hidden on admin, driver, and guide routes
  * - Supports RTL languages
  * - WebView compatible for mobile apps
+ * - Uses dynamic WhatsApp number from database
  */
 export const FloatingWhatsAppButton: React.FC = () => {
   const location = useLocation();
-  const { user, loading } = useAuth();
-  const { language } = useLanguage();
+  const { user, loading: authLoading } = useAuth();
+  const { t, language } = useLanguage();
+  const { data: socialSettings, loading: settingsLoading } = useSocialSettings();
   
-  const whatsappNumber = '79522212903';
+  // Use dynamic WhatsApp number from settings
+  const whatsappNumber = socialSettings?.whatsappNumber || '79522212903';
   const whatsappUrl = `https://wa.me/${whatsappNumber}`;
 
   // Hide WhatsApp button on driver, admin, and guide routes
@@ -32,7 +36,12 @@ export const FloatingWhatsAppButton: React.FC = () => {
   
   // Only show for authenticated users, hide on special routes
   // لا تظهر الزر إلا للمستخدمين المسجلين
-  if (loading || !user || isDriverRoute || isAdminRoute || isGuideRoute || isAuthRoute) {
+  if (authLoading || !user || isDriverRoute || isAdminRoute || isGuideRoute || isAuthRoute) {
+    return null;
+  }
+
+  // Don't render while loading settings
+  if (settingsLoading) {
     return null;
   }
 
@@ -43,12 +52,8 @@ export const FloatingWhatsAppButton: React.FC = () => {
     }
   };
 
-  // Tooltip text in different languages
-  const tooltipText: Record<string, string> = {
-    en: 'Chat on WhatsApp',
-    ar: 'تحدث معنا على واتساب',
-    ru: 'Написать в WhatsApp',
-  };
+  // Tooltip text using translations
+  const tooltipText = t('footer.whatsapp') || 'Chat on WhatsApp';
 
   return (
     <a
@@ -57,8 +62,8 @@ export const FloatingWhatsAppButton: React.FC = () => {
       rel="noopener noreferrer"
       onClick={handleClick}
       className="fixed bottom-6 right-6 z-50 group focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-full"
-      aria-label={tooltipText[language] || tooltipText.en}
-      title={tooltipText[language] || tooltipText.en}
+      aria-label={tooltipText}
+      title={tooltipText}
     >
       <Button
         size="lg"
@@ -66,13 +71,13 @@ export const FloatingWhatsAppButton: React.FC = () => {
         tabIndex={-1}
       >
         <MessageCircle className="w-6 h-6" aria-hidden="true" />
-        <span className="sr-only">{tooltipText[language] || tooltipText.en}</span>
+        <span className="sr-only">{tooltipText}</span>
       </Button>
       <span 
         className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-foreground text-background text-sm rounded-lg opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity duration-300 whitespace-nowrap pointer-events-none shadow-md"
         role="tooltip"
       >
-        {tooltipText[language] || tooltipText.en}
+        {tooltipText}
       </span>
     </a>
   );
