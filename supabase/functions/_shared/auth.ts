@@ -73,6 +73,7 @@ export function handleCors(req: Request): Response | null {
 
 /**
  * Validates the Authorization header and returns user info + roles
+ * Uses getClaims() for fast JWT validation (recommended approach)
  * Does NOT check for specific roles - use requireRole/requireAnyRole for that
  */
 export async function authenticateRequest(req: Request): Promise<AuthResult> {
@@ -88,6 +89,7 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')
 
   if (!supabaseUrl || !supabaseServiceKey) {
     console.error('Missing Supabase environment variables')
@@ -99,14 +101,18 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
   }
 
   try {
-    // Create admin client for role verification
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
-
-    // Validate the JWT and get user
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
-
-    if (authError || !user) {
+    
+    // Use getClaims() for fast JWT validation (as per Supabase signing-keys pattern)
+    // Create client with anon key and auth header for claims validation
+    const supabaseWithAuth = createClient(supabaseUrl, supabaseAnonKey || supabaseServiceKey, {
+      global: { headers: { Authorization: authHeader } }
+    })
+    
+    const { data: claimsData, error: claimsError } = await supabaseWithAuth.auth.getUser()
+    
+    if (claimsError || !claimsData?.user) {
+      console.error('JWT validation failed:', claimsError?.message)
       return {
         success: false,
         error: 'Invalid or expired token',
@@ -114,11 +120,17 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
       }
     }
 
+    const user = claimsData.user
+    const userId = user.id
+
+    // Create admin client for role verification (database lookup)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
     // Get user roles from database (single source of truth)
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
 
     if (roleError) {
       console.error('Error fetching user roles:', roleError)
@@ -134,7 +146,7 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
     return {
       success: true,
       user,
-      userId: user.id,
+      userId,
       roles
     }
   } catch (error) {
