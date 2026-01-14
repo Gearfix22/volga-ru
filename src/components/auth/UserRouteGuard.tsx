@@ -14,7 +14,7 @@ interface UserRouteGuardProps {
  */
 export const UserRouteGuard: React.FC<UserRouteGuardProps> = ({ 
   children, 
-  allowedRoles = ['user', 'admin', 'moderator'] 
+  allowedRoles = ['user', 'admin'] // Removed deprecated 'moderator' role
 }) => {
   const { user, loading, hasRole } = useAuth();
   const location = useLocation();
