@@ -516,9 +516,80 @@ export const setBookingPrice = async (
 };
 
 /**
- * WORKFLOW STEP 4: Customer confirms price and proceeds to payment
- * (Payment processing is handled in EnhancedPayment.tsx)
+ * WORKFLOW STEP 4: Process payment for an EXISTING booking
+ * 
+ * CRITICAL: This updates an existing booking with payment information.
+ * The price MUST come from booking_prices.admin_price (verified by caller).
+ * 
+ * Use this when a booking already exists and admin has set the price.
  */
+export const processBookingPayment = async (
+  bookingId: string,
+  paymentInfo: {
+    paymentMethod: string;
+    transactionId: string;
+    paidAmount: number;
+    requiresVerification?: boolean;
+    paymentCurrency?: string;
+    exchangeRateUsed?: number;
+    finalPaidAmount?: number;
+    customerNotes?: string;
+  }
+): Promise<any> => {
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('User must be authenticated to process payment');
+  }
+
+  try {
+    // Verify the booking exists and belongs to the user
+    const { data: existingBooking, error: fetchError } = await supabase
+      .from('bookings')
+      .select('id, user_id, status')
+      .eq('id', bookingId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (fetchError || !existingBooking) {
+      throw new Error('Booking not found or access denied');
+    }
+
+    // Determine the new status and payment status
+    const requiresVerification = paymentInfo.requiresVerification || paymentInfo.paymentMethod === 'Bank Transfer';
+    const newPaymentStatus = requiresVerification ? 'pending_verification' : 'paid';
+    const newStatus = requiresVerification ? 'awaiting_customer_confirmation' : 'paid';
+
+    // Update the existing booking with payment info
+    const { data: updatedBooking, error: updateError } = await supabase
+      .from('bookings')
+      .update({
+        payment_method: paymentInfo.paymentMethod,
+        transaction_id: paymentInfo.transactionId,
+        paid_price: paymentInfo.paidAmount,
+        payment_status: newPaymentStatus,
+        status: newStatus,
+        requires_verification: requiresVerification,
+        payment_currency: paymentInfo.paymentCurrency || 'USD',
+        exchange_rate_used: paymentInfo.exchangeRateUsed || 1,
+        final_paid_amount: paymentInfo.finalPaidAmount || paymentInfo.paidAmount,
+        customer_notes: paymentInfo.customerNotes || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', bookingId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    console.log(`Payment processed for booking ${bookingId}: Method=${paymentInfo.paymentMethod}, Status=${newStatus}, PaymentStatus=${newPaymentStatus}`);
+    
+    return updatedBooking;
+  } catch (error) {
+    console.error('Error processing booking payment:', error);
+    throw error;
+  }
+};
 
 // Admin: Confirm booking (legacy support)
 export const confirmBooking = async (bookingId: string): Promise<void> => {

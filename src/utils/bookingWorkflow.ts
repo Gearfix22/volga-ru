@@ -1,5 +1,5 @@
 /**
- * FINAL BOOKING WORKFLOW - Aligned with booking_price_workflow
+ * FINAL BOOKING WORKFLOW - Aligned with booking_prices table
  * 
  * SINGLE SOURCE OF TRUTH FOR BOOKING STATUS (Frontend)
  * 
@@ -13,8 +13,10 @@
  * 
  * Terminal states: cancelled, rejected
  * 
- * PRICING: booking_price_workflow.approved_price is the ONLY payable price
- * Payment page opens ONLY when status = 'approved' AND locked = true
+ * PRICING ARCHITECTURE:
+ * - booking_prices.admin_price is the ONLY payable price
+ * - v_booking_payment_guard view exposes: can_pay, approved_price, locked
+ * - Payment page opens ONLY when can_pay = true (locked = true AND admin_price > 0)
  */
 
 import { BookingStatus } from '@/types/booking';
@@ -180,7 +182,9 @@ export function requiresGuideAssignment(serviceType: string): boolean {
 /**
  * CRITICAL: Customer can ONLY pay if:
  * 1. Status is 'awaiting_customer_confirmation'
- * 2. booking_price_workflow.status = 'approved' AND locked = true
+ * 2. booking_prices.locked = true AND booking_prices.admin_price > 0
+ * 
+ * Use paymentGuardService.canPayForBooking() for the authoritative check.
  */
 export function canAcceptPayment(status: string, priceApproved: boolean, priceLocked: boolean): boolean {
   if (status !== 'awaiting_customer_confirmation') return false;
@@ -190,7 +194,8 @@ export function canAcceptPayment(status: string, priceApproved: boolean, priceLo
 }
 
 /**
- * CRITICAL: Admin can ONLY edit price when locked = false
+ * CRITICAL: Admin can ONLY edit price when booking_prices.locked = false
+ * Use adminService.setBookingPrice() to set and lock prices.
  */
 export function canEditPrice(priceLocked: boolean): boolean {
   return !priceLocked;
