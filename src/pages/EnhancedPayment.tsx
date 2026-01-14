@@ -28,7 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { completeDraftBooking, createEnhancedBooking } from '@/services/bookingService';
+import { completeDraftBooking, createEnhancedBooking, processBookingPayment } from '@/services/bookingService';
 import { canPayForBooking, subscribeToPaymentGuardChanges } from '@/services/paymentGuardService';
 import { convertFromUSD, getCurrencyRates, type CurrencyCode, type CurrencyRate, formatPrice } from '@/services/currencyService';
 import type { BookingData } from '@/types/booking';
@@ -186,15 +186,28 @@ const EnhancedPayment = () => {
       const transactionId = `CASH-${Date.now()}`;
       const convertedPrice = convertFromUSD(finalAmount, selectedExchangeRate);
       
-      // Create the booking using enhanced booking service with currency audit
-      await createEnhancedBooking(bookingData, {
-        paymentMethod: 'Cash on Arrival',
-        transactionId,
-        totalPrice: finalAmount,
-        paymentCurrency: selectedCurrency,
-        exchangeRateUsed: selectedExchangeRate,
-        finalPaidAmount: convertedPrice
-      });
+      // If we have an existing booking, update it with payment info
+      // Otherwise, create a new booking (for new service selection flow)
+      if (bookingId) {
+        await processBookingPayment(bookingId, {
+          paymentMethod: 'Cash on Arrival',
+          transactionId,
+          paidAmount: finalAmount,
+          paymentCurrency: selectedCurrency,
+          exchangeRateUsed: selectedExchangeRate,
+          finalPaidAmount: convertedPrice,
+          requiresVerification: false
+        });
+      } else {
+        await createEnhancedBooking(bookingData, {
+          paymentMethod: 'Cash on Arrival',
+          transactionId,
+          totalPrice: finalAmount,
+          paymentCurrency: selectedCurrency,
+          exchangeRateUsed: selectedExchangeRate,
+          finalPaidAmount: convertedPrice
+        });
+      }
 
       // Complete draft if exists
       if (draftId) {
@@ -206,7 +219,7 @@ const EnhancedPayment = () => {
         description: t('cashPaymentConfirmed'),
       });
 
-              navigate('/enhanced-confirmation', {
+      navigate('/enhanced-confirmation', {
         state: {
           bookingData: {
             ...bookingData,
@@ -258,15 +271,27 @@ const EnhancedPayment = () => {
       const transactionId = `STRIPE-${Date.now()}`;
       const convertedPrice = convertFromUSD(finalAmount, selectedExchangeRate);
       
-      // Create the booking using enhanced booking service with currency audit
-      await createEnhancedBooking(bookingData, {
-        paymentMethod: 'Credit Card',
-        transactionId,
-        totalPrice: finalAmount,
-        paymentCurrency: selectedCurrency,
-        exchangeRateUsed: selectedExchangeRate,
-        finalPaidAmount: convertedPrice
-      });
+      // If we have an existing booking, update it with payment info
+      if (bookingId) {
+        await processBookingPayment(bookingId, {
+          paymentMethod: 'Credit Card',
+          transactionId,
+          paidAmount: finalAmount,
+          paymentCurrency: selectedCurrency,
+          exchangeRateUsed: selectedExchangeRate,
+          finalPaidAmount: convertedPrice,
+          requiresVerification: false
+        });
+      } else {
+        await createEnhancedBooking(bookingData, {
+          paymentMethod: 'Credit Card',
+          transactionId,
+          totalPrice: finalAmount,
+          paymentCurrency: selectedCurrency,
+          exchangeRateUsed: selectedExchangeRate,
+          finalPaidAmount: convertedPrice
+        });
+      }
 
       // Complete draft if exists
       if (draftId) {
@@ -346,24 +371,42 @@ const EnhancedPayment = () => {
         }
       }
       
-      // Create the booking with pending verification status and currency audit
+      // Process payment for existing booking or create new one
       const convertedPrice = convertFromUSD(finalAmount, selectedExchangeRate);
-      const booking = await createEnhancedBooking(bookingData, {
-        paymentMethod: 'Bank Transfer',
-        transactionId,
-        totalPrice: finalAmount,
-        requiresVerification: true,
-        adminNotes: `Reference: ${transferDetails.referenceNumber}, Date: ${transferDetails.transferDate}`,
-        customerNotes: transferDetails.notes,
-        paymentCurrency: selectedCurrency,
-        exchangeRateUsed: selectedExchangeRate,
-        finalPaidAmount: convertedPrice
-      });
+      let booking: any;
+      
+      if (bookingId) {
+        // Update existing booking with bank transfer payment info
+        booking = await processBookingPayment(bookingId, {
+          paymentMethod: 'Bank Transfer',
+          transactionId,
+          paidAmount: finalAmount,
+          paymentCurrency: selectedCurrency,
+          exchangeRateUsed: selectedExchangeRate,
+          finalPaidAmount: convertedPrice,
+          requiresVerification: true,
+          customerNotes: `Reference: ${transferDetails.referenceNumber}, Date: ${transferDetails.transferDate}. ${transferDetails.notes || ''}`
+        });
+      } else {
+        // Create new booking for new service selection flow
+        booking = await createEnhancedBooking(bookingData, {
+          paymentMethod: 'Bank Transfer',
+          transactionId,
+          totalPrice: finalAmount,
+          requiresVerification: true,
+          adminNotes: `Reference: ${transferDetails.referenceNumber}, Date: ${transferDetails.transferDate}`,
+          customerNotes: transferDetails.notes,
+          paymentCurrency: selectedCurrency,
+          exchangeRateUsed: selectedExchangeRate,
+          finalPaidAmount: convertedPrice
+        });
+      }
 
       // Save payment receipt record if file was uploaded
-      if (receiptUrl && booking) {
+      const targetBookingId = bookingId || booking?.id;
+      if (receiptUrl && targetBookingId) {
         await supabase.from('payment_receipts').insert({
-          booking_id: booking.id,
+          booking_id: targetBookingId,
           file_url: receiptUrl,
           file_name: transferDetails.receiptFile?.name || ''
         });

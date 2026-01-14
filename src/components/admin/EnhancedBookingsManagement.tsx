@@ -119,10 +119,14 @@ export const EnhancedBookingsManagement = () => {
     fetchBookings();
     fetchDraftBookings();
 
-    // Real-time subscription for UI updates
+    // Real-time subscription for UI updates (including booking_prices for price changes)
     const channel = supabase
       .channel('admin-bookings-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
+        fetchBookings();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'booking_prices' }, () => {
+        // Refetch when prices change (SINGLE SOURCE OF TRUTH)
         fetchBookings();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'draft_bookings' }, () => {

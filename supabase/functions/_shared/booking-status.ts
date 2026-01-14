@@ -1,5 +1,5 @@
 /**
- * SINGLE SOURCE OF TRUTH FOR BOOKING STATUS
+ * SINGLE SOURCE OF TRUTH FOR BOOKING STATUS (Edge Functions)
  * 
  * This module defines all valid booking statuses and transitions.
  * Both frontend and backend MUST use these definitions.
@@ -11,6 +11,11 @@
  * - completed (success)
  * - cancelled (user cancelled)
  * - rejected (admin rejected)
+ * 
+ * PRICING ARCHITECTURE:
+ * - booking_prices.admin_price is the ONLY payable amount
+ * - booking_prices.locked determines if price can be edited
+ * - v_booking_payment_guard view exposes: can_pay, approved_price, locked
  * 
  * CRITICAL: This file is for EDGE FUNCTIONS only.
  * Frontend uses src/utils/bookingWorkflow.ts (mirrored logic)
