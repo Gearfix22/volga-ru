@@ -304,35 +304,35 @@ export type Database = {
           {
             foreignKeyName: "booking_prices_booking_id_fkey"
             columns: ["booking_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "booking_prices_booking_id_fkey"
             columns: ["booking_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "v_admin_bookings"
             referencedColumns: ["booking_id"]
           },
           {
             foreignKeyName: "booking_prices_booking_id_fkey"
             columns: ["booking_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "v_booking_payment_guard"
             referencedColumns: ["booking_id"]
           },
           {
             foreignKeyName: "booking_prices_booking_id_fkey"
             columns: ["booking_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "v_payment_audit"
             referencedColumns: ["booking_id"]
           },
           {
             foreignKeyName: "booking_prices_booking_id_fkey"
             columns: ["booking_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "v_user_booking_dashboard"
             referencedColumns: ["booking_id"]
           },

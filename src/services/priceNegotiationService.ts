@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
-import { logAdminAction } from './adminService';
-import { getPriceWorkflow, setProposedPrice, approvePrice } from './bookingPriceWorkflowService';
+import { logAdminAction, setBookingPrice as adminSetBookingPrice } from './adminService';
+import { getPaymentGuard, canPayForBooking } from './paymentGuardService';
 
 export interface PriceNegotiationData {
   bookingId: string;
@@ -15,11 +15,11 @@ export interface PriceNegotiationData {
 }
 
 /**
- * Get complete price negotiation status from booking_price_workflow
+ * Get complete price negotiation status from v_booking_payment_guard (SINGLE SOURCE OF TRUTH)
  */
 export async function getPriceNegotiationStatus(bookingId: string): Promise<PriceNegotiationData | null> {
-  // Get from booking_price_workflow (single source of truth)
-  const workflow = await getPriceWorkflow(bookingId);
+  // Get from v_booking_payment_guard (single source of truth)
+  const guard = await getPaymentGuard(bookingId);
   
   // Get customer proposed price from bookings table (negotiation feature)
   const { data: booking, error } = await supabase
@@ -34,29 +34,47 @@ export async function getPriceNegotiationStatus(bookingId: string): Promise<Pric
 
   return {
     bookingId,
-    proposedPrice: workflow?.proposed_price || null,
-    approvedPrice: workflow?.approved_price || null,
+    proposedPrice: guard?.approved_price || null,
+    approvedPrice: guard?.approved_price || null,
     customerProposedPrice: booking?.customer_proposed_price || null,
-    priceApproved: workflow?.status === 'approved',
-    priceLocked: workflow?.locked || false,
-    status: workflow?.status || 'pending',
-    approvedAt: workflow?.approved_at || null,
+    priceApproved: guard?.can_pay === true,
+    priceLocked: guard?.locked || false,
+    status: guard?.can_pay ? 'approved' : 'pending',
+    approvedAt: null, // Not tracked in booking_prices
     paymentStatus: booking?.payment_status || null
   };
 }
 
 /**
  * Admin sets/updates price for a booking
+ * CRITICAL: Uses adminService.setBookingPrice which calls the Edge Function
  */
 export async function setAdminPrice(bookingId: string, price: number): Promise<{ success: boolean; error?: string }> {
-  return setProposedPrice(bookingId, price);
+  try {
+    const result = await adminSetBookingPrice(bookingId, price, { lock: false });
+    return { success: result.success !== false };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
 
 /**
  * Admin approves and locks the price
+ * CRITICAL: Uses adminService.setBookingPrice with lock: true
  */
 export async function adminApprovePrice(bookingId: string): Promise<{ success: boolean; error?: string }> {
-  return approvePrice(bookingId);
+  // Get current price first
+  const guard = await getPaymentGuard(bookingId);
+  if (!guard?.approved_price) {
+    return { success: false, error: 'No price set to approve' };
+  }
+  
+  try {
+    const result = await adminSetBookingPrice(bookingId, guard.approved_price, { lock: true });
+    return { success: result.success !== false };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
 }
 
 /**
@@ -84,9 +102,9 @@ export async function proposePrice(bookingId: string, proposedPrice: number): Pr
     return { success: false, error: 'Not authorized' };
   }
 
-  // Check if price is locked
-  const workflow = await getPriceWorkflow(bookingId);
-  if (workflow?.locked) {
+  // Check if price is locked (using v_booking_payment_guard)
+  const guard = await getPaymentGuard(bookingId);
+  if (guard?.locked) {
     return { success: false, error: 'Cannot negotiate price after approval' };
   }
 
@@ -139,9 +157,9 @@ export async function confirmPrice(bookingId: string): Promise<{ success: boolea
     return { success: false, error: 'Not authorized' };
   }
 
-  // Check if price is approved and locked
-  const workflow = await getPriceWorkflow(bookingId);
-  if (!workflow || !workflow.locked || workflow.status !== 'approved') {
+  // Check if price is approved and locked (using v_booking_payment_guard)
+  const guard = await getPaymentGuard(bookingId);
+  if (!guard || !guard.locked || !guard.can_pay) {
     return { success: false, error: 'Price must be approved by admin first' };
   }
 
@@ -192,15 +210,14 @@ export async function acceptProposedPrice(bookingId: string): Promise<{ success:
     return { success: false, error: 'No proposed price found' };
   }
 
-  // Set the proposed price as the new price and approve it
-  const setResult = await setProposedPrice(bookingId, booking.customer_proposed_price);
-  if (!setResult.success) {
-    return setResult;
-  }
-
-  const approveResult = await approvePrice(bookingId);
-  if (!approveResult.success) {
-    return approveResult;
+  // Set the proposed price as the new price and approve it via Edge Function
+  try {
+    const result = await adminSetBookingPrice(bookingId, booking.customer_proposed_price, { lock: true });
+    if (!result.success) {
+      return { success: false, error: result.error || 'Failed to set price' };
+    }
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
 
   // Clear customer proposed price
@@ -246,10 +263,14 @@ export async function rejectProposedPrice(bookingId: string, newPrice: number): 
     .eq('id', bookingId)
     .single();
 
-  // Set the new proposed price (not approved yet)
-  const result = await setProposedPrice(bookingId, newPrice);
-  if (!result.success) {
-    return result;
+  // Set the new proposed price (not locked - for negotiation)
+  try {
+    const result = await adminSetBookingPrice(bookingId, newPrice, { lock: false });
+    if (!result.success) {
+      return { success: false, error: result.error || 'Failed to set price' };
+    }
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
 
   // Clear customer proposed price

@@ -1,18 +1,26 @@
-import { supabase } from '@/integrations/supabase/client';
-import { logAdminAction } from './adminService';
-
 /**
- * BOOKING PRICE WORKFLOW SERVICE
+ * DEPRECATED: BOOKING PRICE WORKFLOW SERVICE
  * 
- * SINGLE SOURCE OF TRUTH: booking_price_workflow table
+ * This service is DEPRECATED. Use paymentGuardService.ts instead.
  * 
- * Workflow:
- * 1. Admin sets proposed_price (locked = false)
- * 2. Admin can edit proposed_price while locked = false
- * 3. Admin approves → sets approved_price, locked = true
- * 4. Customer pays ONLY when status = 'approved' AND locked = true
- * 5. approved_price is the ONLY payable price
+ * SINGLE SOURCE OF TRUTH: booking_prices table (via v_booking_payment_guard view)
+ * 
+ * The booking_price_workflow table is deprecated and should not be used for new code.
+ * All price operations go through the admin-bookings Edge Function which writes to booking_prices.
+ * 
+ * For payment eligibility: use canPayForBooking from paymentGuardService.ts
+ * For setting prices: use setBookingPrice from adminService.ts
  */
+
+import { 
+  canPayForBooking as _canPayForBooking,
+  getPaymentGuard,
+  getPayableAmount as _getPayableAmount,
+  type PaymentGuardData
+} from './paymentGuardService';
+
+// Re-export for backward compatibility
+export { getPaymentGuard, type PaymentGuardData };
 
 export interface PriceWorkflow {
   id: string;
@@ -29,309 +37,101 @@ export interface PriceWorkflow {
 }
 
 /**
- * Get price workflow for a booking
+ * @deprecated Use getPaymentGuard from paymentGuardService.ts
  */
 export async function getPriceWorkflow(bookingId: string): Promise<PriceWorkflow | null> {
-  const { data, error } = await supabase
-    .from('booking_price_workflow')
-    .select('*')
-    .eq('booking_id', bookingId)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error fetching price workflow:', error);
-    return null;
-  }
-
-  return data as PriceWorkflow | null;
+  console.warn('DEPRECATED: getPriceWorkflow is deprecated. Use getPaymentGuard from paymentGuardService.ts');
+  const guard = await getPaymentGuard(bookingId);
+  if (!guard) return null;
+  
+  // Transform to legacy format for backward compatibility
+  return {
+    id: bookingId,
+    booking_id: bookingId,
+    proposed_price: guard.approved_price ?? 0,
+    approved_price: guard.approved_price,
+    currency: 'USD',
+    status: guard.can_pay ? 'approved' : 'pending',
+    locked: guard.locked,
+    approved_by: null,
+    approved_at: null,
+    created_at: null,
+    updated_at: null
+  };
 }
 
 /**
- * Create initial price workflow when booking is created
+ * @deprecated Use setBookingPrice from adminService.ts via Edge Function
  */
 export async function createPriceWorkflow(
   bookingId: string,
   proposedPrice: number,
   currency: string = 'USD'
 ): Promise<{ success: boolean; error?: string }> {
-  const { error } = await supabase
-    .from('booking_price_workflow')
-    .insert({
-      booking_id: bookingId,
-      proposed_price: proposedPrice,
-      currency,
-      status: 'pending',
-      locked: false
-    });
-
-  if (error) {
-    console.error('Error creating price workflow:', error);
-    return { success: false, error: error.message };
-  }
-
-  return { success: true };
+  console.warn('DEPRECATED: createPriceWorkflow is deprecated. Use setBookingPrice from adminService.ts');
+  return { success: false, error: 'Use setBookingPrice from adminService.ts via admin-bookings Edge Function' };
 }
 
 /**
- * Admin sets/updates proposed price (ONLY when locked = false)
+ * @deprecated Use setBookingPrice from adminService.ts via Edge Function
  */
 export async function setProposedPrice(
   bookingId: string,
   price: number,
   currency: string = 'USD'
 ): Promise<{ success: boolean; error?: string }> {
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    return { success: false, error: 'Not authenticated' };
-  }
-
-  if (price < 0) {
-    return { success: false, error: 'Price cannot be negative' };
-  }
-
-  // Check if workflow exists
-  const existing = await getPriceWorkflow(bookingId);
-  
-  if (existing) {
-    // Cannot edit if locked
-    if (existing.locked) {
-      return { success: false, error: 'Price is locked and cannot be modified' };
-    }
-    
-    // Update existing
-    const { error } = await supabase
-      .from('booking_price_workflow')
-      .update({
-        proposed_price: price,
-        currency,
-        status: 'proposed',
-        updated_at: new Date().toISOString()
-      })
-      .eq('booking_id', bookingId);
-
-    if (error) {
-      console.error('Error updating proposed price:', error);
-      return { success: false, error: error.message };
-    }
-  } else {
-    // Create new
-    const { error } = await supabase
-      .from('booking_price_workflow')
-      .insert({
-        booking_id: bookingId,
-        proposed_price: price,
-        currency,
-        status: 'proposed',
-        locked: false
-      });
-
-    if (error) {
-      console.error('Error creating proposed price:', error);
-      return { success: false, error: error.message };
-    }
-  }
-
-  // Log admin action
-  await logAdminAction('price_proposed', bookingId, 'booking_price_workflow', { price });
-
-  // Notify customer
-  const { data: booking } = await supabase
-    .from('bookings')
-    .select('user_id, service_type')
-    .eq('id', bookingId)
-    .single();
-
-  if (booking?.user_id) {
-    await supabase.from('customer_notifications').insert({
-      user_id: booking.user_id,
-      booking_id: bookingId,
-      type: 'price_proposed',
-      title: 'Price Quote Available',
-      message: `A price of $${price} has been proposed for your ${booking.service_type} booking. Please review.`
-    });
-  }
-
-  return { success: true };
+  console.warn('DEPRECATED: setProposedPrice is deprecated. Use setBookingPrice from adminService.ts');
+  return { success: false, error: 'Use setBookingPrice from adminService.ts via admin-bookings Edge Function' };
 }
 
 /**
- * Admin approves the price (sets approved_price, locked = true)
+ * @deprecated Use setBookingPrice from adminService.ts via Edge Function with lock: true
  */
 export async function approvePrice(bookingId: string): Promise<{ success: boolean; error?: string }> {
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    return { success: false, error: 'Not authenticated' };
-  }
-
-  const workflow = await getPriceWorkflow(bookingId);
-  
-  if (!workflow) {
-    return { success: false, error: 'Price workflow not found' };
-  }
-
-  if (workflow.locked) {
-    return { success: false, error: 'Price is already approved and locked' };
-  }
-
-  const { error } = await supabase
-    .from('booking_price_workflow')
-    .update({
-      approved_price: workflow.proposed_price,
-      status: 'approved',
-      locked: true,
-      approved_by: user.id,
-      approved_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    })
-    .eq('booking_id', bookingId);
-
-  if (error) {
-    console.error('Error approving price:', error);
-    return { success: false, error: error.message };
-  }
-
-  // Update booking status
-  await supabase
-    .from('bookings')
-    .update({
-      status: 'awaiting_customer_confirmation',
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', bookingId);
-
-  // Log admin action
-  await logAdminAction('price_approved', bookingId, 'booking_price_workflow', { 
-    approved_price: workflow.proposed_price 
-  });
-
-  // Notify customer
-  const { data: booking } = await supabase
-    .from('bookings')
-    .select('user_id, service_type')
-    .eq('id', bookingId)
-    .single();
-
-  if (booking?.user_id) {
-    await supabase.from('customer_notifications').insert({
-      user_id: booking.user_id,
-      booking_id: bookingId,
-      type: 'price_approved',
-      title: 'Price Confirmed - Ready for Payment',
-      message: `Your booking price of $${workflow.proposed_price} has been confirmed. You can now proceed to payment.`
-    });
-  }
-
-  return { success: true };
+  console.warn('DEPRECATED: approvePrice is deprecated. Use setBookingPrice from adminService.ts');
+  return { success: false, error: 'Use setBookingPrice from adminService.ts via admin-bookings Edge Function' };
 }
 
 /**
- * Check if customer can pay
- * ONLY when status = 'approved' AND locked = true
+ * Check if customer can pay - redirects to paymentGuardService
  */
 export async function canCustomerPay(bookingId: string): Promise<{ canPay: boolean; reason?: string; amount?: number }> {
-  const workflow = await getPriceWorkflow(bookingId);
-  
-  if (!workflow) {
-    return { canPay: false, reason: 'Price not set by admin' };
-  }
-
-  if (workflow.status === 'paid') {
-    return { canPay: false, reason: 'Already paid' };
-  }
-
-  if (workflow.status !== 'approved') {
-    return { canPay: false, reason: 'Price must be approved by admin first' };
-  }
-
-  if (!workflow.locked) {
-    return { canPay: false, reason: 'Price is not locked' };
-  }
-
-  if (!workflow.approved_price || workflow.approved_price <= 0) {
-    return { canPay: false, reason: 'No approved price set' };
-  }
-
-  return { 
-    canPay: true, 
-    amount: workflow.approved_price 
+  const result = await _canPayForBooking(bookingId);
+  return {
+    canPay: result.canPay,
+    reason: result.reason,
+    amount: result.amount ?? undefined
   };
 }
 
 /**
- * Get the payable amount (approved_price ONLY)
+ * Get the payable amount - redirects to paymentGuardService
  */
 export async function getPayableAmount(bookingId: string): Promise<number> {
-  const workflow = await getPriceWorkflow(bookingId);
-  
-  if (!workflow || workflow.status !== 'approved' || !workflow.locked) {
-    return 0;
-  }
-  
-  return workflow.approved_price || 0;
+  return await _getPayableAmount(bookingId) ?? 0;
 }
 
 /**
- * Mark price as paid (called after successful payment)
+ * @deprecated Mark as paid should be done via admin-bookings Edge Function
  */
 export async function markPricePaid(bookingId: string): Promise<{ success: boolean; error?: string }> {
-  const workflow = await getPriceWorkflow(bookingId);
-  
-  if (!workflow) {
-    return { success: false, error: 'Price workflow not found' };
-  }
-
-  if (!workflow.locked || workflow.status !== 'approved') {
-    return { success: false, error: 'Cannot mark as paid - price not approved' };
-  }
-
-  const { error } = await supabase
-    .from('booking_price_workflow')
-    .update({
-      status: 'paid',
-      updated_at: new Date().toISOString()
-    })
-    .eq('booking_id', bookingId);
-
-  if (error) {
-    console.error('Error marking price as paid:', error);
-    return { success: false, error: error.message };
-  }
-
-  return { success: true };
+  console.warn('DEPRECATED: markPricePaid is deprecated. Use updatePaymentStatus from adminService.ts');
+  return { success: false, error: 'Use updatePaymentStatus from adminService.ts' };
 }
 
 /**
- * Get prices for multiple bookings
+ * @deprecated Use getMultiplePaymentGuards from paymentGuardService.ts
  */
 export async function getMultiplePriceWorkflows(bookingIds: string[]): Promise<Record<string, PriceWorkflow>> {
-  if (bookingIds.length === 0) return {};
-
-  const { data, error } = await supabase
-    .from('booking_price_workflow')
-    .select('*')
-    .in('booking_id', bookingIds);
-
-  if (error) {
-    console.error('Error fetching price workflows:', error);
-    return {};
-  }
-
-  const map: Record<string, PriceWorkflow> = {};
-  for (const workflow of data || []) {
-    map[workflow.booking_id] = workflow as PriceWorkflow;
-  }
-
-  return map;
+  console.warn('DEPRECATED: getMultiplePriceWorkflows is deprecated. Use getMultiplePaymentGuards from paymentGuardService.ts');
+  return {};
 }
 
 /**
- * Check if admin can edit price (only when NOT locked)
+ * Check if admin can edit price
  */
 export async function canAdminEditPrice(bookingId: string): Promise<boolean> {
-  const workflow = await getPriceWorkflow(bookingId);
-  
-  if (!workflow) return true; // Can create new
-  return !workflow.locked;
+  const guard = await getPaymentGuard(bookingId);
+  if (!guard) return true; // No price set yet
+  return !guard.locked;
 }
