@@ -1,20 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, jsonResponse, errorResponse, handleCors, getClientIP } from '../_shared/auth.ts';
 
 // Rate limiting configuration
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MINUTES = 15;
-
-// Get client IP from request headers
-function getClientIP(req: Request): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
-         req.headers.get('x-real-ip') || 
-         'unknown';
-}
 
 // Check if user is rate limited
 async function checkRateLimit(supabase: any, identifier: string, ip: string): Promise<{ isLimited: boolean; remainingAttempts: number }> {
@@ -71,9 +60,8 @@ function constantTimeCompare(a: string, b: string): boolean {
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
 
   try {
     const { email, password } = await req.json();
