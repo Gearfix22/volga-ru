@@ -6,6 +6,9 @@ interface AdminApiResponse<T = any> {
   success?: boolean;
   error?: string;
   data?: T;
+  price?: number;
+  locked?: boolean;
+  message?: string;
 }
 
 async function getAuthHeaders(): Promise<HeadersInit> {
@@ -47,6 +50,59 @@ export async function getAdminBookings(filters?: BookingFilters) {
   }
   
   return data.bookings;
+}
+
+/**
+ * POST /admin-bookings/:id/set-price
+ * CRITICAL: This is the ONLY way to set admin price
+ * Writes to booking_prices table and locks the price
+ */
+export async function setBookingPrice(
+  bookingId: string, 
+  price: number, 
+  options?: { 
+    lock?: boolean; 
+    currency?: string; 
+    admin_notes?: string 
+  }
+): Promise<AdminApiResponse> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${EDGE_FUNCTION_URL}/${bookingId}/set-price`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      price,
+      lock: options?.lock ?? true, // Default to lock
+      currency: options?.currency || 'USD',
+      admin_notes: options?.admin_notes
+    }),
+  });
+  const data = await response.json();
+  
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to set price');
+  }
+  
+  return data;
+}
+
+/**
+ * POST /admin-bookings/:id/unlock-price
+ * Allows admin to unlock a previously locked price for editing
+ */
+export async function unlockBookingPrice(bookingId: string): Promise<AdminApiResponse> {
+  const headers = await getAuthHeaders();
+  const response = await fetch(`${EDGE_FUNCTION_URL}/${bookingId}/unlock-price`, {
+    method: 'POST',
+    headers,
+  });
+  const data = await response.json();
+  
+  if (!response.ok) {
+    throw new Error(data.error || 'Failed to unlock price');
+  }
+  
+  return data;
 }
 
 // GET /admin-bookings/:id - Get single booking

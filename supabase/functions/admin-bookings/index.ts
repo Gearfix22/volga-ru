@@ -4,12 +4,17 @@
  * Full CRUD operations for bookings - ADMIN ONLY
  * Uses shared auth middleware for consistent security
  * 
+ * PRICE MANAGEMENT ARCHITECTURE:
+ * - booking_prices table is the SINGLE SOURCE OF TRUTH
+ * - v_booking_payment_guard view derives can_pay from booking_prices
+ * - admin_final_price in bookings table is also updated for consistency
+ * 
  * Endpoints:
  * GET    /admin-bookings              - List all bookings
  * GET    /admin-bookings/:id          - Get specific booking
  * PUT    /admin-bookings/:id          - Update booking
  * DELETE /admin-bookings/:id          - Delete booking
- * POST   /admin-bookings/:id/set-price      - Set price and move to awaiting_customer_confirmation
+ * POST   /admin-bookings/:id/set-price      - Set price and lock for payment
  * POST   /admin-bookings/:id/confirm        - Confirm booking (legacy)
  * POST   /admin-bookings/:id/reject         - Reject booking
  * POST   /admin-bookings/:id/payment        - Update payment status
@@ -75,29 +80,46 @@ Deno.serve(async (req) => {
     }
 
     // =========================================================
-    // GET /admin-bookings/:id - Get specific booking
+    // GET /admin-bookings/:id - Get specific booking with price data
     // =========================================================
     if (method === 'GET' && bookingId && !action) {
-      const { data, error } = await supabaseAdmin
+      const { data: booking, error } = await supabaseAdmin
         .from('bookings')
         .select('*')
         .eq('id', bookingId)
         .maybeSingle()
 
       if (error) throw error
-      if (!data) {
+      if (!booking) {
         return errorResponse('Booking not found', 404)
       }
 
-      return jsonResponse({ booking: data })
+      // Also fetch price data from booking_prices (SINGLE SOURCE OF TRUTH)
+      const { data: priceData } = await supabaseAdmin
+        .from('booking_prices')
+        .select('*')
+        .eq('booking_id', bookingId)
+        .maybeSingle()
+
+      return jsonResponse({ 
+        booking,
+        price: priceData ? {
+          admin_price: priceData.admin_price,
+          locked: priceData.locked,
+          currency: priceData.currency,
+          can_pay: priceData.admin_price !== null && priceData.locked === true
+        } : null
+      })
     }
 
     // =========================================================
     // POST /admin-bookings/:id/set-price
+    // CRITICAL: This is the ONLY way to set admin price
+    // Writes to booking_prices table (SINGLE SOURCE OF TRUTH)
     // =========================================================
     if (method === 'POST' && bookingId && action === 'set-price') {
       const body = await req.json()
-      const { price, admin_notes, currency } = body
+      const { price, admin_notes, currency, lock = true } = body
 
       if (typeof price !== 'number' || price <= 0) {
         return errorResponse('Valid price is required', 400)
@@ -105,7 +127,7 @@ Deno.serve(async (req) => {
 
       const { data: booking, error: fetchError } = await supabaseAdmin
         .from('bookings')
-        .select('status, admin_final_price, user_id')
+        .select('status, admin_final_price, user_id, total_price')
         .eq('id', bookingId)
         .maybeSingle()
 
@@ -122,26 +144,40 @@ Deno.serve(async (req) => {
         )
       }
 
-      // Upsert into booking_prices table
+      // Check if price is already locked in booking_prices
+      const { data: existingPrice } = await supabaseAdmin
+        .from('booking_prices')
+        .select('locked')
+        .eq('booking_id', bookingId)
+        .maybeSingle()
+
+      if (existingPrice?.locked === true) {
+        return errorResponse('Price is already locked and cannot be modified', 400, 'PRICE_LOCKED')
+      }
+
+      // CRITICAL: Upsert into booking_prices table (SINGLE SOURCE OF TRUTH)
       const { error: priceError } = await supabaseAdmin
         .from('booking_prices')
         .upsert({
           booking_id: bookingId,
           admin_price: price,
-          currency: currency || 'USD'
+          amount: price, // Also set amount for consistency
+          currency: currency || 'USD',
+          locked: lock, // Lock by default when admin sets price
+          updated_at: new Date().toISOString()
         }, {
           onConflict: 'booking_id'
         })
 
       if (priceError) {
-        console.error('Error setting booking price:', priceError)
-        return errorResponse('Failed to set price', 500)
+        console.error('Error setting booking price in booking_prices:', priceError)
+        return errorResponse('Failed to set price in price table', 500)
       }
 
-      // Update bookings table
+      // Also update bookings table for consistency (admin_final_price column)
       const updateData: Record<string, any> = {
         admin_final_price: price,
-        status: 'awaiting_customer_confirmation',
+        status: lock ? 'awaiting_customer_confirmation' : booking.status,
         updated_at: new Date().toISOString()
       }
       if (admin_notes) updateData.admin_notes = admin_notes
@@ -151,26 +187,74 @@ Deno.serve(async (req) => {
         .update(updateData)
         .eq('id', bookingId)
 
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error('Error updating bookings table:', updateError)
+        // Don't fail - booking_prices is the source of truth
+      }
 
       await logAdminAction(supabaseAdmin, user.id, 'price_set', bookingId, 'bookings', {
         price,
+        locked: lock,
         old_status: booking.status,
-        new_status: 'awaiting_customer_confirmation'
+        new_status: lock ? 'awaiting_customer_confirmation' : booking.status
       })
 
-      // Notify customer
-      if (booking.user_id) {
+      // Notify customer if price is locked (ready for payment)
+      if (booking.user_id && lock) {
         await supabaseAdmin.from('customer_notifications').insert({
           user_id: booking.user_id,
           booking_id: bookingId,
           type: 'price_set',
           title: 'Price Confirmed',
-          message: `Your booking price has been set to $${price}. Please confirm and proceed to payment.`
+          message: `Your booking price has been set to $${price}. You can now proceed to payment.`
         })
       }
 
-      return jsonResponse({ success: true, price, status: 'awaiting_customer_confirmation' })
+      return jsonResponse({ 
+        success: true, 
+        price, 
+        locked: lock,
+        status: lock ? 'awaiting_customer_confirmation' : booking.status,
+        message: lock ? 'Price set and locked - customer can now pay' : 'Price set but not locked'
+      })
+    }
+
+    // =========================================================
+    // POST /admin-bookings/:id/unlock-price
+    // Allow admin to unlock price for editing
+    // =========================================================
+    if (method === 'POST' && bookingId && action === 'unlock-price') {
+      const { data: booking, error: fetchError } = await supabaseAdmin
+        .from('bookings')
+        .select('status, payment_status')
+        .eq('id', bookingId)
+        .maybeSingle()
+
+      if (fetchError || !booking) {
+        return errorResponse('Booking not found', 404)
+      }
+
+      // Cannot unlock if already paid
+      if (booking.payment_status === 'paid') {
+        return errorResponse('Cannot unlock price for paid booking', 400, 'ALREADY_PAID')
+      }
+
+      const { error: unlockError } = await supabaseAdmin
+        .from('booking_prices')
+        .update({ 
+          locked: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('booking_id', bookingId)
+
+      if (unlockError) {
+        console.error('Error unlocking price:', unlockError)
+        return errorResponse('Failed to unlock price', 500)
+      }
+
+      await logAdminAction(supabaseAdmin, user.id, 'price_unlocked', bookingId, 'bookings', {})
+
+      return jsonResponse({ success: true, message: 'Price unlocked for editing' })
     }
 
     // =========================================================
@@ -292,19 +376,37 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Block price updates after payment
+      // Block price updates after payment via PUT - use set-price action instead
       const lockedStatuses = ['paid', 'in_progress', 'completed']
       if (admin_final_price !== undefined && lockedStatuses.includes(currentBooking.status)) {
-        return errorResponse('Cannot update price after payment', 400, 'PRICE_LOCKED')
+        return errorResponse('Cannot update price after payment. Use set-price action for price changes.', 400, 'PRICE_LOCKED')
       }
 
       const updateData: Record<string, any> = { updated_at: new Date().toISOString() }
       if (status) updateData.status = status
       if (payment_status) updateData.payment_status = payment_status
       if (admin_notes !== undefined) updateData.admin_notes = admin_notes
-      if (admin_final_price !== undefined) updateData.admin_final_price = admin_final_price
       if (assigned_driver_id !== undefined) updateData.assigned_driver_id = assigned_driver_id
       if (assigned_guide_id !== undefined) updateData.assigned_guide_id = assigned_guide_id
+
+      // If admin_final_price is provided via PUT, also update booking_prices table
+      if (admin_final_price !== undefined) {
+        updateData.admin_final_price = admin_final_price
+        
+        // Sync to booking_prices table
+        await supabaseAdmin
+          .from('booking_prices')
+          .upsert({
+            booking_id: bookingId,
+            admin_price: admin_final_price,
+            amount: admin_final_price,
+            currency: 'USD',
+            locked: false, // Don't lock via PUT - use set-price for locking
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'booking_id'
+          })
+      }
 
       const { error: updateError } = await supabaseAdmin
         .from('bookings')
@@ -495,6 +597,8 @@ Deno.serve(async (req) => {
         'custom_trip_bookings',
         'tourist_guide_bookings',
         'booking_status_history',
+        'booking_prices',
+        'booking_price_workflow',
         'payment_receipts',
         'customer_notifications',
         'driver_notifications',
