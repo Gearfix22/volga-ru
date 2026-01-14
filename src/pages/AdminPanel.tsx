@@ -16,7 +16,7 @@ import DriversManagement from '@/components/admin/DriversManagement';
 import GuidesManagement from '@/components/admin/GuidesManagement';
 import { AdminDriverMap } from '@/components/admin/AdminDriverMap';
 import AdminServicesManagement from '@/components/admin/AdminServicesManagement';
-import AdminPriceNegotiations from '@/components/admin/AdminPriceNegotiations';
+import { AdminPriceNegotiations } from '@/components/admin/AdminPriceNegotiations';
 
 type TabType = 'overview' | 'bookings' | 'payments' | 'pricing' | 'drivers' | 'guides' | 'services' | 'map' | 'users' | 'logs';
 
