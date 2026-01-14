@@ -1,20 +1,24 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+/**
+ * MANAGE-DRIVERS EDGE FUNCTION
+ * 
+ * Admin-only CRUD for drivers + public password reset request.
+ * Uses shared auth middleware for protected endpoints.
+ */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { 
+  corsHeaders, 
+  jsonResponse, 
+  errorResponse, 
+  handleCors,
+  requireAdmin,
+  logAdminAction,
+  getClientIP
+} from '../_shared/auth.ts'
 
 // Rate limiting configuration for password reset requests
 const MAX_RESET_ATTEMPTS = 3;
 const RESET_LOCKOUT_DURATION_MINUTES = 30;
-
-// Get client IP from request headers
-function getClientIP(req: Request): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
-         req.headers.get('x-real-ip') || 
-         'unknown';
-}
 
 // Check rate limit for password reset requests
 async function checkResetRateLimit(supabase: any, identifier: string, ip: string): Promise<{ isLimited: boolean }> {
@@ -52,9 +56,9 @@ async function recordResetAttempt(supabase: any, identifier: string, ip: string)
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
+  // Handle CORS preflight
+  const corsResponse = handleCors(req)
+  if (corsResponse) return corsResponse
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -135,46 +139,20 @@ Deno.serve(async (req) => {
       })
     }
 
-    // All other operations require admin auth
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
-
-    // Verify user is admin
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    )
-
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
-
-    const { data: roleData } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .maybeSingle()
-
-    if (!roleData) {
-      return new Response(JSON.stringify({ error: 'Admin access required' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
+    // All other operations require admin auth - use shared middleware
+    const authResult = await requireAdmin(req)
+    if (authResult instanceof Response) return authResult
+    
+    const { user, supabaseAdmin: adminClient } = authResult
 
     const url = new URL(req.url)
     const pathParts = url.pathname.split('/').filter(Boolean)
     const method = req.method
     const driverId = pathParts.length > 1 ? pathParts[1] : null
     const action = pathParts.length > 2 ? pathParts[2] : null
+
+    // Use the admin client from auth context for all subsequent operations
+    const supabase = adminClient
 
     // POST /manage-drivers - Create new driver with auth account
     if (method === 'POST' && !driverId && body.action !== 'reset_driver_password') {
