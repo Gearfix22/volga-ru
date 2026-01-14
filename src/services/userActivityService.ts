@@ -58,13 +58,8 @@ export const getUserActivityHistory = async (limit = 50): Promise<ActivityHistor
       .order('timestamp', { ascending: false })
       .limit(10);
 
-    // Fetch search queries
-    const { data: searchQueries } = await supabase
-      .from('search_queries')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('timestamp', { ascending: false })
-      .limit(10);
+    // Search queries are now stored in localStorage (table was removed)
+    // We'll skip them in the unified history
 
     // Convert all activities to unified format
     const unifiedHistory: ActivityHistoryItem[] = [];
@@ -89,7 +84,7 @@ export const getUserActivityHistory = async (limit = 50): Promise<ActivityHistor
         type: 'booking',
         title: `${booking.service_type} Booking`,
         description: `Created booking for ${booking.service_type} - $${booking.total_price}`,
-        timestamp: booking.created_at,
+        timestamp: booking.created_at || new Date().toISOString(),
         icon: 'calendar',
         data: {
           service_type: booking.service_type,
@@ -107,7 +102,7 @@ export const getUserActivityHistory = async (limit = 50): Promise<ActivityHistor
           type: 'page_visit',
           title: 'Page Visit',
           description: `Visited ${getPageTitle(visit.page_url)}`,
-          timestamp: visit.visit_timestamp,
+          timestamp: visit.visit_timestamp || visit.created_at || new Date().toISOString(),
           icon: 'eye',
           data: { page_url: visit.page_url, page_title: visit.page_title }
         });
@@ -122,24 +117,11 @@ export const getUserActivityHistory = async (limit = 50): Promise<ActivityHistor
           type: 'form_interaction',
           title: 'Form Submission',
           description: `Submitted ${interaction.form_type} form`,
-          timestamp: interaction.timestamp,
+          timestamp: interaction.timestamp || interaction.created_at || new Date().toISOString(),
           icon: 'file-text',
           data: { form_type: interaction.form_type }
         });
       }
-    });
-
-    // Add search queries
-    searchQueries?.forEach(query => {
-      unifiedHistory.push({
-        id: query.id,
-        type: 'search',
-        title: 'Search Query',
-        description: `Searched for "${query.query_text}"`,
-        timestamp: query.timestamp,
-        icon: 'search',
-        data: { query_text: query.query_text, search_type: query.search_type }
-      });
     });
 
     // Sort by timestamp and limit

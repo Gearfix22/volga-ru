@@ -11,7 +11,8 @@ export interface Driver {
 
 export interface DriverNotification {
   id: string;
-  driver_id: string;
+  recipient_id: string;
+  recipient_type: string;
   booking_id: string | null;
   type: string;
   title: string;
@@ -145,15 +146,16 @@ export async function getDriverAssignedBookings(): Promise<AssignedBooking[]> {
   return data as AssignedBooking[];
 }
 
-// Get driver notifications
+// Get driver notifications from unified_notifications table
 export async function getDriverNotifications(limit: number = 20): Promise<DriverNotification[]> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
   const { data, error } = await supabase
-    .from('driver_notifications')
+    .from('unified_notifications')
     .select('*')
-    .eq('driver_id', user.id)
+    .eq('recipient_id', user.id)
+    .eq('recipient_type', 'driver')
     .order('created_at', { ascending: false })
     .limit(limit);
   
@@ -168,7 +170,7 @@ export async function getDriverNotifications(limit: number = 20): Promise<Driver
 // Mark driver notification as read
 export async function markDriverNotificationRead(notificationId: string): Promise<boolean> {
   const { error } = await supabase
-    .from('driver_notifications')
+    .from('unified_notifications')
     .update({ is_read: true })
     .eq('id', notificationId);
   
@@ -341,7 +343,7 @@ export async function toggleDriverVisibility(
   return { success: true };
 }
 
-// Subscribe to new driver notifications
+// Subscribe to new driver notifications using unified_notifications
 export function subscribeToDriverNotifications(
   driverId: string,
   callback: (notification: DriverNotification) => void
@@ -353,11 +355,14 @@ export function subscribeToDriverNotifications(
       {
         event: 'INSERT',
         schema: 'public',
-        table: 'driver_notifications',
-        filter: `driver_id=eq.${driverId}`,
+        table: 'unified_notifications',
+        filter: `recipient_id=eq.${driverId}`,
       },
       (payload) => {
-        callback(payload.new as DriverNotification);
+        // Only process driver type notifications
+        if (payload.new && (payload.new as any).recipient_type === 'driver') {
+          callback(payload.new as DriverNotification);
+        }
       }
     )
     .subscribe();

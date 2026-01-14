@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Check, CheckCheck, X } from 'lucide-react';
+import { Bell, Check, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,6 +18,7 @@ import {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   subscribeToNotifications,
+  getNotificationIcon,
 } from '@/services/notificationService';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -81,18 +82,7 @@ export const NotificationBell: React.FC = () => {
     setIsOpen(false);
   };
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'new_booking':
-        return '📦';
-      case 'status_change':
-        return '🔄';
-      case 'payment_update':
-        return '💳';
-      default:
-        return '📌';
-    }
-  };
+  // Use imported getNotificationIcon from service
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>

@@ -378,12 +378,13 @@ export async function getGuideLocation(guideId: string): Promise<GuideLocation |
   return data as GuideLocation;
 }
 
-// Get guide notifications
+// Get guide notifications from unified_notifications table
 export async function getGuideNotifications(guideId: string): Promise<GuideNotification[]> {
   const { data, error } = await supabase
-    .from('guide_notifications')
+    .from('unified_notifications')
     .select('*')
-    .eq('guide_id', guideId)
+    .eq('recipient_id', guideId)
+    .eq('recipient_type', 'guide')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -391,13 +392,23 @@ export async function getGuideNotifications(guideId: string): Promise<GuideNotif
     return [];
   }
 
-  return data as GuideNotification[];
+  // Map to GuideNotification format
+  return (data || []).map(n => ({
+    id: n.id,
+    guide_id: n.recipient_id,
+    booking_id: n.booking_id,
+    type: n.type,
+    title: n.title,
+    message: n.message,
+    is_read: n.is_read || false,
+    created_at: n.created_at || ''
+  }));
 }
 
 // Mark notification as read
 export async function markGuideNotificationRead(notificationId: string): Promise<boolean> {
   const { error } = await supabase
-    .from('guide_notifications')
+    .from('unified_notifications')
     .update({ is_read: true })
     .eq('id', notificationId);
 

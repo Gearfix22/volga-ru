@@ -1,5 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
 
+/**
+ * Customer Notification Service
+ * Uses the unified_notifications table with recipient_type = 'user'
+ */
+
 export type NotificationType = 
   | 'booking_update' 
   | 'payment' 
@@ -10,7 +15,8 @@ export type NotificationType =
 
 export interface CustomerNotification {
   id: string;
-  user_id: string;
+  recipient_id: string;
+  recipient_type: string;
   booking_id: string | null;
   type: NotificationType;
   title: string;
@@ -23,9 +29,14 @@ export interface CustomerNotification {
  * Get unread notifications for current user
  */
 export async function getUnreadCustomerNotifications(): Promise<CustomerNotification[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const { data, error } = await supabase
-    .from('customer_notifications')
+    .from('unified_notifications')
     .select('*')
+    .eq('recipient_id', user.id)
+    .eq('recipient_type', 'user')
     .eq('is_read', false)
     .order('created_at', { ascending: false })
     .limit(20);
@@ -42,9 +53,14 @@ export async function getUnreadCustomerNotifications(): Promise<CustomerNotifica
  * Get all notifications for current user
  */
 export async function getAllCustomerNotifications(limit: number = 50): Promise<CustomerNotification[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const { data, error } = await supabase
-    .from('customer_notifications')
+    .from('unified_notifications')
     .select('*')
+    .eq('recipient_id', user.id)
+    .eq('recipient_type', 'user')
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -61,7 +77,7 @@ export async function getAllCustomerNotifications(limit: number = 50): Promise<C
  */
 export async function markCustomerNotificationAsRead(notificationId: string): Promise<boolean> {
   const { error } = await supabase
-    .from('customer_notifications')
+    .from('unified_notifications')
     .update({ is_read: true })
     .eq('id', notificationId);
 
@@ -77,9 +93,14 @@ export async function markCustomerNotificationAsRead(notificationId: string): Pr
  * Mark all notifications as read
  */
 export async function markAllCustomerNotificationsAsRead(): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
   const { error } = await supabase
-    .from('customer_notifications')
+    .from('unified_notifications')
     .update({ is_read: true })
+    .eq('recipient_id', user.id)
+    .eq('recipient_type', 'user')
     .eq('is_read', false);
 
   if (error) {
@@ -98,17 +119,20 @@ export function subscribeToCustomerNotifications(
   callback: (notification: CustomerNotification) => void
 ) {
   const channel = supabase
-    .channel('customer-notifications')
+    .channel(`customer-notifications-${userId}`)
     .on(
       'postgres_changes',
       {
         event: 'INSERT',
         schema: 'public',
-        table: 'customer_notifications',
-        filter: `user_id=eq.${userId}`
+        table: 'unified_notifications',
+        filter: `recipient_id=eq.${userId}`
       },
       (payload) => {
-        callback(payload.new as CustomerNotification);
+        // Only process user type notifications
+        if (payload.new && (payload.new as any).recipient_type === 'user') {
+          callback(payload.new as CustomerNotification);
+        }
       }
     )
     .subscribe();
