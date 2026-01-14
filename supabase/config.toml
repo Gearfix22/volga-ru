@@ -4,25 +4,28 @@ project_id = "tujborgbqzmcwolntvas"
 verify_jwt = false
 
 [functions.admin-bookings]
-verify_jwt = true
+verify_jwt = false
+
+[functions.user-bookings]
+verify_jwt = false
 
 [functions.send-booking-email]
 verify_jwt = false
 
 [functions.manage-drivers]
-verify_jwt = true
+verify_jwt = false
 
 [functions.driver-login]
 verify_jwt = false
 
 [functions.get-mapbox-token]
-verify_jwt = true
+verify_jwt = false
 
 [functions.guide-login]
 verify_jwt = false
 
 [functions.manage-guides]
-verify_jwt = true
+verify_jwt = false
 
 [functions.ai-tourist-guide]
 verify_jwt = false

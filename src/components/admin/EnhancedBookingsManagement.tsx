@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,7 +30,8 @@ import {
   RefreshCw,
   Trash2,
   Car,
-  MapPin
+  MapPin,
+  Archive
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +56,7 @@ import {
   deleteBooking,
 } from '@/services/adminService';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { ACTIVE_STATUSES, FINAL_STATUSES } from '@/utils/bookingWorkflow';
 
 interface Booking {
   id: string;
@@ -98,7 +100,7 @@ export const EnhancedBookingsManagement = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [noteText, setNoteText] = useState('');
-  const [activeTab, setActiveTab] = useState('completed');
+  const [activeTab, setActiveTab] = useState('active');
   
   // Rejection modal state
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
@@ -429,15 +431,26 @@ export const EnhancedBookingsManagement = () => {
     }
   };
 
-  const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = 
-      booking.user_info?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.user_info?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      booking.user_info?.phone?.includes(searchQuery) ||
-      booking.id.toLowerCase().includes(searchQuery.toLowerCase());
+  // FIXED: Separate active vs archived bookings using status
+  const activeBookings = useMemo(() => {
+    return bookings.filter(b => ACTIVE_STATUSES.includes(b.status));
+  }, [bookings]);
 
-    return matchesSearch;
-  });
+  const archivedBookings = useMemo(() => {
+    return bookings.filter(b => FINAL_STATUSES.includes(b.status));
+  }, [bookings]);
+
+  const filteredBookings = useMemo(() => {
+    const sourceBookings = activeTab === 'active' ? activeBookings : archivedBookings;
+    return sourceBookings.filter(booking => {
+      const matchesSearch = 
+        booking.user_info?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking.user_info?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking.user_info?.phone?.includes(searchQuery) ||
+        booking.id.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesSearch;
+    });
+  }, [activeBookings, archivedBookings, activeTab, searchQuery]);
 
   const getStatusBadge = (status: string) => {
     // FINAL WORKFLOW status labels
@@ -468,27 +481,38 @@ export const EnhancedBookingsManagement = () => {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="completed">Completed Bookings</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 max-w-lg">
+          <TabsTrigger value="active">
+            Active Bookings
+            {activeBookings.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{activeBookings.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="archived">
+            Archived
+            {archivedBookings.length > 0 && (
+              <Badge variant="outline" className="ml-2">{archivedBookings.length}</Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="drafts">
-            Incomplete Bookings
+            Drafts
             {draftBookings.length > 0 && (
               <Badge variant="secondary" className="ml-2">{draftBookings.length}</Badge>
             )}
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="completed">
+        <TabsContent value="active">
           <Card>
             <CardHeader>
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    Bookings Management
+                    Active Bookings
                   </CardTitle>
                   <CardDescription>
-                    View and manage all customer bookings
+                    Bookings that are pending, in progress, or awaiting action
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
@@ -502,7 +526,7 @@ export const EnhancedBookingsManagement = () => {
                     Refresh
                   </Button>
                   <Badge variant="outline" className="text-lg px-4 py-2">
-                    {filteredBookings.length} Bookings
+                    {filteredBookings.length} Active
                   </Badge>
                 </div>
               </div>
