@@ -185,82 +185,67 @@ export type Database = {
         }
         Relationships: []
       }
-      booking_price_workflow: {
+      booking_price_history: {
         Row: {
-          approved_at: string | null
-          approved_by: string | null
-          approved_price: number | null
-          base_price: number | null
           booking_id: string
+          changed_by: string | null
           created_at: string | null
-          currency: string
           id: string
-          locked: boolean
-          proposed_price: number
-          status: string
-          updated_at: string | null
+          new_price: number | null
+          old_price: number | null
+          reason: string | null
         }
         Insert: {
-          approved_at?: string | null
-          approved_by?: string | null
-          approved_price?: number | null
-          base_price?: number | null
           booking_id: string
+          changed_by?: string | null
           created_at?: string | null
-          currency?: string
           id?: string
-          locked?: boolean
-          proposed_price: number
-          status?: string
-          updated_at?: string | null
+          new_price?: number | null
+          old_price?: number | null
+          reason?: string | null
         }
         Update: {
-          approved_at?: string | null
-          approved_by?: string | null
-          approved_price?: number | null
-          base_price?: number | null
           booking_id?: string
+          changed_by?: string | null
           created_at?: string | null
-          currency?: string
           id?: string
-          locked?: boolean
-          proposed_price?: number
-          status?: string
-          updated_at?: string | null
+          new_price?: number | null
+          old_price?: number | null
+          reason?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "booking_price_workflow_booking_id_fkey"
+            foreignKeyName: "booking_price_history_booking_id_fkey"
             columns: ["booking_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "booking_price_workflow_booking_id_fkey"
+            foreignKeyName: "booking_price_history_booking_id_fkey"
             columns: ["booking_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "v_admin_bookings"
             referencedColumns: ["booking_id"]
           },
           {
-            foreignKeyName: "booking_price_workflow_booking_id_fkey"
+            foreignKeyName: "booking_price_history_booking_id_fkey"
             columns: ["booking_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "v_booking_payment_guard"
             referencedColumns: ["booking_id"]
           },
           {
-            foreignKeyName: "booking_price_workflow_booking_id_fkey"
+            foreignKeyName: "booking_price_history_booking_id_fkey"
             columns: ["booking_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "v_payment_audit"
             referencedColumns: ["booking_id"]
           },
           {
-            foreignKeyName: "booking_price_workflow_booking_id_fkey"
+            foreignKeyName: "booking_price_history_booking_id_fkey"
             columns: ["booking_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "v_user_booking_dashboard"
             referencedColumns: ["booking_id"]
           },
@@ -270,6 +255,8 @@ export type Database = {
         Row: {
           admin_price: number | null
           amount: number
+          approved_at: string | null
+          approved_by: string | null
           booking_id: string
           created_at: string
           currency: string
@@ -281,6 +268,8 @@ export type Database = {
         Insert: {
           admin_price?: number | null
           amount: number
+          approved_at?: string | null
+          approved_by?: string | null
           booking_id: string
           created_at?: string
           currency?: string
@@ -292,6 +281,8 @@ export type Database = {
         Update: {
           admin_price?: number | null
           amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
           booking_id?: string
           created_at?: string
           currency?: string
@@ -406,15 +397,12 @@ export type Database = {
       }
       bookings: {
         Row: {
-          admin_final_price: number | null
           admin_notes: string | null
           assigned_driver_id: string | null
           assigned_guide_id: string | null
           created_at: string | null
           currency: string | null
-          currency_snapshot: string | null
           customer_notes: string | null
-          customer_proposed_price: number | null
           driver_notes: string | null
           driver_required: boolean | null
           driver_response: string | null
@@ -422,15 +410,9 @@ export type Database = {
           exchange_rate_used: number | null
           final_paid_amount: number | null
           id: string
-          original_price_usd: number | null
-          paid_price: number | null
           payment_currency: string | null
           payment_method: string | null
           payment_status: string | null
-          price_confirmed: boolean | null
-          price_confirmed_at: string | null
-          quoted_price: number | null
-          quoted_price_snapshot: number | null
           requires_verification: boolean | null
           service_details: Json | null
           service_id: string | null
@@ -444,15 +426,12 @@ export type Database = {
           user_info: Json
         }
         Insert: {
-          admin_final_price?: number | null
           admin_notes?: string | null
           assigned_driver_id?: string | null
           assigned_guide_id?: string | null
           created_at?: string | null
           currency?: string | null
-          currency_snapshot?: string | null
           customer_notes?: string | null
-          customer_proposed_price?: number | null
           driver_notes?: string | null
           driver_required?: boolean | null
           driver_response?: string | null
@@ -460,15 +439,9 @@ export type Database = {
           exchange_rate_used?: number | null
           final_paid_amount?: number | null
           id?: string
-          original_price_usd?: number | null
-          paid_price?: number | null
           payment_currency?: string | null
           payment_method?: string | null
           payment_status?: string | null
-          price_confirmed?: boolean | null
-          price_confirmed_at?: string | null
-          quoted_price?: number | null
-          quoted_price_snapshot?: number | null
           requires_verification?: boolean | null
           service_details?: Json | null
           service_id?: string | null
@@ -482,15 +455,12 @@ export type Database = {
           user_info: Json
         }
         Update: {
-          admin_final_price?: number | null
           admin_notes?: string | null
           assigned_driver_id?: string | null
           assigned_guide_id?: string | null
           created_at?: string | null
           currency?: string | null
-          currency_snapshot?: string | null
           customer_notes?: string | null
-          customer_proposed_price?: number | null
           driver_notes?: string | null
           driver_required?: boolean | null
           driver_response?: string | null
@@ -498,15 +468,9 @@ export type Database = {
           exchange_rate_used?: number | null
           final_paid_amount?: number | null
           id?: string
-          original_price_usd?: number | null
-          paid_price?: number | null
           payment_currency?: string | null
           payment_method?: string | null
           payment_status?: string | null
-          price_confirmed?: boolean | null
-          price_confirmed_at?: string | null
-          quoted_price?: number | null
-          quoted_price_snapshot?: number | null
           requires_verification?: boolean | null
           service_details?: Json | null
           service_id?: string | null
@@ -682,123 +646,6 @@ export type Database = {
           },
         ]
       }
-      custom_trip_packages: {
-        Row: {
-          base_price: number
-          created_at: string | null
-          description: string | null
-          difficulty_level: string | null
-          duration_type: string
-          id: string
-          included_activities: string[] | null
-          is_active: boolean | null
-          max_participants: number | null
-          package_name: string
-          price_per_day: number | null
-          regions: string[]
-          updated_at: string | null
-        }
-        Insert: {
-          base_price: number
-          created_at?: string | null
-          description?: string | null
-          difficulty_level?: string | null
-          duration_type: string
-          id?: string
-          included_activities?: string[] | null
-          is_active?: boolean | null
-          max_participants?: number | null
-          package_name: string
-          price_per_day?: number | null
-          regions: string[]
-          updated_at?: string | null
-        }
-        Update: {
-          base_price?: number
-          created_at?: string | null
-          description?: string | null
-          difficulty_level?: string | null
-          duration_type?: string
-          id?: string
-          included_activities?: string[] | null
-          is_active?: boolean | null
-          max_participants?: number | null
-          package_name?: string
-          price_per_day?: number | null
-          regions?: string[]
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      customer_notifications: {
-        Row: {
-          booking_id: string | null
-          created_at: string
-          id: string
-          is_read: boolean | null
-          message: string
-          title: string
-          type: string
-          user_id: string
-        }
-        Insert: {
-          booking_id?: string | null
-          created_at?: string
-          id?: string
-          is_read?: boolean | null
-          message: string
-          title: string
-          type: string
-          user_id: string
-        }
-        Update: {
-          booking_id?: string | null
-          created_at?: string
-          id?: string
-          is_read?: boolean | null
-          message?: string
-          title?: string
-          type?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_admin_bookings"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "customer_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_booking_payment_guard"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "customer_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_payment_audit"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "customer_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_user_booking_dashboard"
-            referencedColumns: ["booking_id"]
-          },
-        ]
-      }
       draft_bookings: {
         Row: {
           booking_progress: string | null
@@ -915,82 +762,6 @@ export type Database = {
             foreignKeyName: "driver_locations_driver_id_fkey"
             columns: ["driver_id"]
             isOneToOne: true
-            referencedRelation: "drivers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      driver_notifications: {
-        Row: {
-          booking_id: string | null
-          created_at: string | null
-          driver_id: string
-          id: string
-          is_read: boolean | null
-          message: string
-          title: string
-          type: string
-        }
-        Insert: {
-          booking_id?: string | null
-          created_at?: string | null
-          driver_id: string
-          id?: string
-          is_read?: boolean | null
-          message: string
-          title: string
-          type: string
-        }
-        Update: {
-          booking_id?: string | null
-          created_at?: string | null
-          driver_id?: string
-          id?: string
-          is_read?: boolean | null
-          message?: string
-          title?: string
-          type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "driver_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "driver_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_admin_bookings"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "driver_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_booking_payment_guard"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "driver_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_payment_audit"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "driver_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_user_booking_dashboard"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "driver_notifications_driver_id_fkey"
-            columns: ["driver_id"]
-            isOneToOne: false
             referencedRelation: "drivers"
             referencedColumns: ["id"]
           },
@@ -1203,54 +974,6 @@ export type Database = {
           },
         ]
       }
-      event_services: {
-        Row: {
-          available_tickets: number | null
-          city: string
-          created_at: string | null
-          description: string | null
-          event_date: string
-          event_name: string
-          event_time: string | null
-          event_type: string
-          id: string
-          is_active: boolean | null
-          ticket_types: Json
-          updated_at: string | null
-          venue: string
-        }
-        Insert: {
-          available_tickets?: number | null
-          city: string
-          created_at?: string | null
-          description?: string | null
-          event_date: string
-          event_name: string
-          event_time?: string | null
-          event_type: string
-          id?: string
-          is_active?: boolean | null
-          ticket_types: Json
-          updated_at?: string | null
-          venue: string
-        }
-        Update: {
-          available_tickets?: number | null
-          city?: string
-          created_at?: string | null
-          description?: string | null
-          event_date?: string
-          event_name?: string
-          event_time?: string | null
-          event_type?: string
-          id?: string
-          is_active?: boolean | null
-          ticket_types?: Json
-          updated_at?: string | null
-          venue?: string
-        }
-        Relationships: []
-      }
       form_interactions: {
         Row: {
           created_at: string | null
@@ -1408,82 +1131,6 @@ export type Database = {
           },
         ]
       }
-      guide_notifications: {
-        Row: {
-          booking_id: string | null
-          created_at: string | null
-          guide_id: string
-          id: string
-          is_read: boolean | null
-          message: string
-          title: string
-          type: string
-        }
-        Insert: {
-          booking_id?: string | null
-          created_at?: string | null
-          guide_id: string
-          id?: string
-          is_read?: boolean | null
-          message: string
-          title: string
-          type: string
-        }
-        Update: {
-          booking_id?: string | null
-          created_at?: string | null
-          guide_id?: string
-          id?: string
-          is_read?: boolean | null
-          message?: string
-          title?: string
-          type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "guide_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "guide_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_admin_bookings"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "guide_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_booking_payment_guard"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "guide_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_payment_audit"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "guide_notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_user_booking_dashboard"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "guide_notifications_guide_id_fkey"
-            columns: ["guide_id"]
-            isOneToOne: false
-            referencedRelation: "guides"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       guides: {
         Row: {
           created_at: string | null
@@ -1630,111 +1277,6 @@ export type Database = {
           },
         ]
       }
-      hotel_services: {
-        Row: {
-          amenities: string[] | null
-          base_price_per_night: number
-          city: string
-          created_at: string | null
-          description: string | null
-          hotel_name: string
-          id: string
-          is_active: boolean | null
-          max_guests: number | null
-          room_type: string
-          star_rating: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          amenities?: string[] | null
-          base_price_per_night: number
-          city: string
-          created_at?: string | null
-          description?: string | null
-          hotel_name: string
-          id?: string
-          is_active?: boolean | null
-          max_guests?: number | null
-          room_type: string
-          star_rating?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          amenities?: string[] | null
-          base_price_per_night?: number
-          city?: string
-          created_at?: string | null
-          description?: string | null
-          hotel_name?: string
-          id?: string
-          is_active?: boolean | null
-          max_guests?: number | null
-          room_type?: string
-          star_rating?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      i18n_keys: {
-        Row: {
-          key: string
-        }
-        Insert: {
-          key: string
-        }
-        Update: {
-          key?: string
-        }
-        Relationships: []
-      }
-      i18n_translations: {
-        Row: {
-          key: string
-          language_code: string
-          value: string
-        }
-        Insert: {
-          key: string
-          language_code: string
-          value: string
-        }
-        Update: {
-          key?: string
-          language_code?: string
-          value?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "i18n_translations_key_fkey"
-            columns: ["key"]
-            isOneToOne: false
-            referencedRelation: "i18n_keys"
-            referencedColumns: ["key"]
-          },
-          {
-            foreignKeyName: "i18n_translations_language_code_fkey"
-            columns: ["language_code"]
-            isOneToOne: false
-            referencedRelation: "languages"
-            referencedColumns: ["code"]
-          },
-        ]
-      }
-      languages: {
-        Row: {
-          code: string
-          name: string
-        }
-        Insert: {
-          code: string
-          name: string
-        }
-        Update: {
-          code?: string
-          name?: string
-        }
-        Relationships: []
-      }
       login_attempts: {
         Row: {
           attempt_type: string
@@ -1791,72 +1333,6 @@ export type Database = {
           subscription_status?: string | null
         }
         Relationships: []
-      }
-      notifications: {
-        Row: {
-          booking_id: string | null
-          created_at: string | null
-          id: string
-          is_read: boolean | null
-          message: string
-          target_admin_id: string | null
-          type: string
-        }
-        Insert: {
-          booking_id?: string | null
-          created_at?: string | null
-          id?: string
-          is_read?: boolean | null
-          message: string
-          target_admin_id?: string | null
-          type: string
-        }
-        Update: {
-          booking_id?: string | null
-          created_at?: string | null
-          id?: string
-          is_read?: boolean | null
-          message?: string
-          target_admin_id?: string | null
-          type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_admin_bookings"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_booking_payment_guard"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_payment_audit"
-            referencedColumns: ["booking_id"]
-          },
-          {
-            foreignKeyName: "notifications_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "v_user_booking_dashboard"
-            referencedColumns: ["booking_id"]
-          },
-        ]
       }
       page_visits: {
         Row: {
@@ -2008,39 +1484,6 @@ export type Database = {
           preferred_currency?: string | null
           preferred_language?: string | null
           updated_at?: string | null
-        }
-        Relationships: []
-      }
-      search_queries: {
-        Row: {
-          created_at: string | null
-          id: string
-          query_text: string
-          results_count: number | null
-          search_type: string | null
-          session_id: string | null
-          timestamp: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          query_text: string
-          results_count?: number | null
-          search_type?: string | null
-          session_id?: string | null
-          timestamp?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          query_text?: string
-          results_count?: number | null
-          search_type?: string | null
-          session_id?: string | null
-          timestamp?: string | null
-          user_id?: string | null
         }
         Relationships: []
       }
@@ -2353,48 +1796,6 @@ export type Database = {
           },
         ]
       }
-      transportation_services: {
-        Row: {
-          base_price: number
-          created_at: string | null
-          description: string | null
-          features: string[] | null
-          id: string
-          is_active: boolean | null
-          max_passengers: number | null
-          price_per_km: number | null
-          service_name: string
-          updated_at: string | null
-          vehicle_type: string
-        }
-        Insert: {
-          base_price: number
-          created_at?: string | null
-          description?: string | null
-          features?: string[] | null
-          id?: string
-          is_active?: boolean | null
-          max_passengers?: number | null
-          price_per_km?: number | null
-          service_name: string
-          updated_at?: string | null
-          vehicle_type: string
-        }
-        Update: {
-          base_price?: number
-          created_at?: string | null
-          description?: string | null
-          features?: string[] | null
-          id?: string
-          is_active?: boolean | null
-          max_passengers?: number | null
-          price_per_km?: number | null
-          service_name?: string
-          updated_at?: string | null
-          vehicle_type?: string
-        }
-        Relationships: []
-      }
       ui_translations: {
         Row: {
           key: string
@@ -2412,6 +1813,78 @@ export type Database = {
           value?: string | null
         }
         Relationships: []
+      }
+      unified_notifications: {
+        Row: {
+          booking_id: string | null
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          recipient_id: string
+          recipient_type: string
+          title: string
+          type: string
+        }
+        Insert: {
+          booking_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          recipient_id: string
+          recipient_type: string
+          title: string
+          type: string
+        }
+        Update: {
+          booking_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          recipient_id?: string
+          recipient_type?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unified_notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unified_notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_bookings"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "unified_notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_booking_payment_guard"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "unified_notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_payment_audit"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "unified_notifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_booking_dashboard"
+            referencedColumns: ["booking_id"]
+          },
+        ]
       }
       user_activities: {
         Row: {
@@ -2446,33 +1919,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_preferences: {
-        Row: {
-          created_at: string | null
-          id: string
-          preference_type: string
-          preference_value: Json
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          preference_type: string
-          preference_value: Json
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          preference_type?: string
-          preference_value?: Json
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -2491,24 +1937,6 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
-        }
-        Relationships: []
-      }
-      workflow_transitions: {
-        Row: {
-          from_status: string
-          role_required: string | null
-          to_status: string
-        }
-        Insert: {
-          from_status: string
-          role_required?: string | null
-          to_status: string
-        }
-        Update: {
-          from_status?: string
-          role_required?: string | null
-          to_status?: string
         }
         Relationships: []
       }
@@ -2629,6 +2057,20 @@ export type Database = {
         | "settings_manage"
         | "full_access"
       app_role: "admin" | "moderator" | "user" | "driver" | "guide"
+      booking_status:
+        | "draft"
+        | "pending"
+        | "under_review"
+        | "approved"
+        | "awaiting_payment"
+        | "paid"
+        | "confirmed"
+        | "assigned"
+        | "accepted"
+        | "on_trip"
+        | "completed"
+        | "cancelled"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2770,6 +2212,21 @@ export const Constants = {
         "full_access",
       ],
       app_role: ["admin", "moderator", "user", "driver", "guide"],
+      booking_status: [
+        "draft",
+        "pending",
+        "under_review",
+        "approved",
+        "awaiting_payment",
+        "paid",
+        "confirmed",
+        "assigned",
+        "accepted",
+        "on_trip",
+        "completed",
+        "cancelled",
+        "rejected",
+      ],
     },
   },
 } as const
