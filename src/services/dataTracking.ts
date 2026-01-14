@@ -59,31 +59,28 @@ export const trackFormInteraction = async (
   }
 };
 
-// Search query tracking
+// Search query tracking - uses localStorage since search_queries table was removed
 export const trackSearchQuery = async (queryText: string, searchType?: string, resultsCount?: number) => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    const sessionId = sessionStorage.getItem('session_id') || generateSessionId();
-
-    const { error } = await supabase
-      .from('search_queries')
-      .insert({
-        user_id: user?.id || null,
-        query_text: queryText,
-        search_type: searchType || null,
-        results_count: resultsCount || null,
-        session_id: sessionId
-      });
-
-    if (error) {
-      console.error('Error tracking search query:', error);
+    // Store in localStorage for analytics purposes
+    const searches = JSON.parse(localStorage.getItem('search_queries') || '[]');
+    searches.push({
+      query_text: queryText,
+      search_type: searchType || null,
+      results_count: resultsCount || null,
+      timestamp: new Date().toISOString()
+    });
+    // Keep only last 50 searches
+    if (searches.length > 50) {
+      searches.shift();
     }
+    localStorage.setItem('search_queries', JSON.stringify(searches));
   } catch (error) {
     console.error('Error in trackSearchQuery:', error);
   }
 };
 
-// User preferences
+// User preferences - uses profiles table preferred_* columns or localStorage
 export const saveUserPreference = async (preferenceType: string, preferenceValue: any) => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -94,13 +91,23 @@ export const saveUserPreference = async (preferenceType: string, preferenceValue
       return;
     }
 
+    // Map common preferences to profiles table columns
+    const profileUpdates: Record<string, any> = {};
+    
+    if (preferenceType === 'language' || preferenceType === 'preferred_language') {
+      profileUpdates.preferred_language = preferenceValue;
+    } else if (preferenceType === 'currency' || preferenceType === 'preferred_currency') {
+      profileUpdates.preferred_currency = preferenceValue;
+    } else {
+      // For other preferences, store in localStorage
+      localStorage.setItem(`pref_${preferenceType}`, JSON.stringify(preferenceValue));
+      return;
+    }
+
     const { error } = await supabase
-      .from('user_preferences')
-      .upsert({
-        user_id: user.id,
-        preference_type: preferenceType,
-        preference_value: preferenceValue
-      });
+      .from('profiles')
+      .update(profileUpdates)
+      .eq('id', user.id);
 
     if (error) {
       console.error('Error saving user preference:', error);
@@ -167,7 +174,7 @@ const generateSessionId = () => {
   return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 };
 
-// Get user preferences
+// Get user preferences - from profiles table or localStorage
 export const getUserPreferences = async (preferenceType?: string) => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -181,23 +188,31 @@ export const getUserPreferences = async (preferenceType?: string) => {
       return null;
     }
 
-    let query = supabase
-      .from('user_preferences')
-      .select('*')
-      .eq('user_id', user.id);
-
-    if (preferenceType) {
-      query = query.eq('preference_type', preferenceType);
-    }
-
-    const { data, error } = await query;
+    // Get from profiles table
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('preferred_language, preferred_currency')
+      .eq('id', user.id)
+      .single();
 
     if (error) {
       console.error('Error getting user preferences:', error);
       return null;
     }
 
-    return preferenceType ? data[0]?.preference_value : data;
+    if (preferenceType) {
+      if (preferenceType === 'language' || preferenceType === 'preferred_language') {
+        return profile?.preferred_language;
+      } else if (preferenceType === 'currency' || preferenceType === 'preferred_currency') {
+        return profile?.preferred_currency;
+      } else {
+        // Check localStorage for other preferences
+        const pref = localStorage.getItem(`pref_${preferenceType}`);
+        return pref ? JSON.parse(pref) : null;
+      }
+    }
+
+    return profile;
   } catch (error) {
     console.error('Error in getUserPreferences:', error);
     return null;

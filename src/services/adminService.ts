@@ -290,8 +290,8 @@ export async function deleteUser(userId: string) {
   // Delete user activities
   await supabase.from('user_activities').delete().eq('user_id', userId);
   
-  // Delete user preferences
-  await supabase.from('user_preferences').delete().eq('user_id', userId);
+  // Delete user notifications
+  await supabase.from('unified_notifications').delete().eq('recipient_id', userId);
   
   // Delete user profile
   const { error } = await supabase

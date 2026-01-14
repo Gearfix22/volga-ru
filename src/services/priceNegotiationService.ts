@@ -1,12 +1,11 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logAdminAction, setBookingPrice as adminSetBookingPrice } from './adminService';
-import { getPaymentGuard, canPayForBooking } from './paymentGuardService';
+import { getPaymentGuard } from './paymentGuardService';
 
 export interface PriceNegotiationData {
   bookingId: string;
   proposedPrice: number | null;
   approvedPrice: number | null;
-  customerProposedPrice: number | null;
   priceApproved: boolean;
   priceLocked: boolean;
   status: string;
@@ -21,10 +20,10 @@ export async function getPriceNegotiationStatus(bookingId: string): Promise<Pric
   // Get from v_booking_payment_guard (single source of truth)
   const guard = await getPaymentGuard(bookingId);
   
-  // Get customer proposed price from bookings table (negotiation feature)
+  // Get payment status from bookings table
   const { data: booking, error } = await supabase
     .from('bookings')
-    .select('customer_proposed_price, payment_status')
+    .select('payment_status, status')
     .eq('id', bookingId)
     .single();
 
@@ -36,11 +35,10 @@ export async function getPriceNegotiationStatus(bookingId: string): Promise<Pric
     bookingId,
     proposedPrice: guard?.approved_price || null,
     approvedPrice: guard?.approved_price || null,
-    customerProposedPrice: booking?.customer_proposed_price || null,
     priceApproved: guard?.can_pay === true,
     priceLocked: guard?.locked || false,
-    status: guard?.can_pay ? 'approved' : 'pending',
-    approvedAt: null, // Not tracked in booking_prices
+    status: booking?.status || 'pending',
+    approvedAt: null,
     paymentStatus: booking?.payment_status || null
   };
 }
@@ -78,62 +76,6 @@ export async function adminApprovePrice(bookingId: string): Promise<{ success: b
 }
 
 /**
- * Customer proposes a different price (BEFORE approval only)
- */
-export async function proposePrice(bookingId: string, proposedPrice: number): Promise<{ success: boolean; error?: string }> {
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    return { success: false, error: 'Not authenticated' };
-  }
-
-  // Check if booking belongs to user
-  const { data: booking, error: fetchError } = await supabase
-    .from('bookings')
-    .select('user_id, status')
-    .eq('id', bookingId)
-    .single();
-
-  if (fetchError || !booking) {
-    return { success: false, error: 'Booking not found' };
-  }
-
-  if (booking.user_id !== user.id) {
-    return { success: false, error: 'Not authorized' };
-  }
-
-  // Check if price is locked (using v_booking_payment_guard)
-  const guard = await getPaymentGuard(bookingId);
-  if (guard?.locked) {
-    return { success: false, error: 'Cannot negotiate price after approval' };
-  }
-
-  const { error } = await supabase
-    .from('bookings')
-    .update({
-      customer_proposed_price: proposedPrice,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', bookingId)
-    .eq('user_id', user.id);
-
-  if (error) {
-    console.error('Error proposing price:', error);
-    return { success: false, error: error.message };
-  }
-
-  // Notify admin
-  await supabase.from('notifications').insert({
-    type: 'price_proposal',
-    message: `Customer proposed $${proposedPrice} for booking ${bookingId.substring(0, 8)}`,
-    booking_id: bookingId,
-    target_admin_id: null
-  });
-
-  return { success: true };
-}
-
-/**
  * Customer confirms the approved price
  */
 export async function confirmPrice(bookingId: string): Promise<{ success: boolean; error?: string }> {
@@ -163,12 +105,11 @@ export async function confirmPrice(bookingId: string): Promise<{ success: boolea
     return { success: false, error: 'Price must be approved by admin first' };
   }
 
+  // Update booking status to indicate price acceptance
   const { error } = await supabase
     .from('bookings')
     .update({
-      price_confirmed: true,
-      price_confirmed_at: new Date().toISOString(),
-      customer_proposed_price: null,
+      status: 'awaiting_payment',
       updated_at: new Date().toISOString()
     })
     .eq('id', bookingId)
@@ -179,19 +120,21 @@ export async function confirmPrice(bookingId: string): Promise<{ success: boolea
     return { success: false, error: error.message };
   }
 
-  // Notify admin
-  await supabase.from('notifications').insert({
+  // Notify admin via unified_notifications
+  await supabase.from('unified_notifications').insert({
+    recipient_type: 'admin',
+    recipient_id: user.id, // Will be filtered by recipient_type
     type: 'price_confirmed',
+    title: 'Price Confirmed',
     message: `Customer confirmed price for booking ${bookingId.substring(0, 8)}`,
-    booking_id: bookingId,
-    target_admin_id: null
+    booking_id: bookingId
   });
 
   return { success: true };
 }
 
 /**
- * Admin accepts customer's proposed price
+ * Admin accepts customer's proposed price (legacy - price negotiation is now via booking_prices)
  */
 export async function acceptProposedPrice(bookingId: string): Promise<{ success: boolean; error?: string }> {
   const { data: { user } } = await supabase.auth.getUser();
@@ -200,19 +143,28 @@ export async function acceptProposedPrice(bookingId: string): Promise<{ success:
     return { success: false, error: 'Not authenticated' };
   }
 
+  // Get booking to find user
   const { data: booking, error: fetchError } = await supabase
     .from('bookings')
-    .select('customer_proposed_price, user_id, service_type')
+    .select('user_id, service_type, total_price')
     .eq('id', bookingId)
     .single();
 
-  if (fetchError || !booking?.customer_proposed_price) {
-    return { success: false, error: 'No proposed price found' };
+  if (fetchError || !booking) {
+    return { success: false, error: 'Booking not found' };
   }
 
-  // Set the proposed price as the new price and approve it via Edge Function
+  // Get current price from booking_prices
+  const guard = await getPaymentGuard(bookingId);
+  const priceToApprove = guard?.approved_price || booking?.total_price;
+
+  if (!priceToApprove) {
+    return { success: false, error: 'No price to approve' };
+  }
+
+  // Set the price and lock it via Edge Function
   try {
-    const result = await adminSetBookingPrice(bookingId, booking.customer_proposed_price, { lock: true });
+    const result = await adminSetBookingPrice(bookingId, priceToApprove, { lock: true });
     if (!result.success) {
       return { success: false, error: result.error || 'Failed to set price' };
     }
@@ -220,27 +172,19 @@ export async function acceptProposedPrice(bookingId: string): Promise<{ success:
     return { success: false, error: error.message };
   }
 
-  // Clear customer proposed price
-  await supabase
-    .from('bookings')
-    .update({
-      customer_proposed_price: null,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', bookingId);
-
-  await logAdminAction('price_proposal_accepted', bookingId, 'bookings', { 
-    acceptedPrice: booking.customer_proposed_price 
+  await logAdminAction('price_approved', bookingId, 'bookings', { 
+    approvedPrice: priceToApprove 
   });
 
-  // Notify customer
+  // Notify customer via unified_notifications
   if (booking.user_id) {
-    await supabase.from('customer_notifications').insert({
-      user_id: booking.user_id,
+    await supabase.from('unified_notifications').insert({
+      recipient_id: booking.user_id,
+      recipient_type: 'user',
       booking_id: bookingId,
       type: 'price_accepted',
-      title: 'Price Proposal Accepted',
-      message: `Your proposed price of $${booking.customer_proposed_price} has been accepted. You can now proceed with payment.`
+      title: 'Price Approved',
+      message: `Your booking price of $${priceToApprove} has been approved. You can now proceed with payment.`
     });
   }
 
@@ -259,9 +203,11 @@ export async function rejectProposedPrice(bookingId: string, newPrice: number): 
 
   const { data: booking } = await supabase
     .from('bookings')
-    .select('customer_proposed_price, user_id, service_type')
+    .select('user_id, service_type, total_price')
     .eq('id', bookingId)
     .single();
+
+  const oldPrice = booking?.total_price;
 
   // Set the new proposed price (not locked - for negotiation)
   try {
@@ -273,28 +219,20 @@ export async function rejectProposedPrice(bookingId: string, newPrice: number): 
     return { success: false, error: error.message };
   }
 
-  // Clear customer proposed price
-  await supabase
-    .from('bookings')
-    .update({
-      customer_proposed_price: null,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', bookingId);
-
-  await logAdminAction('price_proposal_rejected', bookingId, 'bookings', { 
-    rejectedPrice: booking?.customer_proposed_price,
+  await logAdminAction('price_counter_offer', bookingId, 'bookings', { 
+    oldPrice,
     newPrice 
   });
 
-  // Notify customer
+  // Notify customer via unified_notifications
   if (booking?.user_id) {
-    await supabase.from('customer_notifications').insert({
-      user_id: booking.user_id,
+    await supabase.from('unified_notifications').insert({
+      recipient_id: booking.user_id,
+      recipient_type: 'user',
       booking_id: bookingId,
       type: 'price_updated',
       title: 'Price Counter-Offer',
-      message: `Your proposed price was not accepted. The new price is $${newPrice}. Please review and respond.`
+      message: `A new price of $${newPrice} has been set for your booking. Please review and respond.`
     });
   }
 
@@ -311,10 +249,6 @@ export function canCustomerPayCheck(priceData: PriceNegotiationData): { canPay: 
 
   if (!priceData.priceLocked) {
     return { canPay: false, reason: 'Price must be locked before payment' };
-  }
-
-  if (priceData.status !== 'approved') {
-    return { canPay: false, reason: 'Price must be approved' };
   }
 
   if (priceData.paymentStatus === 'paid') {
