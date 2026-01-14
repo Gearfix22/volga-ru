@@ -1,6 +1,9 @@
 /**
  * FINAL BOOKING WORKFLOW - Aligned with booking_price_workflow
  * 
+ * SINGLE SOURCE OF TRUTH FOR BOOKING STATUS (Frontend)
+ * 
+ * Workflow:
  * 1. draft → Customer selecting service
  * 2. under_review → Customer confirmed, waiting for admin
  * 3. awaiting_customer_confirmation → Admin approved price (locked = true)
@@ -15,6 +18,43 @@
  */
 
 import { BookingStatus } from '@/types/booking';
+
+// All valid booking statuses
+export const BOOKING_STATUSES = [
+  'draft',
+  'under_review',
+  'awaiting_customer_confirmation',
+  'paid',
+  'in_progress',
+  'completed',
+  'cancelled',
+  'rejected',
+  // Legacy statuses (for backward compatibility)
+  'pending',
+  'confirmed',
+] as const;
+
+// Statuses that indicate ACTIVE bookings (in progress, not final)
+export const ACTIVE_STATUSES = [
+  'draft',
+  'under_review',
+  'awaiting_customer_confirmation',
+  'paid',
+  'in_progress',
+  'pending',
+  'confirmed',
+];
+
+// Statuses that indicate FINAL/COMPLETED bookings
+export const FINAL_STATUSES = ['completed', 'cancelled', 'rejected'];
+
+// Statuses where price can be edited
+export const PRICE_EDITABLE_STATUSES = [
+  'draft',
+  'under_review',
+  'awaiting_customer_confirmation',
+  'pending',
+];
 
 // Valid status transitions map
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -40,20 +80,35 @@ export const STATUS_LABELS: Record<string, string> = {
   completed: 'Completed',
   cancelled: 'Cancelled',
   rejected: 'Rejected',
+  confirmed: 'Confirmed', // Legacy
 };
 
-// Status colors for UI
+// Status colors for UI (using semantic colors)
 export const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-gray-500/20 text-gray-700 dark:text-gray-300',
+  draft: 'bg-muted text-muted-foreground',
   pending: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300',
   under_review: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300',
   awaiting_customer_confirmation: 'bg-blue-500/20 text-blue-700 dark:text-blue-300',
   paid: 'bg-green-500/20 text-green-700 dark:text-green-300',
   in_progress: 'bg-orange-500/20 text-orange-700 dark:text-orange-300',
   completed: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300',
-  cancelled: 'bg-red-500/20 text-red-700 dark:text-red-300',
-  rejected: 'bg-red-500/20 text-red-700 dark:text-red-300',
+  cancelled: 'bg-destructive/20 text-destructive',
+  rejected: 'bg-destructive/20 text-destructive',
 };
+
+/**
+ * Check if a status is considered "active" (not finalized)
+ */
+export function isActiveBooking(status: string): boolean {
+  return ACTIVE_STATUSES.includes(status);
+}
+
+/**
+ * Check if a status is considered "final" (completed/cancelled/rejected)
+ */
+export function isFinalStatus(status: string): boolean {
+  return FINAL_STATUSES.includes(status);
+}
 
 /**
  * Check if a status transition is valid
@@ -157,6 +212,13 @@ export function isPriceLockedByStatus(status: string): boolean {
 }
 
 /**
+ * Check if price can be edited based on status
+ */
+export function canEditPriceByStatus(status: string): boolean {
+  return PRICE_EDITABLE_STATUSES.includes(status);
+}
+
+/**
  * Get status badge variant
  */
 export function getStatusBadgeVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
@@ -173,4 +235,15 @@ export function getStatusBadgeVariant(status: string): 'default' | 'secondary' |
     default:
       return 'secondary';
   }
+}
+
+/**
+ * Normalize legacy status to current workflow
+ */
+export function normalizeStatus(status: string): string {
+  const mappings: Record<string, string> = {
+    pending: 'under_review',
+    confirmed: 'awaiting_customer_confirmation',
+  };
+  return mappings[status] || status;
 }
