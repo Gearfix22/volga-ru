@@ -1,10 +1,10 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
 /**
  * USER-BOOKINGS EDGE FUNCTION
  * 
  * Provides secure access to a user's own bookings.
  * Users can ONLY see and manage their own bookings.
+ * 
+ * Uses shared auth middleware for consistent security.
  * 
  * Endpoints:
  * GET  /user-bookings              - List user's bookings
@@ -12,55 +12,30 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
  * POST /user-bookings/:id/cancel   - Cancel own booking
  */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-function jsonResponse(data: any, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-  })
-}
-
-function errorResponse(error: string, status = 400) {
-  return jsonResponse({ error, success: false }, status)
-}
+import { 
+  corsHeaders, 
+  jsonResponse, 
+  errorResponse, 
+  handleCors,
+  getAuthContext,
+  AuthContext
+} from '../_shared/auth.ts'
+import { canCancel } from '../_shared/booking-status.ts'
 
 // Statuses that can be cancelled by user
 const CANCELLABLE_STATUSES = ['draft', 'under_review', 'awaiting_customer_confirmation', 'pending']
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
+  // Handle CORS preflight
+  const corsResponse = handleCors(req)
+  if (corsResponse) return corsResponse
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-
-    // Validate auth header
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return errorResponse('Unauthorized', 401)
-    }
-
-    // Validate JWT and get user
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      global: { headers: { Authorization: authHeader } }
-    })
-
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-
-    if (authError || !user) {
-      console.error('Auth error:', authError)
-      return errorResponse('Invalid or expired token', 401)
-    }
-
-    const userId = user.id
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+    // Require authentication (any role)
+    const authResult = await getAuthContext(req)
+    if (authResult instanceof Response) return authResult
+    
+    const { userId, supabaseAdmin } = authResult as AuthContext
 
     // Parse URL
     const url = new URL(req.url)
@@ -207,7 +182,7 @@ Deno.serve(async (req) => {
       }
 
       // Check if booking can be cancelled
-      if (!CANCELLABLE_STATUSES.includes(booking.status)) {
+      if (!canCancel(booking.status)) {
         return errorResponse(
           `Cannot cancel booking in '${booking.status}' status. Contact support for assistance.`,
           400
@@ -226,8 +201,8 @@ Deno.serve(async (req) => {
 
       if (updateError) throw updateError
 
-      // Log the activity
-      await supabaseAdmin.from('user_activities').insert({
+      // Log the activity (fire and forget)
+      supabaseAdmin.from('user_activities').insert({
         user_id: userId,
         activity_type: 'booking_cancelled',
         activity_data: { booking_id: bookingId, reason },
@@ -243,7 +218,7 @@ Deno.serve(async (req) => {
 
     return errorResponse('Not found', 404)
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('User bookings error:', error)
     return errorResponse(error.message || 'Internal server error', 500)
   }

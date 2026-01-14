@@ -9,6 +9,11 @@
  * - Always validate JWT tokens server-side
  * - Use database-driven role checks (no hardcoded roles)
  * - Return consistent error responses
+ * 
+ * USAGE:
+ * 1. For admin-only endpoints: const ctx = await requireAdmin(req); if (ctx instanceof Response) return ctx;
+ * 2. For any authenticated user: const ctx = await getAuthContext(req); if (ctx instanceof Response) return ctx;
+ * 3. For specific roles: const ctx = await requireRole(req, ['admin', 'driver']); if (ctx instanceof Response) return ctx;
  */
 
 import { createClient, SupabaseClient, User } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -32,9 +37,11 @@ export interface AuthContext {
   supabaseUser: SupabaseClient
 }
 
+// Standard CORS headers for all edge functions
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 }
 
 /**
@@ -52,6 +59,16 @@ export function jsonResponse(data: any, status: number = 200): Response {
  */
 export function errorResponse(error: string, status: number = 400, code?: string): Response {
   return jsonResponse({ error, code, success: false }, status)
+}
+
+/**
+ * Handle CORS preflight - use at the start of every function
+ */
+export function handleCors(req: Request): Response | null {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+  return null
 }
 
 /**
@@ -82,14 +99,12 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
   }
 
   try {
-    // Create a client that uses the user's JWT for auth
-    const supabaseUser = createClient(supabaseUrl, supabaseServiceKey, {
-      global: { headers: { Authorization: authHeader } }
-    })
+    // Create admin client for role verification
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
 
     // Validate the JWT and get user
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser(token)
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
 
     if (authError || !user) {
       return {
@@ -100,7 +115,6 @@ export async function authenticateRequest(req: Request): Promise<AuthResult> {
     }
 
     // Get user roles from database (single source of truth)
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -208,6 +222,47 @@ export async function requireAdmin(req: Request): Promise<AuthContext | Response
 }
 
 /**
+ * Middleware to require driver role specifically
+ */
+export async function requireDriver(req: Request): Promise<AuthContext | Response> {
+  return requireRole(req, 'driver')
+}
+
+/**
+ * Middleware to require guide role specifically
+ */
+export async function requireGuide(req: Request): Promise<AuthContext | Response> {
+  return requireRole(req, 'guide')
+}
+
+/**
+ * Middleware that allows admin OR owner of a resource
+ * Use for endpoints where users can access their own data, but admins can access all
+ */
+export async function requireAdminOrOwner(
+  req: Request,
+  ownerId: string | null
+): Promise<AuthContext | Response> {
+  const context = await getAuthContext(req)
+  
+  if (context instanceof Response) {
+    return context
+  }
+
+  // Admin can access everything
+  if (hasRole(context.roles, 'admin')) {
+    return context
+  }
+
+  // Check ownership
+  if (ownerId && context.userId === ownerId) {
+    return context
+  }
+
+  return errorResponse('Forbidden: You can only access your own resources', 403)
+}
+
+/**
  * Parse URL path to extract function name, resource ID, and action
  * Example: /admin-bookings/123/confirm -> { resourceId: '123', action: 'confirm' }
  */
@@ -220,6 +275,15 @@ export function parseUrlPath(url: URL): { resourceId: string | null; action: str
   const action = pathParts.length > 2 ? pathParts[2] : null
   
   return { resourceId, action }
+}
+
+/**
+ * Get client IP for logging
+ */
+export function getClientIP(req: Request): string {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+         req.headers.get('x-real-ip') || 
+         'unknown'
 }
 
 /**

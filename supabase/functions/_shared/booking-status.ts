@@ -11,6 +11,9 @@
  * - completed (success)
  * - cancelled (user cancelled)
  * - rejected (admin rejected)
+ * 
+ * CRITICAL: This file is for EDGE FUNCTIONS only.
+ * Frontend uses src/utils/bookingWorkflow.ts (mirrored logic)
  */
 
 export const BOOKING_STATUSES = [
@@ -48,7 +51,7 @@ export const STATUS_TRANSITIONS: Record<string, string[]> = {
   'draft': ['under_review', 'cancelled'],
   'under_review': ['awaiting_customer_confirmation', 'cancelled', 'rejected'],
   'awaiting_customer_confirmation': ['paid', 'cancelled'],
-  'paid': ['in_progress', 'cancelled'],
+  'paid': ['in_progress'],
   'in_progress': ['completed', 'cancelled'],
   
   // Terminal states - no transitions allowed
@@ -168,4 +171,12 @@ export function getStatusLabel(status: string): string {
     'confirmed': 'Confirmed',
   }
   return labels[status] || status
+}
+
+/**
+ * Check if cancellation is allowed from current status
+ */
+export function canCancel(status: string): boolean {
+  const nonCancellable = ['completed', 'cancelled', 'rejected']
+  return !nonCancellable.includes(status)
 }

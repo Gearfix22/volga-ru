@@ -1,27 +1,24 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
 /**
  * AI Tourist Guide Edge Function
- * وظيفة مرشد السفر الذكي
+ * 
+ * Public endpoint - authentication is OPTIONAL
+ * Uses shared auth helpers for consistency but allows anonymous access.
  * 
  * Features:
- * - Validates user authentication
+ * - Validates user authentication if provided
  * - Maintains conversation context
  * - Fetches real service data from database
  * - Logs all interactions for analytics
  * - Supports multiple languages (EN, AR, RU)
  */
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders, handleCors, jsonResponse, errorResponse } from '../_shared/auth.ts'
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
+  // Handle CORS preflight
+  const corsResponse = handleCors(req)
+  if (corsResponse) return corsResponse
 
   try {
     const { 
@@ -31,91 +28,84 @@ Deno.serve(async (req) => {
       user_id, 
       user_location,
       user_context 
-    } = await req.json();
+    } = await req.json()
 
     // Validate required fields
-    // التحقق من الحقول المطلوبة
     if (!message || typeof message !== 'string') {
-      return new Response(JSON.stringify({ error: "Message is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return errorResponse('Message is required', 400)
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
     if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY is not configured");
-      throw new Error("AI service is not configured");
+      console.error('LOVABLE_API_KEY is not configured')
+      return errorResponse('AI service is not configured', 500)
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
     // Optional: Verify user authentication if user_id is provided
-    // التحقق من هوية المستخدم إذا تم تقديم معرف المستخدم
-    let verifiedUserId = null;
+    let verifiedUserId = null
     if (user_id) {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id, full_name, preferred_language, preferred_currency')
         .eq('id', user_id)
-        .single();
+        .single()
       
       if (!profileError && profile) {
-        verifiedUserId = profile.id;
-        console.log(`Verified user: ${profile.full_name || 'Anonymous'}`);
+        verifiedUserId = profile.id
+        console.log(`Verified user: ${profile.full_name || 'Anonymous'}`)
       }
     }
 
     // Fetch services data for context (read-only)
-    // جلب بيانات الخدمات للسياق
     const [servicesResult, eventsResult, transportResult, hotelsResult] = await Promise.all([
       supabase.from('services').select('name, description, type, base_price, features, currency').eq('is_active', true).limit(50),
       supabase.from('event_services').select('event_name, description, event_type, city, venue, event_date, ticket_types').eq('is_active', true).limit(30),
       supabase.from('transportation_services').select('service_name, description, vehicle_type, base_price, max_passengers, features, price_per_km').eq('is_active', true).limit(20),
       supabase.from('hotel_services').select('hotel_name, city, room_type, base_price_per_night, star_rating, amenities, max_guests').eq('is_active', true).limit(30),
-    ]);
+    ])
 
-    const services = servicesResult.data || [];
-    const events = eventsResult.data || [];
-    const transport = transportResult.data || [];
-    const hotels = hotelsResult.data || [];
+    const services = servicesResult.data || []
+    const events = eventsResult.data || []
+    const transport = transportResult.data || []
+    const hotels = hotelsResult.data || []
 
-    console.log(`Fetched data: ${services.length} services, ${events.length} events, ${transport.length} transport, ${hotels.length} hotels`);
+    console.log(`Fetched data: ${services.length} services, ${events.length} events, ${transport.length} transport, ${hotels.length} hotels`)
 
     // Fetch nearby places from Mapbox if user location is provided
-    let nearbyPlacesContext = '';
-    let locationContext = '';
-    const MAPBOX_TOKEN = Deno.env.get("MAPBOX_PUBLIC_TOKEN");
+    let nearbyPlacesContext = ''
+    let locationContext = ''
+    const MAPBOX_TOKEN = Deno.env.get('MAPBOX_PUBLIC_TOKEN')
     
     if (user_location && MAPBOX_TOKEN) {
       try {
-        const { lat, lng } = user_location;
-        locationContext = `User's current coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        const { lat, lng } = user_location
+        locationContext = `User's current coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`
         
-        const mapboxUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=poi&limit=8&access_token=${MAPBOX_TOKEN}`;
+        const mapboxUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?types=poi&limit=8&access_token=${MAPBOX_TOKEN}`
         
-        const mapboxResponse = await fetch(mapboxUrl);
+        const mapboxResponse = await fetch(mapboxUrl)
         if (mapboxResponse.ok) {
-          const placesData = await mapboxResponse.json();
+          const placesData = await mapboxResponse.json()
           if (placesData.features && placesData.features.length > 0) {
             const places = placesData.features.map((f: any) => 
               `${f.text} (${f.properties?.category || 'attraction'}) - ${f.place_name?.split(',').slice(1, 3).join(',') || ''}`
-            ).join('; ');
-            nearbyPlacesContext = `Nearby attractions within walking distance: ${places}`;
+            ).join('; ')
+            nearbyPlacesContext = `Nearby attractions within walking distance: ${places}`
           }
         }
       } catch (mapboxError) {
-        console.error("Mapbox error:", mapboxError);
+        console.error('Mapbox error:', mapboxError)
       }
     }
 
     // Build user context awareness
-    // بناء سياق وعي المستخدم
-    let userContextString = '';
+    let userContextString = ''
     if (user_context) {
-      const { isGuest, name, role, preferredCurrency, hasGreeted, topicsDiscussed, questionsAsked, destinationPreferences, recentMessages } = user_context;
+      const { isGuest, name, role, preferredCurrency, hasGreeted, topicsDiscussed, questionsAsked, destinationPreferences, recentMessages } = user_context
       
       userContextString = `
 USER CONTEXT (Use this to personalize your responses):
@@ -129,34 +119,33 @@ ${questionsAsked?.length > 0 ? `- Recent Questions (avoid repetition): ${questio
 
 CONVERSATION HISTORY (for context continuity):
 ${recentMessages?.map((m: { role: string; content: string }) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content.substring(0, 100)}...`).join('\n') || 'No previous messages'}
-`;
+`
     }
 
     // Build detailed context from available data
-    // بناء سياق مفصل من البيانات المتاحة
     const servicesContext = services.length > 0 
       ? `Available booking services:\n${services.map(s => 
           `- ${s.name} (${s.type}): ${s.description || 'Premium service'} | Starting from ${s.currency || 'USD'} ${s.base_price || 'TBD'}`
         ).join('\n')}`
-      : '';
+      : ''
     
     const eventsContext = events.length > 0
       ? `Upcoming events & experiences:\n${events.map(e => 
           `- ${e.event_name} at ${e.venue}, ${e.city} (${e.event_date}) - ${e.event_type}`
         ).join('\n')}`
-      : '';
+      : ''
     
     const transportContext = transport.length > 0
       ? `Transportation options:\n${transport.map(t => 
           `- ${t.service_name} (${t.vehicle_type}): Up to ${t.max_passengers} passengers, from $${t.base_price}${t.price_per_km ? ` + $${t.price_per_km}/km` : ''}`
         ).join('\n')}`
-      : '';
+      : ''
 
     const hotelsContext = hotels.length > 0
       ? `Hotel accommodations:\n${hotels.map(h => 
           `- ${h.hotel_name} in ${h.city}: ${h.star_rating}★ ${h.room_type}, $${h.base_price_per_night}/night (max ${h.max_guests} guests)${h.amenities?.length ? ` - ${h.amenities.slice(0, 3).join(', ')}` : ''}`
         ).join('\n')}`
-      : '';
+      : ''
 
     const languageInstructions: Record<string, string> = {
       en: 'Respond in English. Be conversational yet professional.',
@@ -170,7 +159,7 @@ ${recentMessages?.map((m: { role: string; content: string }) => `${m.role === 'u
       ur: 'Respond in Urdu (اردو).',
       tr: 'Respond in Turkish (Türkçe).',
       fa: 'Respond in Persian/Farsi (فارسی).',
-    };
+    }
 
     const systemPrompt = `You are a PROFESSIONAL AI TRAVEL CONSULTANT for Volga Services - not a simple chatbot. You provide expert, data-driven travel advice like a seasoned travel agent.
 
@@ -248,12 +237,12 @@ ${eventsContext || 'No events data currently available.'}
 
 ${servicesContext || 'No additional services currently available.'}
 
-Remember: The user should feel "This AI understands travel better than a Google search." Be the expert they need. Be conversational, not robotic.`;
+Remember: The user should feel "This AI understands travel better than a Google search." Be the expert they need. Be conversational, not robotic.`
 
     // Build messages array with conversation history
     const messagesForAI: { role: string; content: string }[] = [
-      { role: "system", content: systemPrompt },
-    ];
+      { role: 'system', content: systemPrompt },
+    ]
 
     // Add recent conversation history for better context
     if (user_context?.recentMessages && user_context.recentMessages.length > 0) {
@@ -261,86 +250,73 @@ Remember: The user should feel "This AI understands travel better than a Google 
         messagesForAI.push({
           role: m.role,
           content: m.content,
-        });
-      });
+        })
+      })
     }
 
     // Add current message
-    messagesForAI.push({ role: "user", content: message });
+    messagesForAI.push({ role: 'user', content: message })
 
     // Call Lovable AI Gateway
-    // استدعاء بوابة الذكاء الاصطناعي
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: 'google/gemini-3-flash-preview',
         messages: messagesForAI,
         max_tokens: 300,
       }),
-    });
+    })
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      const errorText = await response.text()
+      console.error('AI gateway error:', response.status, errorText)
       
       if (response.status === 429) {
-        return new Response(JSON.stringify({ 
-          error: language === 'ar' 
-            ? "تم تجاوز الحد الأقصى للطلبات. يرجى المحاولة لاحقاً."
+        return errorResponse(
+          language === 'ar' 
+            ? 'تم تجاوز الحد الأقصى للطلبات. يرجى المحاولة لاحقاً.'
             : language === 'ru'
-            ? "Превышен лимит запросов. Попробуйте позже."
-            : "Rate limit exceeded. Please try again in a moment." 
-        }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+            ? 'Превышен лимит запросов. Попробуйте позже.'
+            : 'Rate limit exceeded. Please try again in a moment.',
+          429
+        )
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ 
-          error: language === 'ar'
-            ? "خدمة الذكاء الاصطناعي غير متوفرة مؤقتاً."
+        return errorResponse(
+          language === 'ar'
+            ? 'خدمة الذكاء الاصطناعي غير متوفرة مؤقتاً.'
             : language === 'ru'
-            ? "Сервис AI временно недоступен."
-            : "AI service temporarily unavailable." 
-        }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+            ? 'Сервис AI временно недоступен.'
+            : 'AI service temporarily unavailable.',
+          402
+        )
       }
       
-      throw new Error(`AI gateway error: ${response.status}`);
+      throw new Error(`AI gateway error: ${response.status}`)
     }
 
-    const data = await response.json();
+    const data = await response.json()
     const assistantResponse = data.choices?.[0]?.message?.content || 
-      (language === 'ar' ? "عذراً، لم أتمكن من إنشاء رد." : language === 'ru' ? "Извините, не удалось сгенерировать ответ." : "I'm sorry, I couldn't generate a response.");
+      (language === 'ar' ? 'عذراً، لم أتمكن من إنشاء رد.' : language === 'ru' ? 'Извините, не удалось сгенерировать ответ.' : "I'm sorry, I couldn't generate a response.")
 
     // Log conversation for analytics
-    // تسجيل المحادثة للتحليلات
     await supabase.from('ai_guide_logs').insert({
       user_id: verifiedUserId,
       session_id: session_id || `anon_${Date.now()}`,
       language: language || 'en',
       user_message: message,
       assistant_response: assistantResponse,
-    });
+    })
 
-    console.log(`AI Travel Guide: Processed in ${language}, session: ${session_id}, user: ${verifiedUserId || 'guest'}`);
+    console.log(`AI Travel Guide: Processed in ${language}, session: ${session_id}, user: ${verifiedUserId || 'guest'}`)
 
-    return new Response(JSON.stringify({ response: assistantResponse }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    console.error("AI Travel Guide error:", error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : "Unknown error occurred" 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ response: assistantResponse })
+  } catch (error: any) {
+    console.error('AI Travel Guide error:', error)
+    return errorResponse(error.message || 'Unknown error occurred', 500)
   }
-});
+})

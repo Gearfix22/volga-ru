@@ -2,27 +2,22 @@
  * SEND-BOOKING-EMAIL EDGE FUNCTION
  * 
  * Sends booking confirmation emails using Resend.
+ * Uses shared auth middleware for consistent security.
  * 
  * Security: Requires admin role OR the booking must belong to the authenticated user.
- * This prevents abuse of the email sending functionality.
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { 
+  corsHeaders, 
+  jsonResponse, 
+  errorResponse, 
+  handleCors,
+  getAuthContext,
+  hasRole
+} from '../_shared/auth.ts'
 import { Resend } from 'npm:resend@2.0.0'
 
 const resend = new Resend(Deno.env.get('RESEND_API_KEY'))
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-function jsonResponse(data: any, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-  })
-}
 
 interface BookingEmailRequest {
   bookingId?: string
@@ -40,46 +35,17 @@ interface BookingEmailRequest {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
+  // Handle CORS preflight
+  const corsResponse = handleCors(req)
+  if (corsResponse) return corsResponse
 
   try {
-    // Validate auth header
-    const authHeader = req.headers.get('Authorization')
+    // Require authentication
+    const authResult = await getAuthContext(req)
+    if (authResult instanceof Response) return authResult
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return jsonResponse({ error: 'Unauthorized' }, 401)
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      global: { headers: { Authorization: authHeader } }
-    })
-
-    // Validate JWT
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-
-    if (authError || !user) {
-      console.error('Auth error:', authError)
-      return jsonResponse({ error: 'Invalid or expired token' }, 401)
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
-
-    // Check if user is admin
-    const { data: roleData } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .maybeSingle()
-
-    const isAdmin = !!roleData
+    const { userId, roles, supabaseAdmin, user } = authResult
+    const isAdmin = hasRole(roles, 'admin')
 
     const bookingData: BookingEmailRequest = await req.json()
 
@@ -91,21 +57,20 @@ Deno.serve(async (req) => {
         .eq('id', bookingData.bookingId)
         .maybeSingle()
 
-      if (!booking || booking.user_id !== user.id) {
-        return jsonResponse({ error: 'Forbidden: You can only send emails for your own bookings' }, 403)
+      if (!booking || booking.user_id !== userId) {
+        return errorResponse('Forbidden: You can only send emails for your own bookings', 403)
       }
     }
 
     // Validate required fields
     if (!bookingData.userInfo?.email) {
-      return jsonResponse({ error: 'Email address is required' }, 400)
+      return errorResponse('Email address is required', 400)
     }
 
     // If not admin and no bookingId, user can only send to their own email
     if (!isAdmin && !bookingData.bookingId) {
-      // Verify the email matches the user's email
       if (bookingData.userInfo.email !== user.email) {
-        return jsonResponse({ error: 'Forbidden: Can only send to your own email' }, 403)
+        return errorResponse('Forbidden: Can only send to your own email', 403)
       }
     }
 
@@ -244,11 +209,11 @@ Deno.serve(async (req) => {
       `,
     })
 
-    console.log(`Booking email sent to ${bookingData.userInfo.email} by user ${user.id}`)
+    console.log(`Booking email sent to ${bookingData.userInfo.email} by user ${userId}`)
 
     return jsonResponse({ success: true, emailResponse })
   } catch (error: any) {
     console.error('Error in send-booking-email function:', error)
-    return jsonResponse({ error: error.message || 'Internal server error' }, 500)
+    return errorResponse(error.message || 'Internal server error', 500)
   }
 })
