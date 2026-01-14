@@ -1,21 +1,24 @@
-import { supabase } from '@/integrations/supabase/client';
-
 /**
  * BOOKING PRICE SERVICE
  * 
- * THIS SERVICE IS DEPRECATED - Use bookingPriceWorkflowService instead
+ * THIS SERVICE IS DEPRECATED - Use paymentGuardService.ts instead
  * 
- * Kept for backward compatibility during transition.
- * booking_price_workflow table is the SINGLE SOURCE OF TRUTH for pricing.
+ * SINGLE SOURCE OF TRUTH: booking_prices table (via v_booking_payment_guard view)
+ * 
+ * For setting prices: Use setBookingPrice from adminService.ts (calls Edge Function)
+ * For checking payment eligibility: Use canPayForBooking from paymentGuardService.ts
  */
 
-// Re-export new service functions for gradual migration
-export {
-  getPriceWorkflow,
-  canCustomerPay,
+import { 
+  canPayForBooking,
+  getPaymentGuard,
   getPayableAmount,
-  canAdminEditPrice,
-} from './bookingPriceWorkflowService';
+  getMultiplePaymentGuards,
+  type PaymentGuardData
+} from './paymentGuardService';
+
+// Re-export new service functions for backward compatibility
+export { canPayForBooking, getPaymentGuard, getPayableAmount, getMultiplePaymentGuards };
 
 export interface BookingPrice {
   booking_id: string;
@@ -27,30 +30,48 @@ export interface BookingPrice {
 }
 
 /**
- * Get the admin-set price for a booking from booking_price_workflow
- * @deprecated Use getPriceWorkflow from bookingPriceWorkflowService
+ * @deprecated Use getPaymentGuard from paymentGuardService.ts
+ */
+export async function getPriceWorkflow(bookingId: string) {
+  return getPaymentGuard(bookingId);
+}
+
+/**
+ * @deprecated Use canPayForBooking from paymentGuardService.ts
+ */
+export async function canCustomerPay(bookingId: string): Promise<{ canPay: boolean; reason?: string; amount?: number }> {
+  const result = await canPayForBooking(bookingId);
+  return {
+    canPay: result.canPay,
+    reason: result.reason,
+    amount: result.amount ?? undefined
+  };
+}
+
+/**
+ * Check if admin can edit price - price is editable if not locked
+ */
+export async function canAdminEditPrice(bookingId: string): Promise<boolean> {
+  const guard = await getPaymentGuard(bookingId);
+  if (!guard) return true; // No price set, can create
+  return !guard.locked;
+}
+
+/**
+ * Get the admin-set price for a booking
+ * @deprecated Use getPaymentGuard from paymentGuardService.ts
  */
 export async function getBookingPrice(bookingId: string): Promise<BookingPrice | null> {
-  const { data, error } = await supabase
-    .from('booking_price_workflow')
-    .select('*')
-    .eq('booking_id', bookingId)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error fetching booking price:', error);
-    return null;
-  }
-
-  if (!data) return null;
-
+  const guard = await getPaymentGuard(bookingId);
+  if (!guard) return null;
+  
   return {
-    booking_id: data.booking_id,
-    proposed_price: data.proposed_price,
-    approved_price: data.approved_price,
-    currency: data.currency,
-    status: data.status,
-    locked: data.locked
+    booking_id: guard.booking_id,
+    proposed_price: guard.approved_price ?? 0,
+    approved_price: guard.approved_price,
+    currency: 'USD',
+    status: guard.can_pay ? 'approved' : 'pending',
+    locked: guard.locked
   };
 }
 
@@ -58,89 +79,41 @@ export async function getBookingPrice(bookingId: string): Promise<BookingPrice |
  * Check if a booking has an approved price
  */
 export async function hasAdminPrice(bookingId: string): Promise<boolean> {
-  const price = await getBookingPrice(bookingId);
-  return price !== null && price.approved_price !== null && price.approved_price > 0 && price.locked;
+  const guard = await getPaymentGuard(bookingId);
+  return guard !== null && guard.approved_price !== null && guard.approved_price > 0 && guard.locked;
 }
 
 /**
- * Set the admin price for a booking (admin only)
- * @deprecated Use setProposedPrice and approvePrice from bookingPriceWorkflowService
+ * @deprecated Use setBookingPrice from adminService.ts via Edge Function
  */
 export async function setBookingPrice(
   bookingId: string,
   price: number,
   currency: string = 'USD'
 ): Promise<{ success: boolean; error?: string }> {
-  try {
-    const existing = await getBookingPrice(bookingId);
-    
-    if (existing) {
-      if (existing.locked) {
-        return { success: false, error: 'Price is locked and cannot be modified' };
-      }
-      
-      const { error } = await supabase
-        .from('booking_price_workflow')
-        .update({
-          proposed_price: price,
-          currency: currency,
-          status: 'proposed',
-          updated_at: new Date().toISOString()
-        })
-        .eq('booking_id', bookingId);
-
-      if (error) {
-        console.error('Error setting booking price:', error);
-        return { success: false, error: error.message };
-      }
-    } else {
-      const { error } = await supabase
-        .from('booking_price_workflow')
-        .insert({
-          booking_id: bookingId,
-          proposed_price: price,
-          currency: currency,
-          status: 'proposed',
-          locked: false
-        });
-
-      if (error) {
-        console.error('Error creating booking price:', error);
-        return { success: false, error: error.message };
-      }
-    }
-
-    return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
-  }
+  console.warn('DEPRECATED: bookingPriceService.setBookingPrice is deprecated. Use adminService.setBookingPrice');
+  return { 
+    success: false, 
+    error: 'Use setBookingPrice from adminService.ts which calls the admin-bookings Edge Function' 
+  };
 }
 
 /**
  * Get prices for multiple bookings at once
+ * @deprecated Use getMultiplePaymentGuards from paymentGuardService.ts
  */
 export async function getBookingPrices(bookingIds: string[]): Promise<Record<string, BookingPrice>> {
-  if (bookingIds.length === 0) return {};
-
-  const { data, error } = await supabase
-    .from('booking_price_workflow')
-    .select('*')
-    .in('booking_id', bookingIds);
-
-  if (error) {
-    console.error('Error fetching booking prices:', error);
-    return {};
-  }
-
+  const guards = await getMultiplePaymentGuards(bookingIds);
+  
   const priceMap: Record<string, BookingPrice> = {};
-  for (const price of data || []) {
-    priceMap[price.booking_id] = {
-      booking_id: price.booking_id,
-      proposed_price: price.proposed_price,
-      approved_price: price.approved_price,
-      currency: price.currency,
-      status: price.status,
-      locked: price.locked
+  for (const [bookingId, guard] of Object.entries(guards)) {
+    priceMap[bookingId] = {
+      booking_id: guard.booking_id,
+      proposed_price: guard.approved_price ?? 0,
+      approved_price: guard.approved_price,
+      currency: 'USD',
+      status: guard.can_pay ? 'approved' : 'pending',
+      locked: guard.locked
     };
   }
 

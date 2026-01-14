@@ -62,7 +62,7 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
     fetchPaymentGuards();
   }, [bookings]);
 
-  // Subscribe to real-time updates for booking_price_workflow
+  // Subscribe to real-time updates for booking_prices (SINGLE SOURCE OF TRUTH)
   useEffect(() => {
     if (bookings.length === 0) return;
     
@@ -73,7 +73,7 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
         {
           event: '*',
           schema: 'public',
-          table: 'booking_price_workflow'
+          table: 'booking_prices'  // CHANGED: from booking_price_workflow to booking_prices
         },
         async () => {
           // Refetch payment guards when workflow changes

@@ -482,13 +482,26 @@ export const submitBookingForReview = async (bookingId: string): Promise<void> =
 
 /**
  * WORKFLOW STEP 3: Admin sets price → admin_final_price, status = 'awaiting_customer_confirmation'
- * This is done via the edge function: POST /admin-bookings/:id/set-price
+ * 
+ * CRITICAL: This function is DEPRECATED for admin use.
+ * Admins MUST use setBookingPrice from adminService.ts which calls the Edge Function.
+ * The Edge Function writes to booking_prices table (SINGLE SOURCE OF TRUTH).
+ * 
+ * This function is kept for legacy/user-side operations but should not be used
+ * for setting admin prices.
+ * 
+ * @deprecated Use setBookingPrice from adminService.ts for admin price setting
  */
 export const setBookingPrice = async (
   bookingId: string,
   price: number,
   adminNotes?: string
 ): Promise<void> => {
+  console.warn('DEPRECATED: bookingService.setBookingPrice is deprecated. Use adminService.setBookingPrice for admin operations.');
+  
+  // CRITICAL: This still updates the bookings table directly
+  // For proper price management, use adminService.setBookingPrice which calls the Edge Function
+  // and writes to booking_prices table (SINGLE SOURCE OF TRUTH)
   const { error } = await supabase
     .from('bookings')
     .update({
