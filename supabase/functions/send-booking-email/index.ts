@@ -1,36 +1,113 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
+/**
+ * SEND-BOOKING-EMAIL EDGE FUNCTION
+ * 
+ * Sends booking confirmation emails using Resend.
+ * 
+ * Security: Requires admin role OR the booking must belong to the authenticated user.
+ * This prevents abuse of the email sending functionality.
+ */
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { Resend } from 'npm:resend@2.0.0'
+
+const resend = new Resend(Deno.env.get('RESEND_API_KEY'))
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
-interface BookingEmailRequest {
-  userInfo: {
-    fullName: string;
-    email: string;
-    phone: string;
-  };
-  serviceType: string;
-  serviceDetails: any;
-  transactionId: string;
-  totalPrice: number;
-  paymentMethod: string;
-  status: string;
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const handler = async (req: Request): Promise<Response> => {
+function jsonResponse(data: any, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  })
+}
+
+interface BookingEmailRequest {
+  bookingId?: string
+  userInfo: {
+    fullName: string
+    email: string
+    phone: string
+  }
+  serviceType: string
+  serviceDetails: any
+  transactionId: string
+  totalPrice: number
+  paymentMethod: string
+  status: string
+}
+
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const bookingData: BookingEmailRequest = await req.json();
+    // Validate auth header
+    const authHeader = req.headers.get('Authorization')
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return jsonResponse({ error: 'Unauthorized' }, 401)
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      global: { headers: { Authorization: authHeader } }
+    })
+
+    // Validate JWT
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+
+    if (authError || !user) {
+      console.error('Auth error:', authError)
+      return jsonResponse({ error: 'Invalid or expired token' }, 401)
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Check if user is admin
+    const { data: roleData } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle()
+
+    const isAdmin = !!roleData
+
+    const bookingData: BookingEmailRequest = await req.json()
+
+    // If not admin, verify user owns this booking (if bookingId provided)
+    if (!isAdmin && bookingData.bookingId) {
+      const { data: booking } = await supabaseAdmin
+        .from('bookings')
+        .select('user_id')
+        .eq('id', bookingData.bookingId)
+        .maybeSingle()
+
+      if (!booking || booking.user_id !== user.id) {
+        return jsonResponse({ error: 'Forbidden: You can only send emails for your own bookings' }, 403)
+      }
+    }
+
+    // Validate required fields
+    if (!bookingData.userInfo?.email) {
+      return jsonResponse({ error: 'Email address is required' }, 400)
+    }
+
+    // If not admin and no bookingId, user can only send to their own email
+    if (!isAdmin && !bookingData.bookingId) {
+      // Verify the email matches the user's email
+      if (bookingData.userInfo.email !== user.email) {
+        return jsonResponse({ error: 'Forbidden: Can only send to your own email' }, 403)
+      }
+    }
 
     const renderServiceDetails = (serviceType: string, details: any) => {
       switch (serviceType) {
@@ -38,65 +115,69 @@ const handler = async (req: Request): Promise<Response> => {
           return `
             <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 16px 0;">
               <h3 style="color: #1e293b; margin-bottom: 12px;">Transportation Details</h3>
-              <p><strong>Pickup:</strong> ${details.pickup}</p>
-              <p><strong>Drop-off:</strong> ${details.dropoff}</p>
-              <p><strong>Date:</strong> ${details.date}</p>
-              <p><strong>Time:</strong> ${details.time}</p>
-              <p><strong>Vehicle Type:</strong> ${details.vehicleType}</p>
+              <p><strong>Pickup:</strong> ${details.pickup || 'N/A'}</p>
+              <p><strong>Drop-off:</strong> ${details.dropoff || 'N/A'}</p>
+              <p><strong>Date:</strong> ${details.date || 'N/A'}</p>
+              <p><strong>Time:</strong> ${details.time || 'N/A'}</p>
+              <p><strong>Vehicle Type:</strong> ${details.vehicleType || 'N/A'}</p>
               ${details.passengers ? `<p><strong>Passengers:</strong> ${details.passengers}</p>` : ''}
             </div>
-          `;
+          `
         case 'Hotels':
           return `
             <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 16px 0;">
               <h3 style="color: #1e293b; margin-bottom: 12px;">Hotel Details</h3>
-              <p><strong>Hotel:</strong> ${details.hotel}</p>
-              <p><strong>City:</strong> ${details.city}</p>
-              <p><strong>Check-in:</strong> ${details.checkin}</p>
-              <p><strong>Check-out:</strong> ${details.checkout}</p>
-              <p><strong>Room Type:</strong> ${details.roomType}</p>
+              <p><strong>Hotel:</strong> ${details.hotel || 'N/A'}</p>
+              <p><strong>City:</strong> ${details.city || 'N/A'}</p>
+              <p><strong>Check-in:</strong> ${details.checkin || 'N/A'}</p>
+              <p><strong>Check-out:</strong> ${details.checkout || 'N/A'}</p>
+              <p><strong>Room Type:</strong> ${details.roomType || 'N/A'}</p>
               ${details.guests ? `<p><strong>Guests:</strong> ${details.guests}</p>` : ''}
             </div>
-          `;
+          `
         case 'Events':
           return `
             <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 16px 0;">
               <h3 style="color: #1e293b; margin-bottom: 12px;">Event Details</h3>
-              <p><strong>Event:</strong> ${details.eventName}</p>
-              <p><strong>Location:</strong> ${details.eventLocation}</p>
-              <p><strong>Date:</strong> ${details.eventDate}</p>
-              <p><strong>Tickets:</strong> ${details.tickets}</p>
+              <p><strong>Event:</strong> ${details.eventName || 'N/A'}</p>
+              <p><strong>Location:</strong> ${details.eventLocation || 'N/A'}</p>
+              <p><strong>Date:</strong> ${details.eventDate || 'N/A'}</p>
+              <p><strong>Tickets:</strong> ${details.tickets || 'N/A'}</p>
               ${details.ticketType ? `<p><strong>Ticket Type:</strong> ${details.ticketType}</p>` : ''}
             </div>
-          `;
+          `
         case 'Custom Trips':
           return `
             <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin: 16px 0;">
               <h3 style="color: #1e293b; margin-bottom: 12px;">Trip Details</h3>
-              <p><strong>Duration:</strong> ${details.duration}</p>
-              <p><strong>Regions:</strong> ${details.regions}</p>
+              <p><strong>Duration:</strong> ${details.duration || 'N/A'}</p>
+              <p><strong>Regions:</strong> ${details.regions || 'N/A'}</p>
               ${details.interests ? `<p><strong>Interests:</strong> ${details.interests.join(', ')}</p>` : ''}
               ${details.budget ? `<p><strong>Budget:</strong> ${details.budget}</p>` : ''}
             </div>
-          `;
+          `
         default:
-          return `<p>Service details not available</p>`;
+          return `<p>Service details not available</p>`
       }
-    };
+    }
 
     const getStatusBadge = (status: string) => {
-      const colors = {
+      const colors: Record<string, string> = {
         'confirmed': '#16a34a',
         'paid': '#16a34a',
         'pending': '#eab308',
         'pending_verification': '#eab308',
-        'failed': '#dc2626'
-      };
-      return `<span style="background: ${colors[status as keyof typeof colors] || '#6b7280'}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;">${status.toUpperCase()}</span>`;
-    };
+        'awaiting_customer_confirmation': '#eab308',
+        'under_review': '#3b82f6',
+        'failed': '#dc2626',
+        'cancelled': '#dc2626',
+        'rejected': '#dc2626'
+      }
+      return `<span style="background: ${colors[status] || '#6b7280'}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;">${status.replace(/_/g, ' ').toUpperCase()}</span>`
+    }
 
     const emailResponse = await resend.emails.send({
-      from: "Volga Services <bookings@volgaservices.com>",
+      from: 'Volga Services <bookings@volgaservices.com>',
       to: [bookingData.userInfo.email],
       subject: `Booking Confirmation - ${bookingData.serviceType} Service`,
       html: `
@@ -125,12 +206,12 @@ const handler = async (req: Request): Promise<Response> => {
               <p><strong>Phone:</strong> ${bookingData.userInfo.phone}</p>
             </div>
 
-            ${renderServiceDetails(bookingData.serviceType, bookingData.serviceDetails)}
+            ${renderServiceDetails(bookingData.serviceType, bookingData.serviceDetails || {})}
 
             <div style="background: #f1f5f9; padding: 16px; border-radius: 8px; margin-top: 16px;">
               <h3 style="color: #1e293b; margin-bottom: 12px;">Payment Information</h3>
               <p><strong>Payment Method:</strong> ${bookingData.paymentMethod}</p>
-              <p><strong>Total Amount:</strong> $${bookingData.totalPrice.toFixed(2)}</p>
+              <p><strong>Total Amount:</strong> $${(bookingData.totalPrice || 0).toFixed(2)}</p>
               <p><strong>Transaction ID:</strong> ${bookingData.transactionId}</p>
             </div>
           </div>
@@ -161,27 +242,13 @@ const handler = async (req: Request): Promise<Response> => {
         </body>
         </html>
       `,
-    });
+    })
 
-    console.log("Booking confirmation email sent successfully:", emailResponse);
+    console.log(`Booking email sent to ${bookingData.userInfo.email} by user ${user.id}`)
 
-    return new Response(JSON.stringify({ success: true, emailResponse }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
-    });
+    return jsonResponse({ success: true, emailResponse })
   } catch (error: any) {
-    console.error("Error in send-booking-email function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    console.error('Error in send-booking-email function:', error)
+    return jsonResponse({ error: error.message || 'Internal server error' }, 500)
   }
-};
-
-serve(handler);
+})
