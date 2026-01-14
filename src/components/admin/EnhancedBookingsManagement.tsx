@@ -54,6 +54,7 @@ import {
   updateBooking,
   updatePaymentStatus,
   deleteBooking,
+  setBookingPrice,
 } from '@/services/adminService';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ACTIVE_STATUSES, FINAL_STATUSES } from '@/utils/bookingWorkflow';
@@ -342,10 +343,10 @@ export const EnhancedBookingsManagement = () => {
       return;
     }
     
-    if (newPrice < 0) {
+    if (newPrice <= 0) {
       toast({
         title: 'Invalid Price',
-        description: 'Price cannot be negative',
+        description: 'Price must be greater than zero',
         variant: 'destructive'
       });
       return;
@@ -360,23 +361,24 @@ export const EnhancedBookingsManagement = () => {
       
       // Optimistic update first for instant feedback
       setBookings(prev => prev.map(b => 
-        b.id === bookingId ? { ...b, total_price: newPrice } : b
+        b.id === bookingId ? { ...b, total_price: newPrice, status: 'awaiting_customer_confirmation' } : b
       ));
       
-      // FINAL WORKFLOW: Use admin_final_price
-      const result = await updateBooking(bookingId, { admin_final_price: newPrice });
+      // CRITICAL: Use setBookingPrice which writes to booking_prices table
+      // This is the SINGLE SOURCE OF TRUTH for pricing
+      const result = await setBookingPrice(bookingId, newPrice, { lock: true });
       
       if (!result.success) {
         // Rollback on failure
         setBookings(prev => prev.map(b => 
-          b.id === bookingId ? { ...b, total_price: originalPrice ?? 0 } : b
+          b.id === bookingId ? { ...b, total_price: originalPrice ?? 0, status: originalBooking?.status || 'pending' } : b
         ));
-        throw new Error('Failed to update price');
+        throw new Error(result.error || 'Failed to set price');
       }
       
       toast({
-        title: 'Price Updated',
-        description: `Admin final price set to $${newPrice.toFixed(2)}`,
+        title: 'Price Set & Locked',
+        description: `Price set to $${newPrice.toFixed(2)} - Customer can now pay`,
       });
       
       setEditingPrice(null);
@@ -387,7 +389,7 @@ export const EnhancedBookingsManagement = () => {
     } catch (error: any) {
       console.error('Price update error:', error);
       toast({
-        title: 'Error Updating Price',
+        title: 'Error Setting Price',
         description: error.message || 'Failed to save price. Please try again.',
         variant: 'destructive'
       });

@@ -2,11 +2,17 @@
  * Payment Guard Service
  * 
  * SINGLE SOURCE OF TRUTH: v_booking_payment_guard view
+ * This view reads from booking_prices table
  * 
  * This service reads from the database view to determine:
- * - can_pay: Whether customer can pay
- * - approved_price: The locked approved amount
+ * - can_pay: Whether customer can pay (admin_price IS NOT NULL AND locked = true)
+ * - approved_price: The locked approved amount (from booking_prices.admin_price)
  * - locked: Whether price is locked
+ * 
+ * ARCHITECTURE:
+ * booking_prices.admin_price → v_booking_payment_guard.approved_price
+ * booking_prices.locked → v_booking_payment_guard.locked
+ * (locked = true AND admin_price IS NOT NULL) → v_booking_payment_guard.can_pay
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -49,17 +55,20 @@ export async function canPayForBooking(bookingId: string): Promise<{
   const guard = await getPaymentGuard(bookingId);
 
   if (!guard) {
+    // No price record exists - admin hasn't set a price yet
     return { canPay: false, amount: null, reason: 'Price not set by admin' };
   }
 
+  if (!guard.approved_price || guard.approved_price <= 0) {
+    return { canPay: false, amount: null, reason: 'No approved price set by admin' };
+  }
+
+  if (!guard.locked) {
+    return { canPay: false, amount: guard.approved_price, reason: 'Price must be locked by admin before payment' };
+  }
+
   if (!guard.can_pay) {
-    if (!guard.locked) {
-      return { canPay: false, amount: null, reason: 'Price must be approved and locked' };
-    }
-    if (!guard.approved_price) {
-      return { canPay: false, amount: null, reason: 'No approved price set' };
-    }
-    return { canPay: false, amount: null, reason: 'Payment not available' };
+    return { canPay: false, amount: guard.approved_price, reason: 'Payment not available - contact admin' };
   }
 
   return {
@@ -96,12 +105,13 @@ export async function getMultiplePaymentGuards(bookingIds: string[]): Promise<Re
 
 /**
  * Subscribe to payment guard changes for real-time updates
+ * Listens to booking_prices table changes (the source of truth)
  */
 export function subscribeToPaymentGuardChanges(
   bookingId: string,
   callback: (data: PaymentGuardData | null) => void
 ): () => void {
-  // Subscribe to booking_price_workflow changes
+  // Subscribe to booking_prices changes (SINGLE SOURCE OF TRUTH)
   const channel = supabase
     .channel(`payment-guard-${bookingId}`)
     .on(
@@ -109,7 +119,7 @@ export function subscribeToPaymentGuardChanges(
       {
         event: '*',
         schema: 'public',
-        table: 'booking_price_workflow',
+        table: 'booking_prices',
         filter: `booking_id=eq.${bookingId}`
       },
       async () => {
@@ -123,4 +133,13 @@ export function subscribeToPaymentGuardChanges(
   return () => {
     supabase.removeChannel(channel);
   };
+}
+
+/**
+ * Get the payable amount for a booking
+ * Returns the approved_price only if payment is allowed
+ */
+export async function getPayableAmount(bookingId: string): Promise<number | null> {
+  const result = await canPayForBooking(bookingId);
+  return result.canPay ? result.amount : null;
 }
