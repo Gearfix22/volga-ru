@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { API_ENDPOINTS, buildEndpoint } from '@/config/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -146,7 +147,7 @@ export default function GuidesManagement() {
       }
 
       const response = await fetch(
-        `https://tujborgbqzmcwolntvas.supabase.co/functions/v1/manage-guides`,
+        API_ENDPOINTS.manageGuides,
         {
           method: 'POST',
           headers: {
@@ -196,7 +197,7 @@ export default function GuidesManagement() {
       }
 
       const response = await fetch(
-        `https://tujborgbqzmcwolntvas.supabase.co/functions/v1/manage-guides/${selectedGuide.id}`,
+        buildEndpoint(API_ENDPOINTS.manageGuides, selectedGuide.id),
         {
           method: 'PUT',
           headers: {
@@ -262,7 +263,7 @@ export default function GuidesManagement() {
       }
 
       const response = await fetch(
-        `https://tujborgbqzmcwolntvas.supabase.co/functions/v1/manage-guides/${selectedGuide.id}`,
+        buildEndpoint(API_ENDPOINTS.manageGuides, selectedGuide.id),
         {
           method: 'DELETE',
           headers: {
@@ -308,7 +309,7 @@ export default function GuidesManagement() {
       }
 
       const response = await fetch(
-        `https://tujborgbqzmcwolntvas.supabase.co/functions/v1/manage-guides`,
+        API_ENDPOINTS.manageGuides,
         {
           method: 'POST',
           headers: {
