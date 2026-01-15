@@ -6,7 +6,25 @@ verify_jwt = false
 [functions.admin-bookings]
 verify_jwt = false
 
+[functions.admin-services]
+verify_jwt = false
+
 [functions.user-bookings]
+verify_jwt = false
+
+[functions.create-booking]
+verify_jwt = false
+
+[functions.confirm-booking]
+verify_jwt = false
+
+[functions.prepare-payment]
+verify_jwt = false
+
+[functions.verify-payment]
+verify_jwt = false
+
+[functions.notifications]
 verify_jwt = false
 
 [functions.send-booking-email]
