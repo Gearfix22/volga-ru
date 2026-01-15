@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { API_ENDPOINTS, buildEndpoint } from '@/config/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,7 +42,8 @@ import {
 import { toast } from 'sonner';
 import { Plus, Pencil, Trash2, Search, RefreshCw, Car, CheckCircle, Ban, Eye, EyeOff, KeyRound } from 'lucide-react';
 
-const EDGE_FUNCTION_URL = 'https://tujborgbqzmcwolntvas.supabase.co/functions/v1/manage-drivers';
+// Using centralized API configuration - no Netlify dependency
+const EDGE_FUNCTION_URL = API_ENDPOINTS.manageDrivers;
 
 interface Driver {
   id: string;

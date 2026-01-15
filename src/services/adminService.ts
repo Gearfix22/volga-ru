@@ -1,6 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
+import { API_ENDPOINTS, buildEndpoint, buildEndpointWithParams } from '@/config/api';
 
-const EDGE_FUNCTION_URL = 'https://tujborgbqzmcwolntvas.supabase.co/functions/v1/admin-bookings';
+// Using centralized API configuration - no Netlify dependency
+const EDGE_FUNCTION_URL = API_ENDPOINTS.adminBookings;
 
 interface AdminApiResponse<T = any> {
   success?: boolean;

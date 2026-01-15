@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { API_ENDPOINTS, buildEndpoint } from '@/config/api';
 
 export interface Driver {
   id: string;
@@ -72,7 +73,7 @@ export async function assignDriverToBooking(bookingId: string, driverId: string 
   }
 
   const response = await fetch(
-    `https://tujborgbqzmcwolntvas.supabase.co/functions/v1/admin-bookings/${bookingId}/assign-driver`,
+    buildEndpoint(API_ENDPOINTS.adminBookings, bookingId, 'assign-driver'),
     {
       method: 'POST',
       headers: {
@@ -100,7 +101,7 @@ export async function autoAssignDriver(bookingId: string): Promise<{ success: bo
   }
 
   const response = await fetch(
-    `https://tujborgbqzmcwolntvas.supabase.co/functions/v1/admin-bookings/${bookingId}/auto-assign`,
+    buildEndpoint(API_ENDPOINTS.adminBookings, bookingId, 'auto-assign'),
     {
       method: 'POST',
       headers: {
