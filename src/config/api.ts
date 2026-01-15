@@ -19,9 +19,19 @@ export const API_ENDPOINTS = {
   
   // Admin operations
   adminBookings: `${SUPABASE_FUNCTIONS_URL}/admin-bookings`,
+  adminServices: `${SUPABASE_FUNCTIONS_URL}/admin-services`,
   
   // User operations
   userBookings: `${SUPABASE_FUNCTIONS_URL}/user-bookings`,
+  createBooking: `${SUPABASE_FUNCTIONS_URL}/create-booking`,
+  confirmBooking: `${SUPABASE_FUNCTIONS_URL}/confirm-booking`,
+  
+  // Payment operations (mobile-compatible, no redirects)
+  preparePayment: `${SUPABASE_FUNCTIONS_URL}/prepare-payment`,
+  verifyPayment: `${SUPABASE_FUNCTIONS_URL}/verify-payment`,
+  
+  // Notifications
+  notifications: `${SUPABASE_FUNCTIONS_URL}/notifications`,
   
   // Resource management
   manageDrivers: `${SUPABASE_FUNCTIONS_URL}/manage-drivers`,
