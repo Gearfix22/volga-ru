@@ -18,7 +18,10 @@ const isAdminDomain = (): boolean => {
     hostname === 'admin.volgaservices.com' ||
     hostname.startsWith('admin.') ||
     hostname === 'localhost' ||
-    hostname === '127.0.0.1'
+    hostname === '127.0.0.1' ||
+    // Allow Lovable preview URLs
+    hostname.includes('lovable.app') ||
+    hostname.includes('lovableproject.com')
   );
 };
 

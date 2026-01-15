@@ -10,7 +10,7 @@ interface AdminRouteGuardProps {
 }
 
 /**
- * Check if current domain is the admin subdomain
+ * Check if current domain is allowed for admin access
  */
 const isAdminDomain = (): boolean => {
   const hostname = window.location.hostname;
@@ -19,7 +19,10 @@ const isAdminDomain = (): boolean => {
     hostname.startsWith('admin.') ||
     // Allow localhost for development
     hostname === 'localhost' ||
-    hostname === '127.0.0.1'
+    hostname === '127.0.0.1' ||
+    // Allow Lovable preview URLs
+    hostname.includes('lovable.app') ||
+    hostname.includes('lovableproject.com')
   );
 };
 
