@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Pencil, Trash2, GripVertical, Image, Loader2, Save, X, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import {
   getAllServices,
@@ -36,6 +37,7 @@ interface AdminServicesManagementProps {
 
 const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRefresh }) => {
   const { toast } = useToast();
+  const { t, isRTL } = useLanguage();
   const [services, setServices] = useState<Service[]>([]);
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [currencies, setCurrencies] = useState<{ code: string; symbol: string }[]>([]);
@@ -56,22 +58,18 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
   const loadData = async () => {
     setLoading(true);
     try {
-      // Fetch all data in parallel - services, categories, currencies, and service types
       const [servicesData, categoriesData, currencyRates] = await Promise.all([
         getAllServices(),
         getAllCategories(),
-        // Fetch currencies from currency_rates table
         supabase.from('currency_rates').select('currency_code, symbol').order('currency_code')
       ]);
       
       setServices(servicesData);
       setCategories(categoriesData);
       
-      // Set currencies from database
       if (currencyRates.data && currencyRates.data.length > 0) {
         setCurrencies(currencyRates.data.map(c => ({ code: c.currency_code, symbol: c.symbol })));
       } else {
-        // Fallback currencies if none in DB
         setCurrencies([
           { code: 'USD', symbol: '$' },
           { code: 'EUR', symbol: '€' },
@@ -81,9 +79,7 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
         ]);
       }
       
-      // Extract unique service types from existing services
       const uniqueTypes = [...new Set(servicesData.map(s => s.type))];
-      // Merge with default types
       const defaultTypes = ['Driver', 'Accommodation', 'Events', 'Guide'];
       const allTypes = [...new Set([...defaultTypes, ...uniqueTypes])];
       setServiceTypes(allTypes);
@@ -91,8 +87,8 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
-        title: 'Error Loading Data',
-        description: error instanceof Error ? error.message : 'Failed to load services',
+        title: t('adminServices.errorLoadingData'),
+        description: error instanceof Error ? error.message : t('adminServices.failedToLoadServices'),
         variant: 'destructive'
       });
     } finally {
@@ -115,12 +111,11 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
   const handleSave = async () => {
     setFormError(null);
     
-    // Validate form data
     const validation = validateServicePayload(formData);
     if (!validation.valid) {
       setFormError(validation.errors.join('. '));
       toast({
-        title: 'Validation Error',
+        title: t('common.error'),
         description: validation.errors.join('. '),
         variant: 'destructive'
       });
@@ -134,14 +129,14 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
       if (editingService) {
         await updateService(editingService.id, payload);
         toast({
-          title: 'Service Updated',
-          description: `${formData.name} has been updated.`
+          title: t('adminServices.serviceUpdated'),
+          description: `${formData.name} ${t('adminServices.hasBeenUpdated')}`
         });
       } else {
         await createService(payload);
         toast({
-          title: 'Service Created',
-          description: `${formData.name} has been created.`
+          title: t('adminServices.serviceCreated'),
+          description: `${formData.name} ${t('adminServices.hasBeenCreated')}`
         });
       }
 
@@ -149,44 +144,43 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
       await loadData();
       onRefresh?.();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const errorMessage = error instanceof Error ? error.message : t('common.error');
       console.error('Service save error:', error);
       setFormError(errorMessage);
       toast({
-        title: 'Failed to Save Service',
+        title: t('adminServices.failedToSave'),
         description: errorMessage,
         variant: 'destructive'
       });
-      // Stay on dialog - do NOT close or navigate
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (serviceId: string) => {
-    if (!confirm('Are you sure you want to delete this service?')) return;
+    if (!confirm(t('adminServices.confirmDelete'))) return;
 
     setIsDeleting(serviceId);
     try {
       const result = await deleteService(serviceId);
       if (result.success) {
         toast({
-          title: 'Service Deleted',
-          description: 'The service has been removed.'
+          title: t('adminServices.serviceDeleted'),
+          description: t('adminServices.hasBeenRemoved')
         });
         await loadData();
         onRefresh?.();
       } else {
         toast({
-          title: 'Failed to Delete Service',
-          description: result.error || 'Check admin permissions.',
+          title: t('adminServices.failedToDelete'),
+          description: result.error || t('adminServices.checkAdminPermissions'),
           variant: 'destructive'
         });
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to delete service',
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : t('adminServices.failedToDelete'),
         variant: 'destructive'
       });
     } finally {
@@ -200,22 +194,22 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
       const result = await toggleServiceStatus(service.id, !service.is_active);
       if (result.success) {
         toast({
-          title: service.is_active ? 'Service Deactivated' : 'Service Activated',
-          description: `${service.name} is now ${service.is_active ? 'inactive' : 'active'}.`
+          title: service.is_active ? t('adminServices.serviceDeactivated') : t('adminServices.serviceActivated'),
+          description: `${service.name} ${service.is_active ? t('adminServices.isNowInactive') : t('adminServices.isNowActive')}`
         });
         await loadData();
         onRefresh?.();
       } else {
         toast({
-          title: 'Failed to Update Status',
-          description: result.error || 'Check admin permissions.',
+          title: t('adminServices.failedToUpdate'),
+          description: result.error || t('adminServices.checkAdminPermissions'),
           variant: 'destructive'
         });
       }
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to update status',
+        title: t('common.error'),
+        description: error instanceof Error ? error.message : t('adminServices.failedToUpdate'),
         variant: 'destructive'
       });
     } finally {
@@ -234,15 +228,15 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Services Management</h2>
-          <p className="text-muted-foreground">Add, edit, and manage your services</p>
+          <h2 className="text-2xl font-bold">{t('adminServices.title')}</h2>
+          <p className="text-muted-foreground">{t('adminServices.subtitle')}</p>
         </div>
         <Button onClick={() => handleOpenDialog()}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Service
+          <Plus className={`h-4 w-4 ${isRTL ? 'ms-2' : 'me-2'}`} />
+          {t('adminServices.addService')}
         </Button>
       </div>
 
@@ -251,12 +245,12 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">#</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Base Price</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="w-12">{t('adminServices.tableHeaders.order')}</TableHead>
+                <TableHead>{t('adminServices.tableHeaders.name')}</TableHead>
+                <TableHead>{t('adminServices.tableHeaders.type')}</TableHead>
+                <TableHead>{t('adminServices.tableHeaders.basePrice')}</TableHead>
+                <TableHead>{t('adminServices.tableHeaders.status')}</TableHead>
+                <TableHead className={isRTL ? 'text-left' : 'text-right'}>{t('adminServices.tableHeaders.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -290,7 +284,7 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                     <Badge variant="outline">{service.type}</Badge>
                   </TableCell>
                   <TableCell>
-                    {service.base_price ? `$${service.base_price}` : 'Quote'}
+                    {service.base_price ? `$${service.base_price}` : t('adminServices.quote')}
                   </TableCell>
                   <TableCell>
                     <Switch
@@ -299,8 +293,8 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                       disabled={isToggling === service.id}
                     />
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <TableCell className={isRTL ? 'text-left' : 'text-right'}>
+                    <div className={`flex items-center gap-2 ${isRTL ? 'justify-start' : 'justify-end'}`}>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -329,7 +323,7 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
               {services.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No services found. Add your first service!
+                    {t('adminServices.noServicesFound')}
                   </TableCell>
                 </TableRow>
               )}
@@ -343,13 +337,13 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
         if (!open) setFormError(null);
         setIsDialogOpen(open);
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" dir={isRTL ? 'rtl' : 'ltr'}>
           <DialogHeader>
             <DialogTitle>
-              {editingService ? 'Edit Service' : 'Add New Service'}
+              {editingService ? t('adminServices.editService') : t('adminServices.addNewService')}
             </DialogTitle>
             <DialogDescription>
-              Fill in the details below. Fields marked with * are required.
+              {t('adminServices.formFields.requiredFields')}
             </DialogDescription>
           </DialogHeader>
 
@@ -363,23 +357,23 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Service Name *</Label>
+                <Label htmlFor="name">{t('adminServices.formFields.serviceName')} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Premium Transport"
+                  placeholder={t('adminServices.formFields.serviceNamePlaceholder')}
                   className={!formData.name.trim() && formError ? 'border-destructive' : ''}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="type">Service Type *</Label>
+                <Label htmlFor="type">{t('adminServices.formFields.serviceType')} *</Label>
                 <Select
                   value={formData.type}
                   onValueChange={(value) => setFormData({ ...formData, type: value })}
                 >
                   <SelectTrigger className={!formData.type ? 'border-destructive' : ''}>
-                    <SelectValue placeholder="Select type *" />
+                    <SelectValue placeholder={t('adminServices.formFields.selectType')} />
                   </SelectTrigger>
                   <SelectContent>
                     {serviceTypes.map((type) => (
@@ -387,39 +381,38 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                         {type}
                       </SelectItem>
                     ))}
-                    {/* Allow custom type entry */}
                     <SelectItem value="__custom__" className="text-muted-foreground italic">
-                      + Add custom type...
+                      {t('adminServices.formFields.addCustomType')}
                     </SelectItem>
                   </SelectContent>
                 </Select>
                 {formData.type === '__custom__' && (
                   <Input
-                    placeholder="Enter custom service type"
+                    placeholder={t('adminServices.formFields.serviceType')}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     className="mt-2"
                   />
                 )}
                 {!formData.type && (
-                  <p className="text-xs text-destructive">Service type is required</p>
+                  <p className="text-xs text-destructive">{t('adminServices.formFields.typeRequired')}</p>
                 )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('adminServices.formFields.description')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe the service..."
+                placeholder={t('adminServices.formFields.descriptionPlaceholder')}
                 rows={3}
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="base_price">Base Price</Label>
+                <Label htmlFor="base_price">{t('adminServices.formFields.basePrice')}</Label>
                 <Input
                   id="base_price"
                   type="number"
@@ -431,13 +424,13 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
+                <Label htmlFor="currency">{t('adminServices.formFields.currency')}</Label>
                 <Select
                   value={formData.currency || 'USD'}
                   onValueChange={(value) => setFormData({ ...formData, currency: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select currency" />
+                    <SelectValue placeholder={t('adminServices.formFields.selectCurrency')} />
                   </SelectTrigger>
                   <SelectContent>
                     {currencies.map((c) => (
@@ -449,7 +442,7 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="display_order">Display Order</Label>
+                <Label htmlFor="display_order">{t('adminServices.formFields.displayOrder')}</Label>
                 <Input
                   id="display_order"
                   type="number"
@@ -461,36 +454,36 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="image_url">Image URL</Label>
+              <Label htmlFor="image_url">{t('adminServices.formFields.imageUrl')}</Label>
               <Input
                 id="image_url"
                 value={formData.image_url}
                 onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                placeholder="https://example.com/image.jpg"
+                placeholder={t('adminServices.formFields.imageUrlPlaceholder')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="features">Features (comma-separated)</Label>
+              <Label htmlFor="features">{t('adminServices.formFields.features')}</Label>
               <Input
                 id="features"
                 value={formData.features}
                 onChange={(e) => setFormData({ ...formData, features: e.target.value })}
-                placeholder="Feature 1, Feature 2, Feature 3"
+                placeholder={t('adminServices.formFields.featuresPlaceholder')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">{t('adminServices.formFields.category')}</Label>
               <Select
                 value={formData.category_id}
                 onValueChange={(value) => setFormData({ ...formData, category_id: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category (optional)" />
+                  <SelectValue placeholder={t('adminServices.formFields.selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No Category</SelectItem>
+                  <SelectItem value="">{t('adminServices.formFields.noCategory')}</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.category_name}
@@ -500,31 +493,31 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
               </Select>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
               <Switch
                 id="is_active"
                 checked={formData.is_active}
                 onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
               />
-              <Label htmlFor="is_active">Active (visible to customers)</Label>
+              <Label htmlFor="is_active">{t('adminServices.formFields.activeService')}</Label>
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t">
+          <div className={`flex gap-2 pt-4 border-t ${isRTL ? 'justify-start' : 'justify-end'}`}>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>
-              <X className="h-4 w-4 mr-2" />
-              Cancel
+              <X className={`h-4 w-4 ${isRTL ? 'ms-2' : 'me-2'}`} />
+              {t('common.cancel')}
             </Button>
             <Button 
               onClick={handleSave} 
               disabled={isSaving || !formData.name.trim() || !formData.type}
             >
               {isSaving ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ms-2' : 'me-2'}`} />
               ) : (
-                <Save className="h-4 w-4 mr-2" />
+                <Save className={`h-4 w-4 ${isRTL ? 'ms-2' : 'me-2'}`} />
               )}
-              {editingService ? 'Update' : 'Create'}
+              {editingService ? t('adminServices.update') : t('adminServices.create')}
             </Button>
           </div>
         </DialogContent>
