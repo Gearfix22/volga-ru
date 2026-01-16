@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Logo } from './Logo';
 
 interface SplashScreenProps {
@@ -8,36 +7,37 @@ interface SplashScreenProps {
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
   const [isVisible, setIsVisible] = useState(true);
-  const onFinishRef = useRef(onFinish);
   const hasCalledFinish = useRef(false);
 
-  // Keep ref updated
   useEffect(() => {
-    onFinishRef.current = onFinish;
-  }, [onFinish]);
+    // Store onFinish in closure, call only once
+    const callFinish = () => {
+      if (hasCalledFinish.current) return;
+      hasCalledFinish.current = true;
+      onFinish();
+    };
 
-  const handleFinish = useCallback(() => {
-    if (hasCalledFinish.current) return;
-    hasCalledFinish.current = true;
-    onFinishRef.current();
-  }, []);
-
-  useEffect(() => {
-    // Main timer for splash duration
-    const splashTimer = setTimeout(() => {
+    // Main timer for splash duration (fade start)
+    const fadeTimer = setTimeout(() => {
       setIsVisible(false);
-    }, 1800); // Slightly shorter for snappier feel
+    }, 1500);
 
-    // Fade-out + finish timer
+    // Finish timer (fade complete)
     const finishTimer = setTimeout(() => {
-      handleFinish();
-    }, 2300); // 1800 + 500ms for fade
+      callFinish();
+    }, 2000);
+
+    // Failsafe - always finish within 3 seconds
+    const failsafeTimer = setTimeout(() => {
+      callFinish();
+    }, 3000);
 
     return () => {
-      clearTimeout(splashTimer);
+      clearTimeout(fadeTimer);
       clearTimeout(finishTimer);
+      clearTimeout(failsafeTimer);
     };
-  }, [handleFinish]);
+  }, []); // Empty deps - run only once
 
   return (
     <div className={`fixed inset-0 z-50 bg-volga-navy flex items-center justify-center transition-opacity duration-500 ${
