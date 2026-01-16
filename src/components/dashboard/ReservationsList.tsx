@@ -269,10 +269,14 @@ export const ReservationsList: React.FC<ReservationsListProps> = ({
                             {getApprovedPrice(booking) ? (
                               <div className="flex items-center gap-1">
                                 <Lock className="h-3 w-3 text-green-600" />
-                                <p className="font-semibold text-green-600">{getApprovedPrice(booking)?.toFixed(2)}</p>
+                                <p className="font-semibold text-green-600">
+                                  ${getApprovedPrice(booking)?.toFixed(2)} USD
+                                </p>
                               </div>
                             ) : (
-                              <p className="font-semibold">{booking.total_price?.toFixed(2) || '0.00'}</p>
+                              <div className="flex items-center gap-1 text-muted-foreground">
+                                <span className="text-sm italic">{t('userDashboard.awaitingPrice')}</span>
+                              </div>
                             )}
                           </div>
                           

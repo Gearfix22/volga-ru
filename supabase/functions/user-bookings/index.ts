@@ -22,8 +22,8 @@ import {
 } from '../_shared/auth.ts'
 import { canCancel } from '../_shared/booking-status.ts'
 
-// Statuses that can be cancelled by user
-const CANCELLABLE_STATUSES = ['draft', 'under_review', 'awaiting_customer_confirmation', 'pending']
+// ALIGNED WITH DATABASE ENUM - statuses that can be cancelled by user
+const CANCELLABLE_STATUSES = ['draft', 'pending', 'under_review', 'approved', 'awaiting_payment']
 
 Deno.serve(async (req) => {
   // Handle CORS preflight

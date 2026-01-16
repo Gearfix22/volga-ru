@@ -1804,7 +1804,8 @@
     "bookingId": "ID бронирования",
     "created": "Создано",
     "payment": "Оплата",
-    "priceConfirmed": "Цена подтверждена"
+    "priceConfirmed": "Цена подтверждена",
+    "awaitingPrice": "Ожидание цены"
   },
   "timeline": {
     "bookingCreated": "Бронирование создано",
