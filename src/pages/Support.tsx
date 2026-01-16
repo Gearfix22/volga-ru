@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { supportRequestSchema } from '@/lib/validationSchemas';
+import { openExternalLink } from '@/hooks/useWebViewCompat';
 
 const Support = () => {
   const { user } = useAuth();
@@ -110,7 +111,7 @@ const Support = () => {
               </div>
               <Button 
                 className="w-full mt-4 bg-green-600 hover:bg-green-700" 
-                onClick={() => window.open('https://wa.me/79522212903', '_blank')}
+                onClick={() => openExternalLink('https://wa.me/79522212903')}
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Open WhatsApp
@@ -131,7 +132,7 @@ const Support = () => {
               <Button 
                 variant="outline" 
                 className="w-full mt-4"
-                onClick={() => window.open('tel:+79522212903', '_self')}
+                onClick={() => openExternalLink('tel:+79522212903')}
               >
                 <Phone className="h-4 w-4 mr-2" />
                 Call Now
@@ -151,7 +152,7 @@ const Support = () => {
               <Button 
                 variant="outline" 
                 className="w-full mt-4"
-                onClick={() => window.open('mailto:support@volgaservices.com', '_blank')}
+                onClick={() => openExternalLink('mailto:support@volgaservices.com')}
               >
                 <Mail className="h-4 w-4 mr-2" />
                 Send Email

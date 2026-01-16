@@ -12,17 +12,12 @@ import { Eye, EyeOff, Shield, Lock, Mail, AlertTriangle, Globe, ArrowLeft, KeyRo
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Logo } from '@/components/Logo';
 
-const isAdminDomain = (): boolean => {
-  const hostname = window.location.hostname;
-  return (
-    hostname === 'admin.volgaservices.com' ||
-    hostname.startsWith('admin.') ||
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    // Allow Lovable preview URLs
-    hostname.includes('lovable.app') ||
-    hostname.includes('lovableproject.com')
-  );
+/**
+ * MOBILE-FIRST: Admin access is role-based, not domain-based
+ * This always returns true; actual auth is handled by edge functions
+ */
+const isAdminAccessAllowed = (): boolean => {
+  return true; // Role-based auth handles actual access control
 };
 
 const AdminLogin = () => {
@@ -42,10 +37,8 @@ const AdminLogin = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check domain validity
-    setIsValidDomain(isAdminDomain());
-    
-    // Check for recovery mode from URL
+    // MOBILE-FIRST: Domain check removed, using role-based auth
+    setIsValidDomain(isAdminAccessAllowed());
     const type = searchParams.get('type');
     if (type === 'recovery') {
       setIsRecoveryMode(true);
@@ -197,39 +190,8 @@ const AdminLogin = () => {
     }
   };
 
-  // Block access on non-admin domains
-  if (!isValidDomain) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="max-w-md w-full">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
-              <Globe className="h-8 w-8 text-destructive" />
-            </div>
-            <CardTitle>Invalid Domain</CardTitle>
-            <CardDescription>
-              Admin login is only accessible at <strong>admin.volgaservices.com</strong>
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button 
-              variant="outline" 
-              onClick={() => window.location.href = 'https://volgaservices.com'}
-              className="w-full"
-            >
-              Go to Main Site
-            </Button>
-            <Button 
-              onClick={() => window.location.href = 'https://admin.volgaservices.com/admin-login'}
-              className="w-full"
-            >
-              Go to Admin Portal
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // MOBILE-FIRST: Removed domain-based blocking
+  // Access control is handled by role-based authentication via edge functions
 
   // Password Recovery Mode
   if (isRecoveryMode) {

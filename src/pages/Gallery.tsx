@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
@@ -8,6 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 const Gallery = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
 
   const landmarks = [
     {
@@ -111,7 +113,7 @@ const Gallery = () => {
                 {t('gallery.cta.description')}
               </p>
               <button
-                onClick={() => window.location.href = '/services'}
+                onClick={() => navigate('/services')}
                 className="bg-russian-gold hover:bg-russian-gold/90 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-md font-semibold transition-colors text-sm sm:text-base"
               >
                 {t('gallery.cta.button')}
