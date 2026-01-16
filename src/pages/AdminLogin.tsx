@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Eye, EyeOff, Shield, Lock, Mail, AlertTriangle, ArrowLeft, KeyRound, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Shield, Lock, Mail, ArrowLeft, KeyRound, CheckCircle, AlertTriangle } from 'lucide-react';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Logo } from '@/components/Logo';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -31,7 +31,6 @@ const AdminLogin = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isValidDomain, setIsValidDomain] = useState(true);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
@@ -40,8 +39,6 @@ const AdminLogin = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // MOBILE-FIRST: Domain check removed, using role-based auth
-    setIsValidDomain(isAdminAccessAllowed());
     const type = searchParams.get('type');
     if (type === 'recovery') {
       setIsRecoveryMode(true);
