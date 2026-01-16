@@ -154,8 +154,17 @@ export const UserDashboardContent = () => {
   };
 
   const handlePayNow = (booking: Booking) => {
-    navigate('/payment', {
-      state: { bookingId: booking.id, amount: booking.total_price }
+    // Navigate to unified payment page - price comes from v_booking_payment_guard
+    navigate('/enhanced-payment', {
+      state: { 
+        bookingId: booking.id,
+        // bookingData provided for display purposes only - actual price from backend
+        bookingData: {
+          serviceType: booking.service_type,
+          userInfo: { fullName: '', email: '', phone: '', language: 'english' },
+          serviceDetails: booking.service_details || {}
+        }
+      }
     });
   };
 

@@ -40,10 +40,12 @@ const EnhancedPayment = () => {
   const { t, isRTL } = useLanguage();
   const { user } = useAuth();
   
-  const bookingData = location.state?.bookingData as BookingData;
-  const bookingId = location.state?.bookingId as string;
-  const draftId = location.state?.draftId as string;
+  // Accept both bookingData (from booking flow) and bookingId (from dashboard)
+  const initialBookingData = location.state?.bookingData as BookingData | undefined;
+  const bookingId = location.state?.bookingId as string | undefined;
+  const draftId = location.state?.draftId as string | undefined;
   
+  const [bookingData, setBookingData] = useState<BookingData | null>(initialBookingData || null);
   const [payablePrice, setPayablePrice] = useState<number | null>(null);
   const [priceLoading, setPriceLoading] = useState(true);
   const [selectedMethod, setSelectedMethod] = useState<'cash' | 'stripe' | 'bank-transfer'>('cash');
@@ -52,6 +54,7 @@ const EnhancedPayment = () => {
   const [selectedExchangeRate, setSelectedExchangeRate] = useState<number>(1);
   const [currencyRates, setCurrencyRates] = useState<CurrencyRate[]>([]);
   const [convertedAmount, setConvertedAmount] = useState<number>(0);
+  const [currentBookingId, setCurrentBookingId] = useState<string | null>(bookingId || null);
 
   // Stripe payment form fields
   const [cardNumber, setCardNumber] = useState('');
@@ -59,22 +62,52 @@ const EnhancedPayment = () => {
   const [cvv, setCvv] = useState('');
   const [cardholderName, setCardholderName] = useState('');
 
-  // Load currency rates and booking price from v_booking_payment_guard view
+  // Load currency rates, booking data, and payment eligibility
   useEffect(() => {
     const loadData = async () => {
       const rates = await getCurrencyRates();
       setCurrencyRates(rates);
       
-      // Fetch payment eligibility from v_booking_payment_guard (SINGLE SOURCE OF TRUTH)
+      // If bookingId is provided, fetch booking data and payment eligibility
       if (bookingId) {
+        setCurrentBookingId(bookingId);
+        
+        // Fetch payment eligibility from v_booking_payment_guard (SINGLE SOURCE OF TRUTH)
         const payCheck = await canPayForBooking(bookingId);
         if (payCheck.canPay && payCheck.amount) {
           setPayablePrice(payCheck.amount);
         } else {
-          // Price not ready for payment - show waiting state
           setPayablePrice(null);
         }
+        
+        // If no bookingData provided, fetch basic info from bookings table
+        if (!initialBookingData) {
+          const { data: booking, error } = await supabase
+            .from('bookings')
+            .select('service_type, user_info, service_details')
+            .eq('id', bookingId)
+            .single();
+          
+          if (!error && booking) {
+            const userInfo = typeof booking.user_info === 'object' && booking.user_info !== null
+              ? booking.user_info as { fullName?: string; email?: string; phone?: string; language?: string }
+              : { fullName: '', email: '', phone: '', language: 'english' };
+            
+            setBookingData({
+              serviceType: booking.service_type,
+              userInfo: {
+                fullName: userInfo.fullName || '',
+                email: userInfo.email || '',
+                phone: userInfo.phone || '',
+                language: userInfo.language || 'english'
+              },
+              serviceDetails: (typeof booking.service_details === 'object' && booking.service_details !== null ? booking.service_details : {}) as import('@/types/booking').ServiceDetails,
+              totalPrice: 0 // Will be overridden by payablePrice
+            });
+          }
+        }
       }
+      
       setPriceLoading(false);
     };
     loadData();
@@ -92,7 +125,7 @@ const EnhancedPayment = () => {
     return () => {
       unsubscribe?.();
     };
-  }, [bookingId]);
+  }, [bookingId, initialBookingData]);
 
   // Update converted amount when currency changes
   useEffect(() => {
@@ -104,17 +137,17 @@ const EnhancedPayment = () => {
 
   const hasPayablePrice = payablePrice !== null && payablePrice > 0;
 
+  // Redirect if no booking context at all
   useEffect(() => {
-    if (!bookingData) {
+    if (!bookingId && !initialBookingData) {
       toast({
         title: t('error'),
         description: t('noBookingData'),
         variant: 'destructive'
       });
       navigate('/enhanced-booking');
-      return;
     }
-  }, [bookingData, navigate, t, toast]);
+  }, [bookingId, initialBookingData, navigate, t, toast]);
 
   // Show loading while fetching price
   if (priceLoading) {
@@ -187,8 +220,8 @@ const EnhancedPayment = () => {
       
       // If we have an existing booking, update it with payment info
       // Otherwise, create a new booking (for new service selection flow)
-      if (bookingId) {
-        await processBookingPayment(bookingId, {
+      if (currentBookingId) {
+        await processBookingPayment(currentBookingId, {
           paymentMethod: 'Cash on Arrival',
           transactionId,
           paidAmount: finalAmount,
@@ -197,7 +230,7 @@ const EnhancedPayment = () => {
           finalPaidAmount: convertedPrice,
           requiresVerification: false
         });
-      } else {
+      } else if (bookingData) {
         await createEnhancedBooking(bookingData, {
           paymentMethod: 'Cash on Arrival',
           transactionId,
@@ -271,8 +304,8 @@ const EnhancedPayment = () => {
       const convertedPrice = convertFromUSD(finalAmount, selectedExchangeRate);
       
       // If we have an existing booking, update it with payment info
-      if (bookingId) {
-        await processBookingPayment(bookingId, {
+      if (currentBookingId) {
+        await processBookingPayment(currentBookingId, {
           paymentMethod: 'Credit Card',
           transactionId,
           paidAmount: finalAmount,
@@ -281,7 +314,7 @@ const EnhancedPayment = () => {
           finalPaidAmount: convertedPrice,
           requiresVerification: false
         });
-      } else {
+      } else if (bookingData) {
         await createEnhancedBooking(bookingData, {
           paymentMethod: 'Credit Card',
           transactionId,
@@ -374,9 +407,9 @@ const EnhancedPayment = () => {
       const convertedPrice = convertFromUSD(finalAmount, selectedExchangeRate);
       let booking: any;
       
-      if (bookingId) {
+      if (currentBookingId) {
         // Update existing booking with bank transfer payment info
-        booking = await processBookingPayment(bookingId, {
+        booking = await processBookingPayment(currentBookingId, {
           paymentMethod: 'Bank Transfer',
           transactionId,
           paidAmount: finalAmount,
@@ -386,7 +419,7 @@ const EnhancedPayment = () => {
           requiresVerification: true,
           customerNotes: `Reference: ${transferDetails.referenceNumber}, Date: ${transferDetails.transferDate}. ${transferDetails.notes || ''}`
         });
-      } else {
+      } else if (bookingData) {
         // Create new booking for new service selection flow
         booking = await createEnhancedBooking(bookingData, {
           paymentMethod: 'Bank Transfer',
@@ -402,7 +435,7 @@ const EnhancedPayment = () => {
       }
 
       // Save payment receipt record if file was uploaded
-      const targetBookingId = bookingId || booking?.id;
+      const targetBookingId = currentBookingId || booking?.id;
       if (receiptUrl && targetBookingId) {
         await supabase.from('payment_receipts').insert({
           booking_id: targetBookingId,
