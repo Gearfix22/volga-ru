@@ -1101,6 +1101,15 @@
     "loading": "Загрузка...",
     "verifyingAccess": "Проверка доступа...",
     "loadingBookings": "Загрузка бронирований...",
+    "days": {
+      "sun": "Вс",
+      "mon": "Пн",
+      "tue": "Вт",
+      "wed": "Ср",
+      "thu": "Чт",
+      "fri": "Пт",
+      "sat": "Сб"
+    },
     "loadingData": "Загрузка данных...",
     "searchPlaceholder": "Поиск...",
     "searchByNameEmailPhone": "Поиск по имени, email, телефону, ID...",
@@ -1278,7 +1287,13 @@
       "titleRu": "Название (русский)",
       "descriptionEn": "Описание (английский)",
       "descriptionAr": "Описание (арабский)",
-      "descriptionRu": "Описание (русский)"
+      "descriptionRu": "Описание (русский)",
+      "durationAvailability": "Длительность и доступность",
+      "durationMinutes": "Длительность (минуты)",
+      "durationHint": "Оставьте пустым для переменной длительности",
+      "availableFrom": "Доступно с",
+      "availableTo": "Доступно до",
+      "availableDays": "Доступные дни"
     },
     "tableHeaders": {
       "order": "#",

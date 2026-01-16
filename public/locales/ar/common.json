@@ -1119,6 +1119,15 @@
     "loading": "جاري التحميل...",
     "verifyingAccess": "جاري التحقق من الوصول...",
     "loadingBookings": "جاري تحميل الحجوزات...",
+    "days": {
+      "sun": "أحد",
+      "mon": "إثنين",
+      "tue": "ثلاثاء",
+      "wed": "أربعاء",
+      "thu": "خميس",
+      "fri": "جمعة",
+      "sat": "سبت"
+    },
     "loadingData": "جاري تحميل البيانات...",
     "searchPlaceholder": "بحث...",
     "searchByNameEmailPhone": "بحث بالاسم، البريد، الهاتف، المعرف...",
@@ -1296,7 +1305,13 @@
       "titleRu": "العنوان (الروسية)",
       "descriptionEn": "الوصف (الإنجليزية)",
       "descriptionAr": "الوصف (العربية)",
-      "descriptionRu": "الوصف (الروسية)"
+      "descriptionRu": "الوصف (الروسية)",
+      "durationAvailability": "المدة والتوافر",
+      "durationMinutes": "المدة (بالدقائق)",
+      "durationHint": "اتركه فارغاً للمدة المتغيرة",
+      "availableFrom": "متاح من",
+      "availableTo": "متاح حتى",
+      "availableDays": "الأيام المتاحة"
     },
     "tableHeaders": {
       "order": "#",

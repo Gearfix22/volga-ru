@@ -22,6 +22,11 @@ export interface Service {
   service_type: string | null; // Legacy column, may be removed
   created_at: string | null;
   updated_at: string | null;
+  // Duration and availability fields
+  duration_minutes: number | null;
+  availability_days: number[] | null; // 0=Sunday, 1=Monday, etc.
+  available_from: string | null; // Time in HH:mm:ss format
+  available_to: string | null; // Time in HH:mm:ss format
 }
 
 // Service category interface matching Supabase service_categories table
@@ -47,6 +52,11 @@ export interface CreateServicePayload {
   is_active?: boolean;
   category_id?: string | null;
   display_order?: number;
+  // Duration and availability
+  duration_minutes?: number | null;
+  availability_days?: number[] | null;
+  available_from?: string | null;
+  available_to?: string | null;
 }
 
 // Payload for updating a service
@@ -64,6 +74,11 @@ export interface ServiceFormData {
   is_active: boolean;
   category_id: string;
   display_order: number;
+  // Duration and availability
+  duration_minutes: number;
+  availability_days: number[];
+  available_from: string;
+  available_to: string;
 }
 
 // Default form values
@@ -77,7 +92,12 @@ export const DEFAULT_SERVICE_FORM: ServiceFormData = {
   features: '',
   is_active: true,
   category_id: '',
-  display_order: 0
+  display_order: 0,
+  // Duration and availability defaults
+  duration_minutes: 0,
+  availability_days: [0, 1, 2, 3, 4, 5, 6],
+  available_from: '08:00',
+  available_to: '20:00'
 };
 
 // Default service types for select dropdowns (admin can add more via DB)
@@ -130,7 +150,12 @@ export function formToPayload(data: ServiceFormData): CreateServicePayload {
       : null,
     is_active: data.is_active,
     category_id: data.category_id || null,
-    display_order: data.display_order
+    display_order: data.display_order,
+    // Duration and availability
+    duration_minutes: data.duration_minutes > 0 ? data.duration_minutes : null,
+    availability_days: data.availability_days?.length > 0 ? data.availability_days : null,
+    available_from: data.available_from || null,
+    available_to: data.available_to || null
   };
 }
 
@@ -146,6 +171,11 @@ export function serviceToForm(service: Service, defaultOrder: number = 0): Servi
     features: service.features?.join(', ') || '',
     is_active: service.is_active,
     category_id: service.category_id || '',
-    display_order: service.display_order ?? defaultOrder
+    display_order: service.display_order ?? defaultOrder,
+    // Duration and availability
+    duration_minutes: service.duration_minutes || 0,
+    availability_days: service.availability_days || [0, 1, 2, 3, 4, 5, 6],
+    available_from: service.available_from?.substring(0, 5) || '08:00',
+    available_to: service.available_to?.substring(0, 5) || '20:00'
   };
 }

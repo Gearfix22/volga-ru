@@ -1178,6 +1178,15 @@
     "loading": "Loading...",
     "verifyingAccess": "Verifying access...",
     "loadingBookings": "Loading bookings...",
+    "days": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
     "loadingData": "Loading data...",
     "searchPlaceholder": "Search...",
     "searchByNameEmailPhone": "Search by name, email, phone, ID...",
@@ -1355,7 +1364,13 @@
       "titleRu": "Title (Russian)",
       "descriptionEn": "Description (English)",
       "descriptionAr": "Description (Arabic)",
-      "descriptionRu": "Description (Russian)"
+      "descriptionRu": "Description (Russian)",
+      "durationAvailability": "Duration & Availability",
+      "durationMinutes": "Duration (minutes)",
+      "durationHint": "Leave empty for variable duration",
+      "availableFrom": "Available From",
+      "availableTo": "Available To",
+      "availableDays": "Available Days"
     },
     "tableHeaders": {
       "order": "#",
