@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +54,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DriverLocationTracker } from '@/components/driver/DriverLocationTracker';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 
 interface ExtendedBooking extends AssignedBooking {
   driver_response?: string;
@@ -61,6 +63,7 @@ interface ExtendedBooking extends AssignedBooking {
 const DriverDashboard = () => {
   const { user, signOut, hasRole } = useAuth();
   const navigate = useNavigate();
+  const { t, isRTL } = useLanguage();
   const { toast } = useToast();
   
   const [bookings, setBookings] = useState<ExtendedBooking[]>([]);
@@ -165,14 +168,14 @@ const DriverDashboard = () => {
     
     if (result.success) {
       toast({
-        title: 'Booking Accepted',
-        description: 'Customer has been notified. You can now start the trip.',
+        title: t('driver.bookingAccepted'),
+        description: t('driver.customerNotified'),
       });
       loadBookings();
     } else {
       toast({
-        title: 'Error',
-        description: result.error || 'Failed to accept booking',
+        title: t('common.error'),
+        description: result.error || t('common.error'),
         variant: 'destructive',
       });
     }
@@ -193,16 +196,16 @@ const DriverDashboard = () => {
     
     if (result.success) {
       toast({
-        title: 'Booking Declined',
-        description: 'Admin will reassign to another driver.',
+        title: t('driver.bookingDeclined'),
+        description: t('driver.adminReassign'),
       });
       setRejectDialogOpen(false);
       setBookingToReject(null);
       loadBookings();
     } else {
       toast({
-        title: 'Error',
-        description: result.error || 'Failed to decline booking',
+        title: t('common.error'),
+        description: result.error || t('common.error'),
         variant: 'destructive',
       });
     }
@@ -215,14 +218,14 @@ const DriverDashboard = () => {
     
     if (result.success) {
       toast({
-        title: 'Status Updated',
-        description: status === 'on_trip' ? 'Customer notified you\'re on the way!' : 'Trip completed successfully!',
+        title: t('driver.statusUpdated'),
+        description: status === 'on_trip' ? t('driver.onTheWay') : t('driver.tripCompleted'),
       });
       loadBookings();
     } else {
       toast({
-        title: 'Error',
-        description: result.error || 'Failed to update status',
+        title: t('common.error'),
+        description: result.error || t('common.error'),
         variant: 'destructive',
       });
     }
@@ -236,16 +239,16 @@ const DriverDashboard = () => {
 
   const getStatusBadge = (status: string, driverResponse?: string) => {
     if (driverResponse === 'pending' && status === 'confirmed') {
-      return <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600">Awaiting Your Response</Badge>;
+      return <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600">{t('driver.awaitingYourResponse')}</Badge>;
     }
     
     const config: Record<string, { variant: any; label: string; className?: string }> = {
-      pending: { variant: 'secondary', label: 'Pending' },
-      assigned: { variant: 'secondary', label: 'Assigned' },
-      confirmed: { variant: 'secondary', label: 'Confirmed' },
-      accepted: { variant: 'default', label: 'Accepted', className: 'bg-green-600' },
-      on_trip: { variant: 'default', label: 'On Trip', className: 'bg-blue-600' },
-      completed: { variant: 'outline', label: 'Completed' },
+      pending: { variant: 'secondary', label: t('bookings.statusPending') },
+      assigned: { variant: 'secondary', label: t('common.assigned') },
+      confirmed: { variant: 'secondary', label: t('bookings.statusConfirmed') },
+      accepted: { variant: 'default', label: t('driver.accepted'), className: 'bg-green-600' },
+      on_trip: { variant: 'default', label: t('driver.onTrip'), className: 'bg-blue-600' },
+      completed: { variant: 'outline', label: t('bookings.statusCompleted') },
     };
     const { variant, label, className } = config[status] || { variant: 'secondary', label: status };
     return <Badge variant={variant} className={className}>{label}</Badge>;
@@ -281,18 +284,18 @@ const DriverDashboard = () => {
     <div className="min-h-screen bg-background">
       {/* Driver-specific header - no customer navigation */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-b">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className={cn("container mx-auto px-4 h-16 flex items-center justify-between", isRTL && "flex-row-reverse")}>
+          <div className={cn("flex items-center gap-3", isRTL && "flex-row-reverse")}>
             <Car className="h-8 w-8 text-primary" />
             <div>
-              <span className="text-xl font-bold">Driver Portal</span>
+              <span className="text-xl font-bold">{t('driver.portal')}</span>
               {driverName && (
                 <p className="text-sm text-muted-foreground">{driverName}</p>
               )}
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
             {/* Notifications */}
             <Sheet>
               <SheetTrigger asChild>
@@ -307,11 +310,11 @@ const DriverDashboard = () => {
               </SheetTrigger>
               <SheetContent>
                 <SheetHeader>
-                  <SheetTitle>Notifications</SheetTitle>
+                  <SheetTitle>{t('driver.notifications')}</SheetTitle>
                 </SheetHeader>
                 <ScrollArea className="h-[calc(100vh-100px)] mt-4">
                   {notifications.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">No notifications</p>
+                    <p className="text-muted-foreground text-center py-8">{t('driver.noNotifications')}</p>
                   ) : (
                     <div className="space-y-3">
                       {notifications.map((notification) => (
@@ -321,7 +324,7 @@ const DriverDashboard = () => {
                           onClick={() => !notification.is_read && handleMarkRead(notification.id)}
                         >
                           <CardContent className="p-3">
-                            <div className="flex items-start justify-between gap-2">
+                            <div className={cn("flex items-start justify-between gap-2", isRTL && "flex-row-reverse")}>
                               <div>
                                 <p className="font-medium text-sm">{notification.title}</p>
                                 <p className="text-xs text-muted-foreground mt-1">{notification.message}</p>
@@ -347,10 +350,84 @@ const DriverDashboard = () => {
             </Button>
             
             <Button variant="outline" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
+              <LogOut className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+              {t('driver.signOut')}
             </Button>
           </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 pt-24 pb-12">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-foreground">
+            {driverName ? t('driver.welcomeNamed', { name: driverName }) : t('driver.welcomeDriver')}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {pendingResponse.length > 0 
+              ? t('driver.pendingBookings', { count: pendingResponse.length })
+              : t('driver.activeAssignments', { count: activeBookings.length })
+            }
+          </p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-4 mb-8">
+          <Card className={pendingResponse.length > 0 ? 'border-yellow-500/50 bg-yellow-500/5' : ''}>
+            <CardContent className="pt-6">
+              <div className={cn("flex items-center gap-4", isRTL && "flex-row-reverse")}>
+                <div className={`p-3 rounded-full ${pendingResponse.length > 0 ? 'bg-yellow-500/20' : 'bg-muted'}`}>
+                  <Bell className={`h-6 w-6 ${pendingResponse.length > 0 ? 'text-yellow-600' : 'text-muted-foreground'}`} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{pendingResponse.length}</p>
+                  <p className="text-sm text-muted-foreground">{t('driver.awaitingResponse')}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className={cn("flex items-center gap-4", isRTL && "flex-row-reverse")}>
+                <div className="p-3 rounded-full bg-green-500/10">
+                  <CheckCircle className="h-6 w-6 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{bookings.filter(b => b.status === 'accepted').length}</p>
+                  <p className="text-sm text-muted-foreground">{t('driver.accepted')}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className={cn("flex items-center gap-4", isRTL && "flex-row-reverse")}>
+                <div className="p-3 rounded-full bg-blue-500/10">
+                  <Car className="h-6 w-6 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{bookings.filter(b => b.status === 'on_trip').length}</p>
+                  <p className="text-sm text-muted-foreground">{t('driver.onTrip')}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className={cn("flex items-center gap-4", isRTL && "flex-row-reverse")}>
+                <div className="p-3 rounded-full bg-primary/10">
+                  <Calendar className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{completedBookings.length}</p>
+                  <p className="text-sm text-muted-foreground">{t('driver.completedToday')}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </header>
 
