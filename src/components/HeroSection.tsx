@@ -41,21 +41,37 @@ export const HeroSection: React.FC = () => {
             {t('hero.subtitle')}
           </p>
           
-          {/* CTA Button - Simplified */}
+          {/* CTA Button - Mobile-optimized with proper touch target */}
           <div className="flex justify-center items-center pt-6">
             <Button
               onClick={() => navigate('/enhanced-booking')}
               size="lg"
-              className="bg-white text-brand-primary hover:bg-white/90 px-10 py-7 text-xl font-bold rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105"
+              className="bg-white text-brand-primary hover:bg-white/90 active:bg-white/80 px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold rounded-xl shadow-2xl hover:shadow-3xl transition-all hover:scale-105 active:scale-100 min-h-[56px] touch-manipulation"
             >
               {t('hero.bookAppointment')}
-              <ArrowRight className={`h-6 w-6 ${isRTL ? 'mr-3 rotate-180' : 'ml-3'}`} />
+              <ArrowRight className={`h-5 w-5 sm:h-6 sm:w-6 ${isRTL ? 'mr-2 sm:mr-3 rotate-180' : 'ml-2 sm:ml-3'}`} />
             </Button>
           </div>
 
-          {/* Feature Highlights */}
-          <div className="pt-12 hidden md:block">
-            <div className={`flex items-center justify-center gap-8 lg:gap-12 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          {/* Feature Highlights - Visible on larger screens, replaced with simplified mobile version */}
+          <div className="pt-8 sm:pt-12">
+            {/* Mobile version - stacked */}
+            <div className="flex flex-col gap-3 sm:hidden">
+              <div className={`flex items-center justify-center gap-2 text-white ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <span className="text-brand-accent bg-white rounded-full p-1 text-lg">✓</span>
+                <span className="text-sm font-semibold" style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.9)' }}>{t('hero.premiumService')}</span>
+              </div>
+              <div className={`flex items-center justify-center gap-2 text-white ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <span className="text-brand-accent bg-white rounded-full p-1 text-lg">✓</span>
+                <span className="text-sm font-semibold" style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.9)' }}>{t('hero.multilingualSupport')}</span>
+              </div>
+              <div className={`flex items-center justify-center gap-2 text-white ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <span className="text-brand-accent bg-white rounded-full p-1 text-lg">✓</span>
+                <span className="text-sm font-semibold" style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.9)' }}>{t('hero.secureBooking')}</span>
+              </div>
+            </div>
+            {/* Desktop version - horizontal */}
+            <div className={`hidden sm:flex items-center justify-center gap-8 lg:gap-12 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div className={`flex items-center gap-2 text-white ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <span className="text-brand-accent bg-white rounded-full p-1 text-xl">✓</span>
                 <span className="text-base lg:text-lg font-semibold" style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.9)' }}>{t('hero.premiumService')}</span>

@@ -40,7 +40,7 @@ export const UserMenu: React.FC = () => {
         <Button 
           variant="outline" 
           size="sm" 
-          className="bg-background/10 border-border/50 text-foreground hover:bg-background/20"
+          className="bg-background/10 border-border/50 text-foreground hover:bg-background/20 active:bg-background/30 min-h-[44px] touch-manipulation"
         >
           <User className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
           <span className="max-w-[100px] truncate">
@@ -52,7 +52,7 @@ export const UserMenu: React.FC = () => {
         align={isRTL ? 'start' : 'end'} 
         className="w-56 bg-popover border-border"
       >
-        <DropdownMenuItem asChild>
+        <DropdownMenuItem asChild className="min-h-[48px] touch-manipulation">
           <Link to="/user-dashboard" className={`w-full flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
             <Settings className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
             {t('navbar.dashboard')}
@@ -62,7 +62,7 @@ export const UserMenu: React.FC = () => {
         {hasRole('admin') && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
+            <DropdownMenuItem asChild className="min-h-[48px] touch-manipulation">
               <Link to="/admin" className={`w-full flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <Shield className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                 {t('admin.adminPanel')}
@@ -81,7 +81,7 @@ export const UserMenu: React.FC = () => {
             {canSwitchToDriver && (
               <DropdownMenuItem 
                 onClick={() => navigate('/driver-dashboard')}
-                className={isRTL ? 'flex-row-reverse' : ''}
+                className={`min-h-[48px] touch-manipulation ${isRTL ? 'flex-row-reverse' : ''}`}
               >
                 <Car className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                 {t('roles.driverMode')}
@@ -90,7 +90,7 @@ export const UserMenu: React.FC = () => {
             {canSwitchToGuide && (
               <DropdownMenuItem 
                 onClick={() => navigate('/guide-dashboard')}
-                className={isRTL ? 'flex-row-reverse' : ''}
+                className={`min-h-[48px] touch-manipulation ${isRTL ? 'flex-row-reverse' : ''}`}
               >
                 <UserCheck className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                 {t('roles.guideMode')}
@@ -102,7 +102,7 @@ export const UserMenu: React.FC = () => {
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           onClick={signOut}
-          className={isRTL ? 'flex-row-reverse' : ''}
+          className={`min-h-[48px] touch-manipulation ${isRTL ? 'flex-row-reverse' : ''}`}
         >
           <LogOut className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
           {t('auth.signOut')}
