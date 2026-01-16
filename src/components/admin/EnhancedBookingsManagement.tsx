@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { BookingDetailsDialog } from './BookingDetailsDialog';
 import { RejectBookingModal } from './RejectBookingModal';
 import { DriverAssignmentSelect } from './DriverAssignmentSelect';
@@ -90,6 +91,7 @@ interface DraftBooking {
 
 export const EnhancedBookingsManagement = () => {
   const { toast } = useToast();
+  const { t, isRTL } = useLanguage();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [draftBookings, setDraftBookings] = useState<DraftBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,14 +121,13 @@ export const EnhancedBookingsManagement = () => {
     fetchBookings();
     fetchDraftBookings();
 
-    // Real-time subscription for UI updates (including booking_prices for price changes)
+    // Real-time subscription for UI updates
     const channel = supabase
       .channel('admin-bookings-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => {
         fetchBookings();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'booking_prices' }, () => {
-        // Refetch when prices change (SINGLE SOURCE OF TRUTH)
         fetchBookings();
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'draft_bookings' }, () => {
@@ -150,8 +151,8 @@ export const EnhancedBookingsManagement = () => {
     } catch (error: any) {
       console.error('Error fetching bookings:', error);
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to load bookings',
+        title: t('common.error'),
+        description: error.message || t('common.failedToLoad'),
         variant: 'destructive'
       });
     } finally {
@@ -173,7 +174,6 @@ export const EnhancedBookingsManagement = () => {
     }
   };
 
-  // Refetch when filters change
   useEffect(() => {
     if (!loading) {
       fetchBookings();
@@ -185,22 +185,21 @@ export const EnhancedBookingsManagement = () => {
       setActionLoading(booking.id);
       await confirmBooking(booking.id);
       
-      // Optimistic update
       setBookings(prev => prev.map(b => 
         b.id === booking.id ? { ...b, status: 'confirmed' } : b
       ));
       
       toast({
-        title: 'Success',
-        description: `Booking confirmed successfully`,
+        title: t('common.success'),
+        description: t('bookings.bookingConfirmed'),
       });
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: t('common.error'),
         description: error.message,
         variant: 'destructive'
       });
-      fetchBookings(); // Refresh on error
+      fetchBookings();
     } finally {
       setActionLoading(null);
     }
@@ -218,7 +217,6 @@ export const EnhancedBookingsManagement = () => {
       setActionLoading(bookingToReject.id);
       await rejectBooking(bookingToReject.id, reason);
       
-      // Optimistic update
       setBookings(prev => prev.map(b => 
         b.id === bookingToReject.id 
           ? { ...b, status: 'cancelled', admin_notes: `Rejected: ${reason}` } 
@@ -226,15 +224,15 @@ export const EnhancedBookingsManagement = () => {
       ));
       
       toast({
-        title: 'Booking Rejected',
-        description: `Booking has been rejected and customer will be notified`,
+        title: t('bookings.bookingRejected'),
+        description: t('bookings.customerNotified'),
       });
       
       setRejectModalOpen(false);
       setBookingToReject(null);
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: t('common.error'),
         description: error.message,
         variant: 'destructive'
       });
@@ -249,18 +247,17 @@ export const EnhancedBookingsManagement = () => {
       setActionLoading(bookingId);
       await updateBooking(bookingId, { status: newStatus });
       
-      // Optimistic update
       setBookings(prev => prev.map(b => 
         b.id === bookingId ? { ...b, status: newStatus } : b
       ));
       
       toast({
-        title: 'Success',
-        description: `Booking status updated to ${newStatus}`,
+        title: t('common.success'),
+        description: `${t('bookings.statusUpdated')} ${newStatus}`,
       });
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: t('common.error'),
         description: error.message,
         variant: 'destructive'
       });
@@ -275,18 +272,17 @@ export const EnhancedBookingsManagement = () => {
       setActionLoading(bookingId);
       await updatePaymentStatus(bookingId, newStatus);
       
-      // Optimistic update
       setBookings(prev => prev.map(b => 
         b.id === bookingId ? { ...b, payment_status: newStatus } : b
       ));
       
       toast({
-        title: 'Success',
-        description: 'Payment status updated',
+        title: t('common.success'),
+        description: t('bookings.paymentUpdated'),
       });
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: t('common.error'),
         description: error.message,
         variant: 'destructive'
       });
@@ -301,20 +297,19 @@ export const EnhancedBookingsManagement = () => {
       setActionLoading(bookingId);
       await updateBooking(bookingId, { admin_notes: noteText });
       
-      // Optimistic update
       setBookings(prev => prev.map(b => 
         b.id === bookingId ? { ...b, admin_notes: noteText } : b
       ));
       
       toast({
-        title: 'Success',
-        description: 'Note saved successfully',
+        title: t('common.success'),
+        description: t('bookings.noteSaved'),
       });
       setEditingNotes(null);
       setNoteText('');
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: t('common.error'),
         description: error.message,
         variant: 'destructive'
       });
@@ -326,11 +321,10 @@ export const EnhancedBookingsManagement = () => {
   const savePrice = async (bookingId: string) => {
     const trimmedValue = priceValue.trim();
     
-    // Validate input
     if (!trimmedValue) {
       toast({
-        title: 'Invalid Price',
-        description: 'Please enter a price value',
+        title: t('bookings.invalidPrice'),
+        description: t('bookings.enterPriceValue'),
         variant: 'destructive'
       });
       return;
@@ -340,8 +334,8 @@ export const EnhancedBookingsManagement = () => {
     
     if (isNaN(newPrice)) {
       toast({
-        title: 'Invalid Price',
-        description: 'Please enter a valid number',
+        title: t('bookings.invalidPrice'),
+        description: t('bookings.enterValidNumber'),
         variant: 'destructive'
       });
       return;
@@ -349,8 +343,8 @@ export const EnhancedBookingsManagement = () => {
     
     if (newPrice <= 0) {
       toast({
-        title: 'Invalid Price',
-        description: 'Price must be greater than zero',
+        title: t('bookings.invalidPrice'),
+        description: t('bookings.priceGreaterThanZero'),
         variant: 'destructive'
       });
       return;
@@ -359,21 +353,16 @@ export const EnhancedBookingsManagement = () => {
     try {
       setActionLoading(bookingId);
       
-      // Store original price for rollback
       const originalBooking = bookings.find(b => b.id === bookingId);
       const originalPrice = originalBooking?.total_price;
       
-      // Optimistic update first for instant feedback
       setBookings(prev => prev.map(b => 
         b.id === bookingId ? { ...b, total_price: newPrice, status: 'awaiting_customer_confirmation' } : b
       ));
       
-      // CRITICAL: Use setBookingPrice which writes to booking_prices table
-      // This is the SINGLE SOURCE OF TRUTH for pricing
       const result = await setBookingPrice(bookingId, newPrice, { lock: true });
       
       if (!result.success) {
-        // Rollback on failure
         setBookings(prev => prev.map(b => 
           b.id === bookingId ? { ...b, total_price: originalPrice ?? 0, status: originalBooking?.status || 'pending' } : b
         ));
@@ -381,23 +370,21 @@ export const EnhancedBookingsManagement = () => {
       }
       
       toast({
-        title: 'Price Set & Locked',
-        description: `Price set to $${newPrice.toFixed(2)} - Customer can now pay`,
+        title: t('bookings.priceSetLocked'),
+        description: t('bookings.priceSetDescription').replace('${price}', newPrice.toFixed(2)),
       });
       
       setEditingPrice(null);
       setPriceValue('');
       
-      // Refetch to get updated data
       fetchBookings();
     } catch (error: any) {
       console.error('Price update error:', error);
       toast({
-        title: 'Error Setting Price',
-        description: error.message || 'Failed to save price. Please try again.',
+        title: t('bookings.errorSettingPrice'),
+        description: error.message || t('common.error'),
         variant: 'destructive'
       });
-      // Refresh to get actual state from server
       fetchBookings();
     } finally {
       setActionLoading(null);
@@ -416,18 +403,17 @@ export const EnhancedBookingsManagement = () => {
       setActionLoading(bookingToDelete.id);
       await deleteBooking(bookingToDelete.id);
       
-      // Optimistic update
       setBookings(prev => prev.filter(b => b.id !== bookingToDelete.id));
       
       toast({
-        title: 'Success',
-        description: 'Booking deleted successfully',
+        title: t('common.success'),
+        description: t('bookings.bookingDeleted'),
       });
       setDeleteDialogOpen(false);
       setBookingToDelete(null);
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: t('common.error'),
         description: error.message,
         variant: 'destructive'
       });
@@ -437,7 +423,6 @@ export const EnhancedBookingsManagement = () => {
     }
   };
 
-  // FIXED: Separate active vs archived bookings using status
   const activeBookings = useMemo(() => {
     return bookings.filter(b => ACTIVE_STATUSES.includes(b.status));
   }, [bookings]);
@@ -459,51 +444,49 @@ export const EnhancedBookingsManagement = () => {
   }, [activeBookings, archivedBookings, activeTab, searchQuery]);
 
   const getStatusBadge = (status: string) => {
-    // FINAL WORKFLOW status labels
     const config: Record<string, { variant: any; icon: any; label: string }> = {
-      draft: { variant: 'secondary', icon: Clock, label: 'Draft' },
-      under_review: { variant: 'secondary', icon: Clock, label: 'Under Review' },
-      awaiting_customer_confirmation: { variant: 'default', icon: AlertCircle, label: 'Awaiting Confirmation' },
-      paid: { variant: 'default', icon: CheckCircle, label: 'Paid' },
-      in_progress: { variant: 'default', icon: Car, label: 'In Progress' },
-      completed: { variant: 'outline', icon: CheckCircle, label: 'Completed' },
-      cancelled: { variant: 'destructive', icon: XCircle, label: 'Cancelled' },
-      rejected: { variant: 'destructive', icon: XCircle, label: 'Rejected' },
-      // Legacy support
-      pending: { variant: 'secondary', icon: Clock, label: 'Pending' },
-      confirmed: { variant: 'default', icon: CheckCircle, label: 'Confirmed' },
+      draft: { variant: 'secondary', icon: Clock, label: t('bookings.draft') },
+      under_review: { variant: 'secondary', icon: Clock, label: t('bookings.underReview') },
+      awaiting_customer_confirmation: { variant: 'default', icon: AlertCircle, label: t('bookings.awaitingConfirmation') },
+      paid: { variant: 'default', icon: CheckCircle, label: t('bookings.paid') },
+      in_progress: { variant: 'default', icon: Car, label: t('bookings.inProgress') },
+      completed: { variant: 'outline', icon: CheckCircle, label: t('bookings.completed') },
+      cancelled: { variant: 'destructive', icon: XCircle, label: t('bookings.cancelled') },
+      rejected: { variant: 'destructive', icon: XCircle, label: t('bookings.rejected') },
+      pending: { variant: 'secondary', icon: Clock, label: t('bookings.pending') },
+      confirmed: { variant: 'default', icon: CheckCircle, label: t('bookings.confirmed') },
     };
 
     const { variant, icon: Icon, label } = config[status] || { variant: 'secondary', icon: Clock, label: status };
 
     return (
       <Badge variant={variant}>
-        <Icon className="h-3 w-3 mr-1" />
+        <Icon className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
         {label}
       </Badge>
     );
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-3 max-w-lg">
           <TabsTrigger value="active">
-            Active Bookings
+            {t('bookings.activeBookings')}
             {activeBookings.length > 0 && (
-              <Badge variant="secondary" className="ml-2">{activeBookings.length}</Badge>
+              <Badge variant="secondary" className={isRTL ? 'mr-2' : 'ml-2'}>{activeBookings.length}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="archived">
-            Archived
+            {t('bookings.archived')}
             {archivedBookings.length > 0 && (
-              <Badge variant="outline" className="ml-2">{archivedBookings.length}</Badge>
+              <Badge variant="outline" className={isRTL ? 'mr-2' : 'ml-2'}>{archivedBookings.length}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="drafts">
-            Drafts
+            {t('bookings.drafts')}
             {draftBookings.length > 0 && (
-              <Badge variant="secondary" className="ml-2">{draftBookings.length}</Badge>
+              <Badge variant="secondary" className={isRTL ? 'mr-2' : 'ml-2'}>{draftBookings.length}</Badge>
             )}
           </TabsTrigger>
         </TabsList>
@@ -513,26 +496,26 @@ export const EnhancedBookingsManagement = () => {
             <CardHeader>
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <Calendar className="h-5 w-5" />
-                    Active Bookings
+                    {t('bookings.activeBookings')}
                   </CardTitle>
                   <CardDescription>
-                    Bookings that are pending, in progress, or awaiting action
+                    {t('bookings.pendingDescription')}
                   </CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => fetchBookings()}
                     disabled={loading}
                   >
-                    <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-                    Refresh
+                    <RefreshCw className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'} ${loading ? 'animate-spin' : ''}`} />
+                    {t('bookings.refresh')}
                   </Button>
                   <Badge variant="outline" className="text-lg px-4 py-2">
-                    {filteredBookings.length} Active
+                    {filteredBookings.length} {t('bookings.active')}
                   </Badge>
                 </div>
               </div>
@@ -541,38 +524,38 @@ export const EnhancedBookingsManagement = () => {
               {/* Filters */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground`} />
                   <Input
-                    placeholder="Search by name, email, phone, ID..."
+                    placeholder={t('bookings.searchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+                    className={isRTL ? 'pr-10' : 'pl-10'}
                   />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Filter by status" />
+                    <SelectValue placeholder={t('bookings.filterByStatus')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="pending">Requested</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="assigned">Driver Assigned</SelectItem>
-                    <SelectItem value="accepted">Driver Confirmed</SelectItem>
-                    <SelectItem value="on_trip">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="all">{t('bookings.allStatuses')}</SelectItem>
+                    <SelectItem value="pending">{t('bookings.requested')}</SelectItem>
+                    <SelectItem value="confirmed">{t('bookings.confirmed')}</SelectItem>
+                    <SelectItem value="assigned">{t('bookings.driverAssigned')}</SelectItem>
+                    <SelectItem value="accepted">{t('bookings.driverConfirmed')}</SelectItem>
+                    <SelectItem value="on_trip">{t('bookings.inProgress')}</SelectItem>
+                    <SelectItem value="completed">{t('bookings.completed')}</SelectItem>
+                    <SelectItem value="cancelled">{t('bookings.cancelled')}</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={paymentFilter} onValueChange={setPaymentFilter}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Filter by payment" />
+                    <SelectValue placeholder={t('bookings.filterByPayment')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Payments</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="pending_verification">Pending Verification</SelectItem>
+                    <SelectItem value="all">{t('bookings.allPayments')}</SelectItem>
+                    <SelectItem value="pending">{t('bookings.pending')}</SelectItem>
+                    <SelectItem value="paid">{t('bookings.paid')}</SelectItem>
+                    <SelectItem value="pending_verification">{t('bookings.pendingVerification')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -580,39 +563,39 @@ export const EnhancedBookingsManagement = () => {
               {loading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                  <p className="mt-4 text-muted-foreground">Loading bookings...</p>
+                  <p className="mt-4 text-muted-foreground">{t('bookings.loadingBookings')}</p>
                 </div>
               ) : (
                 <div className="border rounded-lg overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Contact</TableHead>
-                        <TableHead>Service</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Payment</TableHead>
-                        <TableHead>Driver</TableHead>
-                        <TableHead>Guide</TableHead>
-                        <TableHead>Notes</TableHead>
-                        <TableHead>Actions</TableHead>
+                        <TableHead>{t('bookings.customer')}</TableHead>
+                        <TableHead>{t('bookings.contact')}</TableHead>
+                        <TableHead>{t('bookings.service')}</TableHead>
+                        <TableHead>{t('bookings.price')}</TableHead>
+                        <TableHead>{t('bookings.status')}</TableHead>
+                        <TableHead>{t('bookings.payment')}</TableHead>
+                        <TableHead>{t('bookings.driver')}</TableHead>
+                        <TableHead>{t('bookings.guide')}</TableHead>
+                        <TableHead>{t('bookings.notes')}</TableHead>
+                        <TableHead>{t('bookings.actions')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredBookings.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
-                            No bookings found
+                            {t('bookings.noBookingsFound')}
                           </TableCell>
                         </TableRow>
                       ) : (
                         filteredBookings.map((booking) => (
                           <TableRow key={booking.id} className={actionLoading === booking.id ? 'opacity-50' : ''}>
                             <TableCell className="font-medium">
-                              <div className="flex items-center gap-2">
+                              <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                 <User className="h-4 w-4 text-muted-foreground" />
-                                {booking.user_info?.fullName || 'N/A'}
+                                {booking.user_info?.fullName || t('common.notAvailable')}
                               </div>
                               <div className="text-xs text-muted-foreground mt-1">
                                 {new Date(booking.created_at).toLocaleDateString()}
@@ -620,13 +603,13 @@ export const EnhancedBookingsManagement = () => {
                             </TableCell>
                             <TableCell>
                               <div className="space-y-1 text-sm">
-                                <div className="flex items-center gap-1">
+                                <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                   <Mail className="h-3 w-3 text-muted-foreground" />
-                                  <span className="truncate max-w-[150px]">{booking.user_info?.email || 'N/A'}</span>
+                                  <span className="truncate max-w-[150px]">{booking.user_info?.email || t('common.notAvailable')}</span>
                                 </div>
-                                <div className="flex items-center gap-1">
+                                <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                   <Phone className="h-3 w-3 text-muted-foreground" />
-                                  <span className="font-mono text-primary font-semibold">{booking.user_info?.phone || 'N/A'}</span>
+                                  <span className="font-mono text-primary font-semibold">{booking.user_info?.phone || t('common.notAvailable')}</span>
                                 </div>
                               </div>
                             </TableCell>
@@ -635,15 +618,15 @@ export const EnhancedBookingsManagement = () => {
                                 <Badge variant="outline">{booking.service_type}</Badge>
                                 {booking.driver_required && (
                                   <Badge variant="secondary" className="text-xs">
-                                    <Car className="h-3 w-3 mr-1" />
-                                    Driver needed
+                                    <Car className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                                    {t('bookings.driverNeeded')}
                                   </Badge>
                                 )}
                               </div>
                             </TableCell>
                             <TableCell>
                               {editingPrice === booking.id ? (
-                                <div className="flex items-center gap-1">
+                                <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                   <Input
                                     type="number"
                                     value={priceValue}
@@ -673,22 +656,21 @@ export const EnhancedBookingsManagement = () => {
                                   </Button>
                                 </div>
                               ) : (
-                                <div className="flex items-center gap-1">
+                                <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                   <span className="font-semibold">${booking.total_price?.toFixed(2) || '0.00'}</span>
-                                  {/* Allow price edit before payment is completed */}
                                   {booking.payment_status !== 'paid' && (
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      className="h-7 px-2 ml-1"
+                                      className={`h-7 px-2 ${isRTL ? 'mr-1' : 'ml-1'}`}
                                       onClick={() => {
                                         setEditingPrice(booking.id);
                                         setPriceValue(booking.total_price?.toString() || '0');
                                       }}
                                       disabled={actionLoading === booking.id}
                                     >
-                                      <Edit className="h-3 w-3 mr-1" />
-                                      Edit
+                                      <Edit className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                                      {t('bookings.edit')}
                                     </Button>
                                   )}
                                 </div>
@@ -706,14 +688,14 @@ export const EnhancedBookingsManagement = () => {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="assigned">Assigned</SelectItem>
-                                    <SelectItem value="accepted">Accepted</SelectItem>
-                                    <SelectItem value="on_trip">On Trip</SelectItem>
-                                    <SelectItem value="completed">Completed</SelectItem>
-                                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                                    <SelectItem value="pending">{t('bookings.pending')}</SelectItem>
+                                    <SelectItem value="confirmed">{t('bookings.confirmed')}</SelectItem>
+                                    <SelectItem value="active">{t('bookings.active')}</SelectItem>
+                                    <SelectItem value="assigned">{t('bookings.assigned')}</SelectItem>
+                                    <SelectItem value="accepted">{t('bookings.accepted')}</SelectItem>
+                                    <SelectItem value="on_trip">{t('bookings.onTrip')}</SelectItem>
+                                    <SelectItem value="completed">{t('bookings.completed')}</SelectItem>
+                                    <SelectItem value="cancelled">{t('bookings.cancelled')}</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -728,12 +710,12 @@ export const EnhancedBookingsManagement = () => {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="pending">Pending</SelectItem>
-                                  <SelectItem value="paid">Paid</SelectItem>
-                                  <SelectItem value="cash_on_delivery">Cash on Arrival</SelectItem>
-                                  <SelectItem value="pending_verification">Verifying</SelectItem>
-                                  <SelectItem value="awaiting_quote">Awaiting Quote</SelectItem>
-                                  <SelectItem value="awaiting_payment">Awaiting Payment</SelectItem>
+                                  <SelectItem value="pending">{t('bookings.pending')}</SelectItem>
+                                  <SelectItem value="paid">{t('bookings.paid')}</SelectItem>
+                                  <SelectItem value="cash_on_delivery">{t('bookings.cashOnArrival')}</SelectItem>
+                                  <SelectItem value="pending_verification">{t('bookings.verifying')}</SelectItem>
+                                  <SelectItem value="awaiting_quote">{t('bookings.awaitingQuote')}</SelectItem>
+                                  <SelectItem value="awaiting_payment">{t('bookings.awaitingPayment')}</SelectItem>
                                 </SelectContent>
                               </Select>
                             </TableCell>
@@ -746,7 +728,7 @@ export const EnhancedBookingsManagement = () => {
                                   disabled={actionLoading === booking.id || booking.status === 'cancelled' || booking.status === 'completed' || booking.status === 'pending'}
                                 />
                               ) : (
-                                <span className="text-sm text-muted-foreground">Not required</span>
+                                <span className="text-sm text-muted-foreground">{t('bookings.notRequired')}</span>
                               )}
                             </TableCell>
                             <TableCell>
@@ -764,7 +746,7 @@ export const EnhancedBookingsManagement = () => {
                                   }}
                                 />
                               ) : (
-                                <span className="text-sm text-muted-foreground">N/A</span>
+                                <span className="text-sm text-muted-foreground">{t('common.notAvailable')}</span>
                               )}
                             </TableCell>
                             <TableCell>
@@ -773,31 +755,31 @@ export const EnhancedBookingsManagement = () => {
                                   <Textarea
                                     value={noteText}
                                     onChange={(e) => setNoteText(e.target.value)}
-                                    placeholder="Add admin note..."
+                                    placeholder={t('bookings.addNote')}
                                     className="min-h-[60px]"
                                     maxLength={500}
                                   />
-                                  <div className="flex gap-1">
+                                  <div className={`flex gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                     <Button 
                                       size="sm" 
                                       onClick={() => saveAdminNote(booking.id)}
                                       disabled={actionLoading === booking.id}
                                     >
-                                      <Save className="h-3 w-3 mr-1" />
-                                      Save
+                                      <Save className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                                      {t('bookings.save')}
                                     </Button>
                                     <Button size="sm" variant="outline" onClick={() => {
                                       setEditingNotes(null);
                                       setNoteText('');
                                     }}>
-                                      Cancel
+                                      {t('bookings.cancel')}
                                     </Button>
                                   </div>
                                 </div>
                               ) : (
-                                <div className="flex items-center gap-2">
+                                <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                   <span className="text-sm text-muted-foreground truncate max-w-[100px]">
-                                    {booking.admin_notes || 'No notes'}
+                                    {booking.admin_notes || t('bookings.noNotes')}
                                   </span>
                                   <Button
                                     size="sm"
@@ -814,9 +796,8 @@ export const EnhancedBookingsManagement = () => {
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-col gap-1">
-                                {/* Quick Action Buttons */}
                                 {booking.status === 'pending' && (
-                                  <div className="flex gap-1 mb-1">
+                                  <div className={`flex gap-1 mb-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                     <Button
                                       size="sm"
                                       variant="default"
@@ -824,8 +805,8 @@ export const EnhancedBookingsManagement = () => {
                                       onClick={() => handleConfirmBooking(booking)}
                                       disabled={actionLoading === booking.id}
                                     >
-                                      <CheckCircle className="h-3 w-3 mr-1" />
-                                      Confirm
+                                      <CheckCircle className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                                      {t('bookings.confirm')}
                                     </Button>
                                     <Button
                                       size="sm"
@@ -833,12 +814,12 @@ export const EnhancedBookingsManagement = () => {
                                       onClick={() => openRejectModal(booking)}
                                       disabled={actionLoading === booking.id}
                                     >
-                                      <XCircle className="h-3 w-3 mr-1" />
-                                      Reject
+                                      <XCircle className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                                      {t('bookings.reject')}
                                     </Button>
                                   </div>
                                 )}
-                                <div className="flex gap-1">
+                                <div className={`flex gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                   <Button
                                     size="sm"
                                     variant="outline"
@@ -847,8 +828,8 @@ export const EnhancedBookingsManagement = () => {
                                       setShowDetails(true);
                                     }}
                                   >
-                                    <Eye className="h-4 w-4 mr-1" />
-                                    View
+                                    <Eye className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                                    {t('bookings.view')}
                                   </Button>
                                   <Button
                                     size="sm"
@@ -873,34 +854,90 @@ export const EnhancedBookingsManagement = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="drafts">
+        <TabsContent value="archived">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileEdit className="h-5 w-5" />
-                Incomplete Bookings (Drafts)
+              <CardTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <Archive className="h-5 w-5" />
+                {t('bookings.archived')}
               </CardTitle>
               <CardDescription>
-                Bookings that users started but haven't completed
+                {t('bookings.completed')} / {t('bookings.cancelled')}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {draftBookings.length === 0 ? (
+              {archivedBookings.length === 0 ? (
                 <div className="text-center py-8">
                   <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No incomplete bookings found</p>
+                  <p className="text-muted-foreground">{t('bookings.noBookingsFound')}</p>
                 </div>
               ) : (
                 <div className="border rounded-lg overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Customer</TableHead>
-                        <TableHead>Service Type</TableHead>
-                        <TableHead>Progress</TableHead>
-                        <TableHead>Started</TableHead>
-                        <TableHead>Last Updated</TableHead>
-                        <TableHead>Details</TableHead>
+                        <TableHead>{t('bookings.customer')}</TableHead>
+                        <TableHead>{t('bookings.service')}</TableHead>
+                        <TableHead>{t('bookings.status')}</TableHead>
+                        <TableHead>{t('bookings.payment')}</TableHead>
+                        <TableHead>{t('bookings.price')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {archivedBookings.map((booking) => (
+                        <TableRow key={booking.id}>
+                          <TableCell>
+                            <div className="font-medium">{booking.user_info?.fullName || t('common.notAvailable')}</div>
+                            <div className="text-xs text-muted-foreground">{booking.user_info?.phone}</div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{booking.service_type}</Badge>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                          <TableCell>
+                            <Badge variant={booking.payment_status === 'paid' ? 'default' : 'secondary'}>
+                              {booking.payment_status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-semibold">${booking.total_price?.toFixed(2) || '0.00'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="drafts">
+          <Card>
+            <CardHeader>
+              <CardTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <FileEdit className="h-5 w-5" />
+                {t('bookings.incompleteDrafts')}
+              </CardTitle>
+              <CardDescription>
+                {t('bookings.draftsDescription')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {draftBookings.length === 0 ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">{t('bookings.noIncompleteDrafts')}</p>
+                </div>
+              ) : (
+                <div className="border rounded-lg overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('bookings.customer')}</TableHead>
+                        <TableHead>{t('bookings.service')}</TableHead>
+                        <TableHead>{t('bookings.progress')}</TableHead>
+                        <TableHead>{t('bookings.started')}</TableHead>
+                        <TableHead>{t('bookings.lastUpdated')}</TableHead>
+                        <TableHead>{t('bookings.details')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -909,16 +946,16 @@ export const EnhancedBookingsManagement = () => {
                           <TableCell>
                             <div className="space-y-1">
                               <div className="font-medium">
-                                {draft.user_info?.fullName || 'Unknown'}
+                                {draft.user_info?.fullName || t('common.unknown')}
                               </div>
                               {draft.user_info?.email && (
-                                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                <div className={`text-xs text-muted-foreground flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                   <Mail className="h-3 w-3" />
                                   {draft.user_info.email}
                                 </div>
                               )}
                               {draft.user_info?.phone && (
-                                <div className="text-xs font-mono text-primary font-semibold flex items-center gap-1">
+                                <div className={`text-xs font-mono text-primary font-semibold flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                                   <Phone className="h-3 w-3" />
                                   {draft.user_info.phone}
                                 </div>
@@ -960,32 +997,30 @@ export const EnhancedBookingsManagement = () => {
         onPriceUpdated={fetchBookings}
       />
 
-      {/* Reject Booking Modal */}
       <RejectBookingModal
         open={rejectModalOpen}
         onOpenChange={setRejectModalOpen}
         bookingId={bookingToReject?.id || ''}
-        customerName={bookingToReject?.user_info?.fullName || 'Unknown'}
+        customerName={bookingToReject?.user_info?.fullName || t('common.unknown')}
         onConfirm={handleRejectBooking}
         isLoading={!!actionLoading}
       />
 
-      {/* Delete Booking Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Booking</AlertDialogTitle>
+            <AlertDialogTitle>{t('bookings.deleteBooking')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this booking? This will permanently remove all associated data including payment receipts and history. This action cannot be undone.
+              {t('bookings.deleteBookingConfirm')}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className={isRTL ? 'flex-row-reverse' : ''}>
+            <AlertDialogCancel>{t('bookings.cancel')}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDeleteBooking} 
               className="bg-destructive text-destructive-foreground"
             >
-              Delete Booking
+              {t('bookings.deleteBooking')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
