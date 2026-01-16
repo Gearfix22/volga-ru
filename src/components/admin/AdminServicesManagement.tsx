@@ -9,7 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Pencil, Trash2, GripVertical, Image, Loader2, Save, X, AlertCircle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Pencil, Trash2, GripVertical, Image, Loader2, Save, X, AlertCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -471,6 +472,81 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                 onChange={(e) => setFormData({ ...formData, features: e.target.value })}
                 placeholder={t('adminServices.formFields.featuresPlaceholder')}
               />
+            </div>
+
+            {/* Duration and Availability Section */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="font-medium flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                {t('adminServices.formFields.durationAvailability')}
+              </h4>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="duration_minutes">{t('adminServices.formFields.durationMinutes')}</Label>
+                  <Input
+                    id="duration_minutes"
+                    type="number"
+                    min="0"
+                    step="15"
+                    value={formData.duration_minutes || ''}
+                    onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || 0 })}
+                    placeholder="60"
+                  />
+                  <p className="text-xs text-muted-foreground">{t('adminServices.formFields.durationHint')}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="available_from">{t('adminServices.formFields.availableFrom')}</Label>
+                  <Input
+                    id="available_from"
+                    type="time"
+                    value={formData.available_from}
+                    onChange={(e) => setFormData({ ...formData, available_from: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="available_to">{t('adminServices.formFields.availableTo')}</Label>
+                  <Input
+                    id="available_to"
+                    type="time"
+                    value={formData.available_to}
+                    onChange={(e) => setFormData({ ...formData, available_to: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t('adminServices.formFields.availableDays')}</Label>
+                <div className="flex flex-wrap gap-3">
+                  {[
+                    { day: 0, label: t('common.days.sun') },
+                    { day: 1, label: t('common.days.mon') },
+                    { day: 2, label: t('common.days.tue') },
+                    { day: 3, label: t('common.days.wed') },
+                    { day: 4, label: t('common.days.thu') },
+                    { day: 5, label: t('common.days.fri') },
+                    { day: 6, label: t('common.days.sat') }
+                  ].map(({ day, label }) => (
+                    <div key={day} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`day-${day}`}
+                        checked={formData.availability_days?.includes(day)}
+                        onCheckedChange={(checked) => {
+                          const days = formData.availability_days || [];
+                          if (checked) {
+                            setFormData({ ...formData, availability_days: [...days, day].sort() });
+                          } else {
+                            setFormData({ ...formData, availability_days: days.filter(d => d !== day) });
+                          }
+                        }}
+                      />
+                      <Label htmlFor={`day-${day}`} className="text-sm font-normal cursor-pointer">
+                        {label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">

@@ -1519,6 +1519,9 @@ export type Database = {
       }
       services: {
         Row: {
+          availability_days: number[] | null
+          available_from: string | null
+          available_to: string | null
           base_price: number | null
           category_id: string | null
           created_at: string | null
@@ -1528,6 +1531,7 @@ export type Database = {
           description_en: string | null
           description_ru: string | null
           display_order: number | null
+          duration_minutes: number | null
           features: string[] | null
           id: string
           image_url: string | null
@@ -1542,6 +1546,9 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          availability_days?: number[] | null
+          available_from?: string | null
+          available_to?: string | null
           base_price?: number | null
           category_id?: string | null
           created_at?: string | null
@@ -1551,6 +1558,7 @@ export type Database = {
           description_en?: string | null
           description_ru?: string | null
           display_order?: number | null
+          duration_minutes?: number | null
           features?: string[] | null
           id?: string
           image_url?: string | null
@@ -1565,6 +1573,9 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          availability_days?: number[] | null
+          available_from?: string | null
+          available_to?: string | null
           base_price?: number | null
           category_id?: string | null
           created_at?: string | null
@@ -1574,6 +1585,7 @@ export type Database = {
           description_en?: string | null
           description_ru?: string | null
           display_order?: number | null
+          duration_minutes?: number | null
           features?: string[] | null
           id?: string
           image_url?: string | null
