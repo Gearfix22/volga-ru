@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { CreditCard, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useDataTracking } from '@/hooks/useDataTracking';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PaymentMethod {
   id: string;
@@ -19,6 +19,7 @@ interface PaymentMethod {
 
 export const PaymentMethods: React.FC = () => {
   const { toast } = useToast();
+  const { t, isRTL } = useLanguage();
   const { trackForm, savePreference } = useDataTracking();
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [showAddCard, setShowAddCard] = useState(false);
@@ -32,10 +33,9 @@ export const PaymentMethods: React.FC = () => {
 
   const handleAddCard = async () => {
     try {
-      // In a real application, this would integrate with a payment processor
       const newPaymentMethod: PaymentMethod = {
         id: Date.now().toString(),
-        type: 'Visa', // Would be detected from card number
+        type: 'Visa',
         last4: newCard.cardNumber.slice(-4),
         expiryMonth: newCard.expiryMonth,
         expiryYear: newCard.expiryYear,
@@ -51,8 +51,8 @@ export const PaymentMethods: React.FC = () => {
       });
 
       toast({
-        title: "Payment Method Added",
-        description: "Your credit card has been saved successfully.",
+        title: t('paymentMethods.cardAdded'),
+        description: t('paymentMethods.cardAddedDesc'),
       });
 
       setShowAddCard(false);
@@ -65,8 +65,8 @@ export const PaymentMethods: React.FC = () => {
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to add payment method. Please try again.",
+        title: t('common.error'),
+        description: t('paymentMethods.addError'),
         variant: "destructive",
       });
     }
@@ -84,44 +84,44 @@ export const PaymentMethods: React.FC = () => {
       });
 
       toast({
-        title: "Payment Method Removed",
-        description: "The credit card has been removed from your account.",
+        title: t('paymentMethods.cardRemoved'),
+        description: t('paymentMethods.cardRemovedDesc'),
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to remove payment method. Please try again.",
+        title: t('common.error'),
+        description: t('paymentMethods.removeError'),
         variant: "destructive",
       });
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Saved Payment Methods */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Saved Payment Methods</CardTitle>
+          <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <CardTitle>{t('paymentMethods.title')}</CardTitle>
             <Button
               onClick={() => setShowAddCard(true)}
-              className="flex items-center space-x-2"
+              className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
             >
               <Plus className="h-4 w-4" />
-              <span>Add Card</span>
+              <span>{t('paymentMethods.addCard')}</span>
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           {paymentMethods.length === 0 ? (
             <div className="text-center py-8">
-              <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No payment methods saved</p>
+              <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">{t('paymentMethods.noMethods')}</p>
               <Button
                 onClick={() => setShowAddCard(true)}
                 className="mt-4"
               >
-                Add Your First Card
+                {t('paymentMethods.addFirstCard')}
               </Button>
             </div>
           ) : (
@@ -129,20 +129,20 @@ export const PaymentMethods: React.FC = () => {
               {paymentMethods.map((method) => (
                 <div
                   key={method.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
+                  className={`flex items-center justify-between p-4 border rounded-lg ${isRTL ? 'flex-row-reverse' : ''}`}
                 >
-                  <div className="flex items-center space-x-4">
-                    <CreditCard className="h-8 w-8 text-gray-400" />
-                    <div>
+                  <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <CreditCard className="h-8 w-8 text-muted-foreground" />
+                    <div className={isRTL ? 'text-right' : 'text-left'}>
                       <p className="font-medium">
                         {method.type} •••• {method.last4}
                       </p>
-                      <p className="text-sm text-gray-600">
-                        Expires {method.expiryMonth}/{method.expiryYear}
+                      <p className="text-sm text-muted-foreground">
+                        {t('paymentMethods.expires')} {method.expiryMonth}/{method.expiryYear}
                       </p>
                       {method.isDefault && (
-                        <span className="inline-flex px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                          Default
+                        <span className="inline-flex px-2 py-1 text-xs bg-primary/10 text-primary rounded-full">
+                          {t('paymentMethods.default')}
                         </span>
                       )}
                     </div>
@@ -151,7 +151,7 @@ export const PaymentMethods: React.FC = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => handleRemoveCard(method.id)}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-destructive hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -166,12 +166,12 @@ export const PaymentMethods: React.FC = () => {
       {showAddCard && (
         <Card>
           <CardHeader>
-            <CardTitle>Add New Payment Method</CardTitle>
+            <CardTitle>{t('paymentMethods.addNew')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="cardNumber">Card Number</Label>
+                <Label htmlFor="cardNumber">{t('paymentMethods.cardNumber')}</Label>
                 <Input
                   id="cardNumber"
                   placeholder="1234 5678 9012 3456"
@@ -182,14 +182,14 @@ export const PaymentMethods: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="expiryMonth">Expiry Month</Label>
+                  <Label htmlFor="expiryMonth">{t('paymentMethods.expiryMonth')}</Label>
                   <select
                     id="expiryMonth"
                     value={newCard.expiryMonth}
                     onChange={(e) => setNewCard(prev => ({ ...prev, expiryMonth: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
                   >
-                    <option value="">Month</option>
+                    <option value="">{t('paymentMethods.month')}</option>
                     {Array.from({ length: 12 }, (_, i) => (
                       <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
                         {String(i + 1).padStart(2, '0')}
@@ -199,14 +199,14 @@ export const PaymentMethods: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="expiryYear">Expiry Year</Label>
+                  <Label htmlFor="expiryYear">{t('paymentMethods.expiryYear')}</Label>
                   <select
                     id="expiryYear"
                     value={newCard.expiryYear}
                     onChange={(e) => setNewCard(prev => ({ ...prev, expiryYear: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
                   >
-                    <option value="">Year</option>
+                    <option value="">{t('paymentMethods.year')}</option>
                     {Array.from({ length: 10 }, (_, i) => {
                       const year = new Date().getFullYear() + i;
                       return (
@@ -219,7 +219,7 @@ export const PaymentMethods: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="cvv">CVV</Label>
+                  <Label htmlFor="cvv">{t('paymentMethods.cvv')}</Label>
                   <Input
                     id="cvv"
                     placeholder="123"
@@ -230,7 +230,7 @@ export const PaymentMethods: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="name">Name on Card</Label>
+                <Label htmlFor="name">{t('paymentMethods.nameOnCard')}</Label>
                 <Input
                   id="name"
                   placeholder="John Doe"
@@ -239,12 +239,12 @@ export const PaymentMethods: React.FC = () => {
                 />
               </div>
 
-              <div className="flex justify-end space-x-2 pt-4">
+              <div className={`flex justify-end gap-2 pt-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <Button variant="outline" onClick={() => setShowAddCard(false)}>
-                  Cancel
+                  {t('paymentMethods.cancel')}
                 </Button>
                 <Button onClick={handleAddCard}>
-                  Add Payment Method
+                  {t('paymentMethods.addMethod')}
                 </Button>
               </div>
             </div>
@@ -255,11 +255,9 @@ export const PaymentMethods: React.FC = () => {
       {/* Security Notice */}
       <Card>
         <CardContent className="pt-6">
-          <div className="text-sm text-gray-600">
-            <p className="font-medium mb-2">Security Notice:</p>
-            <p>
-              Your payment information is encrypted and stored securely. We never store your full card details on our servers.
-            </p>
+          <div className="text-sm text-muted-foreground">
+            <p className="font-medium mb-2">{t('paymentMethods.securityNotice')}</p>
+            <p>{t('paymentMethods.securityMessage')}</p>
           </div>
         </CardContent>
       </Card>
