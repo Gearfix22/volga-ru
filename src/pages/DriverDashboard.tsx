@@ -429,80 +429,6 @@ const DriverDashboard = () => {
             </CardContent>
           </Card>
         </div>
-      </header>
-
-      <main className="container mx-auto px-4 pt-24 pb-12">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">
-            Welcome{driverName ? `, ${driverName}` : ', Driver'}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {pendingResponse.length > 0 
-              ? `You have ${pendingResponse.length} booking${pendingResponse.length !== 1 ? 's' : ''} waiting for your response.`
-              : `You have ${activeBookings.length} active assignment${activeBookings.length !== 1 ? 's' : ''}.`
-            }
-          </p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4 mb-8">
-          <Card className={pendingResponse.length > 0 ? 'border-yellow-500/50 bg-yellow-500/5' : ''}>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-full ${pendingResponse.length > 0 ? 'bg-yellow-500/20' : 'bg-muted'}`}>
-                  <Bell className={`h-6 w-6 ${pendingResponse.length > 0 ? 'text-yellow-600' : 'text-muted-foreground'}`} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{pendingResponse.length}</p>
-                  <p className="text-sm text-muted-foreground">Awaiting Response</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-green-500/10">
-                  <CheckCircle className="h-6 w-6 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{bookings.filter(b => b.status === 'accepted').length}</p>
-                  <p className="text-sm text-muted-foreground">Accepted</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-blue-500/10">
-                  <Car className="h-6 w-6 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{bookings.filter(b => b.status === 'on_trip').length}</p>
-                  <p className="text-sm text-muted-foreground">On Trip</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-primary/10">
-                  <Calendar className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{completedBookings.length}</p>
-                  <p className="text-sm text-muted-foreground">Completed Today</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Location Tracker */}
         <div className="mb-6">
@@ -516,43 +442,43 @@ const DriverDashboard = () => {
         {pendingResponse.length > 0 && (
           <Card className="mb-6 border-yellow-500/50">
             <CardHeader className="bg-yellow-500/5">
-              <CardTitle className="flex items-center gap-2 text-yellow-700">
+              <CardTitle className={cn("flex items-center gap-2 text-yellow-700", isRTL && "flex-row-reverse")}>
                 <Bell className="h-5 w-5" />
-                New Assignments - Action Required
+                {t('driver.newAssignments')}
               </CardTitle>
-              <CardDescription>Please accept or decline these bookings</CardDescription>
+              <CardDescription>{t('driver.acceptOrDecline')}</CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
               <div className="space-y-4">
                 {pendingResponse.map((booking) => (
-                  <Card key={booking.id} className="border-l-4 border-l-yellow-500">
+                  <Card key={booking.id} className={cn("border-l-4 border-l-yellow-500", isRTL && "border-l-0 border-r-4 border-r-yellow-500")}>
                     <CardContent className="p-4">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className={cn("flex flex-col md:flex-row md:items-center justify-between gap-4", isRTL && "md:flex-row-reverse")}>
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2">
+                          <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
                             <Badge variant="outline">{booking.service_type}</Badge>
                             {getStatusBadge(booking.status, booking.driver_response)}
                           </div>
                           
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                             <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{booking.user_info?.fullName || 'Customer'}</span>
+                            <span className="font-medium">{booking.user_info?.fullName || t('driver.customer')}</span>
                           </div>
                           
                           {booking.user_info?.phone && (
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                               <Phone className="h-4 w-4 text-muted-foreground" />
                               <span>{booking.user_info.phone}</span>
                             </div>
                           )}
                           
                           {booking.service_details?.pickupLocation && (
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                               <MapPin className="h-4 w-4 text-muted-foreground" />
                               <span>{booking.service_details.pickupLocation}</span>
                               {booking.service_details?.dropoffLocation && (
                                 <>
-                                  <span className="text-muted-foreground">→</span>
+                                  <span className="text-muted-foreground">{isRTL ? '←' : '→'}</span>
                                   <span>{booking.service_details.dropoffLocation}</span>
                                 </>
                               )}
@@ -560,39 +486,39 @@ const DriverDashboard = () => {
                           )}
                           
                           {booking.service_details?.travelDate && (
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                               <Calendar className="h-4 w-4 text-muted-foreground" />
                               <span>{booking.service_details.travelDate}</span>
                               {booking.service_details?.travelTime && (
-                                <span className="text-muted-foreground">at {booking.service_details.travelTime}</span>
+                                <span className="text-muted-foreground">{t('driver.at')} {booking.service_details.travelTime}</span>
                               )}
                             </div>
                           )}
                           
                           {booking.total_price && (
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                               <DollarSign className="h-4 w-4 text-muted-foreground" />
                               <span className="font-semibold">${booking.total_price.toFixed(2)}</span>
                             </div>
                           )}
                         </div>
                         
-                        <div className="flex gap-2">
+                        <div className={cn("flex gap-2", isRTL && "flex-row-reverse")}>
                           <Button 
                             className="bg-green-600 hover:bg-green-700"
                             onClick={() => handleAcceptBooking(booking.id)}
                             disabled={updatingBooking === booking.id}
                           >
-                            <ThumbsUp className="h-4 w-4 mr-2" />
-                            Accept
+                            <ThumbsUp className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                            {t('driver.accept')}
                           </Button>
                           <Button 
                             variant="destructive"
                             onClick={() => openRejectDialog(booking.id)}
                             disabled={updatingBooking === booking.id}
                           >
-                            <ThumbsDown className="h-4 w-4 mr-2" />
-                            Decline
+                            <ThumbsDown className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                            {t('driver.decline')}
                           </Button>
                         </div>
                       </div>
@@ -608,31 +534,31 @@ const DriverDashboard = () => {
         {activeBookings.length > 0 && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
                 <Car className="h-5 w-5 text-primary" />
-                Active Trips
+                {t('driver.activeTrips')}
               </CardTitle>
-              <CardDescription>Manage your current assignments</CardDescription>
+              <CardDescription>{t('driver.manageAssignments')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {activeBookings.map((booking) => (
-                  <Card key={booking.id} className="border-l-4 border-l-primary">
+                  <Card key={booking.id} className={cn("border-l-4 border-l-primary", isRTL && "border-l-0 border-r-4 border-r-primary")}>
                     <CardContent className="p-4">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className={cn("flex flex-col md:flex-row md:items-center justify-between gap-4", isRTL && "md:flex-row-reverse")}>
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2">
+                          <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
                             <Badge variant="outline">{booking.service_type}</Badge>
                             {getStatusBadge(booking.status)}
                           </div>
                           
-                          <div className="flex items-center gap-2 text-sm">
+                          <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                             <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{booking.user_info?.fullName || 'Customer'}</span>
+                            <span className="font-medium">{booking.user_info?.fullName || t('driver.customer')}</span>
                           </div>
                           
                           {booking.user_info?.phone && (
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                               <Phone className="h-4 w-4 text-muted-foreground" />
                               <a href={`tel:${booking.user_info.phone}`} className="text-primary hover:underline">
                                 {booking.user_info.phone}
@@ -641,12 +567,12 @@ const DriverDashboard = () => {
                           )}
                           
                           {booking.service_details?.pickupLocation && (
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                               <MapPin className="h-4 w-4 text-muted-foreground" />
                               <span>{booking.service_details.pickupLocation}</span>
                               {booking.service_details?.dropoffLocation && (
                                 <>
-                                  <span className="text-muted-foreground">→</span>
+                                  <span className="text-muted-foreground">{isRTL ? '←' : '→'}</span>
                                   <span>{booking.service_details.dropoffLocation}</span>
                                 </>
                               )}
@@ -654,22 +580,22 @@ const DriverDashboard = () => {
                           )}
                           
                           {booking.total_price && (
-                            <div className="flex items-center gap-2 text-sm">
+                            <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                               <DollarSign className="h-4 w-4 text-muted-foreground" />
                               <span className="font-semibold">${booking.total_price.toFixed(2)}</span>
                             </div>
                           )}
                         </div>
                         
-                        <div className="flex gap-2">
+                        <div className={cn("flex gap-2", isRTL && "flex-row-reverse")}>
                           {booking.status === 'accepted' && (
                             <Button 
                               className="bg-blue-600 hover:bg-blue-700"
                               onClick={() => handleUpdateStatus(booking.id, 'on_trip')}
                               disabled={updatingBooking === booking.id}
                             >
-                              <NavigationIcon className="h-4 w-4 mr-2" />
-                              Start Trip
+                              <NavigationIcon className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                              {t('driver.startTrip')}
                             </Button>
                           )}
                           {booking.status === 'on_trip' && (
@@ -678,8 +604,8 @@ const DriverDashboard = () => {
                               onClick={() => handleUpdateStatus(booking.id, 'completed')}
                               disabled={updatingBooking === booking.id}
                             >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Complete Trip
+                              <CheckCircle className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                              {t('driver.completeTrip')}
                             </Button>
                           )}
                         </div>
@@ -697,9 +623,9 @@ const DriverDashboard = () => {
           <Card>
             <CardContent className="py-12 text-center">
               <Car className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Active Assignments</h3>
+              <h3 className="text-lg font-semibold mb-2">{t('driver.noActiveAssignments')}</h3>
               <p className="text-muted-foreground">
-                You don't have any assigned bookings at the moment. Check back later!
+                {t('driver.noAssignmentsMessage')}
               </p>
             </CardContent>
           </Card>
