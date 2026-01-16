@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, CreditCard, MapPin, Users, TrendingUp } from 'lucide-react';
+import { Calendar, MapPin, Users, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useDataTracking } from '@/hooks/useDataTracking';
 import { getStatusTranslationKey, getServiceTypeTranslationKey } from '@/utils/translationUtils';
@@ -103,7 +103,7 @@ export const DashboardOverview: React.FC = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalSpent.toFixed(2)}</div>
+            <div className="text-2xl font-bold">{totalSpent?.toFixed(2) || '0.00'}</div>
             <p className="text-xs text-muted-foreground">
               {t('dashboard.allTimeSpending')}
             </p>
@@ -203,7 +203,7 @@ export const DashboardOverview: React.FC = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">{booking.total_price}</p>
+                    <p className="font-medium">{booking.total_price?.toFixed(2) || '0.00'}</p>
                     <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
                       booking.status === 'confirmed' 
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'

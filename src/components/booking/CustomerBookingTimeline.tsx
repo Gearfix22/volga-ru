@@ -2,7 +2,7 @@ import { Check, Clock, FileText, CheckCircle2, Car, DollarSign, CreditCard, Ban,
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow, format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 interface CustomerBookingTimelineProps {
