@@ -175,9 +175,10 @@ Deno.serve(async (req) => {
       }
 
       // Also update bookings table for consistency (admin_final_price column)
+      // ALIGNED WITH DATABASE ENUM - use 'awaiting_payment' not 'awaiting_customer_confirmation'
       const updateData: Record<string, any> = {
         admin_final_price: price,
-        status: lock ? 'awaiting_customer_confirmation' : booking.status,
+        status: lock ? 'awaiting_payment' : booking.status,
         updated_at: new Date().toISOString()
       }
       if (admin_notes) updateData.admin_notes = admin_notes
@@ -196,13 +197,14 @@ Deno.serve(async (req) => {
         price,
         locked: lock,
         old_status: booking.status,
-        new_status: lock ? 'awaiting_customer_confirmation' : booking.status
+        new_status: lock ? 'awaiting_payment' : booking.status
       })
 
       // Notify customer if price is locked (ready for payment)
       if (booking.user_id && lock) {
-        await supabaseAdmin.from('customer_notifications').insert({
-          user_id: booking.user_id,
+        await supabaseAdmin.from('unified_notifications').insert({
+          recipient_id: booking.user_id,
+          recipient_type: 'user',
           booking_id: bookingId,
           type: 'price_set',
           title: 'Price Confirmed',
@@ -214,7 +216,7 @@ Deno.serve(async (req) => {
         success: true, 
         price, 
         locked: lock,
-        status: lock ? 'awaiting_customer_confirmation' : booking.status,
+        status: lock ? 'awaiting_payment' : booking.status,
         message: lock ? 'Price set and locked - customer can now pay' : 'Price set but not locked'
       })
     }

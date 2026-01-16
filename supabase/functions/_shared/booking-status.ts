@@ -4,8 +4,12 @@
  * This module defines all valid booking statuses and transitions.
  * Both frontend and backend MUST use these definitions.
  * 
- * WORKFLOW:
- * draft → under_review → awaiting_customer_confirmation → paid → in_progress → completed
+ * ALIGNED WITH DATABASE ENUM (booking_status):
+ * draft, pending, under_review, approved, awaiting_payment, paid, confirmed,
+ * assigned, accepted, on_trip, completed, cancelled, rejected
+ * 
+ * MAIN WORKFLOW:
+ * draft → pending → under_review → approved → awaiting_payment → paid → assigned → accepted → on_trip → completed
  * 
  * TERMINAL STATES:
  * - completed (success)
@@ -21,18 +25,21 @@
  * Frontend uses src/utils/bookingWorkflow.ts (mirrored logic)
  */
 
+// ALIGNED WITH DATABASE ENUM - booking_status
 export const BOOKING_STATUSES = [
-  'draft',                          // User created but not submitted
-  'under_review',                   // Admin reviewing the request
-  'awaiting_customer_confirmation', // Price set, waiting for customer to pay
-  'paid',                           // Customer paid, awaiting assignment
-  'in_progress',                    // Service being delivered
-  'completed',                      // Service completed
-  'cancelled',                      // Cancelled by user or admin
-  'rejected',                       // Rejected by admin
-  // Legacy statuses (for backward compatibility)
-  'pending',                        // Legacy: maps to under_review
-  'confirmed',                      // Legacy: maps to awaiting_customer_confirmation
+  'draft',           // User created but not submitted
+  'pending',         // Submitted, awaiting admin review
+  'under_review',    // Admin actively reviewing the request
+  'approved',        // Admin approved, price may be set
+  'awaiting_payment', // Price set and locked, waiting for payment
+  'paid',            // Customer paid
+  'confirmed',       // Payment confirmed
+  'assigned',        // Driver/Guide assigned
+  'accepted',        // Driver/Guide accepted the assignment
+  'on_trip',         // Service in progress
+  'completed',       // Service completed
+  'cancelled',       // Cancelled by user or admin
+  'rejected',        // Rejected by admin
 ] as const
 
 export type BookingStatus = typeof BOOKING_STATUSES[number]
@@ -53,20 +60,21 @@ export type PaymentStatus = typeof PAYMENT_STATUSES[number]
  */
 export const STATUS_TRANSITIONS: Record<string, string[]> = {
   // Normal workflow
-  'draft': ['under_review', 'cancelled'],
-  'under_review': ['awaiting_customer_confirmation', 'cancelled', 'rejected'],
-  'awaiting_customer_confirmation': ['paid', 'cancelled'],
-  'paid': ['in_progress'],
-  'in_progress': ['completed', 'cancelled'],
+  'draft': ['pending', 'cancelled'],
+  'pending': ['under_review', 'approved', 'cancelled', 'rejected'],
+  'under_review': ['approved', 'awaiting_payment', 'cancelled', 'rejected'],
+  'approved': ['awaiting_payment', 'cancelled', 'rejected'],
+  'awaiting_payment': ['paid', 'cancelled'],
+  'paid': ['confirmed', 'assigned'],
+  'confirmed': ['assigned', 'on_trip'],
+  'assigned': ['accepted', 'on_trip', 'cancelled'],
+  'accepted': ['on_trip'],
+  'on_trip': ['completed', 'cancelled'],
   
   // Terminal states - no transitions allowed
   'completed': [],
   'cancelled': [],
   'rejected': [],
-  
-  // Legacy status mappings
-  'pending': ['confirmed', 'under_review', 'cancelled', 'rejected'],
-  'confirmed': ['paid', 'awaiting_customer_confirmation', 'cancelled'],
 }
 
 /**
@@ -74,12 +82,15 @@ export const STATUS_TRANSITIONS: Record<string, string[]> = {
  */
 export const ACTIVE_STATUSES: BookingStatus[] = [
   'draft',
-  'under_review',
-  'awaiting_customer_confirmation',
-  'paid',
-  'in_progress',
   'pending',
+  'under_review',
+  'approved',
+  'awaiting_payment',
+  'paid',
   'confirmed',
+  'assigned',
+  'accepted',
+  'on_trip',
 ]
 
 /**
@@ -96,17 +107,21 @@ export const FINAL_STATUSES: BookingStatus[] = [
  */
 export const PRICE_EDITABLE_STATUSES: BookingStatus[] = [
   'draft',
-  'under_review',
-  'awaiting_customer_confirmation',
   'pending',
+  'under_review',
+  'approved',
+  'awaiting_payment', // Can unlock and edit before payment
 ]
 
 /**
- * Statuses where price is locked (cannot be changed)
+ * Statuses where price is locked (cannot be changed without unlock)
  */
 export const PRICE_LOCKED_STATUSES: BookingStatus[] = [
   'paid',
-  'in_progress',
+  'confirmed',
+  'assigned',
+  'accepted',
+  'on_trip',
   'completed',
 ]
 
@@ -148,32 +163,23 @@ export function isFinalStatus(status: string): boolean {
 }
 
 /**
- * Normalize legacy status to current workflow
- */
-export function normalizeStatus(status: string): BookingStatus {
-  const mappings: Record<string, BookingStatus> = {
-    'pending': 'under_review',
-    'confirmed': 'awaiting_customer_confirmation',
-  }
-  return (mappings[status] || status) as BookingStatus
-}
-
-/**
  * Get human-readable label for status
  */
 export function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     'draft': 'Draft',
+    'pending': 'Pending',
     'under_review': 'Under Review',
-    'awaiting_customer_confirmation': 'Awaiting Confirmation',
+    'approved': 'Approved',
+    'awaiting_payment': 'Awaiting Payment',
     'paid': 'Paid',
-    'in_progress': 'In Progress',
+    'confirmed': 'Confirmed',
+    'assigned': 'Assigned',
+    'accepted': 'Accepted',
+    'on_trip': 'On Trip',
     'completed': 'Completed',
     'cancelled': 'Cancelled',
     'rejected': 'Rejected',
-    // Legacy
-    'pending': 'Pending',
-    'confirmed': 'Confirmed',
   }
   return labels[status] || status
 }
@@ -182,6 +188,6 @@ export function getStatusLabel(status: string): string {
  * Check if cancellation is allowed from current status
  */
 export function canCancel(status: string): boolean {
-  const nonCancellable = ['completed', 'cancelled', 'rejected']
+  const nonCancellable = ['completed', 'cancelled', 'rejected', 'on_trip']
   return !nonCancellable.includes(status)
 }

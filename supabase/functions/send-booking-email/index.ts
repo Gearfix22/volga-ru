@@ -127,16 +127,23 @@ Deno.serve(async (req) => {
     }
 
     const getStatusBadge = (status: string) => {
+      // ALIGNED WITH DATABASE ENUM - booking_status
       const colors: Record<string, string> = {
-        'confirmed': '#16a34a',
-        'paid': '#16a34a',
+        'draft': '#6b7280',
         'pending': '#eab308',
-        'pending_verification': '#eab308',
-        'awaiting_customer_confirmation': '#eab308',
         'under_review': '#3b82f6',
-        'failed': '#dc2626',
+        'approved': '#16a34a',
+        'awaiting_payment': '#eab308',
+        'paid': '#16a34a',
+        'confirmed': '#16a34a',
+        'assigned': '#8b5cf6',
+        'accepted': '#16a34a',
+        'on_trip': '#3b82f6',
+        'completed': '#059669',
         'cancelled': '#dc2626',
-        'rejected': '#dc2626'
+        'rejected': '#dc2626',
+        'pending_verification': '#eab308',
+        'failed': '#dc2626'
       }
       return `<span style="background: ${colors[status] || '#6b7280'}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;">${status.replace(/_/g, ' ').toUpperCase()}</span>`
     }

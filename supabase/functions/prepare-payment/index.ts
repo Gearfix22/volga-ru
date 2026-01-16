@@ -88,8 +88,8 @@ Deno.serve(async (req) => {
         })
       }
 
-      // Valid statuses for payment
-      const payableStatuses = ['awaiting_customer_confirmation', 'awaiting_payment']
+      // Valid statuses for payment - ALIGNED WITH DATABASE ENUM
+      const payableStatuses = ['awaiting_payment', 'approved']
       if (!payableStatuses.includes(booking.status)) {
         return jsonResponse({
           success: false,

@@ -57,10 +57,11 @@ Deno.serve(async (req) => {
         return errorResponse('Booking not found', 404)
       }
 
-      // Check status - must be awaiting customer confirmation
-      if (booking.status !== 'awaiting_customer_confirmation') {
+      // Check status - must be awaiting_payment (ALIGNED WITH DATABASE ENUM)
+      const confirmableStatuses = ['awaiting_payment', 'approved']
+      if (!confirmableStatuses.includes(booking.status)) {
         return errorResponse(
-          `Cannot confirm booking in '${booking.status}' status. Booking must be in 'awaiting_customer_confirmation' status.`,
+          `Cannot confirm booking in '${booking.status}' status. Booking must be in 'awaiting_payment' or 'approved' status.`,
           400
         )
       }

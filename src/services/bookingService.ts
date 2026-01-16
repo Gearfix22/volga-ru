@@ -493,26 +493,14 @@ export const submitBookingForReview = async (bookingId: string): Promise<void> =
  * @deprecated Use setBookingPrice from adminService.ts for admin price setting
  */
 export const setBookingPrice = async (
-  bookingId: string,
-  price: number,
-  adminNotes?: string
+  _bookingId: string,
+  _price: number,
+  _adminNotes?: string
 ): Promise<void> => {
-  console.warn('DEPRECATED: bookingService.setBookingPrice is deprecated. Use adminService.setBookingPrice for admin operations.');
-  
-  // CRITICAL: This still updates the bookings table directly
-  // For proper price management, use adminService.setBookingPrice which calls the Edge Function
-  // and writes to booking_prices table (SINGLE SOURCE OF TRUTH)
-  const { error } = await supabase
-    .from('bookings')
-    .update({
-      admin_final_price: price,
-      status: 'awaiting_customer_confirmation',
-      admin_notes: adminNotes,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', bookingId);
-
-  if (error) throw error;
+  throw new Error(
+    'DEPRECATED: setBookingPrice is disabled. Use adminService.setBookingPrice() which calls the Edge Function. ' +
+    'This ensures booking_prices table (SINGLE SOURCE OF TRUTH) is properly updated.'
+  );
 };
 
 /**
@@ -558,7 +546,8 @@ export const processBookingPayment = async (
     // Determine the new status and payment status
     const requiresVerification = paymentInfo.requiresVerification || paymentInfo.paymentMethod === 'Bank Transfer';
     const newPaymentStatus = requiresVerification ? 'pending_verification' : 'paid';
-    const newStatus = requiresVerification ? 'awaiting_customer_confirmation' : 'paid';
+    // ALIGNED WITH DATABASE ENUM - no 'awaiting_customer_confirmation' status exists
+    const newStatus = requiresVerification ? 'awaiting_payment' : 'paid';
 
     // Update the existing booking with payment info
     const { data: updatedBooking, error: updateError } = await supabase

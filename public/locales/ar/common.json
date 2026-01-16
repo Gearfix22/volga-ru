@@ -1822,7 +1822,8 @@
     "bookingId": "رقم الحجز",
     "created": "تاريخ الإنشاء",
     "payment": "الدفع",
-    "priceConfirmed": "تم تأكيد السعر"
+    "priceConfirmed": "تم تأكيد السعر",
+    "awaitingPrice": "في انتظار السعر"
   },
   "timeline": {
     "bookingCreated": "تم إنشاء الحجز",
