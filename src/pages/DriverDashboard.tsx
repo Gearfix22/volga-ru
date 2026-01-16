@@ -636,27 +636,27 @@ const DriverDashboard = () => {
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Decline Booking</DialogTitle>
+            <DialogTitle>{t('driverDialog.declineBooking')}</DialogTitle>
             <DialogDescription>
-              Please provide a reason for declining this booking. The admin will be notified.
+              {t('driverDialog.declineDescription')}
             </DialogDescription>
           </DialogHeader>
           <Textarea
-            placeholder="Reason for declining (optional)..."
+            placeholder={t('driverDialog.reasonPlaceholder')}
             value={rejectNotes}
             onChange={(e) => setRejectNotes(e.target.value)}
             rows={3}
           />
-          <DialogFooter>
+          <DialogFooter className={cn(isRTL && "flex-row-reverse")}>
             <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
-              Cancel
+              {t('driverDialog.cancel')}
             </Button>
             <Button 
               variant="destructive" 
               onClick={handleRejectBooking}
               disabled={updatingBooking === bookingToReject}
             >
-              Decline Booking
+              {t('driverDialog.declineButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
