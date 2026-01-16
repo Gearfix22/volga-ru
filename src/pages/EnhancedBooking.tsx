@@ -202,11 +202,12 @@ const EnhancedBooking = () => {
 
   const checkRequiredFields = (): boolean => {
     const details = serviceDetails as any;
-    // New service types: Driver, Accommodation, Events
+    // All 4 service types: Driver, Accommodation, Events, Guide
     const requiredFields: { [key: string]: string[] } = {
       'Driver': ['pickupLocation', 'dropoffLocation', 'pickupDate', 'pickupTime', 'vehicleType', 'passengers'],
       'Accommodation': ['location', 'checkIn', 'checkOut', 'guests'],
-      'Events': ['eventType', 'location', 'date', 'numberOfPeople']
+      'Events': ['eventType', 'location', 'date', 'numberOfPeople'],
+      'Guide': ['location', 'date', 'duration', 'numberOfPeople']
     };
 
     const missing = requiredFields[serviceType]?.filter(field => !details[field]) || [];

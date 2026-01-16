@@ -93,7 +93,16 @@ export interface EventsDetails {
   specialRequests?: string;
 }
 
-export type ServiceDetails = DriverBookingDetails | AccommodationDetails | EventsDetails | Record<string, unknown>;
+// Tourist Guide details
+export interface GuideDetails {
+  location: string;
+  date: string;
+  duration: '2' | '4' | '6' | '8' | 'custom';
+  numberOfPeople: string;
+  specialRequests?: string;
+}
+
+export type ServiceDetails = DriverBookingDetails | AccommodationDetails | EventsDetails | GuideDetails | Record<string, unknown>;
 
 export interface UserInfo {
   fullName: string;
