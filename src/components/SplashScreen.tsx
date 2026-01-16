@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Logo } from './Logo';
 
 interface SplashScreenProps {
@@ -8,15 +8,36 @@ interface SplashScreenProps {
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
   const [isVisible, setIsVisible] = useState(true);
+  const onFinishRef = useRef(onFinish);
+  const hasCalledFinish = useRef(false);
+
+  // Keep ref updated
+  useEffect(() => {
+    onFinishRef.current = onFinish;
+  }, [onFinish]);
+
+  const handleFinish = useCallback(() => {
+    if (hasCalledFinish.current) return;
+    hasCalledFinish.current = true;
+    onFinishRef.current();
+  }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    // Main timer for splash duration
+    const splashTimer = setTimeout(() => {
       setIsVisible(false);
-      setTimeout(onFinish, 500); // Wait for fade out animation
-    }, 2000); // Reduced from 6000 for better UX
+    }, 1800); // Slightly shorter for snappier feel
 
-    return () => clearTimeout(timer);
-  }, [onFinish]);
+    // Fade-out + finish timer
+    const finishTimer = setTimeout(() => {
+      handleFinish();
+    }, 2300); // 1800 + 500ms for fade
+
+    return () => {
+      clearTimeout(splashTimer);
+      clearTimeout(finishTimer);
+    };
+  }, [handleFinish]);
 
   return (
     <div className={`fixed inset-0 z-50 bg-volga-navy flex items-center justify-center transition-opacity duration-500 ${

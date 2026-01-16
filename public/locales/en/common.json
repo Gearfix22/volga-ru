@@ -168,7 +168,8 @@
     "at": "at",
     "noDetails": "No details",
     "viewDetails": "View details",
-    "errorLoadingReservations": "Error loading reservations"
+    "errorLoadingReservations": "Error loading reservations",
+    "termsOfService": "Terms of Service"
   },
   "pages": {
     "aboutUs": "About Volga Services",

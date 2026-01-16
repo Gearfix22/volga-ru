@@ -150,7 +150,8 @@
     "at": "в",
     "noDetails": "Нет данных",
     "viewDetails": "Подробнее",
-    "errorLoadingReservations": "Ошибка загрузки бронирований"
+    "errorLoadingReservations": "Ошибка загрузки бронирований",
+    "termsOfService": "Условия использования"
   },
   "pages": {
     "aboutUs": "О нас",
