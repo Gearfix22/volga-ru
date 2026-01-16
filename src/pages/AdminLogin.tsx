@@ -14,14 +14,6 @@ import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Logo } from '@/components/Logo';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
-/**
- * MOBILE-FIRST: Admin access is role-based, not domain-based
- * This always returns true; actual auth is handled by edge functions
- */
-const isAdminAccessAllowed = (): boolean => {
-  return true; // Role-based auth handles actual access control
-};
-
 const AdminLogin = () => {
   const { t, isRTL } = useLanguage();
   const [searchParams] = useSearchParams();
