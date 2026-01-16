@@ -9,6 +9,7 @@ import { getDriverForBooking, toggleDriverVisibility, Driver } from '@/services/
 import { supabase } from '@/integrations/supabase/client';
 import { CustomerDriverMap } from './CustomerDriverMap';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { openExternalLink } from '@/hooks/useWebViewCompat';
 import { cn } from '@/lib/utils';
 
 interface DriverInfoCardProps {
@@ -84,6 +85,21 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
   const handleToggleVisibility = async (checked: boolean) => {
     setShowDriver(checked);
     await toggleDriverVisibility(bookingId, checked);
+  };
+
+  // Handle phone call - mobile compatible
+  const handleCallDriver = () => {
+    if (driver?.phone) {
+      openExternalLink(`tel:${driver.phone}`);
+    }
+  };
+
+  // Handle WhatsApp - mobile compatible
+  const handleWhatsApp = () => {
+    if (driver?.phone) {
+      const cleanPhone = driver.phone.replace(/\D/g, '');
+      openExternalLink(`https://wa.me/${cleanPhone}`);
+    }
   };
 
   const getStatusMessage = () => {
@@ -199,21 +215,14 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
               </div>
               
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button variant="outline" className="flex-1" asChild>
-                  <a href={`tel:${driver.phone}`}>
-                    <Phone className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
-                    {t('driverInfo.callDriver')}
-                  </a>
+                {/* Fixed: Use button with onClick for mobile compatibility */}
+                <Button variant="outline" className="flex-1" onClick={handleCallDriver}>
+                  <Phone className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                  {t('driverInfo.callDriver')}
                 </Button>
-                <Button variant="outline" className="flex-1" asChild>
-                  <a 
-                    href={`https://wa.me/${driver.phone.replace(/\D/g, '')}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    <MessageCircle className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
-                    WhatsApp
-                  </a>
+                <Button variant="outline" className="flex-1" onClick={handleWhatsApp}>
+                  <MessageCircle className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                  WhatsApp
                 </Button>
               </div>
 

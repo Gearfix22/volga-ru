@@ -10,6 +10,8 @@ import {
   Lock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { cn } from '@/lib/utils';
 import {
   getPriceNegotiationStatus,
   confirmPrice,
@@ -19,16 +21,33 @@ import {
 interface PriceNegotiationCardProps {
   bookingId: string;
   onPriceConfirmed?: () => void;
+  currency?: string;
 }
 
 const PriceNegotiationCard: React.FC<PriceNegotiationCardProps> = ({ 
   bookingId, 
-  onPriceConfirmed 
+  onPriceConfirmed,
+  currency = 'USD'
 }) => {
   const { toast } = useToast();
+  const { t, isRTL } = useLanguage();
   const [data, setData] = useState<PriceNegotiationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Get currency symbol
+  const getCurrencySymbol = (curr: string) => {
+    const symbols: Record<string, string> = {
+      USD: '$',
+      EUR: '€',
+      RUB: '₽',
+      SAR: '﷼',
+      EGP: 'E£'
+    };
+    return symbols[curr] || curr;
+  };
+
+  const currencySymbol = getCurrencySymbol(currency);
 
   useEffect(() => {
     loadStatus();
@@ -47,15 +66,15 @@ const PriceNegotiationCard: React.FC<PriceNegotiationCardProps> = ({
     
     if (result.success) {
       toast({
-        title: 'Price Confirmed',
-        description: 'You can now proceed with payment.'
+        title: t('priceNegotiation.priceConfirmed'),
+        description: t('priceNegotiation.proceedPaymentDesc')
       });
       await loadStatus();
       onPriceConfirmed?.();
     } else {
       toast({
-        title: 'Error',
-        description: result.error || 'Failed to confirm price.',
+        title: t('common.error'),
+        description: result.error || t('priceNegotiation.confirmError'),
         variant: 'destructive'
       });
     }
@@ -81,26 +100,26 @@ const PriceNegotiationCard: React.FC<PriceNegotiationCardProps> = ({
     return (
       <Card className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-300">
+          <CardTitle className={cn("flex items-center gap-2 text-green-700 dark:text-green-300", isRTL && "flex-row-reverse")}>
             <Lock className="h-5 w-5" />
-            Price Approved & Locked
+            {t('priceNegotiation.priceApprovedLocked')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-2xl font-bold text-green-800 dark:text-green-200">
-            ${data.approvedPrice.toFixed(2)}
+          <p className={cn("text-2xl font-bold text-green-800 dark:text-green-200", isRTL && "text-right")}>
+            {currencySymbol}{data.approvedPrice.toFixed(2)}
           </p>
           {data.approvedAt && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Approved on {new Date(data.approvedAt).toLocaleString()}
+            <p className={cn("text-sm text-muted-foreground mt-1", isRTL && "text-right")}>
+              {t('priceNegotiation.approvedOn', { date: new Date(data.approvedAt).toLocaleString() })}
             </p>
           )}
           <Button 
             onClick={onPriceConfirmed}
             className="w-full mt-4"
           >
-            <Check className="h-4 w-4 mr-2" />
-            Proceed to Payment
+            <Check className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+            {t('priceNegotiation.proceedPayment')}
           </Button>
         </CardContent>
       </Card>
@@ -112,14 +131,14 @@ const PriceNegotiationCard: React.FC<PriceNegotiationCardProps> = ({
     return (
       <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950 dark:border-amber-800">
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+          <CardTitle className={cn("flex items-center gap-2 text-amber-700 dark:text-amber-300", isRTL && "flex-row-reverse")}>
             <MessageCircle className="h-5 w-5" />
-            Awaiting Price Quote
+            {t('priceNegotiation.awaitingQuote')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Our team is reviewing your booking and will provide a price quote soon.
+          <p className={cn("text-sm text-muted-foreground", isRTL && "text-right")}>
+            {t('priceNegotiation.awaitingQuoteDesc')}
           </p>
         </CardContent>
       </Card>
@@ -130,28 +149,28 @@ const PriceNegotiationCard: React.FC<PriceNegotiationCardProps> = ({
   return (
     <Card className="border-primary/20">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
           <DollarSign className="h-5 w-5 text-primary" />
-          Price Quote Available
+          {t('priceNegotiation.quoteAvailable')}
         </CardTitle>
-        <CardDescription>
+        <CardDescription className={isRTL ? "text-right" : ""}>
           {data.priceApproved 
-            ? 'Price has been approved. Proceed to payment.'
-            : 'Review the proposed price. Admin will approve before payment.'
+            ? t('priceNegotiation.approvedProceed')
+            : t('priceNegotiation.reviewProposed')
           }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="text-center py-4 bg-primary/5 rounded-lg">
           <p className="text-sm text-muted-foreground mb-1">
-            {data.priceApproved ? 'Approved Price' : 'Proposed Price'}
+            {data.priceApproved ? t('priceNegotiation.approvedPrice') : t('priceNegotiation.proposedPrice')}
           </p>
           <p className="text-3xl font-bold text-primary">
-            ${(data.approvedPrice || data.proposedPrice || 0).toFixed(2)}
+            {currencySymbol}{(data.approvedPrice || data.proposedPrice || 0).toFixed(2)}
           </p>
           {!data.priceLocked && (
             <p className="text-xs text-muted-foreground mt-1">
-              (Awaiting admin approval)
+              ({t('priceNegotiation.awaitingAdminApproval')})
             </p>
           )}
         </div>
@@ -164,16 +183,16 @@ const PriceNegotiationCard: React.FC<PriceNegotiationCardProps> = ({
               className="w-full"
             >
               {isSubmitting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className={cn("h-4 w-4 animate-spin", isRTL ? "ml-2" : "mr-2")} />
               ) : (
-                <Check className="h-4 w-4 mr-2" />
+                <Check className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
               )}
-              Confirm & Proceed to Payment
+              {t('priceNegotiation.confirmProceed')}
             </Button>
           ) : (
             <Alert>
               <AlertDescription className="text-sm">
-                Waiting for admin to approve the price before you can proceed.
+                {t('priceNegotiation.waitingAdminApprove')}
               </AlertDescription>
             </Alert>
           )}
