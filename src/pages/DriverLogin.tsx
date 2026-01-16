@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Car, Phone, Lock, Loader2, ArrowLeft, KeyRound, CheckCircle, Mail } from 'lucide-react';
+import { Car, Phone, Lock, Loader2, ArrowLeft, KeyRound, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 const DriverLogin = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, signIn, loading: authLoading, hasRole, updatePassword } = useAuth();
+  const { user, loading: authLoading, hasRole, updatePassword } = useAuth();
+  const { t, isRTL } = useLanguage();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -25,7 +28,6 @@ const DriverLogin = () => {
   const [resetRequestSent, setResetRequestSent] = useState(false);
 
   useEffect(() => {
-    // Check for recovery mode from URL
     const type = searchParams.get('type');
     if (type === 'recovery') {
       setIsRecoveryMode(true);
@@ -40,13 +42,12 @@ const DriverLogin = () => {
     e.preventDefault();
     
     if (!phone.trim() || !password.trim()) {
-      toast.error('Please enter phone number and password');
+      toast.error(t('staffLogin.enterPhoneAndPassword'));
       return;
     }
 
     setLoading(true);
     try {
-      // Call the driver-login edge function
       const { data, error } = await supabase.functions.invoke('driver-login', {
         body: {
           phone: phone.replace(/\D/g, ''),
@@ -55,16 +56,15 @@ const DriverLogin = () => {
       });
 
       if (error) {
-        toast.error('Login failed. Please try again.');
+        toast.error(t('staffLogin.loginFailed'));
         return;
       }
 
       if (!data.success) {
-        toast.error(data.error || 'Invalid phone number or password');
+        toast.error(data.error || t('staffLogin.invalidPhoneOrPassword'));
         return;
       }
 
-      // Set the session from the edge function response
       if (data.session) {
         const { error: sessionError } = await supabase.auth.setSession({
           access_token: data.session.access_token,
@@ -72,19 +72,17 @@ const DriverLogin = () => {
         });
         
         if (sessionError) {
-          toast.error('Failed to establish session');
+          toast.error(t('staffLogin.failedEstablishSession'));
           return;
         }
         
-        // Wait for session and auth context to update before navigating
-        // The AuthContext will fetch roles after session is set
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
 
-      toast.success('Login successful');
+      toast.success(t('staffLogin.loginSuccessful'));
       navigate('/driver-dashboard', { replace: true });
     } catch (error: any) {
-      toast.error(error.message || 'Login failed');
+      toast.error(error.message || t('staffLogin.loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -94,13 +92,12 @@ const DriverLogin = () => {
     e.preventDefault();
     
     if (!phone.trim()) {
-      toast.error('Please enter your phone number');
+      toast.error(t('staffLogin.pleaseEnterPhone'));
       return;
     }
 
     setLoading(true);
     try {
-      // Request password reset via edge function
       const { data, error } = await supabase.functions.invoke('manage-drivers', {
         body: {
           action: 'request_password_reset',
@@ -109,14 +106,14 @@ const DriverLogin = () => {
       });
 
       if (error) {
-        toast.error('Failed to submit reset request');
+        toast.error(t('staffLogin.failedSubmitRequest'));
         return;
       }
 
       setResetRequestSent(true);
-      toast.success('Password reset request submitted');
+      toast.success(t('staffLogin.resetRequestSubmitted'));
     } catch (error: any) {
-      toast.error(error.message || 'Failed to submit reset request');
+      toast.error(error.message || t('staffLogin.failedSubmitRequest'));
     } finally {
       setLoading(false);
     }
@@ -126,12 +123,12 @@ const DriverLogin = () => {
     e.preventDefault();
     
     if (newPassword !== confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error(t('staffLogin.passwordsDoNotMatch'));
       return;
     }
 
     if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters');
+      toast.error(t('staffLogin.passwordMinLength'));
       return;
     }
 
@@ -139,15 +136,15 @@ const DriverLogin = () => {
     try {
       const { error } = await updatePassword(newPassword);
       if (error) {
-        toast.error(error.message || 'Failed to update password');
+        toast.error(error.message || t('staffLogin.failedUpdatePassword'));
         return;
       }
 
-      toast.success('Password updated successfully');
+      toast.success(t('staffLogin.passwordUpdated'));
       setIsRecoveryMode(false);
       navigate('/driver-login');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update password');
+      toast.error(error.message || t('staffLogin.failedUpdatePassword'));
     } finally {
       setLoading(false);
     }
@@ -164,7 +161,10 @@ const DriverLogin = () => {
   // Password Recovery Mode
   if (isRecoveryMode) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4" dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="absolute top-4 end-4">
+          <LanguageSwitcher />
+        </div>
         <div className="w-full max-w-md space-y-6">
           <Card className="border-2">
             <CardHeader className="text-center space-y-4">
@@ -172,23 +172,23 @@ const DriverLogin = () => {
                 <KeyRound className="h-8 w-8 text-primary" />
               </div>
               <div>
-                <CardTitle className="text-2xl">Set New Password</CardTitle>
-                <CardDescription>Enter your new password below</CardDescription>
+                <CardTitle className="text-2xl">{t('staffLogin.setNewPassword')}</CardTitle>
+                <CardDescription>{t('staffLogin.enterNewPasswordBelow')}</CardDescription>
               </div>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleUpdatePassword} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
+                  <Label htmlFor="newPassword">{t('staffLogin.newPassword')}</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground`} />
                     <Input
                       id="newPassword"
                       type="password"
-                      placeholder="Enter new password"
+                      placeholder={t('staffLogin.enterNewPassword')}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="pl-10"
+                      className={isRTL ? 'pr-10' : 'pl-10'}
                       required
                       minLength={8}
                     />
@@ -196,16 +196,16 @@ const DriverLogin = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword">{t('staffLogin.confirmPassword')}</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground`} />
                     <Input
                       id="confirmPassword"
                       type="password"
-                      placeholder="Confirm new password"
+                      placeholder={t('staffLogin.confirmNewPassword')}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-10"
+                      className={isRTL ? 'pr-10' : 'pl-10'}
                       required
                       minLength={8}
                     />
@@ -215,11 +215,11 @@ const DriverLogin = () => {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Updating...
+                      <Loader2 className="h-4 w-4 me-2 animate-spin" />
+                      {t('staffLogin.updating')}
                     </>
                   ) : (
-                    'Update Password'
+                    t('staffLogin.updatePassword')
                   )}
                 </Button>
               </form>
@@ -233,17 +233,20 @@ const DriverLogin = () => {
   // Forgot Password View
   if (showForgotPassword) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4" dir={isRTL ? 'rtl' : 'ltr'}>
+        <div className="absolute top-4 end-4">
+          <LanguageSwitcher />
+        </div>
         <div className="w-full max-w-md space-y-6">
           <button 
             onClick={() => {
               setShowForgotPassword(false);
               setResetRequestSent(false);
             }}
-            className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
+            className={`inline-flex items-center text-muted-foreground hover:text-foreground transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Login
+            <ArrowLeft className={`h-4 w-4 ${isRTL ? 'ms-2 rotate-180' : 'me-2'}`} />
+            {t('staffLogin.backToLogin')}
           </button>
 
           <Card className="border-2">
@@ -257,12 +260,12 @@ const DriverLogin = () => {
               </div>
               <div>
                 <CardTitle className="text-2xl">
-                  {resetRequestSent ? 'Request Submitted' : 'Reset Password'}
+                  {resetRequestSent ? t('staffLogin.requestSubmitted') : t('staffLogin.resetPassword')}
                 </CardTitle>
                 <CardDescription>
                   {resetRequestSent 
-                    ? 'Your administrator has been notified'
-                    : 'Enter your phone number to request a password reset'}
+                    ? t('staffLogin.adminNotified')
+                    : t('staffLogin.enterPhoneForReset')}
                 </CardDescription>
               </div>
             </CardHeader>
@@ -272,7 +275,7 @@ const DriverLogin = () => {
                   <Alert className="bg-primary/10 border-primary/20">
                     <CheckCircle className="h-4 w-4 text-primary" />
                     <AlertDescription>
-                      Your password reset request has been submitted. An administrator will contact you to reset your password.
+                      {t('staffLogin.adminWillContact')}
                     </AlertDescription>
                   </Alert>
                   <Button
@@ -283,23 +286,23 @@ const DriverLogin = () => {
                     }}
                     className="w-full"
                   >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Login
+                    <ArrowLeft className={`h-4 w-4 ${isRTL ? 'ms-2 rotate-180' : 'me-2'}`} />
+                    {t('staffLogin.backToLogin')}
                   </Button>
                 </div>
               ) : (
                 <form onSubmit={handleForgotPassword} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="resetPhone">Phone Number</Label>
+                    <Label htmlFor="resetPhone">{t('staffLogin.phoneNumber')}</Label>
                     <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Phone className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground`} />
                       <Input
                         id="resetPhone"
                         type="tel"
                         placeholder="+7 XXX XXX XX XX"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        className="pl-10"
+                        className={isRTL ? 'pr-10' : 'pl-10'}
                         required
                       />
                     </div>
@@ -308,16 +311,16 @@ const DriverLogin = () => {
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Submitting...
+                        <Loader2 className="h-4 w-4 me-2 animate-spin" />
+                        {t('staffLogin.submitting')}
                       </>
                     ) : (
-                      'Request Password Reset'
+                      t('staffLogin.requestPasswordReset')
                     )}
                   </Button>
 
                   <p className="text-center text-xs text-muted-foreground">
-                    An administrator will contact you to verify your identity and reset your password
+                    {t('staffLogin.adminWillContact')}
                   </p>
                 </form>
               )}
@@ -329,11 +332,14 @@ const DriverLogin = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/30 p-4" dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="absolute top-4 end-4">
+        <LanguageSwitcher />
+      </div>
       <div className="w-full max-w-md space-y-6">
-        <Link to="/" className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Home
+        <Link to="/" className={`inline-flex items-center text-muted-foreground hover:text-foreground transition-colors ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <ArrowLeft className={`h-4 w-4 ${isRTL ? 'ms-2 rotate-180' : 'me-2'}`} />
+          {t('staffLogin.backToHome')}
         </Link>
 
         <Card className="border-2">
@@ -342,50 +348,50 @@ const DriverLogin = () => {
               <Car className="h-8 w-8 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-2xl">Driver Login</CardTitle>
+              <CardTitle className="text-2xl">{t('staffLogin.driverLogin')}</CardTitle>
               <CardDescription>
-                Sign in to access your driver dashboard
+                {t('staffLogin.signInToAccess')}
               </CardDescription>
             </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone">{t('staffLogin.phoneNumber')}</Label>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Phone className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground`} />
                   <Input
                     id="phone"
                     type="tel"
                     placeholder="+7 XXX XXX XX XX"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="pl-10"
+                    className={isRTL ? 'pr-10' : 'pl-10'}
                     disabled={loading}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
+                <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <Label htmlFor="password">{t('staffLogin.password')}</Label>
                   <button
                     type="button"
                     onClick={() => setShowForgotPassword(true)}
                     className="text-xs text-primary hover:underline"
                   >
-                    Forgot password?
+                    {t('staffLogin.forgotPassword')}
                   </button>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground`} />
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Enter your password"
+                    placeholder={t('staffLogin.password')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
+                    className={isRTL ? 'pr-10' : 'pl-10'}
                     disabled={loading}
                   />
                 </div>
@@ -394,17 +400,17 @@ const DriverLogin = () => {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Signing in...
+                    <Loader2 className="h-4 w-4 me-2 animate-spin" />
+                    {t('staffLogin.signingIn')}
                   </>
                 ) : (
-                  'Sign In'
+                  t('staffLogin.signIn')
                 )}
               </Button>
             </form>
 
             <p className="text-center text-sm text-muted-foreground mt-6">
-              Contact your administrator if you need account access
+              {t('staffLogin.contactAdmin')}
             </p>
           </CardContent>
         </Card>
