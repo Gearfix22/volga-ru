@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { GuideLocationTracker } from '@/components/guide/GuideLocationTracker';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
 import { 
   getGuideNotifications, 
@@ -44,6 +45,7 @@ import { supabase } from '@/integrations/supabase/client';
 const GuideDashboard = () => {
   const navigate = useNavigate();
   const { user, hasRole, signOut } = useAuth();
+  const { t, isRTL } = useLanguage();
   const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState('bookings');
@@ -64,6 +66,17 @@ const GuideDashboard = () => {
   const [newLanguage, setNewLanguage] = useState('');
   const [newArea, setNewArea] = useState('');
 
+  // Weekday labels for i18n
+  const weekDays = [
+    t('guideDashboard.sunday'),
+    t('guideDashboard.monday'),
+    t('guideDashboard.tuesday'),
+    t('guideDashboard.wednesday'),
+    t('guideDashboard.thursday'),
+    t('guideDashboard.friday'),
+    t('guideDashboard.saturday')
+  ];
+
   useEffect(() => {
     if (!user) {
       navigate('/guide-login');
@@ -72,8 +85,8 @@ const GuideDashboard = () => {
 
     if (!hasRole('guide')) {
       toast({
-        title: 'Access Denied',
-        description: 'You do not have guide access.',
+        title: t('guideDashboard.accessDenied'),
+        description: t('guideDashboard.noGuideAccess'),
         variant: 'destructive'
       });
       navigate('/');
@@ -81,7 +94,7 @@ const GuideDashboard = () => {
     }
 
     loadData();
-  }, [user, hasRole, navigate]);
+  }, [user, hasRole, navigate, t]);
 
   const loadData = async () => {
     if (!user) return;
@@ -129,14 +142,14 @@ const GuideDashboard = () => {
 
     if (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to accept booking',
+        title: t('guideDashboard.error'),
+        description: t('guideDashboard.acceptFailed'),
         variant: 'destructive'
       });
     } else {
       toast({
-        title: 'Booking Accepted',
-        description: 'You have accepted this tour booking.'
+        title: t('guideDashboard.bookingAccepted'),
+        description: t('guideDashboard.bookingAcceptedDesc')
       });
       loadData();
     }
@@ -155,14 +168,14 @@ const GuideDashboard = () => {
 
     if (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to reject booking',
+        title: t('guideDashboard.error'),
+        description: t('guideDashboard.rejectFailed'),
         variant: 'destructive'
       });
     } else {
       toast({
-        title: 'Booking Rejected',
-        description: 'The booking has been returned to the queue.'
+        title: t('guideDashboard.bookingRejected'),
+        description: t('guideDashboard.bookingRejectedDesc')
       });
       loadData();
     }
@@ -176,8 +189,8 @@ const GuideDashboard = () => {
 
     if (!error) {
       toast({
-        title: 'Tour Started',
-        description: 'Location tracking is now active.'
+        title: t('guideDashboard.tourStarted'),
+        description: t('guideDashboard.locationActive')
       });
       loadData();
     }
@@ -191,12 +204,13 @@ const GuideDashboard = () => {
 
     if (!error) {
       toast({
-        title: 'Tour Completed',
-        description: 'Thank you for completing the tour!'
+        title: t('guideDashboard.tourCompleted'),
+        description: t('guideDashboard.tourCompletedDesc')
       });
       loadData();
     }
   };
+
   const handleMarkNotificationRead = async (notificationId: string) => {
     await markGuideNotificationRead(notificationId);
     setNotifications(prev => 
@@ -209,7 +223,6 @@ const GuideDashboard = () => {
     
     setSaving(true);
     try {
-      // Save to guide_availability table
       const availSuccess = await upsertGuideAvailability(user.id, {
         is_available: isAvailable,
         available_from: availableFrom,
@@ -219,7 +232,6 @@ const GuideDashboard = () => {
         service_areas: workingAreas
       });
 
-      // Also update hourly rate in guides table
       const { error } = await supabase
         .from('guides')
         .update({
@@ -232,13 +244,13 @@ const GuideDashboard = () => {
       if (error || !availSuccess) throw error;
 
       toast({
-        title: 'Settings Saved',
-        description: 'Your availability has been updated.'
+        title: t('guideDashboard.settingsSaved'),
+        description: t('guideDashboard.availabilityUpdated')
       });
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to save settings',
+        title: t('guideDashboard.error'),
+        description: t('guideDashboard.acceptFailed'),
         variant: 'destructive'
       });
     } finally {
@@ -279,301 +291,300 @@ const GuideDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Guide-specific header - no customer navigation */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-b">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
+      {/* Guide-specific header */}
+      <header className={`fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur border-b`}>
+        <div className={`container mx-auto px-4 h-16 flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <UserCheck className="h-8 w-8 text-primary" />
-            <div>
-              <span className="text-xl font-bold">Guide Portal</span>
+            <div className={isRTL ? 'text-right' : 'text-left'}>
+              <span className="text-xl font-bold">{t('guideDashboard.portal')}</span>
               {guideProfile?.full_name && (
                 <p className="text-sm text-muted-foreground">{guideProfile.full_name}</p>
               )}
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <Button variant="outline" size="icon" onClick={loadData} disabled={loading}>
               <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
             </Button>
             
-            <Button variant="outline" onClick={() => signOut()}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
+            <Button variant="outline" onClick={() => signOut()} className={`flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <LogOut className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+              {t('guideDashboard.signOut')}
             </Button>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 pt-24 pb-12 max-w-6xl">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Guide Dashboard</h1>
+        <div className={`flex items-center justify-between mb-8 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <div className={isRTL ? 'text-right' : 'text-left'}>
+            <h1 className="text-3xl font-bold text-foreground">{t('guideDashboard.dashboard')}</h1>
             <p className="text-muted-foreground">
-              Welcome, {guideProfile?.full_name || 'Guide'}
+              {t('guideDashboard.welcome')}, {guideProfile?.full_name || 'Guide'}
             </p>
           </div>
         </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-6">
-              <TabsTrigger value="bookings">My Bookings</TabsTrigger>
-              <TabsTrigger value="notifications" className="relative">
-                Notifications
-                {unreadCount > 0 && (
-                  <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 text-xs">
-                    {unreadCount}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center gap-1">
-                <Settings className="h-3 w-3" />
-                Settings
-              </TabsTrigger>
-            </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="bookings">{t('guideDashboard.myBookings')}</TabsTrigger>
+            <TabsTrigger value="notifications" className="relative">
+              {t('guideDashboard.notifications')}
+              {unreadCount > 0 && (
+                <Badge variant="destructive" className={`${isRTL ? 'mr-2' : 'ml-2'} h-5 w-5 p-0 text-xs`}>
+                  {unreadCount}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="settings" className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <Settings className="h-3 w-3" />
+              {t('guideDashboard.settings')}
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="bookings">
-              <div className="grid gap-4">
-                {/* Show location tracker for active tour */}
-                {bookings.find(b => b.status === 'on_trip' || b.status === 'accepted') && (
-                  <GuideLocationTracker 
-                    activeBookingId={bookings.find(b => b.status === 'on_trip')?.id || bookings.find(b => b.status === 'accepted')?.id}
-                    bookingStatus={bookings.find(b => b.status === 'on_trip')?.status || bookings.find(b => b.status === 'accepted')?.status}
-                  />
-                )}
-                
-                {bookings.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-12 text-center">
-                      <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground">No bookings assigned yet.</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  bookings.map((booking) => (
-                    <Card key={booking.id} className="bg-card/95 backdrop-blur-sm">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">
-                            Tour #{booking.id.substring(0, 8)}
-                          </CardTitle>
-                          <Badge variant={
-                            booking.status === 'completed' ? 'default' :
-                            booking.status === 'on_trip' ? 'secondary' :
-                            booking.status === 'accepted' ? 'outline' : 'destructive'
-                          }>
-                            {booking.status}
-                          </Badge>
-                        </div>
-                        <CardDescription>
-                          {booking.service_type} Service
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid gap-3 md:grid-cols-2">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-sm">
-                              <Phone className="h-4 w-4 text-primary" />
-                              <span>{booking.user_info?.phone || 'N/A'}</span>
-                            </div>
-                            {booking.tourist_guide_bookings?.[0] && (
-                              <>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Globe className="h-4 w-4 text-primary" />
-                                  <span>Language: {booking.tourist_guide_bookings[0].guide_language}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <MapPin className="h-4 w-4 text-primary" />
-                                  <span>Area: {booking.tourist_guide_bookings[0].tour_area}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Clock className="h-4 w-4 text-primary" />
-                                  <span>Duration: {booking.tourist_guide_bookings[0].tour_duration_hours}h</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Users className="h-4 w-4 text-primary" />
-                                  <span>Group Size: {booking.tourist_guide_bookings[0].group_size}</span>
-                                </div>
-                              </>
-                            )}
+          <TabsContent value="bookings">
+            <div className="grid gap-4">
+              {bookings.find(b => b.status === 'on_trip' || b.status === 'accepted') && (
+                <GuideLocationTracker 
+                  activeBookingId={bookings.find(b => b.status === 'on_trip')?.id || bookings.find(b => b.status === 'accepted')?.id}
+                  bookingStatus={bookings.find(b => b.status === 'on_trip')?.status || bookings.find(b => b.status === 'accepted')?.status}
+                />
+              )}
+              
+              {bookings.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">{t('guideDashboard.noBookingsAssigned')}</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                bookings.map((booking) => (
+                  <Card key={booking.id} className="bg-card/95 backdrop-blur-sm">
+                    <CardHeader className="pb-2">
+                      <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <CardTitle className="text-lg">
+                          {t('guideDashboard.tour')} #{booking.id.substring(0, 8)}
+                        </CardTitle>
+                        <Badge variant={
+                          booking.status === 'completed' ? 'default' :
+                          booking.status === 'on_trip' ? 'secondary' :
+                          booking.status === 'accepted' ? 'outline' : 'destructive'
+                        }>
+                          {booking.status}
+                        </Badge>
+                      </div>
+                      <CardDescription>
+                        {booking.service_type} {t('guideDashboard.service')}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <div className={`flex items-center gap-2 text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+                            <Phone className="h-4 w-4 text-primary" />
+                            <span>{booking.user_info?.phone || 'N/A'}</span>
                           </div>
-                          <div className="flex flex-col gap-2 justify-end">
-                            {booking.status === 'assigned' && (
-                              <>
-                                <Button 
-                                  onClick={() => handleAcceptBooking(booking.id)}
-                                  className="w-full"
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Accept
-                                </Button>
-                                <Button 
-                                  variant="outline"
-                                  onClick={() => handleRejectBooking(booking.id)}
-                                  className="w-full"
-                                >
-                                  <XCircle className="h-4 w-4 mr-2" />
-                                  Decline
-                                </Button>
-                              </>
-                            )}
-                            {booking.status === 'accepted' && (
-                              <Button 
-                                onClick={() => handleStartTour(booking.id)}
-                                className="w-full bg-green-600 hover:bg-green-700"
-                              >
-                                <NavIcon className="h-4 w-4 mr-2" />
-                                Start Tour
-                              </Button>
-                            )}
-                            {booking.status === 'on_trip' && (
-                              <Button 
-                                onClick={() => handleCompleteTour(booking.id)}
-                                className="w-full"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Complete Tour
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="notifications">
-              <div className="space-y-4">
-                {notifications.length === 0 ? (
-                  <Card>
-                    <CardContent className="py-12 text-center">
-                      <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground">No notifications yet.</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  notifications.map((notification) => (
-                    <Card 
-                      key={notification.id} 
-                      className={`cursor-pointer transition-colors ${
-                        !notification.is_read ? 'bg-primary/5 border-primary/20' : ''
-                      }`}
-                      onClick={() => handleMarkNotificationRead(notification.id)}
-                    >
-                      <CardContent className="py-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-medium">{notification.title}</p>
-                            <p className="text-sm text-muted-foreground">{notification.message}</p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {new Date(notification.created_at).toLocaleString()}
-                            </p>
-                          </div>
-                          {!notification.is_read && (
-                            <Badge variant="default" className="bg-primary">New</Badge>
+                          {booking.tourist_guide_bookings?.[0] && (
+                            <>
+                              <div className={`flex items-center gap-2 text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                <Globe className="h-4 w-4 text-primary" />
+                                <span>{t('guideDashboard.language')}: {booking.tourist_guide_bookings[0].guide_language}</span>
+                              </div>
+                              <div className={`flex items-center gap-2 text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                <MapPin className="h-4 w-4 text-primary" />
+                                <span>{t('guideDashboard.area')}: {booking.tourist_guide_bookings[0].tour_area}</span>
+                              </div>
+                              <div className={`flex items-center gap-2 text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                <Clock className="h-4 w-4 text-primary" />
+                                <span>{t('guideDashboard.duration')}: {booking.tourist_guide_bookings[0].tour_duration_hours}h</span>
+                              </div>
+                              <div className={`flex items-center gap-2 text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+                                <Users className="h-4 w-4 text-primary" />
+                                <span>{t('guideDashboard.groupSize')}: {booking.tourist_guide_bookings[0].group_size}</span>
+                              </div>
+                            </>
                           )}
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </TabsContent>
+                        <div className="flex flex-col gap-2 justify-end">
+                          {booking.status === 'assigned' && (
+                            <>
+                              <Button 
+                                onClick={() => handleAcceptBooking(booking.id)}
+                                className="w-full"
+                              >
+                                <CheckCircle className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                                {t('guideDashboard.accept')}
+                              </Button>
+                              <Button 
+                                variant="outline"
+                                onClick={() => handleRejectBooking(booking.id)}
+                                className="w-full"
+                              >
+                                <XCircle className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                                {t('guideDashboard.decline')}
+                              </Button>
+                            </>
+                          )}
+                          {booking.status === 'accepted' && (
+                            <Button 
+                              onClick={() => handleStartTour(booking.id)}
+                              className="w-full bg-green-600 hover:bg-green-700"
+                            >
+                              <NavIcon className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                              {t('guideDashboard.startTour')}
+                            </Button>
+                          )}
+                          {booking.status === 'on_trip' && (
+                            <Button 
+                              onClick={() => handleCompleteTour(booking.id)}
+                              className="w-full"
+                            >
+                              <CheckCircle className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                              {t('guideDashboard.completeTour')}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
 
-            <TabsContent value="settings">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Guide Settings</CardTitle>
-                  <CardDescription>Manage your availability and preferences</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Availability</Label>
-                      <p className="text-sm text-muted-foreground">Toggle to accept new bookings</p>
-                    </div>
-                    <Switch checked={isAvailable} onCheckedChange={setIsAvailable} />
+          <TabsContent value="notifications">
+            <div className="space-y-4">
+              {notifications.length === 0 ? (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">{t('guideDashboard.noNotifications')}</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                notifications.map((notification) => (
+                  <Card 
+                    key={notification.id} 
+                    className={`cursor-pointer transition-colors ${
+                      !notification.is_read ? 'bg-primary/5 border-primary/20' : ''
+                    }`}
+                    onClick={() => handleMarkNotificationRead(notification.id)}
+                  >
+                    <CardContent className="py-4">
+                      <div className={`flex items-start justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                        <div className={isRTL ? 'text-right' : 'text-left'}>
+                          <p className="font-medium">{notification.title}</p>
+                          <p className="text-sm text-muted-foreground">{notification.message}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(notification.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                        {!notification.is_read && (
+                          <Badge variant="default" className="bg-primary">{t('common.new')}</Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('guideDashboard.settings')}</CardTitle>
+                <CardDescription>{t('guideDashboard.availability')}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <div className={isRTL ? 'text-right' : 'text-left'}>
+                    <Label>{t('guideDashboard.isAvailable')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('guideDashboard.availability')}</p>
                   </div>
+                  <Switch checked={isAvailable} onCheckedChange={setIsAvailable} />
+                </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Available From</Label>
-                      <Input type="time" value={availableFrom} onChange={(e) => setAvailableFrom(e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Available To</Label>
-                      <Input type="time" value={availableTo} onChange={(e) => setAvailableTo(e.target.value)} />
-                    </div>
-                  </div>
-
+                <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label>Working Days</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => (
-                        <Badge
-                          key={day}
-                          variant={workingDays.includes(idx) ? 'default' : 'outline'}
-                          className="cursor-pointer"
-                          onClick={() => {
-                            if (workingDays.includes(idx)) {
-                              setWorkingDays(workingDays.filter(d => d !== idx));
-                            } else {
-                              setWorkingDays([...workingDays, idx].sort());
-                            }
-                          }}
-                        >
-                          {day}
-                        </Badge>
-                      ))}
-                    </div>
+                    <Label>{t('guideDashboard.availableFrom')}</Label>
+                    <Input type="time" value={availableFrom} onChange={(e) => setAvailableFrom(e.target.value)} />
                   </div>
-
                   <div className="space-y-2">
-                    <Label>Hourly Rate (USD)</Label>
-                    <Input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value))} className="max-w-[200px]" />
+                    <Label>{t('guideDashboard.availableTo')}</Label>
+                    <Input type="time" value={availableTo} onChange={(e) => setAvailableTo(e.target.value)} />
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label>Languages</Label>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {languages.map(lang => (
-                        <Badge key={lang} variant="secondary" className="cursor-pointer" onClick={() => removeLanguage(lang)}>
-                          {lang} <XCircle className="h-3 w-3 ml-1" />
-                        </Badge>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <Input value={newLanguage} onChange={(e) => setNewLanguage(e.target.value)} placeholder="Add language" className="max-w-[200px]" />
-                      <Button type="button" variant="outline" size="sm" onClick={addLanguage}>Add</Button>
-                    </div>
+                <div className="space-y-2">
+                  <Label>{t('guideDashboard.workingDays')}</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {weekDays.map((day, idx) => (
+                      <Badge
+                        key={idx}
+                        variant={workingDays.includes(idx) ? 'default' : 'outline'}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          if (workingDays.includes(idx)) {
+                            setWorkingDays(workingDays.filter(d => d !== idx));
+                          } else {
+                            setWorkingDays([...workingDays, idx].sort());
+                          }
+                        }}
+                      >
+                        {day}
+                      </Badge>
+                    ))}
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label>Service Areas</Label>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {workingAreas.map(area => (
-                        <Badge key={area} variant="secondary" className="cursor-pointer" onClick={() => removeWorkingArea(area)}>
-                          {area} <XCircle className="h-3 w-3 ml-1" />
-                        </Badge>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <Input value={newArea} onChange={(e) => setNewArea(e.target.value)} placeholder="Add area" className="max-w-[200px]" />
-                      <Button type="button" variant="outline" size="sm" onClick={addWorkingArea}>Add</Button>
-                    </div>
+                <div className="space-y-2">
+                  <Label>{t('guideDashboard.hourlyRate')}</Label>
+                  <Input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(Number(e.target.value))} className="max-w-[200px]" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t('guideDashboard.languages')}</Label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {languages.map(lang => (
+                      <Badge key={lang} variant="secondary" className="cursor-pointer" onClick={() => removeLanguage(lang)}>
+                        {lang} <XCircle className={`h-3 w-3 ${isRTL ? 'mr-1' : 'ml-1'}`} />
+                      </Badge>
+                    ))}
                   </div>
+                  <div className={`flex gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <Input value={newLanguage} onChange={(e) => setNewLanguage(e.target.value)} placeholder={t('guideDashboard.addLanguage')} className="max-w-[200px]" />
+                    <Button type="button" variant="outline" size="sm" onClick={addLanguage}>{t('common.add')}</Button>
+                  </div>
+                </div>
 
-                  <Button onClick={handleSaveSettings} disabled={saving}>
-                    {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                    Save Settings
-                  </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                <div className="space-y-2">
+                  <Label>{t('guideDashboard.workingAreas')}</Label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {workingAreas.map(area => (
+                      <Badge key={area} variant="secondary" className="cursor-pointer" onClick={() => removeWorkingArea(area)}>
+                        {area} <XCircle className={`h-3 w-3 ${isRTL ? 'mr-1' : 'ml-1'}`} />
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className={`flex gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <Input value={newArea} onChange={(e) => setNewArea(e.target.value)} placeholder={t('guideDashboard.addArea')} className="max-w-[200px]" />
+                    <Button type="button" variant="outline" size="sm" onClick={addWorkingArea}>{t('common.add')}</Button>
+                  </div>
+                </div>
+
+                <Button onClick={handleSaveSettings} disabled={saving} className={`flex items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  {saving ? <Loader2 className={`h-4 w-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} /> : <Save className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />}
+                  {saving ? t('guideDashboard.saving') : t('guideDashboard.saveSettings')}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
