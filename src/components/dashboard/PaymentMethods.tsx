@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CreditCard, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useDataTracking } from '@/hooks/useDataTracking';
@@ -183,39 +184,43 @@ export const PaymentMethods: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="expiryMonth">{t('paymentMethods.expiryMonth')}</Label>
-                  <select
-                    id="expiryMonth"
-                    value={newCard.expiryMonth}
-                    onChange={(e) => setNewCard(prev => ({ ...prev, expiryMonth: e.target.value }))}
-                    className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                  <Select
+                    value={newCard.expiryMonth || undefined}
+                    onValueChange={(value) => setNewCard(prev => ({ ...prev, expiryMonth: value }))}
                   >
-                    <option value="">{t('paymentMethods.month')}</option>
-                    {Array.from({ length: 12 }, (_, i) => (
-                      <option key={i + 1} value={String(i + 1).padStart(2, '0')}>
-                        {String(i + 1).padStart(2, '0')}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger id="expiryMonth" className={!newCard.expiryMonth ? 'text-muted-foreground' : ''}>
+                      <SelectValue placeholder={t('paymentMethods.month')} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg z-50">
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <SelectItem key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                          {String(i + 1).padStart(2, '0')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
                   <Label htmlFor="expiryYear">{t('paymentMethods.expiryYear')}</Label>
-                  <select
-                    id="expiryYear"
-                    value={newCard.expiryYear}
-                    onChange={(e) => setNewCard(prev => ({ ...prev, expiryYear: e.target.value }))}
-                    className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary bg-background"
+                  <Select
+                    value={newCard.expiryYear || undefined}
+                    onValueChange={(value) => setNewCard(prev => ({ ...prev, expiryYear: value }))}
                   >
-                    <option value="">{t('paymentMethods.year')}</option>
-                    {Array.from({ length: 10 }, (_, i) => {
-                      const year = new Date().getFullYear() + i;
-                      return (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      );
-                    })}
-                  </select>
+                    <SelectTrigger id="expiryYear" className={!newCard.expiryYear ? 'text-muted-foreground' : ''}>
+                      <SelectValue placeholder={t('paymentMethods.year')} />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg z-50">
+                      {Array.from({ length: 10 }, (_, i) => {
+                        const year = new Date().getFullYear() + i;
+                        return (
+                          <SelectItem key={year} value={String(year)}>
+                            {year}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>

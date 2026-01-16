@@ -552,14 +552,14 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
             <div className="space-y-2">
               <Label htmlFor="category">{t('adminServices.formFields.category')}</Label>
               <Select
-                value={formData.category_id}
-                onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                value={formData.category_id || '__none__'}
+                onValueChange={(value) => setFormData({ ...formData, category_id: value === '__none__' ? '' : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t('adminServices.formFields.selectCategory')} />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">{t('adminServices.formFields.noCategory')}</SelectItem>
+                <SelectContent className="bg-background border shadow-lg z-50">
+                  <SelectItem value="__none__">{t('adminServices.formFields.noCategory')}</SelectItem>
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.category_name}
