@@ -8,39 +8,53 @@ interface BookingStatusTimelineProps {
 }
 
 /**
- * FINAL BOOKING WORKFLOW STATUS TIMELINE - Aligned with Edge Function:
+ * FINAL BOOKING WORKFLOW STATUS TIMELINE - Aligned with Database ENUM:
  * 
- * 1. draft → Customer selecting service
- * 2. under_review → Customer confirmed, waiting for admin
- * 3. awaiting_customer_confirmation → Admin set price, awaiting customer
- * 4. paid → Customer paid (price LOCKED)
- * 5. in_progress → Driver/guide assigned, service ongoing
- * 6. completed → Service completed
+ * DATABASE ENUM: draft, pending, under_review, approved, awaiting_payment, paid,
+ *                confirmed, assigned, accepted, on_trip, completed, cancelled, rejected
+ * 
+ * Visual workflow stages:
+ * 1. draft → Booking created
+ * 2. pending/under_review → Admin reviewing
+ * 3. approved/awaiting_payment → Price set, awaiting payment
+ * 4. paid/confirmed → Payment confirmed
+ * 5. assigned/accepted/on_trip → Service in progress
+ * 6. completed → Service delivered
  * 
  * Terminal states: cancelled, rejected
  */
 const STATUS_FLOW = [
   { key: 'draft', label: 'Draft', icon: FileText, description: 'Booking created' },
   { key: 'under_review', label: 'Under Review', icon: Clock, description: 'Admin reviewing' },
-  { key: 'awaiting_customer_confirmation', label: 'Price Set', icon: DollarSign, description: 'Admin set price' },
+  { key: 'awaiting_payment', label: 'Price Set', icon: DollarSign, description: 'Awaiting payment' },
   { key: 'paid', label: 'Paid', icon: CheckCircle2, description: 'Payment confirmed' },
   { key: 'in_progress', label: 'In Progress', icon: Car, description: 'Service in progress' },
   { key: 'completed', label: 'Completed', icon: Check, description: 'Service delivered' },
 ];
 
+// Map all database statuses to timeline stage index
 const STATUS_INDEX: Record<string, number> = {
+  // Stage 0: Draft
   draft: 0,
-  under_review: 1,
-  awaiting_customer_confirmation: 2,
-  paid: 3,
-  in_progress: 4,
-  completed: 5,
-  // Legacy mappings
+  // Stage 1: Under Review
   pending: 1,
-  pending_admin: 1,
-  price_set: 2,
+  under_review: 1,
+  // Stage 2: Price Set / Awaiting Payment
+  approved: 2,
   awaiting_payment: 2,
-  confirmed: 2,
+  awaiting_customer_confirmation: 2, // Legacy frontend status
+  price_set: 2,
+  confirmed: 2, // Legacy: meant price confirmed
+  // Stage 3: Paid
+  paid: 3,
+  // Stage 4: In Progress
+  in_progress: 4,
+  assigned: 4,
+  accepted: 4,
+  on_trip: 4,
+  // Stage 5: Completed
+  completed: 5,
+  // Terminal states
   cancelled: -1,
   rejected: -1,
 };
