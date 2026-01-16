@@ -168,7 +168,8 @@
     "at": "في",
     "noDetails": "لا توجد تفاصيل",
     "viewDetails": "عرض التفاصيل",
-    "errorLoadingReservations": "خطأ في تحميل الحجوزات"
+    "errorLoadingReservations": "خطأ في تحميل الحجوزات",
+    "termsOfService": "شروط الخدمة"
   },
   "pages": {
     "aboutUs": "من نحن",

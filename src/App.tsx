@@ -62,9 +62,20 @@ const WebViewWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 const App = () => {
-  const [showSplash, setShowSplash] = useState(true);
+  // Use sessionStorage to show splash only once per session
+  const [showSplash, setShowSplash] = useState(() => {
+    // Check if splash was already shown this session
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('volga_splash_shown') !== 'true';
+    }
+    return true;
+  });
 
   const handleSplashFinish = () => {
+    // Mark splash as shown for this session
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('volga_splash_shown', 'true');
+    }
     setShowSplash(false);
   };
 
