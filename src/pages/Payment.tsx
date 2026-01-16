@@ -23,7 +23,7 @@ declare global {
 }
 
 const Payment = () => {
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -86,15 +86,15 @@ const Payment = () => {
     script.src = `https://www.paypal.com/sdk/js?client-id=AU15djn3gU9YlY__yWU0ZFAGCo8AepH1KSx2I5Kr_0YrgktGrApSOcI-yAaeAFmfHDN4-yWUu2V1NHqV&currency=USD`;
     script.onload = () => setPaypalScriptLoaded(true);
     script.onerror = () => {
-      setPaypalError('Failed to load PayPal SDK');
+      setPaypalError(t('paymentPage.paypalError'));
       toast({
-        title: "PayPal Error",
-        description: "Failed to load PayPal. Please try credit card instead.",
+        title: t('paymentPage.paypalError'),
+        description: t('paymentPage.paypalLoadFailed'),
         variant: "destructive"
       });
     };
     document.body.appendChild(script);
-  }, []);
+  }, [t, toast]);
 
   // Handle PayPal button rendering with better error handling
   useEffect(() => {
@@ -140,8 +140,8 @@ const Payment = () => {
                 });
                 
                 toast({
-                  title: "Booking saved successfully!",
-                  description: "Your booking has been saved to your account.",
+                  title: t('paymentPage.bookingSaved'),
+                  description: t('paymentPage.bookingSavedDesc'),
                 });
               }
               
@@ -150,8 +150,8 @@ const Payment = () => {
               localStorage.setItem('paymentAmount', amount.toString());
               
               toast({
-                title: "Payment successful!",
-                description: `Transaction ID: ${transactionId}`,
+                title: t('paymentPage.paymentSuccessful'),
+                description: `${t('confirmation.transactionId')}: ${transactionId}`,
               });
 
               navigate('/booking-confirmation', {
@@ -168,25 +168,25 @@ const Payment = () => {
             } catch (error) {
               console.error('PayPal payment error:', error);
               toast({
-                title: "Payment failed",
-                description: "There was an error processing your PayPal payment.",
+                title: t('paymentPage.paymentFailed'),
+                description: t('paymentPage.paymentError'),
                 variant: "destructive"
               });
             }
           },
           onError: (err: any) => {
             console.error('PayPal error:', err);
-            setPaypalError('PayPal error occurred');
+            setPaypalError(t('paymentPage.paypalError'));
             toast({
-              title: "Payment error",
-              description: "There was an error with PayPal. Please try again.",
+              title: t('paymentPage.paymentError'),
+              description: t('paymentPage.paypalError'),
               variant: "destructive"
             });
           },
           onCancel: () => {
             toast({
-              title: "Payment cancelled",
-              description: "PayPal payment was cancelled.",
+              title: t('paymentPage.paymentCancelled'),
+              description: t('paymentPage.paypalCancelled'),
             });
           }
         });
@@ -195,18 +195,18 @@ const Payment = () => {
           paypalButtonsInstance.current.render(paypalContainerRef.current).then(() => {
             isPaypalMounted.current = true;
           }).catch((error: any) => {
-            setPaypalError('Failed to render PayPal buttons');
+            setPaypalError(t('paymentPage.paypalRenderFailed'));
           });
         }
       } catch (error) {
         console.error('Error setting up PayPal buttons:', error);
-        setPaypalError('Failed to initialize PayPal');
+        setPaypalError(t('paymentPage.paypalInitFailed'));
       }
     };
 
     // Small delay to ensure DOM is ready
     setTimeout(renderPayPalButtons, 100);
-  }, [selectedMethod, paypalScriptLoaded, customAmount, user, bookingData, navigate, toast]);
+  }, [selectedMethod, paypalScriptLoaded, customAmount, user, bookingData, navigate, toast, t]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -245,8 +245,8 @@ const Payment = () => {
     
     if (finalAmount <= 0) {
       toast({
-        title: "Invalid amount",
-        description: "Please enter a valid payment amount greater than $0.",
+        title: t('paymentPage.invalidAmount'),
+        description: t('paymentPage.enterValidAmount'),
         variant: "destructive"
       });
       return;
@@ -255,8 +255,8 @@ const Payment = () => {
     // Validate credit card fields
     if (!cardNumber || !expiryDate || !cvv || !cardholderName) {
       toast({
-        title: "Missing information",
-        description: "Please fill in all credit card details.",
+        title: t('paymentPage.missingInfo'),
+        description: t('paymentPage.fillCardDetails'),
         variant: "destructive"
       });
       return;
@@ -266,8 +266,8 @@ const Payment = () => {
     const cleanCardNumber = cardNumber.replace(/\s/g, '');
     if (cleanCardNumber.length < 13 || cleanCardNumber.length > 19) {
       toast({
-        title: "Invalid card number",
-        description: "Please enter a valid credit card number.",
+        title: t('paymentPage.invalidCardNumber'),
+        description: t('paymentPage.enterValidCardNumber'),
         variant: "destructive"
       });
       return;
@@ -276,8 +276,8 @@ const Payment = () => {
     // Basic expiry date validation (MM/YY format)
     if (!/^\d{2}\/\d{2}$/.test(expiryDate)) {
       toast({
-        title: "Invalid expiry date",
-        description: "Please enter expiry date in MM/YY format.",
+        title: t('paymentPage.invalidExpiryDate'),
+        description: t('paymentPage.enterExpiryFormat'),
         variant: "destructive"
       });
       return;
@@ -286,8 +286,8 @@ const Payment = () => {
     // Basic CVV validation
     if (cvv.length < 3 || cvv.length > 4) {
       toast({
-        title: "Invalid CVV",
-        description: "Please enter a valid CVV code.",
+        title: t('paymentPage.invalidCVV'),
+        description: t('paymentPage.enterValidCVV'),
         variant: "destructive"
       });
       return;
@@ -320,8 +320,8 @@ const Payment = () => {
         });
         
         toast({
-          title: "Booking saved successfully!",
-          description: "Your booking has been saved to your account.",
+          title: t('paymentPage.bookingSaved'),
+          description: t('paymentPage.bookingSavedDesc'),
         });
       }
 
@@ -333,8 +333,8 @@ const Payment = () => {
       localStorage.setItem('paymentAmount', finalAmount.toString());
       
       toast({
-        title: "Payment successful!",
-        description: `Transaction ID: ${transactionId}`,
+        title: t('paymentPage.paymentSuccessful'),
+        description: `${t('confirmation.transactionId')}: ${transactionId}`,
       });
       
       navigate('/booking-confirmation', {
@@ -351,8 +351,8 @@ const Payment = () => {
     } catch (error: any) {
       console.error('Payment failed:', error);
       toast({
-        title: "Payment failed",
-        description: error.message || "There was an error processing your payment. Please try again.",
+        title: t('paymentPage.paymentFailed'),
+        description: error.message || t('paymentPage.paymentError'),
         variant: "destructive"
       });
     } finally {
@@ -367,8 +367,8 @@ const Payment = () => {
       // Validate required data
       if (!bookingData || !bookingData.userInfo) {
         toast({
-          title: "Error",
-          description: "Booking data is missing. Please go back and complete the booking form.",
+          title: t('error'),
+          description: t('paymentPage.bookingDataMissing'),
           variant: "destructive"
         });
         return;
@@ -376,8 +376,8 @@ const Payment = () => {
       
       if (finalAmount <= 0) {
         toast({
-          title: "Invalid amount",
-          description: "Please enter a valid payment amount greater than $0.",
+          title: t('paymentPage.invalidAmount'),
+          description: t('paymentPage.enterValidAmount'),
           variant: "destructive"
         });
         return;
@@ -398,14 +398,14 @@ const Payment = () => {
           });
           
           toast({
-            title: "Booking saved!",
-            description: "Your booking has been saved to your account.",
+            title: t('paymentPage.bookingSaved'),
+            description: t('paymentPage.bookingSavedDesc'),
           });
         } catch (error) {
           console.error('Error saving booking:', error);
           toast({
-            title: "Warning",
-            description: "Booking confirmed but not saved to account. Please contact support.",
+            title: t('warning'),
+            description: t('paymentPage.warningNotSaved'),
             variant: "destructive"
           });
         }
@@ -424,8 +424,8 @@ const Payment = () => {
       localStorage.setItem('paymentAmount', finalAmount.toString());
       
       toast({
-        title: "Booking confirmed!",
-        description: "Redirecting to WhatsApp for service arrangements...",
+        title: t('paymentPage.bookingConfirmed'),
+        description: t('paymentPage.redirectingWhatsApp'),
       });
       
       // Small delay to show the toast before redirecting
@@ -449,40 +449,40 @@ const Payment = () => {
       
     } catch (error) {
       toast({
-        title: "Error",
-        description: "There was an error confirming your booking. Please try again.",
+        title: t('error'),
+        description: t('paymentPage.bookingError'),
         variant: "destructive"
       });
     }
   };
 
-   const paymentMethods = [
-     {
-       id: 'credit-card',
-       name: 'Credit Card',
-       icon: CreditCard,
-       description: 'Secure payment with your credit or debit card'
-     },
-     {
-       id: 'paypal',
-       name: 'PayPal',
-       icon: Shield,
-       description: 'Pay securely with your PayPal account'
-     },
-     {
-       id: 'cash-on-arrival',
-       name: 'Cash on Arrival',
-       icon: MessageCircle,
-       description: 'Pay cash when service is delivered'
-     }
-   ];
+  const paymentMethods = [
+    {
+      id: 'credit-card',
+      name: t('paymentPage.creditCard'),
+      icon: CreditCard,
+      description: t('paymentPage.creditCardDesc')
+    },
+    {
+      id: 'paypal',
+      name: t('paymentPage.paypal'),
+      icon: Shield,
+      description: t('paymentPage.paypalDesc')
+    },
+    {
+      id: 'cash-on-arrival',
+      name: t('paymentPage.cashOnArrival'),
+      icon: MessageCircle,
+      description: t('paymentPage.cashOnArrivalDesc')
+    }
+  ];
 
   const renderBookingDetails = () => {
     const { serviceType, serviceDetails } = bookingData;
     
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-2 mb-4">
+      <div className={`space-y-4 ${isRTL ? 'text-right' : ''}`}>
+        <div className={`flex items-center gap-2 mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <Badge variant="secondary" className="bg-russian-gold/20 text-russian-gold">
             {serviceType}
           </Badge>
@@ -490,31 +490,31 @@ const Payment = () => {
         
         {serviceType === 'Transportation' && serviceDetails && 'pickup' in serviceDetails && (
           <div className="space-y-3">
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <MapPin className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Pickup Location</p>
+                <p className="text-white/70 text-sm">{t('paymentPage.pickupLocation')}</p>
                 <p className="text-white font-medium">{serviceDetails.pickup}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <MapPin className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Drop-off Location</p>
+                <p className="text-white/70 text-sm">{t('paymentPage.dropoffLocation')}</p>
                 <p className="text-white font-medium">{serviceDetails.dropoff}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Calendar className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Date & Time</p>
-                <p className="text-white font-medium">{serviceDetails.date} at {serviceDetails.time}</p>
+                <p className="text-white/70 text-sm">{t('paymentPage.dateAndTime')}</p>
+                <p className="text-white font-medium">{serviceDetails.date} {t('at')} {serviceDetails.time}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Car className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Vehicle Type</p>
+                <p className="text-white/70 text-sm">{t('paymentPage.vehicleType')}</p>
                 <p className="text-white font-medium">{serviceDetails.vehicleType}</p>
               </div>
             </div>
@@ -523,31 +523,31 @@ const Payment = () => {
 
         {serviceType === 'Hotels' && serviceDetails && 'city' in serviceDetails && (
           <div className="space-y-3">
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <MapPin className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">City</p>
+                <p className="text-white/70 text-sm">{t('paymentPage.city')}</p>
                 <p className="text-white font-medium">{serviceDetails.city}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Building2 className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Hotel</p>
+                <p className="text-white/70 text-sm">{t('paymentPage.hotel')}</p>
                 <p className="text-white font-medium">{serviceDetails.hotel}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Calendar className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Check-in / Check-out</p>
+                <p className="text-white/70 text-sm">{t('paymentPage.checkInOut')}</p>
                 <p className="text-white font-medium">{serviceDetails.checkin} - {serviceDetails.checkout}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Users className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Room Type</p>
+                <p className="text-white/70 text-sm">{t('paymentPage.roomType')}</p>
                 <p className="text-white font-medium">{serviceDetails.roomType}</p>
               </div>
             </div>
@@ -556,31 +556,31 @@ const Payment = () => {
 
         {serviceType === 'Events' && serviceDetails && 'eventName' in serviceDetails && (
           <div className="space-y-3">
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Ticket className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Event Name</p>
+                <p className="text-white/70 text-sm">{t('paymentPage.eventName')}</p>
                 <p className="text-white font-medium">{serviceDetails.eventName}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <MapPin className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Location</p>
+                <p className="text-white/70 text-sm">{t('paymentPage.location')}</p>
                 <p className="text-white font-medium">{serviceDetails.eventLocation}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Calendar className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Event Date</p>
+                <p className="text-white/70 text-sm">{t('paymentPage.eventDate')}</p>
                 <p className="text-white font-medium">{serviceDetails.eventDate}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Users className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Number of Tickets</p>
+                <p className="text-white/70 text-sm">{t('paymentPage.numberOfTickets')}</p>
                 <p className="text-white font-medium">{serviceDetails.tickets}</p>
               </div>
             </div>
@@ -589,26 +589,26 @@ const Payment = () => {
 
         {serviceType === 'Custom Trips' && serviceDetails && 'duration' in serviceDetails && (
           <div className="space-y-3">
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Clock className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Trip Duration</p>
+                <p className="text-white/70 text-sm">{t('paymentPage.tripDuration')}</p>
                 <p className="text-white font-medium">{serviceDetails.duration}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
+            <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Globe className="h-4 w-4 text-white/70 mt-1" />
               <div>
-                <p className="text-white/70 text-sm">Regions to Visit</p>
+                <p className="text-white/70 text-sm">{t('paymentPage.regionsToVisit')}</p>
                 <p className="text-white font-medium">{serviceDetails.regions}</p>
               </div>
             </div>
             {serviceDetails.interests && serviceDetails.interests.length > 0 && (
-              <div className="flex items-start gap-3">
+              <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <Users className="h-4 w-4 text-white/70 mt-1" />
                 <div>
-                  <p className="text-white/70 text-sm">Interests</p>
-                  <div className="flex flex-wrap gap-2 mt-1">
+                  <p className="text-white/70 text-sm">{t('paymentPage.interests')}</p>
+                  <div className={`flex flex-wrap gap-2 mt-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                     {serviceDetails.interests.map((interest, index) => (
                       <Badge key={index} variant="outline" className="text-xs">
                         {interest}
@@ -622,27 +622,27 @@ const Payment = () => {
         )}
 
         {/* Customer Information */}
-                         <div className="border-t border-white/20 pt-4 mt-6">
-                           <h4 className="text-white font-medium mb-3">Customer Information</h4>
-                           <div className="space-y-2">
-                             <div className="flex justify-between text-sm">
-                               <span className="text-white/70">Name:</span>
-                               <span className="text-white">{bookingData.userInfo.fullName}</span>
-                             </div>
-                             <div className="flex justify-between text-sm">
-                               <span className="text-white/70">Email:</span>
-                               <span className="text-white">{bookingData.userInfo.email}</span>
-                             </div>
-                             <div className="flex justify-between text-sm">
-                               <span className="text-white/70">Phone:</span>
-                               <span className="text-white">{bookingData.userInfo.phone}</span>
-                             </div>
-                             <div className="flex justify-between text-sm">
-                               <span className="text-white/70">Language:</span>
-                               <span className="text-white">{bookingData.userInfo.language}</span>
-                             </div>
-                           </div>
-                         </div>
+        <div className="border-t border-white/20 pt-4 mt-6">
+          <h4 className="text-white font-medium mb-3">{t('paymentPage.customerInformation')}</h4>
+          <div className="space-y-2">
+            <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <span className="text-white/70">{t('paymentPage.name')}:</span>
+              <span className="text-white">{bookingData.userInfo.fullName}</span>
+            </div>
+            <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <span className="text-white/70">{t('paymentPage.email')}:</span>
+              <span className="text-white">{bookingData.userInfo.email}</span>
+            </div>
+            <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <span className="text-white/70">{t('paymentPage.phone')}:</span>
+              <span className="text-white">{bookingData.userInfo.phone}</span>
+            </div>
+            <div className={`flex justify-between text-sm ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <span className="text-white/70">{t('paymentPage.language')}:</span>
+              <span className="text-white">{bookingData.userInfo.language}</span>
+            </div>
+          </div>
+        </div>
       </div>
     );
   };
@@ -666,13 +666,12 @@ const Payment = () => {
             <Card className="bg-yellow-50 border-yellow-200 mb-6">
               <CardContent className="p-4">
                 <p className="text-yellow-800 text-sm">
-                  <strong>Note:</strong> You're not logged in. Your booking will be processed but not saved to an account. 
-                  Consider <button 
+                  <strong>{t('note')}:</strong> {t('paymentPage.notLoggedIn')} {t('paymentPage.considerSignIn')} <button 
                     onClick={() => navigate('/auth')} 
                     className="underline text-yellow-900 hover:text-yellow-700"
                   >
-                    signing in
-                  </button> to keep track of your bookings.
+                    {t('paymentPage.signingIn')}
+                  </button>.
                 </p>
               </CardContent>
             </Card>
@@ -681,47 +680,47 @@ const Payment = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Payment Form */}
             <Card className="bg-white/10 backdrop-blur-sm border-white/20">
-               <CardHeader>
-                 <CardTitle className="text-white flex items-center gap-2">
-                   <Lock className="h-5 w-5" />
-                   Secure Payment
-                 </CardTitle>
-                 <CardDescription className="text-white/70">
-                   Complete your booking securely
-                 </CardDescription>
-               </CardHeader>
+              <CardHeader>
+                <CardTitle className={`text-white flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <Lock className="h-5 w-5" />
+                  {t('paymentPage.securePayment')}
+                </CardTitle>
+                <CardDescription className="text-white/70">
+                  {t('paymentPage.completeBookingSecurely')}
+                </CardDescription>
+              </CardHeader>
               <CardContent>
                 {/* Payment Amount */}
-                 <div className="space-y-4 mb-6">
-                   <h3 className="text-white font-medium flex items-center gap-2">
-                     <DollarSign className="h-5 w-5" />
-                     Payment Amount
-                   </h3>
-                   <div>
-                     <Label htmlFor="amount" className="block text-white text-sm font-medium mb-2">
-                       {t('amountUSD')}
-                     </Label>
-                     <div className="relative">
-                       <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70">$</span>
-                       <Input
-                         id="amount"
-                         type="text"
-                         value={customAmount}
-                         onChange={handleAmountChange}
-                         className="pl-8 bg-white/10 border-white/20 text-white placeholder-white/50 focus:ring-russian-gold"
-                         placeholder="0.00"
-                         required
-                       />
-                     </div>
-                     <p className="text-white/60 text-xs mt-1">
-                       {t('enterAmountToPay')}
-                     </p>
-                   </div>
-                 </div>
+                <div className="space-y-4 mb-6">
+                  <h3 className={`text-white font-medium flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <DollarSign className="h-5 w-5" />
+                    {t('paymentPage.paymentAmount')}
+                  </h3>
+                  <div>
+                    <Label htmlFor="amount" className="block text-white text-sm font-medium mb-2">
+                      {t('paymentPage.amountUSD')}
+                    </Label>
+                    <div className="relative">
+                      <span className={`absolute top-1/2 transform -translate-y-1/2 text-white/70 ${isRTL ? 'right-3' : 'left-3'}`}>$</span>
+                      <Input
+                        id="amount"
+                        type="text"
+                        value={customAmount}
+                        onChange={handleAmountChange}
+                        className={`bg-white/10 border-white/20 text-white placeholder-white/50 focus:ring-russian-gold ${isRTL ? 'pr-8' : 'pl-8'}`}
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+                    <p className="text-white/60 text-xs mt-1">
+                      {t('paymentPage.enterAmountToPay')}
+                    </p>
+                  </div>
+                </div>
 
-                 {/* Payment Method Selection */}
-                 <div className="space-y-4 mb-6">
-                   <h3 className="text-white font-medium">{t('paymentMethod')}</h3>
+                {/* Payment Method Selection */}
+                <div className="space-y-4 mb-6">
+                  <h3 className="text-white font-medium">{t('payment.paymentMethod')}</h3>
                   <div className="grid grid-cols-1 gap-3">
                     {paymentMethods.map((method) => (
                       <div
@@ -733,7 +732,7 @@ const Payment = () => {
                         }`}
                         onClick={() => handlePaymentMethodChange(method.id)}
                       >
-                        <div className="p-4 flex items-center space-x-3">
+                        <div className={`p-4 flex items-center space-x-3 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
                           <method.icon className="h-5 w-5 text-white" />
                           <div className="flex-1">
                             <p className="text-white font-medium">{method.name}</p>
@@ -753,23 +752,23 @@ const Payment = () => {
                 {/* Credit Card Form */}
                 {selectedMethod === 'credit-card' && (
                   <form onSubmit={handleCreditCardPayment} className="space-y-4">
-                     <div>
-                       <label className="block text-white text-sm font-medium mb-2">
-                         {t('cardholderName')}
-                       </label>
-                       <input
-                         type="text"
-                         value={cardholderName}
-                         onChange={(e) => setCardholderName(e.target.value)}
-                         className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
-                         placeholder={t('enterCardholderName')}
-                         required
-                       />
-                     </div>
-                     <div>
-                       <label className="block text-white text-sm font-medium mb-2">
-                         {t('cardNumber')}
-                       </label>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        {t('paymentPage.cardholderName')}
+                      </label>
+                      <input
+                        type="text"
+                        value={cardholderName}
+                        onChange={(e) => setCardholderName(e.target.value)}
+                        className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-md text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-russian-gold"
+                        placeholder={t('paymentPage.enterCardholderName')}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-white text-sm font-medium mb-2">
+                        {t('paymentPage.cardNumber')}
+                      </label>
                       <input
                         type="text"
                         value={cardNumber}
@@ -786,10 +785,10 @@ const Payment = () => {
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                       <div>
-                         <label className="block text-white text-sm font-medium mb-2">
-                           {t('expiryDate')}
-                         </label>
+                      <div>
+                        <label className="block text-white text-sm font-medium mb-2">
+                          {t('paymentPage.expiryDate')}
+                        </label>
                         <input
                           type="text"
                           value={expiryDate}
@@ -809,10 +808,10 @@ const Payment = () => {
                           required
                         />
                       </div>
-                       <div>
-                         <label className="block text-white text-sm font-medium mb-2">
-                           {t('cvv')}
-                         </label>
+                      <div>
+                        <label className="block text-white text-sm font-medium mb-2">
+                          {t('paymentPage.cvv')}
+                        </label>
                         <input
                           type="text"
                           value={cvv}
@@ -828,23 +827,23 @@ const Payment = () => {
                       </div>
                     </div>
 
-                     <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                       <h4 className="text-blue-800 dark:text-blue-200 font-medium mb-2">{t('bankTransferInfo')}</h4>
-                       <p className="text-blue-700 dark:text-blue-300 text-sm mb-2">
-                         {t('bankTransferDescription')}
-                       </p>
-                       <p className="text-blue-800 dark:text-blue-200 text-sm font-mono">
-                         info@volgaservices.com
-                       </p>
-                     </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                      <h4 className="text-blue-800 dark:text-blue-200 font-medium mb-2">{t('paymentPage.bankTransferInfo')}</h4>
+                      <p className="text-blue-700 dark:text-blue-300 text-sm mb-2">
+                        {t('paymentPage.bankTransferDescription')}
+                      </p>
+                      <p className="text-blue-800 dark:text-blue-200 text-sm font-mono">
+                        info@volgaservices.com
+                      </p>
+                    </div>
 
-                     <Button
-                       type="submit"
-                       disabled={isProcessing || finalAmount <= 0}
-                       className="w-full bg-russian-gold hover:bg-russian-gold/90 text-white font-semibold py-3"
-                     >
-                       {isProcessing ? t('processingPayment') : t('payWithCreditCard', { amount: finalAmount.toFixed(2) })}
-                     </Button>
+                    <Button
+                      type="submit"
+                      disabled={isProcessing || finalAmount <= 0}
+                      className="w-full bg-russian-gold hover:bg-russian-gold/90 text-white font-semibold py-3"
+                    >
+                      {isProcessing ? t('paymentPage.processingPayment') : t('paymentPage.payWithCard', { amount: finalAmount.toFixed(2) })}
+                    </Button>
                   </form>
                 )}
 
@@ -852,7 +851,7 @@ const Payment = () => {
                 {selectedMethod === 'paypal' && (
                   <div className="space-y-4">
                     <div className="bg-white/5 rounded-lg p-4 border border-white/20">
-                      <h4 className="text-white font-medium mb-3">PayPal Payment</h4>
+                      <h4 className="text-white font-medium mb-3">{t('paymentPage.paypalPayment')}</h4>
                       {paypalError ? (
                         <div className="text-red-400 text-sm mb-4 p-3 bg-red-500/10 rounded">
                           {paypalError}
@@ -864,22 +863,20 @@ const Payment = () => {
                             className="ml-2 text-xs bg-red-500/20 hover:bg-red-500/30"
                             size="sm"
                           >
-                            Retry
+                            {t('paymentPage.retry')}
                           </Button>
                         </div>
                       ) : (
                         <p className="text-white/70 text-sm mb-4">
-                          Click the PayPal button below to complete your payment securely.
+                          {t('paymentPage.completeWithPaypal')}
                         </p>
                       )}
                       <div 
-                        ref={paypalContainerRef}
-                        className="min-h-[50px]"
+                        ref={paypalContainerRef} 
+                        className="min-h-[100px] flex items-center justify-center"
                       >
                         {!paypalScriptLoaded && !paypalError && (
-                          <div className="flex items-center justify-center py-4">
-                            <div className="text-white/60">Loading PayPal...</div>
-                          </div>
+                          <div className="text-white/50 text-sm">{t('loading')}...</div>
                         )}
                       </div>
                     </div>
@@ -889,93 +886,41 @@ const Payment = () => {
                 {/* Cash on Arrival Form */}
                 {selectedMethod === 'cash-on-arrival' && (
                   <div className="space-y-4">
-                    <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-200">
-                          <MessageCircle className="h-5 w-5" />
-                          Payment upon Arrival
-                        </CardTitle>
-                        <CardDescription className="text-green-700 dark:text-green-300">
-                          Confirm your booking and arrange payment details via WhatsApp
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border">
-                          <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">How it works:</h4>
-                          <ul className="text-sm text-slate-700 dark:text-slate-300 space-y-1">
-                            <li>• Confirm your booking by clicking the button below</li>
-                            <li>• You'll be redirected to WhatsApp to contact our team</li>
-                            <li>• Arrange service details and confirm payment upon arrival</li>
-                            <li>• Pay cash when the service is delivered</li>
-                          </ul>
-                        </div>
-                        
-                        <div className="flex justify-between items-center p-3 bg-white dark:bg-slate-800 rounded-lg border">
-                          <div>
-                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Amount to Pay on Arrival</p>
-                            <p className="text-lg font-bold text-slate-900 dark:text-slate-100">${finalAmount.toFixed(2)} USD</p>
-                          </div>
-                          <DollarSign className="h-5 w-5 text-green-600" />
-                        </div>
-                        
-                        {/* Customer Info Preview */}
-                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
-                          <h5 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Contact Information:</h5>
-                          <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                            <p>• Name: {bookingData?.userInfo?.fullName}</p>
-                            <p>• Email: {bookingData?.userInfo?.email}</p>
-                            <p>• Phone: {bookingData?.userInfo?.phone}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Button
-                      onClick={handleCashPaymentConfirmation}
-                      disabled={finalAmount <= 0 || !bookingData?.userInfo}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 flex items-center gap-2"
-                    >
-                      <MessageCircle className="h-5 w-5" />
-                      Confirm Booking & Contact via WhatsApp
-                    </Button>
+                    <div className="bg-white/5 rounded-lg p-4 border border-white/20">
+                      <h4 className="text-white font-medium mb-3">{t('paymentPage.cashPaymentTitle')}</h4>
+                      <p className="text-white/70 text-sm mb-4">
+                        {t('paymentPage.cashPaymentDesc')}
+                      </p>
+                      <Button
+                        onClick={handleCashPaymentConfirmation}
+                        className="w-full bg-russian-gold hover:bg-russian-gold/90 text-white font-semibold py-3"
+                        disabled={finalAmount <= 0}
+                      >
+                        <MessageCircle className="h-5 w-5 mr-2" />
+                        {t('paymentPage.confirmAndWhatsApp')}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Enhanced Booking Summary */}
+            {/* Booking Summary */}
             <Card className="bg-white/10 backdrop-blur-sm border-white/20">
               <CardHeader>
-                <CardTitle className="text-white">Booking Summary</CardTitle>
-                <CardDescription className="text-white/70">
-                  Review your service details before payment
-                </CardDescription>
+                <CardTitle className={`text-white flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <DollarSign className="h-5 w-5" />
+                  {t('paymentPage.bookingDetails')}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {renderBookingDetails()}
-
-                <div className="border-t border-white/20 pt-4 mt-6">
-                  <div className="flex justify-between text-white text-lg font-bold">
-                    <span>Total:</span>
-                    <span className="text-russian-gold">${finalAmount.toFixed(2)}</span>
-                  </div>
-                  {finalAmount !== (bookingData.totalPrice || 0) && bookingData.totalPrice && (
-                    <p className="text-white/60 text-sm mt-1">
-                      Original amount: ${bookingData.totalPrice || 0}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-2 text-white/70 text-sm mt-4">
-                  <Shield className="h-4 w-4" />
-                  <span>Your payment is protected by secure encryption</span>
-                </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
-      
+
       {/* Footer */}
       <Footer />
     </div>
