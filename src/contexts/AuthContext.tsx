@@ -57,23 +57,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchUserRoles(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    // Listen for auth changes
+    // CRITICAL: Set up auth state listener FIRST (before checking session)
+    // This prevents missing auth events during initialization
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Only synchronous state updates here to avoid deadlocks
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Defer role fetching to avoid deadlock
+        // Defer role fetching with setTimeout(0) to avoid Supabase deadlock
         setTimeout(() => {
           fetchUserRoles(session.user.id);
         }, 0);
@@ -118,9 +110,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Track logout events
       if (event === 'SIGNED_OUT') {
-        // Note: We can't easily get user info after signout, but we tracked the login
         console.log('User signed out');
       }
+      
+      // Handle token refresh
+      if (event === 'TOKEN_REFRESHED') {
+        console.log('Token refreshed successfully');
+      }
+    });
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        await fetchUserRoles(session.user.id);
+      }
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
