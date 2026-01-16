@@ -120,9 +120,9 @@ const EnhancedPayment = () => {
   if (priceLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
+        <div className={`text-center ${isRTL ? 'rtl' : ''}`}>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading payment details...</p>
+          <p>{t('enhancedPayment.loadingPaymentDetails')}</p>
         </div>
       </div>
     );
@@ -132,14 +132,13 @@ const EnhancedPayment = () => {
   if (!hasPayablePrice) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <h2 className="text-2xl font-bold mb-4">Price Not Set</h2>
+        <div className={`text-center max-w-md mx-auto p-6 ${isRTL ? 'rtl' : ''}`}>
+          <h2 className="text-2xl font-bold mb-4">{t('enhancedPayment.priceNotSet')}</h2>
           <p className="text-muted-foreground mb-6">
-            Admin must set the final price before you can proceed with payment.
-            Please check back later or contact support.
+            {t('enhancedPayment.priceNotSetDesc')}
           </p>
           <Button onClick={() => navigate('/user-dashboard')}>
-            Go to Dashboard
+            {t('enhancedPayment.goToDashboard')}
           </Button>
         </div>
       </div>
