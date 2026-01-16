@@ -242,16 +242,17 @@ const Booking = () => {
       hasAllRequiredFields: true
     });
 
-    // Save to localStorage as backup
-    localStorage.setItem('bookingData', JSON.stringify(bookingData));
-
     toast({
       title: 'Booking Details Saved',
       description: 'Proceeding to payment...',
     });
 
-    navigate('/payment', {
-      state: { bookingData }
+    // Navigate to unified payment page (EnhancedPayment)
+    navigate('/enhanced-payment', {
+      state: { 
+        bookingData,
+        draftId 
+      }
     });
   };
 

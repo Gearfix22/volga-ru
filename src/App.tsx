@@ -20,8 +20,9 @@ import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Booking from "./pages/Booking";
-import Payment from "./pages/Payment";
-import BookingConfirmation from "./pages/BookingConfirmation";
+// Legacy pages - kept for reference but not used (redirected)
+// import Payment from "./pages/Payment";
+// import BookingConfirmation from "./pages/BookingConfirmation";
 import EnhancedBooking from "./pages/EnhancedBooking";
 import EnhancedPayment from "./pages/EnhancedPayment";
 import EnhancedConfirmation from "./pages/EnhancedConfirmation";
@@ -118,16 +119,10 @@ const App = () => {
                     <Booking />
                   </CustomerRouteGuard>
                 } />
-                <Route path="/payment" element={
-                  <CustomerRouteGuard>
-                    <Payment />
-                  </CustomerRouteGuard>
-                } />
-                <Route path="/booking-confirmation" element={
-                  <CustomerRouteGuard>
-                    <BookingConfirmation />
-                  </CustomerRouteGuard>
-                } />
+                {/* Legacy payment route - redirect to unified payment */}
+                <Route path="/payment" element={<Navigate to="/enhanced-payment" replace />} />
+                {/* Legacy booking confirmation - redirect to unified confirmation */}
+                <Route path="/booking-confirmation" element={<Navigate to="/enhanced-confirmation" replace />} />
                 <Route path="/enhanced-booking" element={
                   <CustomerRouteGuard>
                     <EnhancedBooking />

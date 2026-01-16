@@ -2072,5 +2072,11 @@
     "awaitingAdminApproval": "Awaiting admin approval",
     "confirmProceed": "Confirm & Proceed to Payment",
     "waitingAdminApprove": "Waiting for admin to approve the price before you can proceed."
+  },
+  "enhancedPayment": {
+    "loadingPaymentDetails": "Loading payment details...",
+    "priceNotSet": "Price Not Yet Set",
+    "priceNotSetDesc": "The admin has not yet set a price for your booking. You will be notified when the price is ready.",
+    "goToDashboard": "Go to Dashboard"
   }
 }

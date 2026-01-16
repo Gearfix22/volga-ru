@@ -2013,5 +2013,11 @@
     "awaitingAdminApproval": "في انتظار موافقة المشرف",
     "confirmProceed": "تأكيد والمتابعة للدفع",
     "waitingAdminApprove": "في انتظار موافقة المشرف على السعر قبل المتابعة."
+  },
+  "enhancedPayment": {
+    "loadingPaymentDetails": "جاري تحميل تفاصيل الدفع...",
+    "priceNotSet": "لم يتم تحديد السعر بعد",
+    "priceNotSetDesc": "لم يحدد المشرف سعرًا لحجزك بعد. سيتم إشعارك عندما يكون السعر جاهزًا.",
+    "goToDashboard": "الذهاب إلى لوحة التحكم"
   }
 }
