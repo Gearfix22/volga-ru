@@ -1,5 +1,5 @@
 import { BookingData, DriverBookingDetails, AccommodationDetails, EventsDetails } from '@/types/booking';
-
+import { openExternalLink } from '@/hooks/useWebViewCompat';
 // Add proper typing for payment result
 interface PaymentResult {
   success: boolean;
@@ -146,7 +146,7 @@ I would like to arrange the service details and confirm payment upon arrival. Pl
   const encodedMessage = encodeURIComponent(message);
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
   
-  window.open(whatsappUrl, '_blank');
+  openExternalLink(whatsappUrl);
   
   return whatsappUrl;
 };
