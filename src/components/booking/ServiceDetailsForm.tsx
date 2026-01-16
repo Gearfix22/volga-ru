@@ -152,8 +152,11 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
             <Car className="h-4 w-4" />
             {t('booking.vehicleType')} *
           </Label>
-          <Select value={details.vehicleType || ''} onValueChange={(value) => onUpdateDetail('vehicleType', value)}>
-            <SelectTrigger>
+          <Select 
+            value={details.vehicleType || undefined} 
+            onValueChange={(value) => value && onUpdateDetail('vehicleType', value)}
+          >
+            <SelectTrigger className={!details.vehicleType ? 'text-muted-foreground' : ''}>
               <SelectValue placeholder={t('booking.selectVehicleType')} />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-lg z-50">
@@ -172,8 +175,11 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
             <Users className="h-4 w-4" />
             {t('booking.passengers')} *
           </Label>
-          <Select value={details.passengers || ''} onValueChange={(value) => onUpdateDetail('passengers', value)}>
-            <SelectTrigger>
+          <Select 
+            value={details.passengers || undefined} 
+            onValueChange={(value) => value && onUpdateDetail('passengers', value)}
+          >
+            <SelectTrigger className={!details.passengers ? 'text-muted-foreground' : ''}>
               <SelectValue placeholder={t('booking.selectPassengers')} />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-lg z-50">
@@ -259,8 +265,11 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
             <Users className="h-4 w-4" />
             {t('booking.guests')} *
           </Label>
-          <Select value={details.guests || ''} onValueChange={(value) => onUpdateDetail('guests', value)}>
-            <SelectTrigger>
+          <Select 
+            value={details.guests || undefined} 
+            onValueChange={(value) => value && onUpdateDetail('guests', value)}
+          >
+            <SelectTrigger className={!details.guests ? 'text-muted-foreground' : ''}>
               <SelectValue placeholder={t('booking.selectGuests')} />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-lg z-50">
@@ -277,8 +286,11 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
             <Building2 className="h-4 w-4" />
             {t('booking.roomPreference')}
           </Label>
-          <Select value={details.roomPreference || ''} onValueChange={(value) => onUpdateDetail('roomPreference', value)}>
-            <SelectTrigger>
+          <Select 
+            value={details.roomPreference || undefined} 
+            onValueChange={(value) => value && onUpdateDetail('roomPreference', value)}
+          >
+            <SelectTrigger className={!details.roomPreference ? 'text-muted-foreground' : ''}>
               <SelectValue placeholder={t('booking.selectRoomPreference')} />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-lg z-50">
@@ -321,8 +333,11 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
           <Ticket className="h-4 w-4" />
           {t('booking.eventType')} *
         </Label>
-        <Select value={details.eventType || ''} onValueChange={(value) => onUpdateDetail('eventType', value)}>
-          <SelectTrigger>
+        <Select 
+          value={details.eventType || undefined} 
+          onValueChange={(value) => value && onUpdateDetail('eventType', value)}
+        >
+          <SelectTrigger className={!details.eventType ? 'text-muted-foreground' : ''}>
             <SelectValue placeholder={t('booking.selectEventType')} />
           </SelectTrigger>
           <SelectContent className="bg-background border shadow-lg z-50">
@@ -379,8 +394,11 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
             <Users className="h-4 w-4" />
             {t('booking.numberOfPeople')} *
           </Label>
-          <Select value={details.numberOfPeople || ''} onValueChange={(value) => onUpdateDetail('numberOfPeople', value)}>
-            <SelectTrigger>
+          <Select 
+            value={details.numberOfPeople || undefined} 
+            onValueChange={(value) => value && onUpdateDetail('numberOfPeople', value)}
+          >
+            <SelectTrigger className={!details.numberOfPeople ? 'text-muted-foreground' : ''}>
               <SelectValue placeholder={t('booking.selectNumberOfPeople')} />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-lg z-50">
@@ -452,8 +470,11 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
             <Clock className="h-4 w-4" />
             {t('booking.duration')} *
           </Label>
-          <Select value={details.duration || ''} onValueChange={(value) => onUpdateDetail('duration', value)}>
-            <SelectTrigger>
+          <Select 
+            value={details.duration || undefined} 
+            onValueChange={(value) => value && onUpdateDetail('duration', value)}
+          >
+            <SelectTrigger className={!details.duration ? 'text-muted-foreground' : ''}>
               <SelectValue placeholder={t('booking.selectDuration')} />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-lg z-50">
@@ -470,8 +491,11 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
             <Users className="h-4 w-4" />
             {t('booking.numberOfPeople')} *
           </Label>
-          <Select value={details.numberOfPeople || ''} onValueChange={(value) => onUpdateDetail('numberOfPeople', value)}>
-            <SelectTrigger>
+          <Select 
+            value={details.numberOfPeople || undefined} 
+            onValueChange={(value) => value && onUpdateDetail('numberOfPeople', value)}
+          >
+            <SelectTrigger className={!details.numberOfPeople ? 'text-muted-foreground' : ''}>
               <SelectValue placeholder={t('booking.selectNumberOfPeople')} />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-lg z-50">
