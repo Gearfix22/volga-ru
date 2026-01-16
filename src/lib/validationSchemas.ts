@@ -203,6 +203,37 @@ export const eventsSchema = z.object({
     .or(z.literal('')),
 });
 
+// SERVICE 4: Tourist Guide Schema
+// NOTE: Field names match the form in ServiceDetailsForm.tsx
+export const guideSchema = z.object({
+  location: z
+    .string()
+    .trim()
+    .min(2, { message: "Location must be at least 2 characters" })
+    .max(200, { message: "Location must be less than 200 characters" }),
+  date: z
+    .string()
+    .refine((date) => new Date(date) >= new Date(new Date().setHours(0, 0, 0, 0)), {
+      message: "Tour date must be today or in the future",
+    }),
+  duration: z
+    .enum(['2', '4', '6', '8', 'custom'], {
+      errorMap: () => ({ message: "Please select a duration" }),
+    }),
+  numberOfPeople: z
+    .string()
+    .refine((val) => {
+      const num = parseInt(val);
+      return !isNaN(num) && num >= 1 && num <= 20;
+    }, { message: "Group size must be between 1 and 20" }),
+  specialRequests: z
+    .string()
+    .trim()
+    .max(1000, { message: "Special requests must be less than 1000 characters" })
+    .optional()
+    .or(z.literal('')),
+});
+
 // ========================================
 // LEGACY SCHEMAS (for backward compatibility)
 // ========================================

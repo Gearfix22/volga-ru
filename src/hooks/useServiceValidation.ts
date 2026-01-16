@@ -3,25 +3,12 @@ import {
   driverSchema,
   accommodationSchema,
   eventsSchema,
+  guideSchema, // Now exported from central location
   // Legacy imports for backward compatibility
   transportationSchema, 
   hotelSchema, 
   customTripSchema 
 } from '@/lib/validationSchemas';
-import { z } from 'zod';
-
-// Guide service validation schema
-const guideSchema = z.object({
-  tourArea: z.string().min(2, { message: "Tour area is required" }),
-  tourDate: z.string().refine((date) => new Date(date) >= new Date(new Date().setHours(0, 0, 0, 0)), {
-    message: "Tour date must be today or in the future",
-  }),
-  tourStartTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Invalid time format" }),
-  tourDurationHours: z.number().min(1).max(12).optional().default(2),
-  guideLanguage: z.string().optional().default('en'),
-  groupSize: z.number().min(1).max(50).optional().default(1),
-  specialInterests: z.string().max(500).optional().or(z.literal('')),
-});
 
 export const useServiceValidation = () => {
   const { toast } = useToast();

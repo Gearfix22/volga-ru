@@ -23,7 +23,7 @@ import {
 } from '../_shared/auth.ts'
 
 // Valid service types
-const VALID_SERVICE_TYPES = ['Driver', 'Accommodation', 'Events', 'Guide'] as const
+const VALID_SERVICE_TYPES = ['Driver', 'Accommodation', 'Events', 'Guide'] as const;
 
 // Validate booking payload
 function validateBookingPayload(payload: any): { valid: boolean; error?: string } {
