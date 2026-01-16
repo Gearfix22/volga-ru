@@ -89,6 +89,8 @@ export default {
 				},
 				volga: {
 					'logo-blue': '#2563eb',
+					'logo-red': '#dc2626',
+					'navy': '#1e3a5f',
 					'pearl': '#e2e8f0',
 				}
 			},
