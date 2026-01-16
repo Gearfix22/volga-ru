@@ -33,7 +33,10 @@ export const DashboardOverview: React.FC = () => {
 
   const recentBookings = bookings?.slice(0, 3) || [];
   const totalBookings = bookings?.length || 0;
-  const pendingBookings = bookings?.filter(b => b.status === 'pending').length || 0;
+  
+  // ALIGNED WITH DATABASE ENUM - Pending includes all waiting statuses
+  const WAITING_STATUSES = ['pending', 'under_review', 'approved', 'awaiting_payment'];
+  const pendingBookings = bookings?.filter(b => WAITING_STATUSES.includes(b.status)).length || 0;
   const totalSpent = bookings?.reduce((sum, booking) => sum + (booking.total_price || 0), 0) || 0;
 
   if (isLoading) {

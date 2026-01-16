@@ -1,15 +1,22 @@
 /**
- * FINAL BOOKING WORKFLOW - Aligned with booking_prices table
+ * FINAL BOOKING WORKFLOW - Aligned with Database ENUM
  * 
  * SINGLE SOURCE OF TRUTH FOR BOOKING STATUS (Frontend)
  * 
+ * DATABASE ENUM (source of truth):
+ * draft, pending, under_review, approved, awaiting_payment, paid,
+ * confirmed, assigned, accepted, on_trip, completed, cancelled, rejected
+ * 
  * Workflow:
  * 1. draft → Customer selecting service
- * 2. under_review → Customer confirmed, waiting for admin
- * 3. awaiting_customer_confirmation → Admin approved price (locked = true)
- * 4. paid → Customer paid (price LOCKED)
- * 5. in_progress → Driver/guide assigned, service ongoing
- * 6. completed → Service completed
+ * 2. pending/under_review → Customer confirmed, waiting for admin
+ * 3. approved/awaiting_payment → Admin set price, waiting for payment
+ * 4. paid → Customer paid
+ * 5. confirmed → Payment confirmed by admin
+ * 6. assigned → Driver/guide assigned
+ * 7. accepted → Driver/guide accepted
+ * 8. on_trip → Service in progress
+ * 9. completed → Service completed
  * 
  * Terminal states: cancelled, rejected
  * 
@@ -21,30 +28,35 @@
 
 import { BookingStatus } from '@/types/booking';
 
-// All valid booking statuses
+// All valid booking statuses - ALIGNED WITH DATABASE ENUM
 export const BOOKING_STATUSES = [
   'draft',
+  'pending',
   'under_review',
-  'awaiting_customer_confirmation',
+  'approved',
+  'awaiting_payment',
   'paid',
-  'in_progress',
+  'confirmed',
+  'assigned',
+  'accepted',
+  'on_trip',
   'completed',
   'cancelled',
   'rejected',
-  // Legacy statuses (for backward compatibility)
-  'pending',
-  'confirmed',
 ] as const;
 
 // Statuses that indicate ACTIVE bookings (in progress, not final)
 export const ACTIVE_STATUSES = [
   'draft',
-  'under_review',
-  'awaiting_customer_confirmation',
-  'paid',
-  'in_progress',
   'pending',
+  'under_review',
+  'approved',
+  'awaiting_payment',
+  'paid',
   'confirmed',
+  'assigned',
+  'accepted',
+  'on_trip',
 ];
 
 // Statuses that indicate FINAL/COMPLETED bookings
@@ -53,46 +65,57 @@ export const FINAL_STATUSES = ['completed', 'cancelled', 'rejected'];
 // Statuses where price can be edited
 export const PRICE_EDITABLE_STATUSES = [
   'draft',
-  'under_review',
-  'awaiting_customer_confirmation',
   'pending',
+  'under_review',
+  'approved',
 ];
 
-// Valid status transitions map
+// Valid status transitions map - ALIGNED WITH DATABASE ENUM
 const VALID_TRANSITIONS: Record<string, string[]> = {
-  draft: ['under_review', 'cancelled'],
-  pending: ['under_review', 'cancelled'], // Legacy support
-  under_review: ['awaiting_customer_confirmation', 'cancelled', 'rejected'],
-  awaiting_customer_confirmation: ['paid', 'cancelled'],
-  paid: ['in_progress'],
-  in_progress: ['completed', 'cancelled'],
+  draft: ['pending', 'under_review', 'cancelled'],
+  pending: ['under_review', 'approved', 'cancelled', 'rejected'],
+  under_review: ['approved', 'awaiting_payment', 'cancelled', 'rejected'],
+  approved: ['awaiting_payment', 'cancelled'],
+  awaiting_payment: ['paid', 'cancelled'],
+  paid: ['confirmed'],
+  confirmed: ['assigned'],
+  assigned: ['accepted', 'cancelled'],
+  accepted: ['on_trip', 'cancelled'],
+  on_trip: ['completed', 'cancelled'],
   completed: [], // Terminal state
   cancelled: [], // Terminal state
   rejected: [], // Terminal state
 };
 
-// Human-readable status labels
+// Human-readable status labels - ALIGNED WITH DATABASE ENUM
 export const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft',
   pending: 'Pending Review',
   under_review: 'Under Review',
-  awaiting_customer_confirmation: 'Awaiting Confirmation',
+  approved: 'Approved',
+  awaiting_payment: 'Awaiting Payment',
   paid: 'Paid',
-  in_progress: 'In Progress',
+  confirmed: 'Confirmed',
+  assigned: 'Assigned',
+  accepted: 'Accepted',
+  on_trip: 'On Trip',
   completed: 'Completed',
   cancelled: 'Cancelled',
   rejected: 'Rejected',
-  confirmed: 'Confirmed', // Legacy
 };
 
-// Status colors for UI (using semantic colors)
+// Status colors for UI (using semantic colors) - ALIGNED WITH DATABASE ENUM
 export const STATUS_COLORS: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
   pending: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300',
   under_review: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300',
-  awaiting_customer_confirmation: 'bg-blue-500/20 text-blue-700 dark:text-blue-300',
+  approved: 'bg-blue-500/20 text-blue-700 dark:text-blue-300',
+  awaiting_payment: 'bg-blue-500/20 text-blue-700 dark:text-blue-300',
   paid: 'bg-green-500/20 text-green-700 dark:text-green-300',
-  in_progress: 'bg-orange-500/20 text-orange-700 dark:text-orange-300',
+  confirmed: 'bg-green-500/20 text-green-700 dark:text-green-300',
+  assigned: 'bg-purple-500/20 text-purple-700 dark:text-purple-300',
+  accepted: 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300',
+  on_trip: 'bg-orange-500/20 text-orange-700 dark:text-orange-300',
   completed: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300',
   cancelled: 'bg-destructive/20 text-destructive',
   rejected: 'bg-destructive/20 text-destructive',
@@ -132,14 +155,18 @@ export function getValidNextStatuses(currentStatus: string): string[] {
  */
 export function getNextStatus(
   currentStatus: string, 
-  action: 'submit' | 'set_price' | 'approve_price' | 'pay' | 'start' | 'complete' | 'cancel' | 'reject'
+  action: 'submit' | 'set_price' | 'approve_price' | 'pay' | 'confirm' | 'assign' | 'accept' | 'start' | 'complete' | 'cancel' | 'reject'
 ): string | null {
+  // Map actions to database status values
   const actionToStatus: Record<string, string> = {
-    submit: 'under_review',
-    set_price: 'under_review', // Price set but not approved yet
-    approve_price: 'awaiting_customer_confirmation', // Price approved and locked
+    submit: 'pending',
+    set_price: 'approved',
+    approve_price: 'awaiting_payment',
     pay: 'paid',
-    start: 'in_progress',
+    confirm: 'confirmed',
+    assign: 'assigned',
+    accept: 'accepted',
+    start: 'on_trip',
     complete: 'completed',
     cancel: 'cancelled',
     reject: 'rejected',

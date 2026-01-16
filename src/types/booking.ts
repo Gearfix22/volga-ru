@@ -3,27 +3,55 @@ import type { ServiceType } from '@/types/service';
 export type { ServiceType };
 
 /**
- * FINAL BOOKING WORKFLOW:
+ * FINAL BOOKING WORKFLOW (Aligned with Database ENUM):
  * 
  * 1. Customer selects service → status = 'draft'
- * 2. Customer confirms (NO PAYMENT) → status = 'under_review'
- * 3. Admin reviews and sets price → status = 'awaiting_customer_confirmation'
- * 4. Customer confirms and pays → status = 'paid'
- * 5. Admin assigns driver/guide → status = 'in_progress'
- * 6. Service completed → status = 'completed'
+ * 2. Customer confirms (NO PAYMENT) → status = 'pending' or 'under_review'
+ * 3. Admin reviews and sets price → status = 'approved' or 'awaiting_payment'
+ * 4. Customer pays → status = 'paid'
+ * 5. Admin assigns driver/guide → status = 'confirmed' then 'assigned'
+ * 6. Driver accepts → status = 'accepted'
+ * 7. Trip starts → status = 'on_trip'
+ * 8. Service completed → status = 'completed'
  * 
  * PRICING: booking_prices.admin_price is the ONLY payable price
+ * 
+ * DATABASE ENUM values (source of truth):
+ * draft, pending, under_review, approved, awaiting_payment, paid, 
+ * confirmed, assigned, accepted, on_trip, completed, cancelled, rejected
  */
 export type BookingStatus = 
-  | 'draft'                           // Customer selecting service
-  | 'pending'                         // Legacy - treated as under_review
-  | 'under_review'                    // Customer confirmed, waiting for admin
-  | 'awaiting_customer_confirmation'  // Admin set price, awaiting customer confirmation
-  | 'paid'                            // Customer paid
-  | 'in_progress'                     // Driver/guide assigned, service ongoing
-  | 'completed'                       // Service completed
-  | 'cancelled'                       // Cancelled by admin or customer
-  | 'rejected';                       // Rejected by admin
+  | 'draft'                // Customer selecting service
+  | 'pending'              // Customer submitted, waiting for admin review
+  | 'under_review'         // Admin is reviewing the booking
+  | 'approved'             // Admin approved, price may be set
+  | 'awaiting_payment'     // Price set and locked, waiting for payment
+  | 'paid'                 // Customer paid
+  | 'confirmed'            // Payment confirmed, ready for assignment
+  | 'assigned'             // Driver/guide assigned
+  | 'accepted'             // Driver/guide accepted the assignment
+  | 'on_trip'              // Service in progress
+  | 'completed'            // Service completed
+  | 'cancelled'            // Cancelled by admin or customer
+  | 'rejected';            // Rejected by admin
+
+// CLASSIFICATION HELPERS - ALIGNED WITH DATABASE
+export const ACTIVE_BOOKING_STATUSES: BookingStatus[] = [
+  'draft', 'pending', 'under_review', 'approved', 'awaiting_payment', 
+  'paid', 'confirmed', 'assigned', 'accepted', 'on_trip'
+];
+
+export const COMPLETED_BOOKING_STATUSES: BookingStatus[] = ['completed'];
+
+export const CANCELLED_BOOKING_STATUSES: BookingStatus[] = ['cancelled', 'rejected'];
+
+export const FINAL_BOOKING_STATUSES: BookingStatus[] = ['completed', 'cancelled', 'rejected'];
+
+// Statuses that indicate user can pay
+export const PAYABLE_STATUSES: BookingStatus[] = ['awaiting_payment', 'approved'];
+
+// Statuses that show booking is actively being worked on
+export const IN_PROGRESS_STATUSES: BookingStatus[] = ['assigned', 'accepted', 'on_trip'];
 
 // Payment methods
 export type PaymentMethod = 'visa' | 'cash' | 'bank_transfer';

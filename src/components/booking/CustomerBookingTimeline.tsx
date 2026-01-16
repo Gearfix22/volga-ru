@@ -21,21 +21,28 @@ interface CustomerBookingTimelineProps {
   showEstimates?: boolean;
 }
 
+// Map all database statuses to timeline stage index - ALIGNED WITH DATABASE ENUM
 const STATUS_INDEX: Record<string, number> = {
+  // Stage 0: Draft
   draft: 0,
+  // Stage 1: Under Review
+  pending: 1,
   under_review: 1,
-  awaiting_customer_confirmation: 2,
-  awaiting_payment: 2,
+  // Stage 2: Price Set / Awaiting Payment
   approved: 2,
+  awaiting_payment: 2,
+  awaiting_customer_confirmation: 2, // Legacy
+  confirmed: 2, // Legacy
+  // Stage 3: Paid
   paid: 3,
+  // Stage 4: In Progress (assigned, accepted, on_trip)
   in_progress: 4,
   assigned: 4,
   accepted: 4,
   on_trip: 4,
+  // Stage 5: Completed
   completed: 5,
-  // Legacy mappings
-  pending: 1,
-  confirmed: 2,
+  // Terminal states
   cancelled: -1,
   rejected: -1,
 };

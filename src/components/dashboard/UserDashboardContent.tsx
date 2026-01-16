@@ -88,10 +88,25 @@ export const UserDashboardContent = () => {
       const drafts = await getDraftBookings();
       setDraftBookings(drafts);
 
-      // Calculate stats
+      // ALIGNED WITH DATABASE ENUM - Correct status classification
+      const FINAL_STATUSES = ['completed', 'cancelled', 'rejected'];
+      const PAID_CONFIRMED_STATUSES = ['paid', 'confirmed'];
+      const IN_PROGRESS_STATUSES = ['assigned', 'accepted', 'on_trip'];
+      const WAITING_STATUSES = ['pending', 'under_review', 'approved', 'awaiting_payment'];
+      
       const total = bookingsData?.length || 0;
-      const confirmed = bookingsData?.filter(b => b.status === 'confirmed' || b.status === 'completed').length || 0;
-      const pending = bookingsData?.filter(b => b.status === 'pending').length || 0;
+      
+      // "Confirmed" = Paid + In Progress + Completed
+      const confirmed = bookingsData?.filter(b => 
+        PAID_CONFIRMED_STATUSES.includes(b.status) || 
+        IN_PROGRESS_STATUSES.includes(b.status) || 
+        b.status === 'completed'
+      ).length || 0;
+      
+      // "Pending" = Awaiting admin action or customer payment
+      const pending = bookingsData?.filter(b => 
+        WAITING_STATUSES.includes(b.status)
+      ).length || 0;
 
       setStats({
         total,
@@ -267,7 +282,7 @@ export const UserDashboardContent = () => {
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                 </div>
-              ) : bookings.filter(b => b.status !== 'cancelled' && b.status !== 'completed').length === 0 ? (
+              ) : bookings.filter(b => !['completed', 'cancelled', 'rejected'].includes(b.status)).length === 0 ? (
                 <div className="text-center py-8">
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">{t('emptyStates.noActiveBookings')}</p>
@@ -277,7 +292,7 @@ export const UserDashboardContent = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {bookings.filter(b => b.status !== 'cancelled' && b.status !== 'completed').map((booking) => (
+                  {bookings.filter(b => !['completed', 'cancelled', 'rejected'].includes(b.status)).map((booking) => (
                     <Card key={booking.id} className="p-4">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="space-y-1">

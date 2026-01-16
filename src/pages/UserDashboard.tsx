@@ -45,7 +45,18 @@ function BookingCardWithTimeline({ booking, onPayNow }: { booking: Booking; onPa
   const [expanded, setExpanded] = useState(false);
   const { t, isRTL } = useLanguage();
   
-  const isActiveBooking = ['pending', 'confirmed', 'assigned', 'accepted', 'on_trip'].includes(booking.status);
+  // ALIGNED WITH DATABASE ENUM - Active bookings are all non-final statuses
+  const FINAL_STATUSES = ['completed', 'cancelled', 'rejected'];
+  const IN_PROGRESS_STATUSES = ['assigned', 'accepted', 'on_trip'];
+  const PAID_STATUSES = ['paid', 'confirmed'];
+  const WAITING_STATUSES = ['pending', 'under_review', 'approved', 'awaiting_payment'];
+  
+  const isActiveBooking = !FINAL_STATUSES.includes(booking.status);
+  const isInProgress = IN_PROGRESS_STATUSES.includes(booking.status);
+  const isPaid = PAID_STATUSES.includes(booking.status);
+  const isWaiting = WAITING_STATUSES.includes(booking.status);
+  const isCompleted = booking.status === 'completed';
+  
   // Use can_pay from v_booking_payment_guard
   const canPayNow = booking.canPay === true;
 
@@ -57,20 +68,20 @@ function BookingCardWithTimeline({ booking, onPayNow }: { booking: Booking; onPa
       >
         <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <div className={`p-2 rounded-full ${
-            booking.status === 'confirmed' || booking.status === 'completed' 
+            isCompleted || isPaid
               ? 'bg-green-100 dark:bg-green-900/20' 
-              : booking.status === 'pending'
-              ? 'bg-yellow-100 dark:bg-yellow-900/20'
-              : booking.status === 'on_trip' || booking.status === 'assigned' || booking.status === 'accepted'
+              : isInProgress
               ? 'bg-blue-100 dark:bg-blue-900/20'
+              : isWaiting
+              ? 'bg-yellow-100 dark:bg-yellow-900/20'
               : 'bg-red-100 dark:bg-red-900/20'
           }`}>
-            {booking.status === 'confirmed' || booking.status === 'completed' ? (
+            {isCompleted || isPaid ? (
               <CheckCircle className="h-5 w-5 text-green-600" />
-            ) : booking.status === 'pending' ? (
-              <Clock className="h-5 w-5 text-yellow-600" />
-            ) : booking.status === 'on_trip' || booking.status === 'assigned' || booking.status === 'accepted' ? (
+            ) : isInProgress ? (
               <PlayCircle className="h-5 w-5 text-blue-600" />
+            ) : isWaiting ? (
+              <Clock className="h-5 w-5 text-yellow-600" />
             ) : (
               <Clock className="h-5 w-5 text-red-600" />
             )}
@@ -84,12 +95,12 @@ function BookingCardWithTimeline({ booking, onPayNow }: { booking: Booking; onPa
         </div>
         <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <Badge className={
-            booking.status === 'confirmed' || booking.status === 'completed'
+            isCompleted || isPaid
               ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-              : booking.status === 'pending'
-              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-              : booking.status === 'on_trip' || booking.status === 'assigned' || booking.status === 'accepted'
+              : isInProgress
               ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+              : isWaiting
+              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
               : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
           }>
             {t(getStatusTranslationKey(booking.status))}
@@ -164,19 +175,34 @@ const UserDashboard = () => {
       setBookings(enrichedBookings);
       setDraftBookings(drafts);
 
+      // ALIGNED WITH DATABASE ENUM - Correct status classification
+      const FINAL_STATUSES = ['completed', 'cancelled', 'rejected'];
+      const IN_PROGRESS_STATUSES = ['assigned', 'accepted', 'on_trip'];
+      const PAID_CONFIRMED_STATUSES = ['paid', 'confirmed'];
+      const WAITING_STATUSES = ['pending', 'under_review', 'approved', 'awaiting_payment'];
+      
       const totalBookings = enrichedBookings.length + drafts.length;
-      const confirmedBookings = enrichedBookings.filter(b => 
-        b.status === 'confirmed' || b.status === 'completed'
+      
+      // "Completed" = Only truly completed bookings
+      const completedBookings = enrichedBookings.filter(b => 
+        b.status === 'completed'
       ).length;
+      
+      // "Pending" = Awaiting admin action or payment
       const pendingBookings = enrichedBookings.filter(b => 
-        b.status === 'pending'
+        WAITING_STATUSES.includes(b.status)
+      ).length;
+      
+      // "In Progress" = Being actively worked on (driver assigned, on trip, etc.)
+      const inProgressBookings = enrichedBookings.filter(b =>
+        IN_PROGRESS_STATUSES.includes(b.status) || PAID_CONFIRMED_STATUSES.includes(b.status)
       ).length;
 
       setStats({
         total: totalBookings,
-        confirmed: confirmedBookings,
+        confirmed: completedBookings,  // Renamed semantically to "completed"
         pending: pendingBookings,
-        inProgress: drafts.length
+        inProgress: inProgressBookings + drafts.length
       });
 
     } catch (error) {
