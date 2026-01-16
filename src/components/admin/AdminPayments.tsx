@@ -11,6 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { updatePaymentStatus, deleteBooking } from '@/services/adminService';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface PaymentBooking {
   id: string;
@@ -24,6 +26,8 @@ interface PaymentBooking {
 }
 
 export const AdminPayments = () => {
+  const { t } = useTranslation('common');
+  const { isRTL } = useLanguage();
   const [bookings, setBookings] = useState<PaymentBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,7 +63,7 @@ export const AdminPayments = () => {
       setBookings(data || []);
     } catch (error) {
       console.error('Error fetching payments:', error);
-      toast.error('Failed to fetch payments');
+      toast.error(t('adminPayments.fetchError'));
     } finally {
       setLoading(false);
     }
@@ -69,11 +73,11 @@ export const AdminPayments = () => {
     try {
       setActionLoading(bookingId);
       await updatePaymentStatus(bookingId, newStatus);
-      toast.success('Payment status updated');
+      toast.success(t('adminPayments.statusUpdated'));
       fetchPayments();
     } catch (error) {
       console.error('Error updating payment status:', error);
-      toast.error('Failed to update payment status');
+      toast.error(t('adminPayments.updateError'));
     } finally {
       setActionLoading(null);
     }
@@ -90,13 +94,13 @@ export const AdminPayments = () => {
     try {
       setActionLoading(paymentToDelete.id);
       await deleteBooking(paymentToDelete.id);
-      toast.success('Payment record deleted');
+      toast.success(t('adminPayments.deleted'));
       setDeleteDialogOpen(false);
       setPaymentToDelete(null);
       fetchPayments();
     } catch (error) {
       console.error('Error deleting payment:', error);
-      toast.error('Failed to delete payment');
+      toast.error(t('adminPayments.deleteError'));
     } finally {
       setActionLoading(null);
     }
@@ -117,15 +121,15 @@ export const AdminPayments = () => {
   const getStatusBadge = (status: string | null) => {
     switch (status) {
       case 'paid':
-        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> Paid</Badge>;
+        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" /> {t('paymentStatus.paid')}</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" /> Pending</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" /> {t('paymentStatus.pending')}</Badge>;
       case 'pending_verification':
-        return <Badge className="bg-blue-100 text-blue-800"><Clock className="h-3 w-3 mr-1" /> Awaiting Verification</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800"><Clock className="h-3 w-3 mr-1" /> {t('paymentStatus.awaitingVerification')}</Badge>;
       case 'failed':
-        return <Badge className="bg-red-100 text-red-800"><XCircle className="h-3 w-3 mr-1" /> Failed</Badge>;
+        return <Badge className="bg-red-100 text-red-800"><XCircle className="h-3 w-3 mr-1" /> {t('paymentStatus.failed')}</Badge>;
       default:
-        return <Badge variant="secondary">{status || 'Unknown'}</Badge>;
+        return <Badge variant="secondary">{status || t('paymentStatus.unknown')}</Badge>;
     }
   };
 
@@ -138,14 +142,14 @@ export const AdminPayments = () => {
     .reduce((sum, b) => sum + (b.total_price || 0), 0);
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isRTL ? 'rtl' : ''}`}>
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('adminPayments.totalRevenue')}</p>
                 <p className="text-2xl font-bold text-green-600">${totalRevenue.toFixed(2)}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
@@ -154,9 +158,9 @@ export const AdminPayments = () => {
         </Card>
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Pending Amount</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('adminPayments.pendingAmount')}</p>
                 <p className="text-2xl font-bold text-yellow-600">${pendingAmount.toFixed(2)}</p>
               </div>
               <Clock className="h-8 w-8 text-yellow-600" />
@@ -165,9 +169,9 @@ export const AdminPayments = () => {
         </Card>
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Transactions</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('adminPayments.totalTransactions')}</p>
                 <p className="text-2xl font-bold">{bookings.length}</p>
               </div>
               <CreditCard className="h-8 w-8 text-primary" />
@@ -179,40 +183,40 @@ export const AdminPayments = () => {
       {/* Payments Table */}
       <Card>
         <CardHeader>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className={`flex flex-col md:flex-row md:items-center md:justify-between gap-4 ${isRTL ? 'md:flex-row-reverse' : ''}`}>
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <CreditCard className="h-5 w-5" />
-                Payment Management
+                {t('adminPayments.title')}
               </CardTitle>
               <CardDescription>
-                Manage and track all payments ({filteredBookings.length} records)
+                {t('adminPayments.description', { count: filteredBookings.length })}
               </CardDescription>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className={`flex flex-col sm:flex-row gap-2 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
               <Button variant="outline" size="sm" onClick={fetchPayments} disabled={loading}>
-                <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
+                <RefreshCw className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'} ${loading ? 'animate-spin' : ''}`} />
+                {t('common.refresh')}
               </Button>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
                 <Input
-                  placeholder="Search payments..."
+                  placeholder={t('adminPayments.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 w-full sm:w-48"
+                  className={`w-full sm:w-48 ${isRTL ? 'pr-9' : 'pl-9'}`}
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Filter status" />
+                  <SelectValue placeholder={t('adminPayments.filterStatus')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="pending_verification">Awaiting Verification</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="all">{t('adminPayments.allStatuses')}</SelectItem>
+                  <SelectItem value="paid">{t('paymentStatus.paid')}</SelectItem>
+                  <SelectItem value="pending">{t('paymentStatus.pending')}</SelectItem>
+                  <SelectItem value="pending_verification">{t('paymentStatus.awaitingVerification')}</SelectItem>
+                  <SelectItem value="failed">{t('paymentStatus.failed')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -226,20 +230,20 @@ export const AdminPayments = () => {
           ) : filteredBookings.length === 0 ? (
             <div className="text-center py-8">
               <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No payments found</p>
+              <p className="text-muted-foreground">{t('adminPayments.noPayments')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Service</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t('adminPayments.date')}</TableHead>
+                    <TableHead>{t('adminPayments.customer')}</TableHead>
+                    <TableHead>{t('adminPayments.service')}</TableHead>
+                    <TableHead>{t('adminPayments.method')}</TableHead>
+                    <TableHead>{t('adminPayments.amount')}</TableHead>
+                    <TableHead>{t('adminPayments.status')}</TableHead>
+                    <TableHead>{t('adminPayments.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -259,7 +263,7 @@ export const AdminPayments = () => {
                       <TableCell className="font-medium">${booking.total_price?.toFixed(2) || '0.00'}</TableCell>
                       <TableCell>{getStatusBadge(booking.payment_status)}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
+                        <div className={`flex items-center gap-1 ${isRTL ? 'flex-row-reverse' : ''}`}>
                           <Select
                             value={booking.payment_status || 'pending'}
                             onValueChange={(value) => handleUpdatePaymentStatus(booking.id, value)}
@@ -269,10 +273,10 @@ export const AdminPayments = () => {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="pending_verification">Verify</SelectItem>
-                              <SelectItem value="paid">Paid</SelectItem>
-                              <SelectItem value="failed">Failed</SelectItem>
+                              <SelectItem value="pending">{t('paymentStatus.pending')}</SelectItem>
+                              <SelectItem value="pending_verification">{t('adminPayments.verify')}</SelectItem>
+                              <SelectItem value="paid">{t('paymentStatus.paid')}</SelectItem>
+                              <SelectItem value="failed">{t('paymentStatus.failed')}</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button
@@ -299,19 +303,18 @@ export const AdminPayments = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Payment Record</AlertDialogTitle>
+            <AlertDialogTitle>{t('adminPayments.deleteTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this payment record for {(paymentToDelete?.user_info as any)?.fullName || 'this customer'}? 
-              This will also delete the associated booking. This action cannot be undone.
+              {t('adminPayments.deleteConfirmation', { name: (paymentToDelete?.user_info as any)?.fullName || t('adminPayments.thisCustomer') })}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className={isRTL ? 'flex-row-reverse' : ''}>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDeletePayment} 
               className="bg-destructive text-destructive-foreground"
             >
-              Delete Record
+              {t('adminPayments.deleteRecord')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
