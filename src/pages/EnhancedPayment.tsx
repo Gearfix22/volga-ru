@@ -561,24 +561,24 @@ const EnhancedPayment = () => {
         return (
           <Card className="backdrop-blur-sm bg-white/90 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-700">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-xl">
+              <CardTitle className={`flex items-center gap-2 text-xl ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <Banknote className="h-6 w-6 text-primary" />
-                Cash on Arrival
+                {t('paymentMethods.cashOnArrival')}
               </CardTitle>
-              <CardDescription>Pay in cash when you receive the service</CardDescription>
+              <CardDescription>{t('messages.cashOnArrivalDescription')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
               <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
                 <MessageCircle className="h-5 w-5 text-blue-600" />
                 <AlertDescription className="text-blue-900 dark:text-blue-100">
-                  You will pay the full amount in cash upon service delivery. Our team will contact you via WhatsApp to confirm the booking details.
+                  {t('messages.cashOnArrivalDescription')}
                 </AlertDescription>
               </Alert>
               
               <div className="space-y-2">
-                <Label htmlFor="amount" className="text-base font-semibold">Total Amount</Label>
+                <Label htmlFor="amount" className="text-base font-semibold">{t('messages.paymentAmount')}</Label>
                 <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <DollarSign className={`absolute top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
                   <Input
                     id="amount"
                     type="number"
@@ -586,7 +586,7 @@ const EnhancedPayment = () => {
                     value={finalAmount}
                     readOnly
                     placeholder="0.00"
-                    className="text-xl font-bold pl-10 h-14 bg-muted"
+                    className={`text-xl font-bold h-14 bg-muted ${isRTL ? 'pr-10' : 'pl-10'}`}
                   />
                 </div>
               </div>
@@ -597,7 +597,7 @@ const EnhancedPayment = () => {
                 className="w-full h-12 text-base font-semibold"
                 size="lg"
               >
-                {isProcessing ? 'Processing Booking...' : 'Confirm Cash Payment Booking'}
+                {isProcessing ? t('messages.processingPayment') : t('payment.confirmBooking')}
               </Button>
             </CardContent>
           </Card>
@@ -607,21 +607,21 @@ const EnhancedPayment = () => {
         return (
           <Card className="backdrop-blur-sm bg-white/90 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-700">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-xl">
+              <CardTitle className={`flex items-center gap-2 text-xl ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <CreditCard className="h-6 w-6 text-primary" />
-                Visa / Credit Card Payment
+                {t('paymentMethods.creditCard')}
               </CardTitle>
-              <CardDescription className="flex items-center gap-2">
+              <CardDescription className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <Lock className="h-4 w-4 text-green-600" />
-                Secure SSL encrypted payment
+                {t('messages.securePayment')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleStripePayment} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="amount" className="text-base font-semibold">Payment Amount</Label>
+                  <Label htmlFor="amount" className="text-base font-semibold">{t('messages.paymentAmount')}</Label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <DollarSign className={`absolute top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
                     <Input
                       id="amount"
                       type="number"
@@ -629,13 +629,13 @@ const EnhancedPayment = () => {
                       value={finalAmount}
                       readOnly
                       placeholder="0.00"
-                      className="text-xl font-bold pl-10 h-14 bg-muted"
+                      className={`text-xl font-bold h-14 bg-muted ${isRTL ? 'pr-10' : 'pl-10'}`}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="cardNumber" className="text-base">Card Number</Label>
+                  <Label htmlFor="cardNumber" className="text-base">{t('payment.cardNumber')}</Label>
                   <Input
                     id="cardNumber"
                     value={cardNumber}
@@ -649,7 +649,7 @@ const EnhancedPayment = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="expiry" className="text-base">Expiry Date</Label>
+                    <Label htmlFor="expiry" className="text-base">{t('payment.expiryDate')}</Label>
                     <Input
                       id="expiry"
                       value={expiryDate}
@@ -661,7 +661,7 @@ const EnhancedPayment = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="cvv" className="text-base">CVV</Label>
+                    <Label htmlFor="cvv" className="text-base">{t('payment.cvv')}</Label>
                     <Input
                       id="cvv"
                       value={cvv}
@@ -675,12 +675,12 @@ const EnhancedPayment = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="cardholderName" className="text-base">Cardholder Name</Label>
+                  <Label htmlFor="cardholderName" className="text-base">{t('payment.cardholderName')}</Label>
                   <Input
                     id="cardholderName"
                     value={cardholderName}
                     onChange={(e) => setCardholderName(e.target.value)}
-                    placeholder="John Doe"
+                    placeholder={t('payment.enterCardholderName')}
                     className="h-12 text-base"
                     required
                   />
@@ -689,7 +689,7 @@ const EnhancedPayment = () => {
                 <Alert className="border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
                   <Shield className="h-5 w-5 text-green-600" />
                   <AlertDescription className="text-green-900 dark:text-green-100">
-                    Your payment information is encrypted and secure. We accept Visa, Mastercard, and American Express.
+                    {t('messages.securePayment')}
                   </AlertDescription>
                 </Alert>
 
@@ -699,7 +699,7 @@ const EnhancedPayment = () => {
                   className="w-full h-12 text-base font-semibold"
                   size="lg"
                 >
-                  {isProcessing ? 'Processing Payment...' : `Pay $${finalAmount.toFixed(2)} Now`}
+                  {isProcessing ? t('messages.processingPayment') : `${t('payment.payNow')} $${finalAmount.toFixed(2)}`}
                 </Button>
               </form>
             </CardContent>
