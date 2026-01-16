@@ -12,6 +12,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Bell, Check, CheckCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { cn } from '@/lib/utils';
 import { 
   CustomerNotification,
   getUnreadCustomerNotifications,
@@ -26,6 +28,7 @@ export const CustomerNotificationBell: React.FC = () => {
   const [notifications, setNotifications] = useState<CustomerNotification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
+  const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
 
   const loadNotifications = useCallback(async () => {
@@ -59,7 +62,8 @@ export const CustomerNotificationBell: React.FC = () => {
   const handleNotificationClick = async (notification: CustomerNotification) => {
     await handleMarkAsRead(notification.id);
     if (notification.booking_id) {
-      navigate(`/dashboard?booking=${notification.booking_id}`);
+      // Fixed: Navigate to correct user dashboard route
+      navigate(`/user-dashboard?booking=${notification.booking_id}`);
     }
     setIsOpen(false);
   };
@@ -79,13 +83,13 @@ export const CustomerNotificationBell: React.FC = () => {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
-        <div className="flex items-center justify-between px-3 py-2 border-b">
-          <span className="font-semibold">Notifications</span>
+      <DropdownMenuContent align={isRTL ? "start" : "end"} className="w-80">
+        <div className={cn("flex items-center justify-between px-3 py-2 border-b", isRTL && "flex-row-reverse")}>
+          <span className="font-semibold">{t('notifications.title')}</span>
           {notifications.length > 0 && (
             <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead}>
-              <CheckCheck className="h-4 w-4 mr-1" />
-              Mark all read
+              <CheckCheck className={cn("h-4 w-4", isRTL ? "ml-1" : "mr-1")} />
+              {t('notifications.markAllRead')}
             </Button>
           )}
         </div>
@@ -93,18 +97,18 @@ export const CustomerNotificationBell: React.FC = () => {
         <ScrollArea className="h-[300px]">
           {notifications.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
-              No new notifications
+              {t('notifications.noNew')}
             </div>
           ) : (
             notifications.map((notification) => (
               <DropdownMenuItem 
                 key={notification.id}
-                className="flex flex-col items-start p-3 cursor-pointer"
+                className={cn("flex flex-col items-start p-3 cursor-pointer", isRTL && "items-end")}
                 onClick={() => handleNotificationClick(notification)}
               >
-                <div className="flex items-start gap-2 w-full">
+                <div className={cn("flex items-start gap-2 w-full", isRTL && "flex-row-reverse")}>
                   <span className="text-lg">{getNotificationIcon(notification.type)}</span>
-                  <div className="flex-1 min-w-0">
+                  <div className={cn("flex-1 min-w-0", isRTL && "text-right")}>
                     <p className="font-medium text-sm">{notification.title}</p>
                     <p className="text-xs text-muted-foreground line-clamp-2">{notification.message}</p>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -132,13 +136,13 @@ export const CustomerNotificationBell: React.FC = () => {
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
-              className="text-center text-primary cursor-pointer"
+              className="text-center text-primary cursor-pointer justify-center"
               onClick={() => {
-                navigate('/dashboard');
+                navigate('/user-dashboard');
                 setIsOpen(false);
               }}
             >
-              View all notifications
+              {t('notifications.viewAll')}
             </DropdownMenuItem>
           </>
         )}

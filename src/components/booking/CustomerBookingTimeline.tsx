@@ -25,8 +25,13 @@ const STATUS_INDEX: Record<string, number> = {
   draft: 0,
   under_review: 1,
   awaiting_customer_confirmation: 2,
+  awaiting_payment: 2,
+  approved: 2,
   paid: 3,
   in_progress: 4,
+  assigned: 4,
+  accepted: 4,
+  on_trip: 4,
   completed: 5,
   // Legacy mappings
   pending: 1,

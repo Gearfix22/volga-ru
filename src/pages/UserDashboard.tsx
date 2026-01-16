@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { getDraftBookings, deleteDraftBooking, type DraftBooking } from '@/services/bookingService';
 import { CustomerBookingTimeline } from '@/components/booking/CustomerBookingTimeline';
+import { CustomerNotificationBell } from '@/components/booking/CustomerNotificationBell';
 import { getStatusTranslationKey, getServiceTypeTranslationKey } from '@/utils/translationUtils';
 import { canPayForBooking, getMultiplePaymentGuards } from '@/services/paymentGuardService';
 import { 
@@ -76,9 +77,9 @@ function BookingCardWithTimeline({ booking, onPayNow }: { booking: Booking; onPa
           </div>
           <div className={isRTL ? 'text-right' : ''}>
             <p className="font-medium">{t(getServiceTypeTranslationKey(booking.service_type))}</p>
-            <p className="text-sm text-muted-foreground">
-              {new Date(booking.created_at).toLocaleDateString()} • ${booking.total_price?.toFixed(2) || '0.00'}
-            </p>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(booking.created_at).toLocaleDateString()} • {booking.approvedPrice ? booking.approvedPrice.toFixed(2) : booking.total_price?.toFixed(2) || '0.00'}
+                  </p>
           </div>
         </div>
         <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
@@ -243,16 +244,19 @@ const UserDashboard = () => {
   return (
     <DashboardLayout title={t('dashboard.dashboard')}>
       <div className="space-y-8">
-        {/* Back to Home Button */}
+        {/* Header with Notification Bell */}
         <div className={`flex justify-between items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
           <div className={isRTL ? 'text-right' : ''}>
             <h2 className="text-2xl font-bold text-foreground">{t('common.welcomeBack')}</h2>
             <p className="text-muted-foreground">{t('common.manageBookings')}</p>
           </div>
-          <Button onClick={() => navigate('/')} variant="outline" size="lg">
-            <ArrowRight className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2 rotate-180'}`} />
-            {t('common.backToHome')}
-          </Button>
+          <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <CustomerNotificationBell />
+            <Button onClick={() => navigate('/')} variant="outline" size="lg">
+              <ArrowRight className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2 rotate-180'}`} />
+              {t('common.backToHome')}
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}

@@ -1988,5 +1988,29 @@
     "changesToTermsDesc": "نحتفظ بالحق في تعديل هذه الشروط في أي وقت. استمرار استخدام التطبيق بعد التغييرات يعني قبول الشروط الجديدة.",
     "contact": "11. الاتصال",
     "contactIntro": "لأسئلة حول هذه الشروط:"
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "markAllRead": "تحديد الكل كمقروء",
+    "noNew": "لا توجد إشعارات جديدة",
+    "viewAll": "عرض جميع الإشعارات"
+  },
+  "priceNegotiation": {
+    "priceConfirmed": "تم تأكيد السعر",
+    "proceedPaymentDesc": "يمكنك الآن المتابعة للدفع.",
+    "confirmError": "فشل في تأكيد السعر.",
+    "priceApprovedLocked": "السعر معتمد ومقفل",
+    "approvedOn": "تمت الموافقة في {{date}}",
+    "proceedPayment": "المتابعة للدفع",
+    "awaitingQuote": "في انتظار عرض السعر",
+    "awaitingQuoteDesc": "فريقنا يراجع حجزك وسيقدم عرض سعر قريباً.",
+    "quoteAvailable": "عرض السعر متاح",
+    "approvedProceed": "تمت الموافقة على السعر. تابع للدفع.",
+    "reviewProposed": "راجع السعر المقترح. سيوافق المشرف قبل الدفع.",
+    "approvedPrice": "السعر المعتمد",
+    "proposedPrice": "السعر المقترح",
+    "awaitingAdminApproval": "في انتظار موافقة المشرف",
+    "confirmProceed": "تأكيد والمتابعة للدفع",
+    "waitingAdminApprove": "في انتظار موافقة المشرف على السعر قبل المتابعة."
   }
 }

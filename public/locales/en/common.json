@@ -2047,5 +2047,29 @@
     "changesToTermsDesc": "We reserve the right to modify these terms at any time. Continued use of the App after changes constitutes acceptance of new terms.",
     "contact": "11. Contact",
     "contactIntro": "For questions about these Terms:"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "noNew": "No new notifications",
+    "viewAll": "View all notifications"
+  },
+  "priceNegotiation": {
+    "priceConfirmed": "Price Confirmed",
+    "proceedPaymentDesc": "You can now proceed with payment.",
+    "confirmError": "Failed to confirm price.",
+    "priceApprovedLocked": "Price Approved & Locked",
+    "approvedOn": "Approved on {{date}}",
+    "proceedPayment": "Proceed to Payment",
+    "awaitingQuote": "Awaiting Price Quote",
+    "awaitingQuoteDesc": "Our team is reviewing your booking and will provide a price quote soon.",
+    "quoteAvailable": "Price Quote Available",
+    "approvedProceed": "Price has been approved. Proceed to payment.",
+    "reviewProposed": "Review the proposed price. Admin will approve before payment.",
+    "approvedPrice": "Approved Price",
+    "proposedPrice": "Proposed Price",
+    "awaitingAdminApproval": "Awaiting admin approval",
+    "confirmProceed": "Confirm & Proceed to Payment",
+    "waitingAdminApprove": "Waiting for admin to approve the price before you can proceed."
   }
 }

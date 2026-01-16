@@ -43,13 +43,8 @@ const AppSidebar = () => {
   const userMenuItems = [
     {
       title: t('sidebar.dashboard'),
-      url: '/enhanced-dashboard',
+      url: '/user-dashboard',
       icon: LayoutDashboard,
-    },
-    {
-      title: t('sidebar.myBookings'),
-      url: '/enhanced-dashboard',
-      icon: Calendar,
     },
     {
       title: t('sidebar.payments'),
