@@ -164,7 +164,15 @@ Deno.serve(async (req) => {
         is_active: body.is_active !== false, // Default true
         category_id: body.category_id || null,
         display_order: body.display_order || 0,
-        service_type: body.service_type || null
+        service_type: body.service_type || null,
+        status: body.status || 'active',
+        // Multilingual fields
+        name_en: body.name_en || body.name?.trim() || null,
+        name_ar: body.name_ar || null,
+        name_ru: body.name_ru || null,
+        description_en: body.description_en || body.description || null,
+        description_ar: body.description_ar || null,
+        description_ru: body.description_ru || null
       }
 
       const { data, error } = await supabaseAdmin
@@ -270,6 +278,14 @@ Deno.serve(async (req) => {
       if (body.category_id !== undefined) updateData.category_id = body.category_id
       if (body.display_order !== undefined) updateData.display_order = body.display_order
       if (body.service_type !== undefined) updateData.service_type = body.service_type
+      if (body.status !== undefined) updateData.status = body.status
+      // Multilingual updates
+      if (body.name_en !== undefined) updateData.name_en = body.name_en
+      if (body.name_ar !== undefined) updateData.name_ar = body.name_ar
+      if (body.name_ru !== undefined) updateData.name_ru = body.name_ru
+      if (body.description_en !== undefined) updateData.description_en = body.description_en
+      if (body.description_ar !== undefined) updateData.description_ar = body.description_ar
+      if (body.description_ru !== undefined) updateData.description_ru = body.description_ru
 
       const { data, error: updateError } = await supabaseAdmin
         .from('services')
