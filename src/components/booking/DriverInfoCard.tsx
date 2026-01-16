@@ -8,6 +8,8 @@ import { Car, Phone, User, Eye, EyeOff, MessageCircle, MapPin } from 'lucide-rea
 import { getDriverForBooking, toggleDriverVisibility, Driver } from '@/services/driverService';
 import { supabase } from '@/integrations/supabase/client';
 import { CustomerDriverMap } from './CustomerDriverMap';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { cn } from '@/lib/utils';
 
 interface DriverInfoCardProps {
   bookingId: string;
@@ -20,6 +22,7 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
   showToggle = false,
   initialVisibility = true,
 }) => {
+  const { t, isRTL } = useLanguage();
   const [driver, setDriver] = useState<Driver | null>(null);
   const [loading, setLoading] = useState(true);
   const [showDriver, setShowDriver] = useState(initialVisibility);
@@ -29,7 +32,6 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
   useEffect(() => {
     loadDriverInfo();
     
-    // Subscribe to booking changes for real-time updates
     const channel = supabase
       .channel(`booking-driver-${bookingId}`)
       .on(
@@ -46,7 +48,6 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
           if (newData.show_driver_to_customer !== showDriver) {
             setShowDriver(newData.show_driver_to_customer);
           }
-          // Reload driver info when assignment changes
           if (newData.assigned_driver_id) {
             loadDriverInfo();
           } else {
@@ -66,7 +67,6 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
     const driverData = await getDriverForBooking(bookingId);
     setDriver(driverData);
     
-    // Also get booking status
     const { data } = await supabase
       .from('bookings')
       .select('status, show_driver_to_customer')
@@ -89,19 +89,19 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
   const getStatusMessage = () => {
     switch (bookingStatus) {
       case 'pending':
-        return 'Waiting for confirmation...';
+        return t('driverInfo.statusPending');
       case 'assigned':
-        return 'Driver assigned - awaiting acceptance...';
+        return t('driverInfo.statusAssigned');
       case 'confirmed':
-        return 'Booking confirmed - Assigning driver...';
+        return t('driverInfo.statusConfirmed');
       case 'accepted':
-        return 'Driver assigned and ready!';
+        return t('driverInfo.statusAccepted');
       case 'on_trip':
-        return 'Your driver is on the way!';
+        return t('driverInfo.statusOnTrip');
       case 'completed':
-        return 'Trip completed';
+        return t('driverInfo.statusCompleted');
       default:
-        return 'Processing...';
+        return t('driverInfo.statusDefault');
     }
   };
 
@@ -111,7 +111,7 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center gap-3">
+          <div className={cn("flex items-center gap-3", isRTL && "flex-row-reverse")}>
             <div className="animate-pulse h-12 w-12 rounded-full bg-muted" />
             <div className="space-y-2">
               <div className="animate-pulse h-4 w-32 bg-muted rounded" />
@@ -123,18 +123,17 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
     );
   }
 
-  // Show status card if no driver yet
   if (!driver) {
     return (
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
+          <CardTitle className={cn("text-lg flex items-center gap-2", isRTL && "flex-row-reverse")}>
             <Car className="h-5 w-5 text-primary" />
-            Driver Status
+            {t('driverInfo.driverStatus')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-3">
+          <div className={cn("flex items-center gap-3", isRTL && "flex-row-reverse")}>
             <div className="p-3 rounded-full bg-muted">
               <Car className="h-6 w-6 text-muted-foreground" />
             </div>
@@ -142,7 +141,7 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
               <p className="text-sm text-muted-foreground">{getStatusMessage()}</p>
               {bookingStatus === 'confirmed' && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  You'll be notified when a driver accepts your booking
+                  {t('driverInfo.notificationHint')}
                 </p>
               )}
             </div>
@@ -156,13 +155,13 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
     <div className="space-y-4">
       <Card className="border-primary/20">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
+          <div className={cn("flex items-center justify-between", isRTL && "flex-row-reverse")}>
+            <CardTitle className={cn("text-lg flex items-center gap-2", isRTL && "flex-row-reverse")}>
               <Car className="h-5 w-5 text-primary" />
-              Your Driver
+              {t('driverInfo.yourDriver')}
             </CardTitle>
             {showToggle && (
-              <div className="flex items-center gap-2">
+              <div className={cn("flex items-center gap-2", isRTL && "flex-row-reverse")}>
                 <Switch
                   id="driver-visibility"
                   checked={showDriver}
@@ -177,10 +176,10 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
         </CardHeader>
         <CardContent>
           {!showDriver ? (
-            <p className="text-sm text-muted-foreground">Driver details hidden</p>
+            <p className="text-sm text-muted-foreground">{t('driverInfo.driverDetailsHidden')}</p>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
+              <div className={cn("flex items-center gap-4", isRTL && "flex-row-reverse")}>
                 <div className="p-3 rounded-full bg-primary/10">
                   <User className="h-8 w-8 text-primary" />
                 </div>
@@ -194,7 +193,7 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
                         : 'bg-green-500/10 text-green-600 border-green-200'
                     }
                   >
-                    {bookingStatus === 'on_trip' ? 'On Trip' : 'Ready'}
+                    {bookingStatus === 'on_trip' ? t('driverInfo.onTrip') : t('driverInfo.ready')}
                   </Badge>
                 </div>
               </div>
@@ -202,8 +201,8 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button variant="outline" className="flex-1" asChild>
                   <a href={`tel:${driver.phone}`}>
-                    <Phone className="h-4 w-4 mr-2" />
-                    Call Driver
+                    <Phone className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                    {t('driverInfo.callDriver')}
                   </a>
                 </Button>
                 <Button variant="outline" className="flex-1" asChild>
@@ -212,7 +211,7 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
-                    <MessageCircle className="h-4 w-4 mr-2" />
+                    <MessageCircle className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
                     WhatsApp
                   </a>
                 </Button>
@@ -224,16 +223,16 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
                   className="w-full"
                   onClick={() => setShowMap(!showMap)}
                 >
-                  <MapPin className="h-4 w-4 mr-2" />
-                  {showMap ? 'Hide Map' : 'Track Driver Location'}
+                  <MapPin className={cn("h-4 w-4", isRTL ? "ml-2" : "mr-2")} />
+                  {showMap ? t('driverInfo.hideMap') : t('driverInfo.trackLocation')}
                 </Button>
               )}
 
               {bookingStatus === 'on_trip' && !showMap && (
                 <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-200">
-                  <p className="text-sm text-blue-700 font-medium flex items-center gap-2">
+                  <p className={cn("text-sm text-blue-700 font-medium flex items-center gap-2", isRTL && "flex-row-reverse")}>
                     <Car className="h-4 w-4" />
-                    Your driver is on the way to pick you up!
+                    {t('driverInfo.onTheWay')}
                   </p>
                 </div>
               )}
@@ -242,7 +241,6 @@ export const DriverInfoCard: React.FC<DriverInfoCardProps> = ({
         </CardContent>
       </Card>
 
-      {/* Driver Location Map */}
       {showMap && canShowMap && (
         <CustomerDriverMap 
           bookingId={bookingId}
