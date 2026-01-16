@@ -199,7 +199,14 @@
     "groupTransport": "Group Transportation",
     "groupTransportDesc": "Spacious buses and vans for group travel with flexible scheduling.",
     "customTours": "Custom Tours",
-    "customToursDesc": "Personalized itineraries crafted to your interests and preferences."
+    "customToursDesc": "Personalized itineraries crafted to your interests and preferences.",
+    "noServicesInCategory": "No services available in this category.",
+    "serviceCategories": "Service categories",
+    "filterBy": "Filter by",
+    "fromPrice": "From {{price}}",
+    "fromPricePerHour": "From {{price}}/hr",
+    "quoteByAdmin": "Quote by admin",
+    "termsOfService": "Terms of Service"
   },
   "booking": {
     "bookYourService": "Book Your Service",

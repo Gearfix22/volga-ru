@@ -8,7 +8,13 @@ export interface ServiceData {
   id: string;
   type: ServiceType;
   name: string;
+  name_en: string | null;
+  name_ar: string | null;
+  name_ru: string | null;
   description: string;
+  description_en: string | null;
+  description_ar: string | null;
+  description_ru: string | null;
   features: string[];
   base_price: number | null;
   currency: string;
@@ -23,7 +29,13 @@ const mapService = (s: any): ServiceData => ({
   id: s.id,
   type: s.type as ServiceType,
   name: s.name,
+  name_en: s.name_en,
+  name_ar: s.name_ar,
+  name_ru: s.name_ru,
   description: s.description || '',
+  description_en: s.description_en,
+  description_ar: s.description_ar,
+  description_ru: s.description_ru,
   features: s.features || [],
   base_price: s.base_price,
   currency: s.currency || 'USD',
@@ -32,6 +44,30 @@ const mapService = (s: any): ServiceData => ({
   display_order: s.display_order ?? 0,
   category_id: s.category_id
 });
+
+// Get localized service name
+export const getLocalizedServiceName = (service: ServiceData, language: string): string => {
+  switch (language) {
+    case 'ar':
+      return service.name_ar || service.name;
+    case 'ru':
+      return service.name_ru || service.name;
+    default:
+      return service.name_en || service.name;
+  }
+};
+
+// Get localized service description
+export const getLocalizedServiceDescription = (service: ServiceData, language: string): string => {
+  switch (language) {
+    case 'ar':
+      return service.description_ar || service.description;
+    case 'ru':
+      return service.description_ru || service.description;
+    default:
+      return service.description_en || service.description;
+  }
+};
 
 // Get service by ID - for booking flow
 export const getServiceById = async (id: string): Promise<ServiceData | null> => {
@@ -98,8 +134,6 @@ export const getAllServicesAdmin = async (): Promise<ServiceData[]> => {
   return (data || []).map(mapService);
 };
 
-// REMOVED: Duplicate getServiceById - now defined at line 37
-
 // Get services by type
 export const getServicesByType = async (type: ServiceType): Promise<ServiceData[]> => {
   const { data, error } = await supabase
@@ -132,24 +166,17 @@ export const getServiceCategoriesDynamic = async (): Promise<{ id: string; label
   // Get unique types
   const uniqueTypes = [...new Set((data || []).map(s => s.type))];
   
-  // Map to labels
-  const typeLabels: Record<string, string> = {
-    'Driver': 'Transportation',
-    'Accommodation': 'Accommodation',
-    'Events': 'Activities & Events',
-    'Guide': 'Tourist Guide'
-  };
-
+  // Return raw types - localization happens in the component
   return [
     { id: 'all', label: 'All Services' },
     ...uniqueTypes.map(type => ({
       id: type,
-      label: typeLabels[type] || type
+      label: type // Will be localized in the component
     }))
   ];
 };
 
-// Static fallback for service categories
+// Static fallback for service categories (deprecated - use dynamic)
 export const getServiceCategories = (): { id: string; label: string }[] => {
   return [
     { id: 'all', label: 'All Services' },
@@ -160,14 +187,14 @@ export const getServiceCategories = (): { id: string; label: string }[] => {
   ];
 };
 
-// Helper to get pricing display text
-export const getPricingText = (service: ServiceData): string => {
+// Helper to get pricing display text - now with i18n support
+export const getPricingText = (service: ServiceData, t?: (key: string, options?: any) => string): string => {
   if (service.base_price && service.base_price > 0) {
     const currencySymbol = service.currency === 'USD' ? '$' : service.currency;
     if (service.type === 'Guide') {
-      return `From ${currencySymbol}${service.base_price}/hr`;
+      return t ? t('services.fromPricePerHour', { price: `${currencySymbol}${service.base_price}` }) : `From ${currencySymbol}${service.base_price}/hr`;
     }
-    return `From ${currencySymbol}${service.base_price}`;
+    return t ? t('services.fromPrice', { price: `${currencySymbol}${service.base_price}` }) : `From ${currencySymbol}${service.base_price}`;
   }
-  return 'Quote by admin';
+  return t ? t('services.quoteByAdmin') : 'Quote by admin';
 };

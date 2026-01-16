@@ -199,7 +199,14 @@
     "flexibleSchedules": "Гибкое расписание",
     "personalizedItinerary": "Персонализированный маршрут",
     "privateGuide": "Личный гид",
-    "flexibleDuration": "Гибкая продолжительность"
+    "flexibleDuration": "Гибкая продолжительность",
+    "noServicesInCategory": "Нет доступных услуг в этой категории.",
+    "serviceCategories": "Категории услуг",
+    "filterBy": "Фильтр по",
+    "fromPrice": "От {{price}}",
+    "fromPricePerHour": "От {{price}}/ч",
+    "quoteByAdmin": "Цена по запросу",
+    "termsOfService": "Условия использования"
   },
   "gallery": {
     "title": "ГАЛЕРЕЯ",

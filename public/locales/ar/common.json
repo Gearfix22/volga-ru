@@ -217,7 +217,14 @@
     "flexibleSchedules": "جداول مرنة",
     "personalizedItinerary": "برنامج شخصي",
     "privateGuide": "مرشد خاص",
-    "flexibleDuration": "مدة مرنة"
+    "flexibleDuration": "مدة مرنة",
+    "noServicesInCategory": "لا توجد خدمات متاحة في هذه الفئة.",
+    "serviceCategories": "فئات الخدمات",
+    "filterBy": "تصفية حسب",
+    "fromPrice": "من {{price}}",
+    "fromPricePerHour": "من {{price}}/ساعة",
+    "quoteByAdmin": "عرض سعر من المدير",
+    "termsOfService": "شروط الخدمة"
   },
   "gallery": {
     "title": "المعرض",
