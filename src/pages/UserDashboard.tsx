@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -12,7 +12,7 @@ import { getDraftBookings, deleteDraftBooking, type DraftBooking } from '@/servi
 import { CustomerBookingTimeline } from '@/components/booking/CustomerBookingTimeline';
 import { CustomerNotificationBell } from '@/components/booking/CustomerNotificationBell';
 import { getStatusTranslationKey, getServiceTypeTranslationKey } from '@/utils/translationUtils';
-import { canPayForBooking, getMultiplePaymentGuards } from '@/services/paymentGuardService';
+import { getMultiplePaymentGuards } from '@/services/paymentGuardService';
 import { 
   Clock, 
   CheckCircle, 
