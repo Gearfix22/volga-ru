@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Loader2, ShieldX } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -8,16 +9,6 @@ import { Button } from '@/components/ui/button';
 interface AdminRouteGuardProps {
   children: React.ReactNode;
 }
-
-/**
- * Check if current environment allows admin access
- * MOBILE-FIRST: No hardcoded domain checks - use role-based auth only
- */
-const isAdminAccessAllowed = (): boolean => {
-  // In mobile apps and web, admin access is always allowed via role-based auth
-  // The actual authorization happens server-side via user_roles table
-  return true;
-};
 
 /**
  * AdminRouteGuard ensures:
@@ -28,16 +19,17 @@ const isAdminAccessAllowed = (): boolean => {
  */
 export const AdminRouteGuard: React.FC<AdminRouteGuardProps> = ({ children }) => {
   const { user, loading, hasRole } = useAuth();
+  const { t, isRTL } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
 
   // Show loading while checking authentication
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className={`flex items-center justify-center min-h-screen bg-background ${isRTL ? 'rtl' : ''}`}>
         <div className="text-center space-y-4">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-          <p className="text-muted-foreground">Verifying access...</p>
+          <p className="text-muted-foreground">{t('common.verifyingAccess')}</p>
         </div>
       </div>
     );
@@ -51,16 +43,15 @@ export const AdminRouteGuard: React.FC<AdminRouteGuardProps> = ({ children }) =>
   // Check for admin role - server-side verified via user_roles table
   if (!hasRole('admin')) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background p-4">
+      <div className={`flex items-center justify-center min-h-screen bg-background p-4 ${isRTL ? 'rtl' : ''}`}>
         <div className="max-w-md w-full space-y-6 text-center">
           <div className="mx-auto w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center">
             <ShieldX className="h-8 w-8 text-destructive" />
           </div>
           <Alert variant="destructive">
-            <AlertTitle className="text-lg font-semibold">Access Denied</AlertTitle>
+            <AlertTitle className="text-lg font-semibold">{t('dashboard.accessDenied')}</AlertTitle>
             <AlertDescription className="mt-2">
-              You do not have administrator privileges to access this page.
-              This incident has been logged.
+              {t('dashboard.noPermission')}
             </AlertDescription>
           </Alert>
           <div className="space-y-3">
@@ -69,10 +60,10 @@ export const AdminRouteGuard: React.FC<AdminRouteGuardProps> = ({ children }) =>
               onClick={() => navigate('/')}
               className="w-full"
             >
-              Return to Home
+              {t('staffLogin.backToHome')}
             </Button>
             <p className="text-sm text-muted-foreground">
-              If you believe this is an error, contact the system administrator.
+              {t('staffLogin.contactAdmin')}
             </p>
           </div>
         </div>
@@ -81,7 +72,7 @@ export const AdminRouteGuard: React.FC<AdminRouteGuardProps> = ({ children }) =>
   }
 
   // Admin access granted
-  return <>{children}</>;
+  return <>{children}</>
 };
 
 /**
