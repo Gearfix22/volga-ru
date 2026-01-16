@@ -35,34 +35,34 @@ import { supabase } from '@/integrations/supabase/client';
 
 const AppSidebar = () => {
   const { user, hasRole } = useAuth();
-  const { t } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const { state } = useSidebar();
 
   const userMenuItems = [
     {
-      title: 'Dashboard',
+      title: t('sidebar.dashboard'),
       url: '/enhanced-dashboard',
       icon: LayoutDashboard,
     },
     {
-      title: 'My Bookings',
+      title: t('sidebar.myBookings'),
       url: '/enhanced-dashboard',
       icon: Calendar,
     },
     {
-      title: 'Payments',
+      title: t('sidebar.payments'),
       url: '/payments-history',
       icon: CreditCard,
     },
     {
-      title: 'Profile',
+      title: t('sidebar.profile'),
       url: '/profile-settings',
       icon: User,
     },
     {
-      title: 'Support',
+      title: t('sidebar.support'),
       url: '/support',
       icon: MessageCircle,
     },
@@ -70,37 +70,37 @@ const AppSidebar = () => {
 
   const adminMenuItems = [
     {
-      title: 'Admin Dashboard',
+      title: t('sidebar.adminDashboard'),
       url: '/admin',
       icon: Shield,
     },
     {
-      title: 'Manage Bookings',
+      title: t('sidebar.manageBookings'),
       url: '/admin/bookings',
       icon: Calendar,
     },
     {
-      title: 'Manage Payments',
+      title: t('sidebar.managePayments'),
       url: '/admin/payments',
       icon: CreditCard,
     },
     {
-      title: 'Manage Services',
+      title: t('sidebar.manageServices'),
       url: '/admin/services',
       icon: Package,
     },
     {
-      title: 'Manage Users',
+      title: t('sidebar.manageUsers'),
       url: '/admin/users',
       icon: Users,
     },
     {
-      title: 'Analytics',
+      title: t('sidebar.analytics'),
       url: '/admin/analytics',
       icon: BarChart,
     },
     {
-      title: 'Activity Logs',
+      title: t('sidebar.activityLogs'),
       url: '/admin/logs',
       icon: FileText,
     },
@@ -120,14 +120,14 @@ const AppSidebar = () => {
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <div className="h-8 w-8 rounded bg-primary flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-sm">V</span>
           </div>
           {state === 'expanded' && (
-            <div>
-              <h2 className="font-semibold text-lg">Volga Travel</h2>
-              <p className="text-sm text-muted-foreground">Booking Platform</p>
+            <div className={isRTL ? 'text-right' : ''}>
+              <h2 className="font-semibold text-lg">{t('sidebar.volgaTravel')}</h2>
+              <p className="text-sm text-muted-foreground">{t('sidebar.bookingPlatform')}</p>
             </div>
           )}
         </div>
@@ -136,11 +136,11 @@ const AppSidebar = () => {
       <SidebarContent>
         {/* User Menu */}
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('sidebar.menu')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {userMenuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
+                <SidebarMenuItem key={item.url + item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} className={getNavClass(item.url)}>
                       <item.icon className="h-4 w-4" />
@@ -156,11 +156,11 @@ const AppSidebar = () => {
         {/* Admin Menu - Only show if user is admin */}
         {hasRole('admin') && (
           <SidebarGroup>
-            <SidebarGroupLabel>Administration</SidebarGroupLabel>
+            <SidebarGroupLabel>{t('sidebar.administration')}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {adminMenuItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
+                  <SidebarMenuItem key={item.url + item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink to={item.url} className={getNavClass(item.url)}>
                         <item.icon className="h-4 w-4" />
@@ -176,14 +176,14 @@ const AppSidebar = () => {
       </SidebarContent>
 
       <SidebarFooter className="p-4">
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <Avatar className="h-8 w-8">
             <AvatarFallback>
               {user?.email?.charAt(0).toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
           {state === 'expanded' && (
-            <div className="flex-1 min-w-0">
+            <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : ''}`}>
               <p className="text-sm font-medium truncate">
                 {user?.email}
               </p>
@@ -191,10 +191,10 @@ const AppSidebar = () => {
                 onClick={handleSignOut}
                 variant="ghost"
                 size="sm"
-                className="mt-1 h-7 px-2 text-xs"
+                className={`mt-1 h-7 px-2 text-xs ${isRTL ? 'flex-row-reverse' : ''}`}
               >
-                <LogOut className="h-3 w-3 mr-1" />
-                Sign Out
+                <LogOut className={`h-3 w-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                {t('sidebar.signOut')}
               </Button>
             </div>
           )}
