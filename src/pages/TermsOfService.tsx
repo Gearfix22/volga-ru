@@ -4,10 +4,14 @@ import { Footer } from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BackButton } from '@/components/BackButton';
 import { FileText, AlertTriangle, CreditCard, MapPin, Ban, Scale } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { cn } from '@/lib/utils';
 
 const TermsOfService = () => {
+  const { t, isRTL } = useLanguage();
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir={isRTL ? 'rtl' : 'ltr'}>
       <Navigation />
       
       <main className="container mx-auto px-4 py-20 max-w-4xl">
@@ -15,145 +19,140 @@ const TermsOfService = () => {
         
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="text-3xl flex items-center gap-3">
+            <CardTitle className={cn("text-3xl flex items-center gap-3", isRTL && "flex-row-reverse")}>
               <FileText className="h-8 w-8 text-primary" />
-              Terms of Service
+              {t('termsOfService.title')}
             </CardTitle>
-            <p className="text-muted-foreground">Last updated: January 2026</p>
+            <p className="text-muted-foreground">{t('termsOfService.lastUpdated')}</p>
           </CardHeader>
           <CardContent className="prose prose-sm max-w-none space-y-8">
             
             <section>
-              <h2 className="text-xl font-semibold mb-3">1. Acceptance of Terms</h2>
+              <h2 className="text-xl font-semibold mb-3">{t('termsOfService.acceptanceTerms')}</h2>
               <p className="text-muted-foreground">
-                By accessing or using the Volga Services mobile application ("App"), you agree to be 
-                bound by these Terms of Service. If you do not agree, do not use the App.
+                {t('termsOfService.acceptanceDesc')}
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">2. Services Provided</h2>
+              <h2 className="text-xl font-semibold mb-3">{t('termsOfService.servicesProvided')}</h2>
               <p className="text-muted-foreground mb-3">
-                Volga Services provides tourism-related booking services in Russia including:
+                {t('termsOfService.servicesProvidedIntro')}
               </p>
-              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                <li>Transportation services with professional drivers</li>
-                <li>Accommodation booking assistance</li>
-                <li>Event tickets and entertainment access</li>
-                <li>Tourist guide services</li>
+              <ul className={cn("list-disc text-muted-foreground space-y-2", isRTL ? "pr-6" : "pl-6")}>
+                <li>{t('termsOfService.servicesList1')}</li>
+                <li>{t('termsOfService.servicesList2')}</li>
+                <li>{t('termsOfService.servicesList3')}</li>
+                <li>{t('termsOfService.servicesList4')}</li>
               </ul>
             </section>
 
             <section className="p-4 bg-muted/50 rounded-lg">
-              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+              <h2 className={cn("text-xl font-semibold mb-3 flex items-center gap-2", isRTL && "flex-row-reverse")}>
                 <CreditCard className="h-5 w-5 text-primary" />
-                3. Payments & Pricing
+                {t('termsOfService.paymentsPricing')}
               </h2>
-              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                <li>All prices are quoted in USD and subject to admin confirmation</li>
-                <li>Final pricing is set by our admin team after reviewing your booking request</li>
-                <li>Payment is required before service confirmation</li>
-                <li>Accepted payment methods: Credit/Debit Card, Bank Transfer, Cash</li>
-                <li>Refunds are handled on a case-by-case basis</li>
+              <ul className={cn("list-disc text-muted-foreground space-y-2", isRTL ? "pr-6" : "pl-6")}>
+                <li>{t('termsOfService.paymentsList1')}</li>
+                <li>{t('termsOfService.paymentsList2')}</li>
+                <li>{t('termsOfService.paymentsList3')}</li>
+                <li>{t('termsOfService.paymentsList4')}</li>
+                <li>{t('termsOfService.paymentsList5')}</li>
               </ul>
             </section>
 
             <section className="p-4 bg-muted/50 rounded-lg">
-              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+              <h2 className={cn("text-xl font-semibold mb-3 flex items-center gap-2", isRTL && "flex-row-reverse")}>
                 <MapPin className="h-5 w-5 text-primary" />
-                4. Location Services
+                {t('termsOfService.locationServicesTerms')}
               </h2>
               <p className="text-muted-foreground">
-                During active bookings, we may collect location data to:
+                {t('termsOfService.locationServicesIntro')}
               </p>
-              <ul className="list-disc pl-6 text-muted-foreground space-y-2 mt-2">
-                <li>Provide real-time driver/guide tracking</li>
-                <li>Calculate estimated arrival times</li>
-                <li>Optimize routes for transportation services</li>
+              <ul className={cn("list-disc text-muted-foreground space-y-2 mt-2", isRTL ? "pr-6" : "pl-6")}>
+                <li>{t('termsOfService.locationTermsList1')}</li>
+                <li>{t('termsOfService.locationTermsList2')}</li>
+                <li>{t('termsOfService.locationTermsList3')}</li>
               </ul>
               <p className="text-muted-foreground mt-3 text-sm">
-                Location access is only requested during active trips and can be disabled in your device settings.
+                {t('termsOfService.locationTermsNote')}
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">5. User Responsibilities</h2>
-              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                <li>Provide accurate personal and booking information</li>
-                <li>Be present at designated pickup locations on time</li>
-                <li>Treat drivers and guides with respect</li>
-                <li>Comply with local laws and regulations</li>
-                <li>Not use the App for any illegal purposes</li>
+              <h2 className="text-xl font-semibold mb-3">{t('termsOfService.userResponsibilities')}</h2>
+              <ul className={cn("list-disc text-muted-foreground space-y-2", isRTL ? "pr-6" : "pl-6")}>
+                <li>{t('termsOfService.userResp1')}</li>
+                <li>{t('termsOfService.userResp2')}</li>
+                <li>{t('termsOfService.userResp3')}</li>
+                <li>{t('termsOfService.userResp4')}</li>
+                <li>{t('termsOfService.userResp5')}</li>
               </ul>
             </section>
 
             <section className="p-4 border border-destructive/30 rounded-lg">
-              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+              <h2 className={cn("text-xl font-semibold mb-3 flex items-center gap-2", isRTL && "flex-row-reverse")}>
                 <Ban className="h-5 w-5 text-destructive" />
-                6. Prohibited Activities
+                {t('termsOfService.prohibitedActivities')}
               </h2>
-              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                <li>Fraudulent bookings or payment information</li>
-                <li>Harassment of drivers, guides, or staff</li>
-                <li>Misuse of the App or its services</li>
-                <li>Attempting to bypass security measures</li>
-                <li>Sharing account credentials with others</li>
+              <ul className={cn("list-disc text-muted-foreground space-y-2", isRTL ? "pr-6" : "pl-6")}>
+                <li>{t('termsOfService.prohibitedList1')}</li>
+                <li>{t('termsOfService.prohibitedList2')}</li>
+                <li>{t('termsOfService.prohibitedList3')}</li>
+                <li>{t('termsOfService.prohibitedList4')}</li>
+                <li>{t('termsOfService.prohibitedList5')}</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+              <h2 className={cn("text-xl font-semibold mb-3 flex items-center gap-2", isRTL && "flex-row-reverse")}>
                 <AlertTriangle className="h-5 w-5 text-warning" />
-                7. Limitation of Liability
+                {t('termsOfService.limitationLiability')}
               </h2>
               <p className="text-muted-foreground">
-                Volga Services acts as an intermediary connecting tourists with service providers. 
-                We are not liable for:
+                {t('termsOfService.limitationIntro')}
               </p>
-              <ul className="list-disc pl-6 text-muted-foreground space-y-2 mt-2">
-                <li>Actions of independent drivers or guides</li>
-                <li>Weather-related service disruptions</li>
-                <li>Third-party service failures</li>
-                <li>Personal injury during services (except where legally required)</li>
+              <ul className={cn("list-disc text-muted-foreground space-y-2 mt-2", isRTL ? "pr-6" : "pl-6")}>
+                <li>{t('termsOfService.limitationList1')}</li>
+                <li>{t('termsOfService.limitationList2')}</li>
+                <li>{t('termsOfService.limitationList3')}</li>
+                <li>{t('termsOfService.limitationList4')}</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">8. Cancellation Policy</h2>
-              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                <li><strong>24+ hours before:</strong> Full refund minus processing fees</li>
-                <li><strong>12-24 hours before:</strong> 50% refund</li>
-                <li><strong>Less than 12 hours:</strong> No refund</li>
-                <li>Emergency cancellations reviewed individually</li>
+              <h2 className="text-xl font-semibold mb-3">{t('termsOfService.cancellationPolicy')}</h2>
+              <ul className={cn("list-disc text-muted-foreground space-y-2", isRTL ? "pr-6" : "pl-6")}>
+                <li><strong>{t('termsOfService.cancellation24h')}</strong> {t('termsOfService.cancellation24hDesc')}</li>
+                <li><strong>{t('termsOfService.cancellation12h')}</strong> {t('termsOfService.cancellation12hDesc')}</li>
+                <li><strong>{t('termsOfService.cancellationLess12h')}</strong> {t('termsOfService.cancellationLess12hDesc')}</li>
+                <li>{t('termsOfService.cancellationEmergency')}</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+              <h2 className={cn("text-xl font-semibold mb-3 flex items-center gap-2", isRTL && "flex-row-reverse")}>
                 <Scale className="h-5 w-5 text-primary" />
-                9. Dispute Resolution
+                {t('termsOfService.disputeResolution')}
               </h2>
               <p className="text-muted-foreground">
-                Any disputes will first be handled through our customer support. 
-                If unresolved, disputes shall be settled under Russian Federation law, 
-                with jurisdiction in Leningrad Region courts.
+                {t('termsOfService.disputeDesc')}
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold mb-3">10. Changes to Terms</h2>
+              <h2 className="text-xl font-semibold mb-3">{t('termsOfService.changesToTerms')}</h2>
               <p className="text-muted-foreground">
-                We reserve the right to modify these terms at any time. Continued use of the App 
-                after changes constitutes acceptance of new terms.
+                {t('termsOfService.changesToTermsDesc')}
               </p>
             </section>
 
             <section className="p-4 bg-primary/5 rounded-lg">
-              <h2 className="text-xl font-semibold mb-3">11. Contact</h2>
+              <h2 className="text-xl font-semibold mb-3">{t('termsOfService.contact')}</h2>
               <p className="text-muted-foreground">
-                For questions about these Terms:<br />
-                <strong>Email:</strong> info@volgaservices.com<br />
-                <strong>Phone:</strong> +7 952 221 29 03
+                {t('termsOfService.contactIntro')}<br />
+                <strong>{t('privacyPolicy.contactEmail')}</strong> info@volgaservices.com<br />
+                <strong>{t('privacyPolicy.contactPhone')}</strong> +7 952 221 29 03
               </p>
             </section>
           </CardContent>
