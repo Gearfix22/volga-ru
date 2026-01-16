@@ -1524,13 +1524,20 @@ export type Database = {
           created_at: string | null
           currency: string
           description: string | null
+          description_ar: string | null
+          description_en: string | null
+          description_ru: string | null
           display_order: number | null
           features: string[] | null
           id: string
           image_url: string | null
           is_active: boolean | null
           name: string
+          name_ar: string | null
+          name_en: string | null
+          name_ru: string | null
           service_type: string | null
+          status: string | null
           type: string
           updated_at: string | null
         }
@@ -1540,13 +1547,20 @@ export type Database = {
           created_at?: string | null
           currency?: string
           description?: string | null
+          description_ar?: string | null
+          description_en?: string | null
+          description_ru?: string | null
           display_order?: number | null
           features?: string[] | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
           name: string
+          name_ar?: string | null
+          name_en?: string | null
+          name_ru?: string | null
           service_type?: string | null
+          status?: string | null
           type?: string
           updated_at?: string | null
         }
@@ -1556,13 +1570,20 @@ export type Database = {
           created_at?: string | null
           currency?: string
           description?: string | null
+          description_ar?: string | null
+          description_en?: string | null
+          description_ru?: string | null
           display_order?: number | null
           features?: string[] | null
           id?: string
           image_url?: string | null
           is_active?: boolean | null
           name?: string
+          name_ar?: string | null
+          name_en?: string | null
+          name_ru?: string | null
           service_type?: string | null
+          status?: string | null
           type?: string
           updated_at?: string | null
         }
