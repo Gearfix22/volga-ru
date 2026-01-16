@@ -22,7 +22,7 @@ export const LanguageSwitcher: React.FC = () => {
         <Button 
           variant="outline" 
           size="sm"
-          className="bg-background/10 border-border/50 text-foreground hover:bg-background/20 backdrop-blur-sm gap-1.5"
+          className="bg-background/10 border-border/50 text-foreground hover:bg-background/20 active:bg-background/30 backdrop-blur-sm gap-1.5 min-h-[44px] touch-manipulation"
         >
           <Languages className="h-4 w-4" />
           <span>{getLanguageFlag(language)}</span>
@@ -37,7 +37,7 @@ export const LanguageSwitcher: React.FC = () => {
           <DropdownMenuItem
             key={lang}
             onClick={() => setLanguage(lang)}
-            className={`cursor-pointer ${
+            className={`cursor-pointer min-h-[48px] touch-manipulation ${
               language === lang ? 'bg-accent text-accent-foreground' : ''
             } ${isRTL ? 'flex-row-reverse text-right' : ''}`}
           >

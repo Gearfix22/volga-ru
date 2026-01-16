@@ -104,13 +104,14 @@ export const Navigation: React.FC = () => {
             {/* User Menu */}
             <UserMenu />
 
-            {/* Mobile menu button */}
+            {/* Mobile menu button - 44px minimum touch target */}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="lg:hidden text-foreground hover:text-brand-accent p-2 rounded-md hover:bg-brand-accent/10 transition-colors"
+              className="lg:hidden text-foreground hover:text-brand-accent active:text-brand-accent min-h-[44px] min-w-[44px] flex items-center justify-center rounded-md hover:bg-brand-accent/10 active:bg-brand-accent/20 transition-colors touch-manipulation"
               aria-label="Toggle menu"
+              aria-expanded={isOpen}
             >
-              {isOpen ? <X size={20} /> : <Menu size={20} />}
+              {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
@@ -126,10 +127,10 @@ export const Navigation: React.FC = () => {
                     navigate(item.path);
                     setIsOpen(false);
                   }}
-                  className={`block w-full text-left px-4 py-3 text-sm font-medium rounded-md transition-colors ${
+                  className={`block w-full text-left px-4 py-3 min-h-[48px] text-base font-medium rounded-md transition-colors touch-manipulation ${
                     isActive(item.path)
                       ? 'text-brand-accent bg-brand-accent/10'
-                      : 'text-foreground hover:text-brand-accent hover:bg-brand-accent/5'
+                      : 'text-foreground hover:text-brand-accent active:text-brand-accent hover:bg-brand-accent/5 active:bg-brand-accent/10'
                   }`}
                 >
                   {item.label}
@@ -144,9 +145,9 @@ export const Navigation: React.FC = () => {
                       navigate('/driver-login');
                       setIsOpen(false);
                     }}
-                    className="flex items-center gap-2 w-full text-left px-4 py-3 text-sm font-medium rounded-md text-foreground hover:text-brand-accent hover:bg-brand-accent/5"
+                    className="flex items-center gap-2 w-full text-left px-4 py-3 min-h-[48px] text-base font-medium rounded-md text-foreground hover:text-brand-accent active:text-brand-accent hover:bg-brand-accent/5 active:bg-brand-accent/10 touch-manipulation"
                   >
-                    <Car className="h-4 w-4" />
+                    <Car className="h-5 w-5" />
                     {t('roles.driver')}
                   </button>
                   <button
@@ -154,9 +155,9 @@ export const Navigation: React.FC = () => {
                       navigate('/guide-login');
                       setIsOpen(false);
                     }}
-                    className="flex items-center gap-2 w-full text-left px-4 py-3 text-sm font-medium rounded-md text-foreground hover:text-brand-accent hover:bg-brand-accent/5"
+                    className="flex items-center gap-2 w-full text-left px-4 py-3 min-h-[48px] text-base font-medium rounded-md text-foreground hover:text-brand-accent active:text-brand-accent hover:bg-brand-accent/5 active:bg-brand-accent/10 touch-manipulation"
                   >
-                    <UserCheck className="h-4 w-4" />
+                    <UserCheck className="h-5 w-5" />
                     {t('roles.guide')}
                   </button>
                 </>

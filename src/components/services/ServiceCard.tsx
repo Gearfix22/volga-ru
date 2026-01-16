@@ -32,7 +32,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, icon: Icon, p
 
   return (
     <Card 
-      className={`bg-card/80 backdrop-blur-sm border hover:bg-card/90 transition-all duration-500 transform hover:scale-105 overflow-hidden group h-full flex flex-col shadow-lg hover:shadow-2xl ${isRTL ? 'rtl' : ''}`}
+      className={`bg-card/80 backdrop-blur-sm border hover:bg-card/90 active:bg-card/95 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] overflow-hidden group h-full flex flex-col shadow-lg hover:shadow-2xl touch-manipulation ${isRTL ? 'rtl' : ''}`}
       style={{ animationDelay: `${index * 100}ms` }}
     >
       <div className="relative h-40 lg:h-48 overflow-hidden">
@@ -78,7 +78,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, icon: Icon, p
         
         <Button
           onClick={handleBookNow}
-          className="w-full bg-brand-secondary hover:bg-brand-secondary/90 text-brand-secondary-foreground text-sm lg:text-base py-2.5 shadow-lg hover:shadow-xl transition-all group-hover:scale-105"
+          className="w-full bg-brand-secondary hover:bg-brand-secondary/90 active:bg-brand-secondary/80 text-brand-secondary-foreground text-sm lg:text-base py-3 min-h-[48px] shadow-lg hover:shadow-xl transition-all touch-manipulation"
         >
           {t('common.bookNow')}
         </Button>

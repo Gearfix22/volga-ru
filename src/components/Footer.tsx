@@ -164,14 +164,14 @@ export const Footer: React.FC = () => {
           <div className="space-y-4 sm:space-y-6">
             <h3 className="text-white font-bold text-lg sm:text-xl"
                 style={{ textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)' }}>{t('footer.followUs')}</h3>
-            <div className={`flex space-x-3 sm:space-x-4 ${isRTL ? 'flex-row-reverse space-x-reverse justify-end' : ''}`}>
+            <div className={`flex space-x-2 sm:space-x-4 ${isRTL ? 'flex-row-reverse space-x-reverse justify-end' : ''}`}>
               {socialLinks.map((social, index) => (
                 <a
                   key={index}
                   href={social.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-white/10 backdrop-blur-sm p-2 sm:p-3 rounded-xl hover:bg-white/20 transition-colors border border-white/20"
+                  className="bg-white/10 backdrop-blur-sm p-3 sm:p-3 min-h-[48px] min-w-[48px] flex items-center justify-center rounded-xl hover:bg-white/20 active:bg-white/30 transition-colors border border-white/20 touch-manipulation"
                 >
                   <social.icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   <span className="sr-only">{social.label}</span>

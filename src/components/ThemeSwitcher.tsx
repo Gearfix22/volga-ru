@@ -44,7 +44,7 @@ export const ThemeSwitcher = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className="relative">
+        <Button variant="outline" size="icon" className="relative min-h-[44px] min-w-[44px] touch-manipulation">
           <Palette className="h-5 w-5" />
           <span className="sr-only">{t('theme.selectTheme')}</span>
         </Button>
@@ -55,13 +55,13 @@ export const ThemeSwitcher = () => {
         
         <DropdownMenuItem
           onClick={() => handleThemeChange('teal')}
-          className={theme === 'teal' ? 'bg-accent/50' : ''}
+          className={`min-h-[48px] cursor-pointer touch-manipulation ${theme === 'teal' ? 'bg-accent/50' : ''}`}
         >
           <div className="flex items-center gap-3 w-full">
             <div className="flex gap-1">
-              <div className="w-4 h-4 rounded-full bg-[hsl(180,83%,24%)]" />
-              <div className="w-4 h-4 rounded-full bg-[hsl(349,76%,52%)]" />
-              <div className="w-4 h-4 rounded-full bg-[hsl(152,69%,37%)]" />
+              <div className="w-5 h-5 rounded-full bg-[hsl(180,83%,24%)]" />
+              <div className="w-5 h-5 rounded-full bg-[hsl(349,76%,52%)]" />
+              <div className="w-5 h-5 rounded-full bg-[hsl(152,69%,37%)]" />
             </div>
             <div className="flex-1">
               <p className="font-medium">{t('theme.modernTeal')}</p>
@@ -72,13 +72,13 @@ export const ThemeSwitcher = () => {
         
         <DropdownMenuItem
           onClick={() => handleThemeChange('russian')}
-          className={theme === 'russian' ? 'bg-accent/50' : ''}
+          className={`min-h-[48px] cursor-pointer touch-manipulation ${theme === 'russian' ? 'bg-accent/50' : ''}`}
         >
           <div className="flex items-center gap-3 w-full">
             <div className="flex gap-1">
-              <div className="w-4 h-4 rounded-full bg-[hsl(220,60%,28%)]" />
-              <div className="w-4 h-4 rounded-full bg-[hsl(45,90%,42%)]" />
-              <div className="w-4 h-4 rounded-full bg-[hsl(0,70%,45%)]" />
+              <div className="w-5 h-5 rounded-full bg-[hsl(220,60%,28%)]" />
+              <div className="w-5 h-5 rounded-full bg-[hsl(45,90%,42%)]" />
+              <div className="w-5 h-5 rounded-full bg-[hsl(0,70%,45%)]" />
             </div>
             <div className="flex-1">
               <p className="font-medium">{t('theme.russianElegance')}</p>
