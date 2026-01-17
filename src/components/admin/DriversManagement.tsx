@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { API_ENDPOINTS, buildEndpoint } from '@/config/api';
+import { API_ENDPOINTS } from '@/config/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,9 +40,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Plus, Pencil, Trash2, Search, RefreshCw, Car, CheckCircle, Ban, Eye, EyeOff, KeyRound } from 'lucide-react';
 
-// Using centralized API configuration - no Netlify dependency
 const EDGE_FUNCTION_URL = API_ENDPOINTS.manageDrivers;
 
 interface Driver {
@@ -64,6 +64,7 @@ async function getAuthHeaders(): Promise<HeadersInit> {
 }
 
 export default function DriversManagement() {
+  const { t, isRTL } = useLanguage();
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,7 +103,7 @@ export default function DriversManagement() {
       if (error) throw error;
       setDrivers(data || []);
     } catch (error: any) {
-      toast.error('Failed to fetch drivers: ' + error.message);
+      toast.error(`${t('common.error')}: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -126,12 +127,12 @@ export default function DriversManagement() {
 
   const handleAddDriver = async () => {
     if (!formData.full_name.trim() || !formData.phone.trim() || !formData.password.trim()) {
-      toast.error('Please fill in all required fields including password');
+      toast.error(t('driversManagement.fillAllFields'));
       return;
     }
 
     if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+      toast.error(t('driversManagement.passwordMinLength'));
       return;
     }
 
@@ -151,11 +152,11 @@ export default function DriversManagement() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create driver');
+        throw new Error(data.error || t('driversManagement.createFailed'));
       }
 
       setDrivers(prev => [data.driver, ...prev]);
-      toast.success('Driver created successfully with login credentials');
+      toast.success(t('driversManagement.driverCreated'));
       setIsAddDialogOpen(false);
       resetForm();
     } catch (error: any) {
@@ -167,7 +168,7 @@ export default function DriversManagement() {
 
   const handleEditDriver = async () => {
     if (!selectedDriver || !formData.full_name.trim() || !formData.phone.trim()) {
-      toast.error('Please fill in all required fields');
+      toast.error(t('driversManagement.fillAllFields'));
       return;
     }
 
@@ -188,7 +189,7 @@ export default function DriversManagement() {
       if (!response.ok) throw new Error(data.error);
 
       setDrivers(prev => prev.map(d => d.id === selectedDriver.id ? data.driver : d));
-      toast.success('Driver updated successfully');
+      toast.success(t('driversManagement.driverUpdated'));
       setIsEditDialogOpen(false);
       resetForm();
     } catch (error: any) {
@@ -213,7 +214,7 @@ export default function DriversManagement() {
       }
 
       setDrivers(prev => prev.map(d => d.id === driver.id ? { ...d, status: 'active' } : d));
-      toast.success(`${driver.full_name} has been approved`);
+      toast.success(`${driver.full_name} ${t('driversManagement.hasBeenApproved')}`);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -236,7 +237,7 @@ export default function DriversManagement() {
       }
 
       setDrivers(prev => prev.map(d => d.id === driver.id ? { ...d, status: 'blocked' } : d));
-      toast.success(`${driver.full_name} has been blocked`);
+      toast.success(`${driver.full_name} ${t('driversManagement.hasBeenBlocked')}`);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -261,7 +262,7 @@ export default function DriversManagement() {
       }
 
       setDrivers(prev => prev.filter(d => d.id !== selectedDriver.id));
-      toast.success('Driver deleted successfully');
+      toast.success(t('driversManagement.driverDeleted'));
       setIsDeleteDialogOpen(false);
       resetForm();
     } catch (error: any) {
@@ -298,17 +299,17 @@ export default function DriversManagement() {
     if (!selectedDriver) return;
 
     if (!newPassword.trim()) {
-      toast.error('Please enter a new password');
+      toast.error(t('driversManagement.enterNewPassword'));
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      toast.error('Passwords do not match');
+      toast.error(t('auth.passwordsDoNotMatch'));
       return;
     }
 
     if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters');
+      toast.error(t('driversManagement.passwordMinLengthReset'));
       return;
     }
 
@@ -328,7 +329,7 @@ export default function DriversManagement() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
 
-      toast.success(`Password reset for ${selectedDriver.full_name}`);
+      toast.success(`${t('driversManagement.passwordResetFor')} ${selectedDriver.full_name}`);
       setIsResetPasswordDialogOpen(false);
       resetForm();
     } catch (error: any) {
@@ -341,75 +342,75 @@ export default function DriversManagement() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+        return <Badge className="bg-green-100 text-green-800">{t('driversManagement.statusActive')}</Badge>;
       case 'inactive':
-        return <Badge variant="secondary">Inactive</Badge>;
+        return <Badge variant="secondary">{t('driversManagement.statusInactive')}</Badge>;
       case 'blocked':
-        return <Badge variant="destructive">Blocked</Badge>;
+        return <Badge variant="destructive">{t('driversManagement.statusBlocked')}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle className="flex items-center gap-2">
+          <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
+            <CardTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <Car className="h-5 w-5" />
-              Drivers Management
+              {t('driversManagement.title')}
             </CardTitle>
             <Button onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Driver
+              <Plus className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+              {t('driversManagement.addDriver')}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className={`flex flex-col sm:flex-row gap-4 mb-6 ${isRTL ? 'sm:flex-row-reverse' : ''}`}>
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground`} />
               <Input
-                placeholder="Search by name or phone..."
+                placeholder={t('driversManagement.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className={isRTL ? 'pr-10' : 'pl-10'}
               />
             </div>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
               <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t('common.status')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="blocked">Blocked</SelectItem>
+                <SelectItem value="all">{t('driversManagement.allStatuses')}</SelectItem>
+                <SelectItem value="active">{t('driversManagement.statusActive')}</SelectItem>
+                <SelectItem value="inactive">{t('driversManagement.statusInactive')}</SelectItem>
+                <SelectItem value="blocked">{t('driversManagement.statusBlocked')}</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" onClick={fetchDrivers} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+              <RefreshCw className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'} ${loading ? 'animate-spin' : ''}`} />
+              {t('common.refresh')}
             </Button>
           </div>
 
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading drivers...</div>
+            <div className="text-center py-8 text-muted-foreground">{t('common.loading')}...</div>
           ) : filteredDrivers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {drivers.length === 0 ? 'No drivers added yet' : 'No drivers match your search'}
+              {drivers.length === 0 ? t('driversManagement.noDriversYet') : t('driversManagement.noMatchingDrivers')}
             </div>
           ) : (
             <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Added</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('common.name')}</TableHead>
+                    <TableHead>{t('common.phone')}</TableHead>
+                    <TableHead>{t('common.status')}</TableHead>
+                    <TableHead>{t('driversManagement.added')}</TableHead>
+                    <TableHead className={isRTL ? 'text-left' : 'text-right'}>{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -419,15 +420,15 @@ export default function DriversManagement() {
                       <TableCell className="font-mono">{driver.phone}</TableCell>
                       <TableCell>{getStatusBadge(driver.status)}</TableCell>
                       <TableCell>{new Date(driver.created_at).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
+                      <TableCell className={isRTL ? 'text-left' : 'text-right'}>
+                        <div className={`flex ${isRTL ? 'justify-start' : 'justify-end'} gap-1`}>
                           {driver.status === 'blocked' ? (
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => handleApproveDriver(driver)}
                               disabled={actionLoading === driver.id}
-                              title="Approve Driver"
+                              title={t('driversManagement.approveDriver')}
                             >
                               <CheckCircle className="h-4 w-4 text-green-600" />
                             </Button>
@@ -437,7 +438,7 @@ export default function DriversManagement() {
                               size="icon"
                               onClick={() => handleBlockDriver(driver)}
                               disabled={actionLoading === driver.id}
-                              title="Block Driver"
+                              title={t('driversManagement.blockDriver')}
                             >
                               <Ban className="h-4 w-4 text-orange-600" />
                             </Button>
@@ -447,7 +448,7 @@ export default function DriversManagement() {
                             size="icon"
                             onClick={() => openEditDialog(driver)}
                             disabled={actionLoading === driver.id}
-                            title="Edit Driver"
+                            title={t('driversManagement.editDriver')}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -456,7 +457,7 @@ export default function DriversManagement() {
                             size="icon"
                             onClick={() => openResetPasswordDialog(driver)}
                             disabled={actionLoading === driver.id}
-                            title="Reset Password"
+                            title={t('driversManagement.resetPassword')}
                           >
                             <KeyRound className="h-4 w-4 text-blue-600" />
                           </Button>
@@ -466,7 +467,7 @@ export default function DriversManagement() {
                             onClick={() => openDeleteDialog(driver)}
                             disabled={actionLoading === driver.id}
                             className="text-destructive hover:text-destructive"
-                            title="Delete Driver"
+                            title={t('driversManagement.deleteDriver')}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -485,23 +486,23 @@ export default function DriversManagement() {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Driver</DialogTitle>
+            <DialogTitle>{t('driversManagement.addNewDriver')}</DialogTitle>
             <DialogDescription>
-              Create a driver account with login credentials
+              {t('driversManagement.createDriverAccount')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="add-name">Full Name *</Label>
+              <Label htmlFor="add-name">{t('common.fullName')} *</Label>
               <Input
                 id="add-name"
                 value={formData.full_name}
                 onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-                placeholder="Enter driver's full name"
+                placeholder={t('driversManagement.enterDriverName')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="add-phone">Phone Number *</Label>
+              <Label htmlFor="add-phone">{t('common.phone')} *</Label>
               <Input
                 id="add-phone"
                 value={formData.phone}
@@ -510,36 +511,36 @@ export default function DriversManagement() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="add-password">Password *</Label>
+              <Label htmlFor="add-password">{t('auth.password')} *</Label>
               <div className="relative">
                 <Input
                   id="add-password"
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="Min. 6 characters"
+                  placeholder={t('driversManagement.minSixChars')}
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-0 top-0"
+                  className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-0`}
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Driver will use their phone number and this password to login
+                {t('driversManagement.loginCredentialsNote')}
               </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddDialogOpen(false); resetForm(); }}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleAddDriver} disabled={formLoading}>
-              {formLoading ? 'Creating...' : 'Create Driver'}
+              {formLoading ? t('common.creating') : t('driversManagement.createDriver')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -549,11 +550,11 @@ export default function DriversManagement() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Driver</DialogTitle>
+            <DialogTitle>{t('driversManagement.editDriver')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">Full Name *</Label>
+              <Label htmlFor="edit-name">{t('common.fullName')} *</Label>
               <Input
                 id="edit-name"
                 value={formData.full_name}
@@ -561,7 +562,7 @@ export default function DriversManagement() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-phone">Phone Number *</Label>
+              <Label htmlFor="edit-phone">{t('common.phone')} *</Label>
               <Input
                 id="edit-phone"
                 value={formData.phone}
@@ -569,7 +570,7 @@ export default function DriversManagement() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-status">Status</Label>
+              <Label htmlFor="edit-status">{t('common.status')}</Label>
               <Select
                 value={formData.status}
                 onValueChange={(v) => setFormData(prev => ({ ...prev, status: v }))}
@@ -578,19 +579,19 @@ export default function DriversManagement() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="blocked">Blocked</SelectItem>
+                  <SelectItem value="active">{t('driversManagement.statusActive')}</SelectItem>
+                  <SelectItem value="inactive">{t('driversManagement.statusInactive')}</SelectItem>
+                  <SelectItem value="blocked">{t('driversManagement.statusBlocked')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsEditDialogOpen(false); resetForm(); }}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleEditDriver} disabled={formLoading}>
-              {formLoading ? 'Saving...' : 'Save Changes'}
+              {formLoading ? t('common.saving') : t('common.saveChanges')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -600,19 +601,18 @@ export default function DriversManagement() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Driver</AlertDialogTitle>
+            <AlertDialogTitle>{t('driversManagement.deleteDriver')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete driver "{selectedDriver?.full_name}"? 
-              This will remove their account and unassign them from any bookings.
+              {t('driversManagement.deleteConfirmation').replace('{{name}}', selectedDriver?.full_name || '')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={resetForm}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={resetForm}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteDriver}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {formLoading ? 'Deleting...' : 'Delete'}
+              {formLoading ? t('common.deleting') : t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -622,27 +622,27 @@ export default function DriversManagement() {
       <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reset Driver Password</DialogTitle>
+            <DialogTitle>{t('driversManagement.resetDriverPassword')}</DialogTitle>
             <DialogDescription>
-              Set a new password for {selectedDriver?.full_name}
+              {t('driversManagement.setNewPasswordFor').replace('{{name}}', selectedDriver?.full_name || '')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="new-password">New Password *</Label>
+              <Label htmlFor="new-password">{t('auth.newPassword')} *</Label>
               <div className="relative">
                 <Input
                   id="new-password"
                   type={showPassword ? 'text' : 'password'}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Min. 8 characters"
+                  placeholder={t('driversManagement.minEightChars')}
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-0 top-0"
+                  className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-0`}
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -650,22 +650,22 @@ export default function DriversManagement() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-new-password">Confirm Password *</Label>
+              <Label htmlFor="confirm-new-password">{t('auth.confirmNewPassword')} *</Label>
               <Input
                 id="confirm-new-password"
                 type={showPassword ? 'text' : 'password'}
                 value={confirmNewPassword}
                 onChange={(e) => setConfirmNewPassword(e.target.value)}
-                placeholder="Confirm new password"
+                placeholder={t('driversManagement.confirmNewPassword')}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsResetPasswordDialogOpen(false); resetForm(); }}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleResetPassword} disabled={formLoading}>
-              {formLoading ? 'Resetting...' : 'Reset Password'}
+              {formLoading ? t('driversManagement.resetting') : t('driversManagement.resetPassword')}
             </Button>
           </DialogFooter>
         </DialogContent>

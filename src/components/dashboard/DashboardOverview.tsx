@@ -106,7 +106,7 @@ export const DashboardOverview: React.FC = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalSpent?.toFixed(2) || '0.00'}</div>
+            <div className="text-2xl font-bold">${totalSpent?.toFixed(2) || '0.00'} USD</div>
             <p className="text-xs text-muted-foreground">
               {t('dashboard.allTimeSpending')}
             </p>
