@@ -762,7 +762,12 @@
     "russianEleganceDesc": "Классический роскошный стиль"
   },
   "status": {
+    "draft": "Черновик",
     "pending": "Ожидает",
+    "underReview": "На рассмотрении",
+    "approved": "Одобрено",
+    "awaitingPayment": "Ожидает оплаты",
+    "paid": "Оплачено",
     "confirmed": "Подтверждено",
     "completed": "Завершено",
     "cancelled": "Отменено",
