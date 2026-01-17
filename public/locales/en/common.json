@@ -346,6 +346,8 @@
     "pleaseSelectService": "Please select a service type",
     "contactInfoRequired": "Contact Information Required",
     "fillAllContactFields": "Please fill in all required contact fields",
+    "submissionInProgress": "Submission in Progress",
+    "pleaseWait": "Please wait while your booking is being submitted",
     "invalidEmail": "Invalid Email",
     "enterValidEmail": "Please enter a valid email address",
     "invalidPhone": "Invalid Phone Number",

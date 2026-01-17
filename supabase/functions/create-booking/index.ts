@@ -25,25 +25,99 @@ import {
 // Valid service types
 const VALID_SERVICE_TYPES = ['Driver', 'Accommodation', 'Events', 'Guide'] as const;
 
-// Validate booking payload
+// Validate booking payload with comprehensive checks
 function validateBookingPayload(payload: any): { valid: boolean; error?: string } {
+  // NEGATIVE TEST: Validate service type
   if (!payload.service_type || !VALID_SERVICE_TYPES.includes(payload.service_type)) {
     return { valid: false, error: `Service type must be one of: ${VALID_SERVICE_TYPES.join(', ')}` }
   }
   
+  // NEGATIVE TEST: Validate user info exists
   if (!payload.user_info) {
     return { valid: false, error: 'User info is required' }
   }
   
   const userInfo = payload.user_info
+  
+  // NEGATIVE TEST: Validate required user info fields
   if (!userInfo.fullName?.trim()) {
     return { valid: false, error: 'Full name is required' }
+  }
+  if (userInfo.fullName.length > 100) {
+    return { valid: false, error: 'Full name must be less than 100 characters' }
   }
   if (!userInfo.phone?.trim()) {
     return { valid: false, error: 'Phone number is required' }
   }
   
+  // NEGATIVE TEST: Validate service_details for date fields (prevent past dates)
+  const details = payload.service_details
+  if (details) {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    // Check pickup/travel date for Driver service
+    if (payload.service_type === 'Driver' && details.pickupDate) {
+      const pickupDate = new Date(details.pickupDate)
+      if (pickupDate < today) {
+        return { valid: false, error: 'Pickup date cannot be in the past' }
+      }
+    }
+    
+    // Check check-in/check-out for Accommodation
+    if (payload.service_type === 'Accommodation') {
+      if (details.checkIn) {
+        const checkIn = new Date(details.checkIn)
+        if (checkIn < today) {
+          return { valid: false, error: 'Check-in date cannot be in the past' }
+        }
+      }
+      if (details.checkOut && details.checkIn) {
+        const checkIn = new Date(details.checkIn)
+        const checkOut = new Date(details.checkOut)
+        if (checkOut <= checkIn) {
+          return { valid: false, error: 'Check-out date must be after check-in date' }
+        }
+      }
+    }
+    
+    // Check event date for Events
+    if (payload.service_type === 'Events' && details.date) {
+      const eventDate = new Date(details.date)
+      if (eventDate < today) {
+        return { valid: false, error: 'Event date cannot be in the past' }
+      }
+    }
+    
+    // Check tour date for Guide
+    if (payload.service_type === 'Guide' && details.date) {
+      const tourDate = new Date(details.date)
+      if (tourDate < today) {
+        return { valid: false, error: 'Tour date cannot be in the past' }
+      }
+    }
+  }
+  
   return { valid: true }
+}
+
+// Check for duplicate recent booking (within 1 minute) - prevent accidental double submission
+async function checkDuplicateBooking(
+  supabaseAdmin: any,
+  userId: string,
+  serviceType: string
+): Promise<boolean> {
+  const oneMinuteAgo = new Date(Date.now() - 60000).toISOString()
+  
+  const { data } = await supabaseAdmin
+    .from('bookings')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('service_type', serviceType)
+    .gte('created_at', oneMinuteAgo)
+    .limit(1)
+  
+  return data && data.length > 0
 }
 
 Deno.serve(async (req) => {
@@ -72,6 +146,13 @@ Deno.serve(async (req) => {
       }
 
       const { service_type, service_details, user_info, service_id, customer_notes, currency } = body
+
+      // NEGATIVE TEST: Check for duplicate submission within 1 minute
+      const isDuplicate = await checkDuplicateBooking(supabaseAdmin, userId, service_type)
+      if (isDuplicate) {
+        console.warn(`Duplicate booking attempt blocked for user ${userId}`)
+        return errorResponse('A similar booking was recently submitted. Please wait before trying again.', 429)
+      }
 
       // Build booking record
       const bookingData = {

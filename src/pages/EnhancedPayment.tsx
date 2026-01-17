@@ -62,6 +62,42 @@ const EnhancedPayment = () => {
   const [cvv, setCvv] = useState('');
   const [cardholderName, setCardholderName] = useState('');
 
+  // NEGATIVE TEST: Back navigation protection during payment processing
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isProcessing) {
+        e.preventDefault();
+        e.returnValue = t('enhancedPayment.paymentInProgress');
+        return e.returnValue;
+      }
+    };
+
+    const handlePopState = () => {
+      if (isProcessing) {
+        // Push current state back to prevent navigation
+        window.history.pushState(null, '', window.location.href);
+        toast({
+          title: t('enhancedPayment.cannotNavigate'),
+          description: t('enhancedPayment.paymentInProgress'),
+          variant: 'destructive'
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    // Push initial state for popstate handling
+    if (isProcessing) {
+      window.history.pushState(null, '', window.location.href);
+    }
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isProcessing, t, toast]);
+
   // Load currency rates, booking data, and payment eligibility
   useEffect(() => {
     const loadData = async () => {

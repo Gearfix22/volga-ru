@@ -336,8 +336,23 @@ const EnhancedBooking = () => {
     }
   };
 
+  // NEGATIVE TEST: Track submission state for double-submission prevention
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submissionLockRef = React.useRef(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // NEGATIVE TEST 1: Prevent double submission
+    if (submissionLockRef.current || isSubmitting) {
+      console.warn('Duplicate submission blocked');
+      toast({
+        title: t('booking.submissionInProgress'),
+        description: t('booking.pleaseWait'),
+        variant: 'default'
+      });
+      return;
+    }
     
     if (!validateForm()) {
       trackForm('booking', 'abandoned', {
@@ -349,8 +364,11 @@ const EnhancedBooking = () => {
       return;
     }
 
-    // Submit booking via edge function - goes to admin for pricing
+    // Lock submission immediately
+    submissionLockRef.current = true;
+    setIsSubmitting(true);
     setIsSaving(true);
+    
     try {
       const { data: authData } = await supabase.auth.getSession();
       if (!authData.session) {
@@ -431,6 +449,11 @@ const EnhancedBooking = () => {
       });
     } finally {
       setIsSaving(false);
+      setIsSubmitting(false);
+      // Keep lock active for 3 seconds to prevent rapid re-clicks
+      setTimeout(() => {
+        submissionLockRef.current = false;
+      }, 3000);
     }
   };
 
