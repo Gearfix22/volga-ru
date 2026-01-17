@@ -148,9 +148,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   };
 
   const requestPasswordReset = async (email: string) => {
+    // MOBILE-SAFE: Use conditional redirect URL (works in WebView)
+    const redirectUrl = typeof window !== 'undefined' ? window.location.origin + '/dashboard/settings' : undefined;
+    
     const { supabase } = await import('@/integrations/supabase/client');
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/dashboard/settings',
+      redirectTo: redirectUrl,
     });
     return { error };
   };
