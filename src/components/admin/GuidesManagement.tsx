@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { API_ENDPOINTS, buildEndpoint } from '@/config/api';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,7 @@ const AVAILABLE_LANGUAGES = ['English', 'Arabic', 'French', 'Spanish', 'German',
 const AVAILABLE_SPECIALIZATIONS = ['City Tours', 'Historical Sites', 'Adventure Tours', 'Cultural Experiences', 'Food Tours', 'Nature & Wildlife', 'Religious Sites', 'Photography Tours'];
 
 export default function GuidesManagement() {
+  const { t } = useTranslation('common');
   const [guides, setGuides] = useState<Guide[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,7 +100,7 @@ export default function GuidesManagement() {
       if (error) throw error;
       setGuides(data || []);
     } catch (error: any) {
-      toast.error('Failed to fetch guides: ' + error.message);
+      toast.error(t('guidesManagement.failedToFetch') + ': ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -129,12 +131,12 @@ export default function GuidesManagement() {
 
   const handleAddGuide = async () => {
     if (!formData.full_name.trim() || !formData.phone.trim()) {
-      toast.error('Please fill in all required fields');
+      toast.error(t('guidesManagement.fillRequiredFields'));
       return;
     }
 
     if (!formData.password || formData.password.length < 8) {
-      toast.error('Password must be at least 8 characters');
+      toast.error(t('guidesManagement.passwordMinLength'));
       return;
     }
 
@@ -142,7 +144,7 @@ export default function GuidesManagement() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast.error('Not authenticated');
+        toast.error(t('common.notAuthenticated'));
         return;
       }
 
@@ -168,11 +170,11 @@ export default function GuidesManagement() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to create guide');
+        throw new Error(result.error || t('guidesManagement.failedToCreate'));
       }
 
       setGuides(prev => [result.guide, ...prev]);
-      toast.success('Guide added successfully with login credentials');
+      toast.success(t('guidesManagement.addedSuccess'));
       setIsAddDialogOpen(false);
       resetForm();
     } catch (error: any) {
@@ -184,7 +186,7 @@ export default function GuidesManagement() {
 
   const handleEditGuide = async () => {
     if (!selectedGuide || !formData.full_name.trim() || !formData.phone.trim()) {
-      toast.error('Please fill in all required fields');
+      toast.error(t('guidesManagement.fillRequiredFields'));
       return;
     }
 
@@ -192,7 +194,7 @@ export default function GuidesManagement() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast.error('Not authenticated');
+        toast.error(t('common.notAuthenticated'));
         return;
       }
 
@@ -218,11 +220,11 @@ export default function GuidesManagement() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to update guide');
+        throw new Error(result.error || t('guidesManagement.failedToUpdate'));
       }
 
       setGuides(prev => prev.map(g => g.id === selectedGuide.id ? result.guide : g));
-      toast.success('Guide updated successfully');
+      toast.success(t('guidesManagement.updatedSuccess'));
       setIsEditDialogOpen(false);
       resetForm();
     } catch (error: any) {
@@ -243,7 +245,10 @@ export default function GuidesManagement() {
       if (error) throw error;
 
       setGuides(prev => prev.map(g => g.id === guide.id ? { ...g, status: newStatus } : g));
-      toast.success(`${guide.full_name} has been ${newStatus === 'active' ? 'activated' : 'blocked'}`);
+      const statusMessage = newStatus === 'active' 
+        ? t('guidesManagement.activated') 
+        : t('guidesManagement.blocked');
+      toast.success(`${guide.full_name} ${statusMessage}`);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
@@ -258,7 +263,7 @@ export default function GuidesManagement() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast.error('Not authenticated');
+        toast.error(t('common.notAuthenticated'));
         return;
       }
 
@@ -275,11 +280,11 @@ export default function GuidesManagement() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete guide');
+        throw new Error(result.error || t('guidesManagement.failedToDelete'));
       }
 
       setGuides(prev => prev.filter(g => g.id !== selectedGuide.id));
-      toast.success('Guide deleted successfully');
+      toast.success(t('guidesManagement.deletedSuccess'));
       setIsDeleteDialogOpen(false);
       resetForm();
     } catch (error: any) {
@@ -291,12 +296,12 @@ export default function GuidesManagement() {
 
   const handleResetPassword = async () => {
     if (!selectedGuide || !newPassword) {
-      toast.error('Please enter a new password');
+      toast.error(t('guidesManagement.enterNewPassword'));
       return;
     }
 
     if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters');
+      toast.error(t('guidesManagement.passwordMinLength'));
       return;
     }
 
@@ -304,7 +309,7 @@ export default function GuidesManagement() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        toast.error('Not authenticated');
+        toast.error(t('common.notAuthenticated'));
         return;
       }
 
@@ -327,10 +332,10 @@ export default function GuidesManagement() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to reset password');
+        throw new Error(result.error || t('guidesManagement.failedToResetPassword'));
       }
 
-      toast.success('Password reset successfully');
+      toast.success(t('guidesManagement.passwordResetSuccess'));
       setIsResetPasswordDialogOpen(false);
       setNewPassword('');
       setSelectedGuide(null);
@@ -352,7 +357,7 @@ export default function GuidesManagement() {
     setFormData({
       full_name: guide.full_name,
       phone: guide.phone,
-      password: '', // Password not needed for edit
+      password: '',
       status: guide.status,
       languages: guide.languages || ['English'],
       specialization: guide.specialization || ['City Tours'],
@@ -387,11 +392,11 @@ export default function GuidesManagement() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Active</Badge>;
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">{t('common.active')}</Badge>;
       case 'inactive':
-        return <Badge variant="secondary">Inactive</Badge>;
+        return <Badge variant="secondary">{t('common.inactive')}</Badge>;
       case 'blocked':
-        return <Badge variant="destructive">Blocked</Badge>;
+        return <Badge variant="destructive">{t('common.blocked')}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -404,11 +409,11 @@ export default function GuidesManagement() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <CardTitle className="flex items-center gap-2">
               <UserCheck className="h-5 w-5" />
-              Guides Management
+              {t('guidesManagement.title')}
             </CardTitle>
             <Button onClick={() => setIsAddDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Guide
+              {t('guidesManagement.addGuide')}
             </Button>
           </div>
         </CardHeader>
@@ -417,7 +422,7 @@ export default function GuidesManagement() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name or phone..."
+                placeholder={t('guidesManagement.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -425,18 +430,18 @@ export default function GuidesManagement() {
             </div>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
               <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t('common.status')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="blocked">Blocked</SelectItem>
+                <SelectItem value="all">{t('common.allStatus')}</SelectItem>
+                <SelectItem value="active">{t('common.active')}</SelectItem>
+                <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
+                <SelectItem value="blocked">{t('common.blocked')}</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" onClick={fetchGuides} disabled={loading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+              {t('common.refresh')}
             </Button>
           </div>
 
@@ -446,20 +451,20 @@ export default function GuidesManagement() {
             </div>
           ) : filteredGuides.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {guides.length === 0 ? 'No guides added yet' : 'No guides match your search'}
+              {guides.length === 0 ? t('guidesManagement.noGuidesYet') : t('guidesManagement.noMatchingGuides')}
             </div>
           ) : (
             <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Languages</TableHead>
-                    <TableHead>Specialization</TableHead>
-                    <TableHead>Rate/hr</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t('common.name')}</TableHead>
+                    <TableHead>{t('common.phone')}</TableHead>
+                    <TableHead>{t('guidesManagement.languages')}</TableHead>
+                    <TableHead>{t('guidesManagement.specialization')}</TableHead>
+                    <TableHead>{t('guidesManagement.ratePerHour')}</TableHead>
+                    <TableHead>{t('common.status')}</TableHead>
+                    <TableHead className="text-right">{t('common.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -497,7 +502,7 @@ export default function GuidesManagement() {
                               size="icon"
                               onClick={() => handleToggleStatus(guide, 'active')}
                               disabled={actionLoading === guide.id}
-                              title="Activate Guide"
+                              title={t('guidesManagement.activateGuide')}
                             >
                               <CheckCircle className="h-4 w-4 text-green-600" />
                             </Button>
@@ -507,7 +512,7 @@ export default function GuidesManagement() {
                               size="icon"
                               onClick={() => handleToggleStatus(guide, 'blocked')}
                               disabled={actionLoading === guide.id}
-                              title="Block Guide"
+                              title={t('guidesManagement.blockGuide')}
                             >
                               <Ban className="h-4 w-4 text-orange-600" />
                             </Button>
@@ -517,7 +522,7 @@ export default function GuidesManagement() {
                             size="icon"
                             onClick={() => openResetPasswordDialog(guide)}
                             disabled={actionLoading === guide.id}
-                            title="Reset Password"
+                            title={t('guidesManagement.resetPassword')}
                           >
                             <Key className="h-4 w-4 text-blue-600" />
                           </Button>
@@ -526,7 +531,7 @@ export default function GuidesManagement() {
                             size="icon"
                             onClick={() => openEditDialog(guide)}
                             disabled={actionLoading === guide.id}
-                            title="Edit Guide"
+                            title={t('guidesManagement.editGuide')}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -536,7 +541,7 @@ export default function GuidesManagement() {
                             onClick={() => openDeleteDialog(guide)}
                             disabled={actionLoading === guide.id}
                             className="text-destructive hover:text-destructive"
-                            title="Delete Guide"
+                            title={t('guidesManagement.deleteGuide')}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -555,23 +560,23 @@ export default function GuidesManagement() {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Guide</DialogTitle>
+            <DialogTitle>{t('guidesManagement.addNewGuide')}</DialogTitle>
             <DialogDescription>
-              Add a new tourist guide to the system
+              {t('guidesManagement.addNewGuideDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="add-name">Full Name *</Label>
+              <Label htmlFor="add-name">{t('common.fullName')} *</Label>
               <Input
                 id="add-name"
                 value={formData.full_name}
                 onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
-                placeholder="Enter guide's full name"
+                placeholder={t('guidesManagement.enterGuideName')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="add-phone">Phone Number *</Label>
+              <Label htmlFor="add-phone">{t('common.phoneNumber')} *</Label>
               <Input
                 id="add-phone"
                 value={formData.phone}
@@ -580,14 +585,14 @@ export default function GuidesManagement() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="add-password">Password *</Label>
+              <Label htmlFor="add-password">{t('common.password')} *</Label>
               <div className="relative">
                 <Input
                   id="add-password"
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="Minimum 8 characters"
+                  placeholder={t('guidesManagement.minEightChars')}
                 />
                 <Button
                   type="button"
@@ -599,10 +604,10 @@ export default function GuidesManagement() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">Guide will use phone number and this password to login</p>
+              <p className="text-xs text-muted-foreground">{t('guidesManagement.loginCredentialsNote')}</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="add-rate">Hourly Rate (USD)</Label>
+              <Label htmlFor="add-rate">{t('guidesManagement.hourlyRateUSD')}</Label>
               <Input
                 id="add-rate"
                 type="number"
@@ -612,7 +617,7 @@ export default function GuidesManagement() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Languages</Label>
+              <Label>{t('guidesManagement.languages')}</Label>
               <div className="flex flex-wrap gap-2">
                 {AVAILABLE_LANGUAGES.map(lang => (
                   <Badge
@@ -627,7 +632,7 @@ export default function GuidesManagement() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Specialization</Label>
+              <Label>{t('guidesManagement.specialization')}</Label>
               <div className="flex flex-wrap gap-2">
                 {AVAILABLE_SPECIALIZATIONS.map(spec => (
                   <Badge
@@ -644,11 +649,11 @@ export default function GuidesManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddDialogOpen(false); resetForm(); }}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleAddGuide} disabled={formLoading}>
               {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Add Guide
+              {t('guidesManagement.addGuide')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -658,14 +663,14 @@ export default function GuidesManagement() {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Guide</DialogTitle>
+            <DialogTitle>{t('guidesManagement.editGuide')}</DialogTitle>
             <DialogDescription>
-              Update guide information
+              {t('guidesManagement.updateGuideInfo')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">Full Name *</Label>
+              <Label htmlFor="edit-name">{t('common.fullName')} *</Label>
               <Input
                 id="edit-name"
                 value={formData.full_name}
@@ -673,7 +678,7 @@ export default function GuidesManagement() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-phone">Phone Number *</Label>
+              <Label htmlFor="edit-phone">{t('common.phoneNumber')} *</Label>
               <Input
                 id="edit-phone"
                 value={formData.phone}
@@ -681,7 +686,7 @@ export default function GuidesManagement() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-rate">Hourly Rate (USD)</Label>
+              <Label htmlFor="edit-rate">{t('guidesManagement.hourlyRateUSD')}</Label>
               <Input
                 id="edit-rate"
                 type="number"
@@ -690,7 +695,7 @@ export default function GuidesManagement() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-status">Status</Label>
+              <Label htmlFor="edit-status">{t('common.status')}</Label>
               <Select 
                 value={formData.status} 
                 onValueChange={(v) => setFormData(prev => ({ ...prev, status: v }))}
@@ -699,14 +704,14 @@ export default function GuidesManagement() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="blocked">Blocked</SelectItem>
+                  <SelectItem value="active">{t('common.active')}</SelectItem>
+                  <SelectItem value="inactive">{t('common.inactive')}</SelectItem>
+                  <SelectItem value="blocked">{t('common.blocked')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Languages</Label>
+              <Label>{t('guidesManagement.languages')}</Label>
               <div className="flex flex-wrap gap-2">
                 {AVAILABLE_LANGUAGES.map(lang => (
                   <Badge
@@ -721,7 +726,7 @@ export default function GuidesManagement() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Specialization</Label>
+              <Label>{t('guidesManagement.specialization')}</Label>
               <div className="flex flex-wrap gap-2">
                 {AVAILABLE_SPECIALIZATIONS.map(spec => (
                   <Badge
@@ -738,11 +743,11 @@ export default function GuidesManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsEditDialogOpen(false); resetForm(); }}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleEditGuide} disabled={formLoading}>
               {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Save Changes
+              {t('common.saveChanges')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -752,21 +757,21 @@ export default function GuidesManagement() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Guide</AlertDialogTitle>
+            <AlertDialogTitle>{t('guidesManagement.deleteGuide')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedGuide?.full_name}? This action cannot be undone.
+              {t('guidesManagement.deleteConfirmation', { name: selectedGuide?.full_name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => { setIsDeleteDialogOpen(false); resetForm(); }}>
-              Cancel
+              {t('common.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteGuide}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Delete
+              {t('common.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -776,21 +781,21 @@ export default function GuidesManagement() {
       <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Reset Guide Password</DialogTitle>
+            <DialogTitle>{t('guidesManagement.resetGuidePassword')}</DialogTitle>
             <DialogDescription>
-              Set a new password for {selectedGuide?.full_name}
+              {t('guidesManagement.setNewPasswordFor', { name: selectedGuide?.full_name })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="new-password">New Password *</Label>
+              <Label htmlFor="new-password">{t('guidesManagement.newPassword')} *</Label>
               <div className="relative">
                 <Input
                   id="new-password"
                   type={showPassword ? 'text' : 'password'}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Minimum 8 characters"
+                  placeholder={t('guidesManagement.minEightChars')}
                 />
                 <Button
                   type="button"
@@ -806,11 +811,11 @@ export default function GuidesManagement() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsResetPasswordDialogOpen(false); setNewPassword(''); setShowPassword(false); }}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleResetPassword} disabled={formLoading}>
               {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Reset Password
+              {t('guidesManagement.resetPassword')}
             </Button>
           </DialogFooter>
         </DialogContent>
