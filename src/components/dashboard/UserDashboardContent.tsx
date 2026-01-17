@@ -31,14 +31,35 @@ import { useToast } from '@/hooks/use-toast';
 import { getDraftBookings, deleteDraftBooking, DraftBooking } from '@/services/bookingService';
 import { getStatusTranslationKey } from '@/utils/translationUtils';
 
+import type { Json } from '@/integrations/supabase/types';
+
+interface BookingServiceDetails {
+  pickupLocation?: string;
+  dropoffLocation?: string;
+  pickup?: string;
+  dropoff?: string;
+  city?: string;
+  hotel?: string;
+  hotelName?: string;
+  eventName?: string;
+  duration?: string;
+  regions?: string;
+}
+
 interface Booking {
   id: string;
   service_type: string;
   status: string;
   payment_status: string;
-  total_price: number;
+  total_price: number | null;
   created_at: string;
-  service_details: any;
+  service_details: Json | null;
+}
+
+// Type guard for service details
+function asServiceDetails(details: Json | null): BookingServiceDetails | null {
+  if (!details || typeof details !== 'object' || Array.isArray(details)) return null;
+  return details as BookingServiceDetails;
 }
 
 interface DashboardStats {
@@ -186,20 +207,21 @@ export const UserDashboardContent = () => {
     );
   };
 
-  const formatServiceDetails = (serviceType: string, details: any) => {
-    if (!details) return t('common.notAvailable');
+  const formatServiceDetails = (serviceType: string, details: Json | null): string => {
+    const parsed = asServiceDetails(details);
+    if (!parsed) return t('common.notAvailable');
     switch (serviceType) {
       case 'Transportation':
       case 'Driver':
-        return `${details.pickup || details.pickupLocation || t('common.notAvailable')} → ${details.dropoff || details.dropoffLocation || t('common.notAvailable')}`;
+        return `${parsed.pickup || parsed.pickupLocation || t('common.notAvailable')} → ${parsed.dropoff || parsed.dropoffLocation || t('common.notAvailable')}`;
       case 'Hotels':
       case 'Accommodation':
-        return `${details.city || t('common.notAvailable')} - ${details.hotel || details.hotelName || t('common.notAvailable')}`;
+        return `${parsed.city || t('common.notAvailable')} - ${parsed.hotel || parsed.hotelName || t('common.notAvailable')}`;
       case 'Events':
       case 'Events & Entertainment':
-        return `${details.eventName || t('common.notAvailable')}`;
+        return `${parsed.eventName || t('common.notAvailable')}`;
       case 'Custom Trips':
-        return `${details.duration || t('common.notAvailable')} ${t('common.in')} ${details.regions || t('common.notAvailable')}`;
+        return `${parsed.duration || t('common.notAvailable')} ${t('common.in')} ${parsed.regions || t('common.notAvailable')}`;
       default:
         return t('common.notAvailable');
     }
