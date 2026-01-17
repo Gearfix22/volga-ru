@@ -121,13 +121,19 @@ Deno.serve(async (req) => {
       const body = await req.json()
       const { price, admin_notes, currency, lock = true } = body
 
+      // EDGE CASE VALIDATION: Valid price required
       if (typeof price !== 'number' || price <= 0) {
-        return errorResponse('Valid price is required', 400)
+        return errorResponse('Price must be a positive number', 400)
+      }
+      
+      // EDGE CASE: Prevent unrealistic prices (max $100,000)
+      if (price > 100000) {
+        return errorResponse('Price exceeds maximum allowed ($100,000)', 400)
       }
 
       const { data: booking, error: fetchError } = await supabaseAdmin
         .from('bookings')
-        .select('status, admin_final_price, user_id, total_price')
+        .select('status, total_price, user_id')
         .eq('id', bookingId)
         .maybeSingle()
 
@@ -174,10 +180,10 @@ Deno.serve(async (req) => {
         return errorResponse('Failed to set price in price table', 500)
       }
 
-      // Also update bookings table for consistency (admin_final_price column)
+      // Also update bookings table for consistency (total_price column)
       // ALIGNED WITH DATABASE ENUM - use 'awaiting_payment' not 'awaiting_customer_confirmation'
       const updateData: Record<string, any> = {
-        admin_final_price: price,
+        total_price: price,
         status: lock ? 'awaiting_payment' : booking.status,
         updated_at: new Date().toISOString()
       }
