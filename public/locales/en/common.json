@@ -481,6 +481,7 @@
     "since": "Since",
     "lastLogin": "Last Login",
     "recentReservations": "Recent Reservations",
+    "reports": "Reports",
     "viewAll": "View All",
     "errorLoadingReservations": "Error loading reservations",
     "refreshPage": "Please try refreshing the page",
