@@ -151,11 +151,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check email uniqueness by attempting to find existing user
     // This helps catch cases where email exists but wasn't fully registered
+    // MOBILE-SAFE: Use relative path for redirect (works in WebView)
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+    
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
+        emailRedirectTo: redirectUrl,
         data: {
           phone: normalizedPhone,
           full_name: fullName,
@@ -277,8 +280,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetPassword = async (email: string) => {
+    // MOBILE-SAFE: Use relative path for redirect (works in WebView)
+    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/auth?type=recovery` : undefined;
+    
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth?type=recovery`,
+      redirectTo: redirectUrl,
     });
     return { error };
   };
