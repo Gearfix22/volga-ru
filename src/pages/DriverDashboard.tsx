@@ -462,24 +462,24 @@ const DriverDashboard = () => {
                           
                           <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                             <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{booking.user_info?.fullName || t('driver.customer')}</span>
+                            <span className="font-medium">{String(booking.user_info?.fullName || t('driver.customer'))}</span>
                           </div>
                           
                           {booking.user_info?.phone && (
                             <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                               <Phone className="h-4 w-4 text-muted-foreground" />
-                              <span>{booking.user_info.phone}</span>
+                              <span>{String(booking.user_info.phone)}</span>
                             </div>
                           )}
                           
                           {booking.service_details?.pickupLocation && (
                             <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                               <MapPin className="h-4 w-4 text-muted-foreground" />
-                              <span>{booking.service_details.pickupLocation}</span>
+                              <span>{String(booking.service_details.pickupLocation)}</span>
                               {booking.service_details?.dropoffLocation && (
                                 <>
                                   <span className="text-muted-foreground">{isRTL ? '←' : '→'}</span>
-                                  <span>{booking.service_details.dropoffLocation}</span>
+                                  <span>{String(booking.service_details.dropoffLocation)}</span>
                                 </>
                               )}
                             </div>
@@ -488,9 +488,9 @@ const DriverDashboard = () => {
                           {booking.service_details?.travelDate && (
                             <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                               <Calendar className="h-4 w-4 text-muted-foreground" />
-                              <span>{booking.service_details.travelDate}</span>
+                              <span>{String(booking.service_details.travelDate)}</span>
                               {booking.service_details?.travelTime && (
-                                <span className="text-muted-foreground">{t('driver.at')} {booking.service_details.travelTime}</span>
+                                <span className="text-muted-foreground">{t('driver.at')} {String(booking.service_details.travelTime)}</span>
                               )}
                             </div>
                           )}
@@ -554,14 +554,14 @@ const DriverDashboard = () => {
                           
                           <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                             <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{booking.user_info?.fullName || t('driver.customer')}</span>
+                            <span className="font-medium">{String(booking.user_info?.fullName || t('driver.customer'))}</span>
                           </div>
                           
                           {booking.user_info?.phone && (
                             <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                               <Phone className="h-4 w-4 text-muted-foreground" />
-                              <a href={`tel:${booking.user_info.phone}`} className="text-primary hover:underline">
-                                {booking.user_info.phone}
+                              <a href={`tel:${String(booking.user_info.phone)}`} className="text-primary hover:underline">
+                                {String(booking.user_info.phone)}
                               </a>
                             </div>
                           )}
@@ -569,11 +569,11 @@ const DriverDashboard = () => {
                           {booking.service_details?.pickupLocation && (
                             <div className={cn("flex items-center gap-2 text-sm", isRTL && "flex-row-reverse")}>
                               <MapPin className="h-4 w-4 text-muted-foreground" />
-                              <span>{booking.service_details.pickupLocation}</span>
+                              <span>{String(booking.service_details.pickupLocation)}</span>
                               {booking.service_details?.dropoffLocation && (
                                 <>
                                   <span className="text-muted-foreground">{isRTL ? '←' : '→'}</span>
-                                  <span>{booking.service_details.dropoffLocation}</span>
+                                  <span>{String(booking.service_details.dropoffLocation)}</span>
                                 </>
                               )}
                             </div>

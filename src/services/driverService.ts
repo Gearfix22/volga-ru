@@ -1,14 +1,15 @@
 import { supabase } from '@/integrations/supabase/client';
 import { API_ENDPOINTS, buildEndpoint } from '@/config/api';
+import type { 
+  DriverRecord, 
+  NotificationRecord, 
+  BookingRecord, 
+  BookingUserInfo, 
+  ServiceDetailsUnion 
+} from '@/types/database';
 
-export interface Driver {
-  id: string;
-  full_name: string;
-  phone: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
+// Re-export Driver type for backward compatibility
+export type Driver = DriverRecord;
 
 export interface DriverNotification {
   id: string;
@@ -29,9 +30,11 @@ export interface AssignedBooking {
   payment_status: string;
   total_price: number | null;
   created_at: string;
-  user_info: any;
-  service_details: any;
+  // Keep as generic record for JSON data from database
+  user_info: Record<string, unknown>;
+  service_details: Record<string, unknown> | null;
   customer_notes: string | null;
+  driver_response?: string | null;
 }
 
 // Get all available (active) drivers
@@ -376,7 +379,8 @@ export function subscribeToDriverNotifications(
 // Subscribe to assigned booking changes
 export function subscribeToAssignedBookings(
   driverId: string,
-  callback: (booking: any) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  callback: (payload: any) => void
 ) {
   const channel = supabase
     .channel('driver-bookings-realtime')

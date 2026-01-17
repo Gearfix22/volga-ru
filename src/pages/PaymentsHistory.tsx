@@ -137,7 +137,7 @@ const PaymentsHistory = () => {
   }
 
   return (
-    <DashboardLayout title="Payment History">
+    <DashboardLayout title={t('paymentsHistory.title')}>
       <div className="space-y-6">
         {/* Payment Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -145,7 +145,7 @@ const PaymentsHistory = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Paid</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('paymentsHistory.totalPaid')}</p>
                   <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                     ${totalPaid.toFixed(2)}
                   </p>
@@ -159,7 +159,7 @@ const PaymentsHistory = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Pending Payments</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('paymentsHistory.pendingPayments')}</p>
                   <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                     ${totalPending.toFixed(2)}
                   </p>
@@ -173,7 +173,7 @@ const PaymentsHistory = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Transactions</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t('paymentsHistory.totalTransactions')}</p>
                   <p className="text-2xl font-bold">{payments.length}</p>
                 </div>
                 <CreditCard className="h-8 w-8 text-primary" />
@@ -187,7 +187,7 @@ const PaymentsHistory = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Search className="h-5 w-5" />
-              Search Payments
+              {t('paymentsHistory.searchPayments')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -195,7 +195,7 @@ const PaymentsHistory = () => {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by service, payment method, or transaction ID..."
+                  placeholder={t('paymentsHistory.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -203,7 +203,7 @@ const PaymentsHistory = () => {
               </div>
               <Button variant="outline">
                 <Download className="h-4 w-4 mr-2" />
-                Export
+                {t('paymentsHistory.export')}
               </Button>
             </div>
           </CardContent>
@@ -214,7 +214,7 @@ const PaymentsHistory = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              Payment History ({filteredPayments.length})
+              {t('paymentsHistory.paymentHistory')} ({filteredPayments.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -222,27 +222,27 @@ const PaymentsHistory = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Service</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Transaction ID</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead>{t('paymentsHistory.date')}</TableHead>
+                    <TableHead>{t('paymentsHistory.service')}</TableHead>
+                    <TableHead>{t('paymentsHistory.method')}</TableHead>
+                    <TableHead>{t('paymentsHistory.amount')}</TableHead>
+                    <TableHead>{t('paymentsHistory.status')}</TableHead>
+                    <TableHead>{t('paymentsHistory.transactionId')}</TableHead>
+                    <TableHead>{t('paymentsHistory.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8">
-                        Loading payments...
+                        {t('common.loading')}
                       </TableCell>
                     </TableRow>
                   ) : filteredPayments.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8">
                         <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground">No payments found</p>
+                        <p className="text-muted-foreground">{t('paymentsHistory.noPaymentsFound')}</p>
                       </TableCell>
                     </TableRow>
                   ) : (

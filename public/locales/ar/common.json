@@ -2059,5 +2059,24 @@
     "priceNotSet": "لم يتم تحديد السعر بعد",
     "priceNotSetDesc": "لم يحدد المشرف سعرًا لحجزك بعد. سيتم إشعارك عندما يكون السعر جاهزًا.",
     "goToDashboard": "الذهاب إلى لوحة التحكم"
+  },
+  "paymentsHistory": {
+    "title": "سجل المدفوعات",
+    "totalPaid": "إجمالي المدفوع",
+    "pendingPayments": "المدفوعات المعلقة",
+    "totalTransactions": "إجمالي المعاملات",
+    "searchPayments": "البحث في المدفوعات",
+    "searchPlaceholder": "البحث حسب الخدمة أو طريقة الدفع أو رقم المعاملة...",
+    "export": "تصدير",
+    "paymentHistory": "سجل المدفوعات",
+    "date": "التاريخ",
+    "service": "الخدمة",
+    "method": "الطريقة",
+    "amount": "المبلغ",
+    "status": "الحالة",
+    "transactionId": "رقم المعاملة",
+    "actions": "الإجراءات",
+    "noPaymentsFound": "لم يتم العثور على مدفوعات",
+    "failedToFetch": "فشل في جلب سجل المدفوعات"
   }
 }

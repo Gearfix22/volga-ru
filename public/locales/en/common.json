@@ -2120,5 +2120,24 @@
     "priceNotSet": "Price Not Yet Set",
     "priceNotSetDesc": "The admin has not yet set a price for your booking. You will be notified when the price is ready.",
     "goToDashboard": "Go to Dashboard"
+  },
+  "paymentsHistory": {
+    "title": "Payment History",
+    "totalPaid": "Total Paid",
+    "pendingPayments": "Pending Payments",
+    "totalTransactions": "Total Transactions",
+    "searchPayments": "Search Payments",
+    "searchPlaceholder": "Search by service, payment method, or transaction ID...",
+    "export": "Export",
+    "paymentHistory": "Payment History",
+    "date": "Date",
+    "service": "Service",
+    "method": "Method",
+    "amount": "Amount",
+    "status": "Status",
+    "transactionId": "Transaction ID",
+    "actions": "Actions",
+    "noPaymentsFound": "No payments found",
+    "failedToFetch": "Failed to fetch payment history"
   }
 }
