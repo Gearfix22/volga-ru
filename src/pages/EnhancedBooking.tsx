@@ -349,41 +349,89 @@ const EnhancedBooking = () => {
       return;
     }
 
-    // Final save before proceeding to payment
-    await autoSave();
-
-    const totalPrice = calculatePrice();
-    const currency = getServiceCurrency();
-    // Driver service ALWAYS includes a driver - no separate flag needed
-    const driverRequired = serviceType === 'Driver';
-    const bookingData = {
-      serviceType,
-      serviceId: currentService?.id || null, // Include service_id for proper FK reference
-      serviceDetails,
-      userInfo,
-      totalPrice,
-      currency,
-      driverRequired
-    };
-
-    // Track form submission
-    trackForm('booking', 'submitted', {
-      serviceType,
-      totalPrice,
-      hasAllRequiredFields: true
-    });
-
-    toast({
-      title: t('booking.bookingDetailsSaved'),
-      description: t('booking.proceedingToPayment'),
-    });
-
-    navigate('/enhanced-payment', {
-      state: { 
-        bookingData,
-        draftId: currentDraftId 
+    // Submit booking via edge function - goes to admin for pricing
+    setIsSaving(true);
+    try {
+      const { data: authData } = await supabase.auth.getSession();
+      if (!authData.session) {
+        toast({
+          title: t('error'),
+          description: t('auth.loginRequired'),
+          variant: 'destructive'
+        });
+        return;
       }
-    });
+
+      const currency = getServiceCurrency();
+      
+      // Call create-booking edge function
+      const { data, error } = await supabase.functions.invoke('create-booking', {
+        body: {
+          service_type: serviceType,
+          service_id: currentService?.id || null,
+          service_details: serviceDetails,
+          user_info: userInfo,
+          currency,
+          customer_notes: (serviceDetails as any).specialRequests || null
+        }
+      });
+
+      if (error) {
+        console.error('Create booking error:', error);
+        toast({
+          title: t('error'),
+          description: error.message || t('booking.submitError'),
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Track form submission
+      trackForm('booking', 'submitted', {
+        serviceType,
+        bookingId: data?.booking?.id,
+        hasAllRequiredFields: true
+      });
+
+      // Delete draft after successful submission
+      if (currentDraftId) {
+        try {
+          await deleteDraftBooking(currentDraftId);
+        } catch (e) {
+          console.warn('Failed to delete draft:', e);
+        }
+      }
+
+      toast({
+        title: t('booking.bookingSubmitted'),
+        description: t('booking.awaitingAdminReview'),
+      });
+
+      // Navigate to confirmation page (not payment - price needs admin approval first)
+      navigate('/enhanced-confirmation', {
+        state: { 
+          bookingData: {
+            serviceType,
+            serviceDetails,
+            userInfo,
+            totalPrice: 0, // Will be set by admin
+            currency,
+            status: 'under_review',
+            bookingId: data?.booking?.id
+          },
+          isNewBooking: true
+        }
+      });
+    } catch (error: any) {
+      console.error('Submit booking error:', error);
+      toast({
+        title: t('error'),
+        description: error.message || t('booking.submitError'),
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleResumeBooking = (draft: DraftBooking) => {
