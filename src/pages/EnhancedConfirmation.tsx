@@ -47,11 +47,16 @@ const EnhancedConfirmation = () => {
     totalPrice?: number;
     status?: string;
     receiptUrl?: string;
+    bookingId?: string;
   };
+  const isNewBooking = location.state?.isNewBooking as boolean | undefined;
 
   const [showWhatsAppButton, setShowWhatsAppButton] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const isAdmin = hasRole('admin');
+  
+  // Check if booking is under review (new booking awaiting admin pricing)
+  const isUnderReview = bookingData?.status === 'under_review';
 
   useEffect(() => {
     if (!bookingData) {
@@ -59,14 +64,16 @@ const EnhancedConfirmation = () => {
       return;
     }
 
-    // Send booking confirmation email
-    sendBookingEmail();
+    // Only send email for confirmed bookings, not under_review
+    if (!isUnderReview) {
+      sendBookingEmail();
+    }
 
     // Show WhatsApp button after 2 seconds for better UX
     setTimeout(() => {
       setShowWhatsAppButton(true);
     }, 2000);
-  }, [bookingData, navigate]);
+  }, [bookingData, navigate, isUnderReview]);
 
   const sendBookingEmail = async () => {
     if (!bookingData || emailSent) return;
@@ -103,10 +110,15 @@ const EnhancedConfirmation = () => {
       case 'paid':
       case 'confirmed':
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'under_review':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
       case 'pending_verification':
       case 'pending':
+      case 'awaiting_payment':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
       case 'failed':
+      case 'rejected':
+      case 'cancelled':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       default:
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
@@ -302,18 +314,66 @@ const EnhancedConfirmation = () => {
       
       <div className="relative z-10 pt-24 pb-12">
         <div className="container mx-auto px-4 max-w-4xl">
-          {/* Success Header */}
+          {/* Success Header - Different for under_review vs confirmed */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full mb-4">
-              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-            </div>
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
-              {t('bookingConfirmed')}!
-            </h1>
-            <p className="text-xl text-slate-600 dark:text-slate-400">
-              {getPaymentStatusMessage()}
-            </p>
+            {isUnderReview ? (
+              <>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full mb-4">
+                  <Clock className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                  {t('booking.underReviewTitle')}
+                </h1>
+                <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+                  {t('booking.underReviewMessage')}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full mb-4">
+                  <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+                </div>
+                <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                  {t('bookingConfirmed')}!
+                </h1>
+                <p className="text-xl text-slate-600 dark:text-slate-400">
+                  {getPaymentStatusMessage()}
+                </p>
+              </>
+            )}
           </div>
+
+          {/* What Happens Next - Only for under_review bookings */}
+          {isUnderReview && (
+            <Card className="backdrop-blur-sm bg-blue-50/80 dark:bg-blue-900/20 border border-blue-200/50 dark:border-blue-700/50 mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
+                  <Clock className="h-5 w-5" />
+                  {t('booking.whatHappensNext')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="flex items-center gap-3 p-3 bg-white/50 dark:bg-slate-800/50 rounded-lg">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                    <span className="text-sm text-slate-700 dark:text-slate-300">{t('booking.step1Review')}</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white/50 dark:bg-slate-800/50 rounded-lg">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">2</div>
+                    <span className="text-sm text-slate-700 dark:text-slate-300">{t('booking.step2Price')}</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white/50 dark:bg-slate-800/50 rounded-lg">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">3</div>
+                    <span className="text-sm text-slate-700 dark:text-slate-300">{t('booking.step3Payment')}</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-white/50 dark:bg-slate-800/50 rounded-lg">
+                    <div className="flex-shrink-0 w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">4</div>
+                    <span className="text-sm text-slate-700 dark:text-slate-300">{t('booking.step4Confirmation')}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Booking Details */}
@@ -326,9 +386,15 @@ const EnhancedConfirmation = () => {
                     <span className="ml-1">{bookingData.status || 'confirmed'}</span>
                   </Badge>
                 </CardTitle>
-                <CardDescription>
-                  {t('transactionId')}: {bookingData.transactionId}
-                </CardDescription>
+                {isUnderReview ? (
+                  <CardDescription>
+                    {t('dashboard.bookingId')}: {bookingData.bookingId || 'Pending'}
+                  </CardDescription>
+                ) : (
+                  <CardDescription>
+                    {t('transactionId')}: {bookingData.transactionId}
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
@@ -366,53 +432,83 @@ const EnhancedConfirmation = () => {
               </CardContent>
             </Card>
 
-            {/* Payment Information */}
-            <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  {t('paymentInformation')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">{t('paymentMethod')}:</span>
-                  <Badge variant="outline">{bookingData.paymentMethod}</Badge>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">{t('totalAmount')}:</span>
-                  <span className="text-lg font-bold text-primary">
-                    ${bookingData.totalPrice?.toFixed(2)}
-                  </span>
-                </div>
-
-                {bookingData.paidAmount !== undefined && (
+            {/* Payment Information - Different for under_review */}
+            {isUnderReview ? (
+              <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-blue-500" />
+                    {t('dashboard.awaitingPrice')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800">
+                    <Clock className="h-4 w-4 text-blue-600" />
+                    <AlertDescription className="text-blue-900 dark:text-blue-100">
+                      {t('booking.underReviewMessage')}
+                    </AlertDescription>
+                  </Alert>
+                  
+                  <div className="text-center py-4">
+                    <p className="text-muted-foreground text-sm mb-4">
+                      {t('booking.step2Price')}
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/user-dashboard')}
+                    >
+                      {t('enhancedPayment.goToDashboard')}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    {t('paymentInformation')}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="font-medium">{t('amountPaid')}:</span>
-                    <span className="text-lg font-semibold text-green-600">
-                      ${bookingData.paidAmount.toFixed(2)}
+                    <span className="font-medium">{t('paymentMethod')}:</span>
+                    <Badge variant="outline">{bookingData.paymentMethod}</Badge>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{t('totalAmount')}:</span>
+                    <span className="text-lg font-bold text-primary">
+                      ${bookingData.totalPrice?.toFixed(2)}
                     </span>
                   </div>
-                )}
 
-                {bookingData.paymentMethod === 'Cash on Arrival' && (
-                  <Alert>
-                    <MessageCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      {t('cashPaymentReminder')}
-                    </AlertDescription>
-                  </Alert>
-                )}
+                  {bookingData.paidAmount !== undefined && (
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">{t('amountPaid')}:</span>
+                      <span className="text-lg font-semibold text-green-600">
+                        ${bookingData.paidAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  )}
 
-                {bookingData.paymentMethod === 'Bank Transfer' && (
-                  <Alert>
-                    <Clock className="h-4 w-4" />
-                    <AlertDescription>
-                      {t('bankTransferVerificationPending')}
-                    </AlertDescription>
-                  </Alert>
-                )}
+                  {bookingData.paymentMethod === 'Cash on Arrival' && (
+                    <Alert>
+                      <MessageCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        {t('cashPaymentReminder')}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {bookingData.paymentMethod === 'Bank Transfer' && (
+                    <Alert>
+                      <Clock className="h-4 w-4" />
+                      <AlertDescription>
+                        {t('bankTransferVerificationPending')}
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
                 {emailSent && (
                   <Alert>
@@ -444,6 +540,7 @@ const EnhancedConfirmation = () => {
                 </div>
               </CardContent>
             </Card>
+            )}
           </div>
 
           {/* Action Buttons */}
