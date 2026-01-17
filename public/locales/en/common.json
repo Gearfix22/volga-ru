@@ -814,7 +814,12 @@
     "russianEleganceDesc": "Classic luxury style"
   },
   "status": {
+    "draft": "Draft",
     "pending": "Pending",
+    "underReview": "Under Review",
+    "approved": "Approved",
+    "awaitingPayment": "Awaiting Payment",
+    "paid": "Paid",
     "confirmed": "Confirmed",
     "completed": "Completed",
     "cancelled": "Cancelled",

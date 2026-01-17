@@ -780,7 +780,12 @@
     "russianEleganceDesc": "أسلوب فاخر كلاسيكي"
   },
   "status": {
+    "draft": "مسودة",
     "pending": "قيد الانتظار",
+    "underReview": "قيد المراجعة",
+    "approved": "تمت الموافقة",
+    "awaitingPayment": "في انتظار الدفع",
+    "paid": "مدفوع",
     "confirmed": "مؤكد",
     "completed": "مكتمل",
     "cancelled": "ملغي",

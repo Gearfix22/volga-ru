@@ -3,18 +3,24 @@
  * and handling dynamic translations
  */
 
-// Status mapping for bookings
+// Status mapping for bookings - ALIGNED WITH DATABASE ENUM
 export const getStatusTranslationKey = (status: string): string => {
   const statusMap: Record<string, string> = {
+    // All statuses from booking_status enum
+    'draft': 'status.draft',
     'pending': 'status.pending',
+    'under_review': 'status.underReview',
+    'approved': 'status.approved',
+    'awaiting_payment': 'status.awaitingPayment',
+    'paid': 'status.paid',
     'confirmed': 'status.confirmed',
-    'completed': 'status.completed',
-    'cancelled': 'status.cancelled',
-    'rejected': 'status.rejected',
     'assigned': 'status.assigned',
     'accepted': 'status.accepted',
     'on_trip': 'status.onTrip',
     'on_the_way': 'status.onTheWay',
+    'completed': 'status.completed',
+    'cancelled': 'status.cancelled',
+    'rejected': 'status.rejected',
   };
   return statusMap[status?.toLowerCase()] || 'status.unknown';
 };
