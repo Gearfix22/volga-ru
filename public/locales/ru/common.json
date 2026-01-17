@@ -2035,5 +2035,30 @@
     "awaitingAdminApproval": "Ожидание утверждения администратором",
     "confirmProceed": "Подтвердить и перейти к оплате",
     "waitingAdminApprove": "Ожидание утверждения цены администратором перед продолжением."
+  },
+  "enhancedPayment": {
+    "loadingPaymentDetails": "Загрузка данных оплаты...",
+    "priceNotSet": "Цена ещё не установлена",
+    "priceNotSetDesc": "Администратор ещё не установил цену для вашего бронирования. Вы получите уведомление, когда цена будет готова.",
+    "goToDashboard": "Перейти в личный кабинет"
+  },
+  "paymentsHistory": {
+    "title": "История платежей",
+    "totalPaid": "Всего оплачено",
+    "pendingPayments": "Ожидающие платежи",
+    "totalTransactions": "Всего транзакций",
+    "searchPayments": "Поиск платежей",
+    "searchPlaceholder": "Поиск по услуге, способу оплаты или ID транзакции...",
+    "export": "Экспорт",
+    "paymentHistory": "История платежей",
+    "date": "Дата",
+    "service": "Услуга",
+    "method": "Способ",
+    "amount": "Сумма",
+    "status": "Статус",
+    "transactionId": "ID транзакции",
+    "actions": "Действия",
+    "noPaymentsFound": "Платежи не найдены",
+    "failedToFetch": "Не удалось загрузить историю платежей"
   }
 }
