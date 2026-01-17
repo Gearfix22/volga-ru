@@ -769,7 +769,9 @@
     "multiDestination": "Multi-destination",
     "localExperiences": "Local Experiences",
     "adventureTours": "Adventure Tours",
-    "adminOnly": "Admin Only"
+    "adminOnly": "Admin Only",
+    "loadingBookingDetails": "Loading booking details...",
+    "hours": "hours"
   },
   "common": {
     "optional": "Optional"

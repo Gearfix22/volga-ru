@@ -742,7 +742,9 @@
     "multiDestination": "متعدد الوجهات",
     "localExperiences": "تجارب محلية",
     "adventureTours": "جولات مغامرة",
-    "adminOnly": "للمسؤولين فقط"
+    "adminOnly": "للمسؤولين فقط",
+    "loadingBookingDetails": "جاري تحميل تفاصيل الحجز...",
+    "hours": "ساعات"
   },
   "common": {
     "optional": "اختياري"

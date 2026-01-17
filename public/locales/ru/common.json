@@ -724,7 +724,9 @@
     "multiDestination": "Мультидестинация",
     "localExperiences": "Местные впечатления",
     "adventureTours": "Приключенческие туры",
-    "adminOnly": "Только для администраторов"
+    "adminOnly": "Только для администраторов",
+    "loadingBookingDetails": "Загрузка данных бронирования...",
+    "hours": "часов"
   },
   "common": {
     "optional": "Необязательно"

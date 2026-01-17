@@ -479,7 +479,19 @@ const EnhancedPayment = () => {
     }
   };
 
-  const renderBookingDetails = () => (
+  const renderBookingDetails = () => {
+    // Guard against null bookingData - should not happen but adds safety
+    if (!bookingData) {
+      return (
+        <Card className="backdrop-blur-sm bg-white/90 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-700 sticky top-24">
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">{t('messages.loadingBookingDetails')}</p>
+          </CardContent>
+        </Card>
+      );
+    }
+    
+    return (
     <Card className="backdrop-blur-sm bg-white/90 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-700 sticky top-24">
       <CardHeader className="pb-3">
         <CardTitle className={`flex items-center gap-2 text-xl ${isRTL ? 'flex-row-reverse' : ''}`}>
@@ -531,6 +543,7 @@ const EnhancedPayment = () => {
       </CardContent>
     </Card>
   );
+  };
 
   const renderPaymentMethodSelector = () => (
     <Card className="backdrop-blur-sm bg-white/90 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-700">
