@@ -28,16 +28,46 @@ import {
   ChevronUp
 } from 'lucide-react';
 
+import type { Json } from '@/integrations/supabase/types';
+
+interface BookingServiceDetails {
+  pickupLocation?: string;
+  dropoffLocation?: string;
+  pickupDate?: string;
+  pickupTime?: string;
+  returnDate?: string;
+  returnTime?: string;
+  passengers?: string;
+  vehicleType?: string;
+  location?: string;
+  checkIn?: string;
+  checkOut?: string;
+  guests?: string;
+  roomPreference?: string;
+  eventType?: string;
+  eventName?: string;
+  date?: string;
+  numberOfPeople?: string;
+  duration?: string;
+  specialRequests?: string;
+}
+
 interface Booking {
   id: string;
   service_type: string;
   status: string;
   payment_status: string;
-  total_price: number;
+  total_price: number | null;
   created_at: string;
-  service_details: any;
+  service_details: Json | null;
   canPay?: boolean;
   approvedPrice?: number | null;
+}
+
+// Type guard for service details
+function asServiceDetails(details: Json | null): BookingServiceDetails | null {
+  if (!details || typeof details !== 'object' || Array.isArray(details)) return null;
+  return details as BookingServiceDetails;
 }
 
 // Expandable booking card with timeline
