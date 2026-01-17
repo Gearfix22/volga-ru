@@ -274,7 +274,7 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
               <div className="space-y-2">
                 <span className="text-sm font-medium flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
-                  Price (from booking_price_workflow):
+                  Admin Price:
                 </span>
                 {loadingPrice ? (
                   <div className="flex items-center gap-2">

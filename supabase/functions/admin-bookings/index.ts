@@ -337,10 +337,11 @@ Deno.serve(async (req) => {
 
       if (updateError) throw updateError
 
-      // Notify customer
+      // Notify customer via UNIFIED notifications table
       if (booking.user_id) {
-        await supabaseAdmin.from('customer_notifications').insert({
-          user_id: booking.user_id,
+        await supabaseAdmin.from('unified_notifications').insert({
+          recipient_id: booking.user_id,
+          recipient_type: 'user',
           booking_id: bookingId,
           type: 'booking_rejected',
           title: 'Booking Rejected',
@@ -505,10 +506,11 @@ Deno.serve(async (req) => {
 
       if (updateError) throw updateError
 
-      // Notify driver
+      // Notify driver via UNIFIED notifications table
       if (driver_id) {
-        await supabaseAdmin.from('driver_notifications').insert({
-          driver_id,
+        await supabaseAdmin.from('unified_notifications').insert({
+          recipient_id: driver_id,
+          recipient_type: 'driver',
           booking_id: bookingId,
           type: 'new_assignment',
           title: 'New Booking Assignment',
@@ -574,10 +576,11 @@ Deno.serve(async (req) => {
 
       if (updateError) throw updateError
 
-      // Notify guide
+      // Notify guide via UNIFIED notifications table
       if (guide_id) {
-        await supabaseAdmin.from('guide_notifications').insert({
-          guide_id,
+        await supabaseAdmin.from('unified_notifications').insert({
+          recipient_id: guide_id,
+          recipient_type: 'guide',
           booking_id: bookingId,
           type: 'new_assignment',
           title: 'New Booking Assignment',
@@ -598,6 +601,7 @@ Deno.serve(async (req) => {
     // =========================================================
     if (method === 'DELETE' && bookingId && !action) {
       // Delete related records first (cascade)
+      // FIXED: Using only existing tables - unified_notifications instead of legacy tables
       const relatedTables = [
         'transportation_bookings',
         'hotel_bookings',
@@ -606,12 +610,8 @@ Deno.serve(async (req) => {
         'tourist_guide_bookings',
         'booking_status_history',
         'booking_prices',
-        'booking_price_workflow',
         'payment_receipts',
-        'customer_notifications',
-        'driver_notifications',
-        'guide_notifications',
-        'notifications'
+        'unified_notifications'  // FIXED: Use unified table instead of legacy customer/driver/guide_notifications
       ]
 
       for (const table of relatedTables) {
