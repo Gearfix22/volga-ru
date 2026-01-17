@@ -250,6 +250,96 @@ const EnhancedConfirmation = () => {
           </div>
         );
       
+      case 'Guide':
+        return (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{t('location')}:</span>
+              <span className="text-sm">{details.location}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{t('date')}:</span>
+              <span className="text-sm">{details.date}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{t('messages.duration')}:</span>
+              <span className="text-sm">{details.duration} {t('messages.hours')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{t('messages.groupSize')}:</span>
+              <span className="text-sm">{details.numberOfPeople}</span>
+            </div>
+          </div>
+        );
+
+      case 'Accommodation':
+        return (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{t('location')}:</span>
+              <span className="text-sm">{details.location}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{t('checkin')}:</span>
+              <span className="text-sm">{details.checkIn}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{t('checkout')}:</span>
+              <span className="text-sm">{details.checkOut}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{t('guests')}:</span>
+              <span className="text-sm">{details.guests}</span>
+            </div>
+          </div>
+        );
+      
+      case 'Driver':
+        return (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{t('pickup')}:</span>
+              <span className="text-sm">{details.pickupLocation}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{t('dropoff')}:</span>
+              <span className="text-sm">{details.dropoffLocation}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{t('date')}:</span>
+              <span className="text-sm">{details.pickupDate}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{t('time')}:</span>
+              <span className="text-sm">{details.pickupTime}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Car className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{t('vehicle')}:</span>
+              <span className="text-sm">{details.vehicleType}</span>
+            </div>
+            {details.passengers && (
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">{t('passengers')}:</span>
+                <span className="text-sm">{details.passengers}</span>
+              </div>
+            )}
+          </div>
+        );
+      
       default:
         return (
           <div className="text-sm text-muted-foreground">
