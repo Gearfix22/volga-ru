@@ -88,9 +88,13 @@ function BookingCardWithTimeline({ booking, onPayNow }: { booking: Booking; onPa
           </div>
           <div className={isRTL ? 'text-right' : ''}>
             <p className="font-medium">{t(getServiceTypeTranslationKey(booking.service_type))}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(booking.created_at).toLocaleDateString()} • {booking.approvedPrice ? booking.approvedPrice.toFixed(2) : booking.total_price?.toFixed(2) || '0.00'}
-                  </p>
+            <p className="text-sm text-muted-foreground">
+              {new Date(booking.created_at).toLocaleDateString()} • {
+                booking.approvedPrice 
+                  ? `$${booking.approvedPrice.toFixed(2)} USD` 
+                  : t('userDashboard.awaitingPrice')
+              }
+            </p>
           </div>
         </div>
         <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
