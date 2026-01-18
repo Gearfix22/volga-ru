@@ -51,12 +51,19 @@ Deno.serve(async (req) => {
     
     const { user, supabaseAdmin } = authResult as AuthContext
     
-    // Parse URL
+    // Parse URL - handle both direct calls and Supabase edge function routing
     const url = new URL(req.url)
     const pathParts = url.pathname.split('/').filter(Boolean)
     const method = req.method
-    const bookingId = pathParts.length > 1 ? pathParts[1] : null
-    const action = pathParts.length > 2 ? pathParts[2] : null
+    
+    // Find the function name in the path and extract segments after it
+    const functionIndex = pathParts.findIndex(p => p === 'admin-bookings')
+    const bookingId = functionIndex >= 0 && pathParts.length > functionIndex + 1 
+      ? pathParts[functionIndex + 1] 
+      : null
+    const action = functionIndex >= 0 && pathParts.length > functionIndex + 2 
+      ? pathParts[functionIndex + 2] 
+      : null
 
     // =========================================================
     // GET /admin-bookings - List all bookings
