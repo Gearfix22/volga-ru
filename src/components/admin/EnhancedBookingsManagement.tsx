@@ -58,7 +58,7 @@ import {
   setBookingPrice,
 } from '@/services/adminService';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { ACTIVE_STATUSES, FINAL_STATUSES } from '@/utils/bookingWorkflow';
+import { ACTIVE_STATUSES, FINAL_STATUSES, getValidNextStatuses, isValidTransition } from '@/utils/bookingWorkflow';
 
 interface Booking {
   id: string;
@@ -243,6 +243,18 @@ export const EnhancedBookingsManagement = () => {
   };
 
   const handleUpdateStatus = async (bookingId: string, newStatus: string) => {
+    const currentStatus = bookings.find(b => b.id === bookingId)?.status;
+
+    // Frontend guard: avoid calling the API with an invalid transition
+    if (currentStatus && !isValidTransition(currentStatus, newStatus) && currentStatus !== newStatus) {
+      toast({
+        title: t('common.error'),
+        description: `Invalid status transition from '${currentStatus}' to '${newStatus}'`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
       setActionLoading(bookingId);
       await updateBooking(bookingId, { status: newStatus });
@@ -688,14 +700,42 @@ export const EnhancedBookingsManagement = () => {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="pending">{t('bookings.pending')}</SelectItem>
-                                    <SelectItem value="confirmed">{t('bookings.confirmed')}</SelectItem>
-                                    <SelectItem value="active">{t('bookings.active')}</SelectItem>
-                                    <SelectItem value="assigned">{t('bookings.assigned')}</SelectItem>
-                                    <SelectItem value="accepted">{t('bookings.accepted')}</SelectItem>
-                                    <SelectItem value="on_trip">{t('bookings.onTrip')}</SelectItem>
-                                    <SelectItem value="completed">{t('bookings.completed')}</SelectItem>
-                                    <SelectItem value="cancelled">{t('bookings.cancelled')}</SelectItem>
+                                    {[...new Set([booking.status, ...getValidNextStatuses(booking.status)])].map((status) => (
+                                      <SelectItem key={status} value={status}>
+                                        {(() => {
+                                          switch (status) {
+                                            case 'draft':
+                                              return t('bookings.draft');
+                                            case 'pending':
+                                              return t('bookings.pending');
+                                            case 'under_review':
+                                              return t('bookings.underReview');
+                                            case 'approved':
+                                              return t('bookings.approved');
+                                            case 'awaiting_payment':
+                                              return t('bookings.awaitingPayment');
+                                            case 'paid':
+                                              return t('bookings.paid');
+                                            case 'confirmed':
+                                              return t('bookings.confirmed');
+                                            case 'assigned':
+                                              return t('bookings.assigned');
+                                            case 'accepted':
+                                              return t('bookings.accepted');
+                                            case 'on_trip':
+                                              return t('bookings.onTrip');
+                                            case 'completed':
+                                              return t('bookings.completed');
+                                            case 'cancelled':
+                                              return t('bookings.cancelled');
+                                            case 'rejected':
+                                              return t('bookings.rejected');
+                                            default:
+                                              return status;
+                                          }
+                                        })()}
+                                      </SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               </div>
