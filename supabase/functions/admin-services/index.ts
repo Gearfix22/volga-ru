@@ -166,6 +166,11 @@ Deno.serve(async (req) => {
         display_order: body.display_order || 0,
         service_type: body.service_type || null,
         status: body.status || 'active',
+        // Scheduling fields - CRITICAL for mobile booking flow
+        duration_minutes: body.duration_minutes || null,
+        availability_days: body.availability_days || null,
+        available_from: body.available_from || null,
+        available_to: body.available_to || null,
         // Multilingual fields
         name_en: body.name_en || body.name?.trim() || null,
         name_ar: body.name_ar || null,
@@ -279,6 +284,11 @@ Deno.serve(async (req) => {
       if (body.display_order !== undefined) updateData.display_order = body.display_order
       if (body.service_type !== undefined) updateData.service_type = body.service_type
       if (body.status !== undefined) updateData.status = body.status
+      // Scheduling fields - CRITICAL for mobile booking flow
+      if (body.duration_minutes !== undefined) updateData.duration_minutes = body.duration_minutes
+      if (body.availability_days !== undefined) updateData.availability_days = body.availability_days
+      if (body.available_from !== undefined) updateData.available_from = body.available_from
+      if (body.available_to !== undefined) updateData.available_to = body.available_to
       // Multilingual updates
       if (body.name_en !== undefined) updateData.name_en = body.name_en
       if (body.name_ar !== undefined) updateData.name_ar = body.name_ar
