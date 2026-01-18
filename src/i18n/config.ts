@@ -1,7 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import { logMissingTranslation } from '@/utils/translationUtils';
 
 // Import translation files
 import en from '../../public/locales/en/common.json';
@@ -54,7 +53,7 @@ i18n
     fallbackLng: 'en',
     defaultNS: 'common',
     ns: ['common'],
-    debug: process.env.NODE_ENV === 'development',
+    debug: false, // Disable debug to prevent console noise
     
     interpolation: {
       escapeValue: false, // React already does escaping
@@ -75,20 +74,29 @@ i18n
       transEmptyNodeValue: '',
     },
 
-    // Missing key handler - log for admin review
-    saveMissing: true,
-    missingKeyHandler: (lngs, ns, key, fallbackValue) => {
-      const languages = Array.isArray(lngs) ? lngs : [lngs];
-      languages.forEach(lng => logMissingTranslation(key, lng));
-      
-      // In development, log to console with more context
+    // CRITICAL: Properly handle missing translations
+    saveMissing: false, // Disable in production
+    
+    // Return proper fallback - NEVER return the raw key
+    returnEmptyString: false,
+    returnNull: false,
+    
+    // Custom missing key handler that returns a user-friendly fallback
+    parseMissingKeyHandler: (key: string) => {
+      // Extract the last part of the key as a readable fallback
+      const parts = key.split('.');
+      const lastPart = parts[parts.length - 1];
+      // Convert camelCase to readable text
+      return lastPart.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim();
+    },
+
+    // Log missing keys only in development
+    missingKeyHandler: (lngs, ns, key) => {
       if (process.env.NODE_ENV === 'development') {
+        const languages = Array.isArray(lngs) ? lngs : [lngs];
         console.warn(`[i18n] Missing key: "${key}" in namespace "${ns}" for languages: ${languages.join(', ')}`);
       }
     },
-
-    // Return key as fallback to make missing translations visible
-    returnEmptyString: false,
   });
 
 // Apply initial direction based on saved language

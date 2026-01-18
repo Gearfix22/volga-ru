@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isRTLLanguage, SUPPORTED_LANGUAGES, SupportedLanguage, LANGUAGE_NAMES, LANGUAGE_FLAGS } from '@/i18n/config';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { keyToReadableFallback } from '@/utils/safeTranslate';
 
 export type Language = SupportedLanguage;
 
@@ -19,11 +20,32 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { t, i18n } = useTranslation('common');
+  const { t: rawT, i18n } = useTranslation('common');
   const { user } = useAuth();
   
   const currentLanguage = (i18n.language || 'en') as Language;
   const isRTL = isRTLLanguage(currentLanguage);
+
+  // SAFE TRANSLATION FUNCTION - Never returns raw keys
+  const t = useMemo(() => {
+    return (key: string, options?: any): string => {
+      try {
+        const result = rawT(key, options);
+        const resultStr = typeof result === 'string' ? result : String(result);
+        
+        // Check if result looks like a raw key (contains dots and matches key pattern)
+        if (resultStr === key || (resultStr.includes('.') && /^[a-z]+\.[a-zA-Z.]+$/.test(resultStr))) {
+          // Return a human-readable fallback instead of the raw key
+          return keyToReadableFallback(key);
+        }
+        
+        return resultStr;
+      } catch (error) {
+        console.error(`[LanguageContext] Translation error for key "${key}":`, error);
+        return keyToReadableFallback(key);
+      }
+    };
+  }, [rawT]);
 
   // Sync language preference with Supabase profile
   const syncLanguageToProfile = useCallback(async (lang: Language) => {
