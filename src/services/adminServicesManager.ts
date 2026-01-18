@@ -98,7 +98,12 @@ export async function createService(payload: CreateServicePayload): Promise<Serv
     features: payload.features ?? null,
     is_active: payload.is_active ?? true,
     category_id: payload.category_id ?? null,
-    display_order: payload.display_order ?? 0
+    display_order: payload.display_order ?? 0,
+    // Scheduling fields - CRITICAL for mobile booking flow
+    duration_minutes: payload.duration_minutes ?? null,
+    availability_days: payload.availability_days ?? null,
+    available_from: payload.available_from ?? null,
+    available_to: payload.available_to ?? null
   };
 
   const { data, error } = await supabase
@@ -137,6 +142,11 @@ export async function updateService(serviceId: string, updates: UpdateServicePay
   if (updates.is_active !== undefined) updateData.is_active = updates.is_active;
   if (updates.category_id !== undefined) updateData.category_id = updates.category_id;
   if (updates.display_order !== undefined) updateData.display_order = updates.display_order;
+  // Scheduling fields - CRITICAL for mobile booking flow
+  if (updates.duration_minutes !== undefined) updateData.duration_minutes = updates.duration_minutes;
+  if (updates.availability_days !== undefined) updateData.availability_days = updates.availability_days;
+  if (updates.available_from !== undefined) updateData.available_from = updates.available_from;
+  if (updates.available_to !== undefined) updateData.available_to = updates.available_to;
 
   const { error } = await supabase
     .from('services')
