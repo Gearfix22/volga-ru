@@ -63,40 +63,41 @@ const AppSidebar = () => {
     },
   ];
 
+  // Admin menu uses query params to match AdminPanel's tab system
   const adminMenuItems = [
     {
       title: t('sidebar.adminDashboard'),
-      url: '/admin',
+      url: '/admin?tab=overview',
       icon: Shield,
     },
     {
       title: t('sidebar.manageBookings'),
-      url: '/admin/bookings',
+      url: '/admin?tab=bookings',
       icon: Calendar,
     },
     {
       title: t('sidebar.managePayments'),
-      url: '/admin/payments',
+      url: '/admin?tab=payments',
       icon: CreditCard,
     },
     {
       title: t('sidebar.manageServices'),
-      url: '/admin/services',
+      url: '/admin?tab=services',
       icon: Package,
     },
     {
       title: t('sidebar.manageUsers'),
-      url: '/admin/users',
+      url: '/admin?tab=users',
       icon: Users,
     },
     {
       title: t('sidebar.analytics'),
-      url: '/admin/analytics',
+      url: '/admin?tab=overview',
       icon: BarChart,
     },
     {
       title: t('sidebar.activityLogs'),
-      url: '/admin/logs',
+      url: '/admin?tab=logs',
       icon: FileText,
     },
   ];
@@ -106,8 +107,23 @@ const AppSidebar = () => {
     navigate('/');
   };
 
-  const getNavClass = (path: string) => {
-    return location.pathname === path 
+  const getNavClass = (url: string) => {
+    // Handle query params for admin routes (e.g., /admin?tab=payments)
+    const [pathname, queryString] = url.split('?');
+    const currentSearch = new URLSearchParams(location.search);
+    const urlSearch = new URLSearchParams(queryString || '');
+    
+    // For admin routes with tabs, check both pathname and tab param
+    if (pathname === '/admin' && urlSearch.has('tab')) {
+      const isMatch = location.pathname === pathname && 
+                      currentSearch.get('tab') === urlSearch.get('tab');
+      return isMatch 
+        ? "bg-accent text-accent-foreground font-medium" 
+        : "hover:bg-accent/50";
+    }
+    
+    // For regular routes, just check pathname
+    return location.pathname === pathname 
       ? "bg-accent text-accent-foreground font-medium" 
       : "hover:bg-accent/50";
   };
