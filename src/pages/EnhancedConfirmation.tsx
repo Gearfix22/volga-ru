@@ -78,15 +78,55 @@ const EnhancedConfirmation = () => {
   const sendBookingEmail = async () => {
     if (!bookingData || emailSent) return;
     
+    // Get email from bookingData.userInfo, or try to get from user profile
+    let userEmail = bookingData.userInfo?.email;
+    
+    // If no email in booking data, try to get from authenticated user
+    if (!userEmail && user?.email) {
+      userEmail = user.email;
+    }
+    
+    // If still no email, try to fetch from profile
+    if (!userEmail && user?.id) {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('phone')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        // If we have user email from auth, use it
+        if (user?.email) {
+          userEmail = user.email;
+        }
+      } catch (err) {
+        console.warn('Could not fetch user profile for email:', err);
+      }
+    }
+    
+    // Skip email sending if no email is available
+    if (!userEmail) {
+      console.warn('No email address available for booking confirmation email');
+      return;
+    }
+    
     try {
+      const userInfo = {
+        ...bookingData.userInfo,
+        email: userEmail,
+        fullName: bookingData.userInfo?.fullName || user?.user_metadata?.full_name || 'Customer',
+        phone: bookingData.userInfo?.phone || ''
+      };
+      
       const { error } = await supabase.functions.invoke('send-booking-email', {
         body: {
-          userInfo: bookingData.userInfo,
+          bookingId: bookingData.bookingId,
+          userInfo,
           serviceType: bookingData.serviceType,
           serviceDetails: bookingData.serviceDetails,
-          transactionId: bookingData.transactionId,
-          totalPrice: bookingData.totalPrice,
-          paymentMethod: bookingData.paymentMethod,
+          transactionId: bookingData.transactionId || 'N/A',
+          totalPrice: bookingData.totalPrice || 0,
+          paymentMethod: bookingData.paymentMethod || 'Not specified',
           status: bookingData.status || 'confirmed'
         }
       });
