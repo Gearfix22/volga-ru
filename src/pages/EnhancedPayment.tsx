@@ -28,10 +28,55 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { completeDraftBooking, createEnhancedBooking, processBookingPayment } from '@/services/bookingService';
+import { completeDraftBooking } from '@/services/bookingService';
 import { canPayForBooking, subscribeToPaymentGuardChanges } from '@/services/paymentGuardService';
 import { convertFromUSD, getCurrencyRates, type CurrencyCode, type CurrencyRate, formatPrice } from '@/services/currencyService';
 import type { BookingData } from '@/types/booking';
+
+/**
+ * UNIFIED PAYMENT PROCESSING
+ * All payment methods now use the process-payment edge function
+ * This ensures consistent handling, validation, and audit trails
+ */
+const processPaymentViaEdgeFunction = async (
+  bookingId: string,
+  paymentMethod: 'cash' | 'credit_card' | 'bank_transfer',
+  options?: {
+    transactionId?: string;
+    receiptUrl?: string;
+    customerNotes?: string;
+    paymentCurrency?: string;
+    exchangeRate?: number;
+  }
+): Promise<{ success: boolean; data?: any; error?: string }> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('process-payment', {
+      body: {
+        booking_id: bookingId,
+        payment_method: paymentMethod,
+        transaction_id: options?.transactionId,
+        receipt_url: options?.receiptUrl,
+        customer_notes: options?.customerNotes,
+        payment_currency: options?.paymentCurrency,
+        exchange_rate: options?.exchangeRate
+      }
+    });
+
+    if (error) {
+      console.error('Payment edge function error:', error);
+      return { success: false, error: error.message };
+    }
+
+    if (!data?.success) {
+      return { success: false, error: data?.message || 'Payment failed' };
+    }
+
+    return { success: true, data };
+  } catch (err: any) {
+    console.error('Payment processing error:', err);
+    return { success: false, error: err.message || 'Unexpected error' };
+  }
+};
 
 const EnhancedPayment = () => {
   const navigate = useNavigate();
@@ -249,32 +294,26 @@ const EnhancedPayment = () => {
       return;
     }
 
+    // CRITICAL: Cash on Arrival requires an existing booking with locked price
+    if (!currentBookingId) {
+      toast({
+        title: t('error'),
+        description: t('enhancedPayment.bookingRequired'),
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsProcessing(true);
     try {
-      const transactionId = `CASH-${Date.now()}`;
-      const convertedPrice = convertFromUSD(finalAmount, selectedExchangeRate);
-      
-      // If we have an existing booking, update it with payment info
-      // Otherwise, create a new booking (for new service selection flow)
-      if (currentBookingId) {
-        await processBookingPayment(currentBookingId, {
-          paymentMethod: 'Cash on Arrival',
-          transactionId,
-          paidAmount: finalAmount,
-          paymentCurrency: selectedCurrency,
-          exchangeRateUsed: selectedExchangeRate,
-          finalPaidAmount: convertedPrice,
-          requiresVerification: false
-        });
-      } else if (bookingData) {
-        await createEnhancedBooking(bookingData, {
-          paymentMethod: 'Cash on Arrival',
-          transactionId,
-          totalPrice: finalAmount,
-          paymentCurrency: selectedCurrency,
-          exchangeRateUsed: selectedExchangeRate,
-          finalPaidAmount: convertedPrice
-        });
+      // Use unified edge function for consistent payment processing
+      const result = await processPaymentViaEdgeFunction(currentBookingId, 'cash', {
+        paymentCurrency: selectedCurrency,
+        exchangeRate: selectedExchangeRate
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Payment failed');
       }
 
       // Complete draft if exists
@@ -292,18 +331,20 @@ const EnhancedPayment = () => {
           bookingData: {
             ...bookingData,
             paymentMethod: 'Cash on Arrival',
-            transactionId,
+            transactionId: result.data?.payment?.transaction_id,
             paidAmount: 0,
             totalPrice: finalAmount,
-            status: 'confirmed'
-          }
+            status: result.data?.booking_status || 'confirmed',
+            bookingId: currentBookingId
+          },
+          isNewBooking: false
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Cash payment error:', error);
       toast({
         title: t('error'),
-        description: t('bookingError'),
+        description: error.message || t('bookingError'),
         variant: 'destructive'
       });
     } finally {
@@ -333,32 +374,26 @@ const EnhancedPayment = () => {
       return;
     }
 
+    // CRITICAL: Credit card requires an existing booking with locked price
+    if (!currentBookingId) {
+      toast({
+        title: t('error'),
+        description: t('enhancedPayment.bookingRequired'),
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsProcessing(true);
     try {
-      // For now, simulate Stripe payment (you would integrate real Stripe here)
-      const transactionId = `STRIPE-${Date.now()}`;
-      const convertedPrice = convertFromUSD(finalAmount, selectedExchangeRate);
-      
-      // If we have an existing booking, update it with payment info
-      if (currentBookingId) {
-        await processBookingPayment(currentBookingId, {
-          paymentMethod: 'Credit Card',
-          transactionId,
-          paidAmount: finalAmount,
-          paymentCurrency: selectedCurrency,
-          exchangeRateUsed: selectedExchangeRate,
-          finalPaidAmount: convertedPrice,
-          requiresVerification: false
-        });
-      } else if (bookingData) {
-        await createEnhancedBooking(bookingData, {
-          paymentMethod: 'Credit Card',
-          transactionId,
-          totalPrice: finalAmount,
-          paymentCurrency: selectedCurrency,
-          exchangeRateUsed: selectedExchangeRate,
-          finalPaidAmount: convertedPrice
-        });
+      // Use unified edge function for consistent payment processing
+      const result = await processPaymentViaEdgeFunction(currentBookingId, 'credit_card', {
+        paymentCurrency: selectedCurrency,
+        exchangeRate: selectedExchangeRate
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Payment failed');
       }
 
       // Complete draft if exists
@@ -368,7 +403,7 @@ const EnhancedPayment = () => {
 
       toast({
         title: t('paymentSuccessful'),
-        description: `Transaction ID: ${transactionId}`,
+        description: `Transaction ID: ${result.data?.payment?.transaction_id}`,
       });
 
       navigate('/enhanced-confirmation', {
@@ -376,18 +411,20 @@ const EnhancedPayment = () => {
           bookingData: {
             ...bookingData,
             paymentMethod: 'Credit Card',
-            transactionId,
+            transactionId: result.data?.payment?.transaction_id,
             paidAmount: finalAmount,
             totalPrice: finalAmount,
-            status: 'paid'
-          }
+            status: result.data?.booking_status || 'paid',
+            bookingId: currentBookingId
+          },
+          isNewBooking: false
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Stripe payment error:', error);
       toast({
         title: t('paymentFailed'),
-        description: t('paymentError'),
+        description: error.message || t('paymentError'),
         variant: 'destructive'
       });
     } finally {
@@ -405,6 +442,16 @@ const EnhancedPayment = () => {
       toast({
         title: t('invalidAmount'),
         description: t('enterValidAmount'),
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // CRITICAL: Bank transfer requires an existing booking with locked price
+    if (!currentBookingId) {
+      toast({
+        title: t('error'),
+        description: t('enhancedPayment.bookingRequired'),
         variant: 'destructive'
       });
       return;
@@ -439,45 +486,19 @@ const EnhancedPayment = () => {
         }
       }
       
-      // Process payment for existing booking or create new one
-      const convertedPrice = convertFromUSD(finalAmount, selectedExchangeRate);
-      let booking: any;
+      // Use unified edge function for consistent payment processing
+      const customerNotes = `Reference: ${transferDetails.referenceNumber}, Date: ${transferDetails.transferDate}. ${transferDetails.notes || ''}`;
       
-      if (currentBookingId) {
-        // Update existing booking with bank transfer payment info
-        booking = await processBookingPayment(currentBookingId, {
-          paymentMethod: 'Bank Transfer',
-          transactionId,
-          paidAmount: finalAmount,
-          paymentCurrency: selectedCurrency,
-          exchangeRateUsed: selectedExchangeRate,
-          finalPaidAmount: convertedPrice,
-          requiresVerification: true,
-          customerNotes: `Reference: ${transferDetails.referenceNumber}, Date: ${transferDetails.transferDate}. ${transferDetails.notes || ''}`
-        });
-      } else if (bookingData) {
-        // Create new booking for new service selection flow
-        booking = await createEnhancedBooking(bookingData, {
-          paymentMethod: 'Bank Transfer',
-          transactionId,
-          totalPrice: finalAmount,
-          requiresVerification: true,
-          adminNotes: `Reference: ${transferDetails.referenceNumber}, Date: ${transferDetails.transferDate}`,
-          customerNotes: transferDetails.notes,
-          paymentCurrency: selectedCurrency,
-          exchangeRateUsed: selectedExchangeRate,
-          finalPaidAmount: convertedPrice
-        });
-      }
+      const result = await processPaymentViaEdgeFunction(currentBookingId, 'bank_transfer', {
+        transactionId,
+        receiptUrl: receiptUrl || undefined,
+        customerNotes,
+        paymentCurrency: selectedCurrency,
+        exchangeRate: selectedExchangeRate
+      });
 
-      // Save payment receipt record if file was uploaded
-      const targetBookingId = currentBookingId || booking?.id;
-      if (receiptUrl && targetBookingId) {
-        await supabase.from('payment_receipts').insert({
-          booking_id: targetBookingId,
-          file_url: receiptUrl,
-          file_name: transferDetails.receiptFile?.name || ''
-        });
+      if (!result.success) {
+        throw new Error(result.error || 'Payment failed');
       }
 
       // Complete draft if exists
@@ -495,19 +516,21 @@ const EnhancedPayment = () => {
           bookingData: {
             ...bookingData,
             paymentMethod: 'Bank Transfer',
-            transactionId,
+            transactionId: result.data?.payment?.transaction_id,
             paidAmount: 0,
             totalPrice: finalAmount,
-            status: 'pending_verification',
-            receiptUrl
-          }
+            status: result.data?.booking_status || 'pending_verification',
+            receiptUrl,
+            bookingId: currentBookingId
+          },
+          isNewBooking: false
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Bank transfer error:', error);
       toast({
         title: t('error'),
-        description: t('bookingError'),
+        description: error.message || t('bookingError'),
         variant: 'destructive'
       });
     } finally {
