@@ -189,9 +189,11 @@ Deno.serve(async (req) => {
 
       // Also update bookings table for consistency (total_price column)
       // ALIGNED WITH DATABASE ENUM - use 'awaiting_payment' not 'awaiting_customer_confirmation'
+      // CRITICAL: Also sync payment_status to 'pending' to ensure v_booking_payment_guard.can_pay works
       const updateData: Record<string, any> = {
         total_price: price,
         status: lock ? 'awaiting_payment' : booking.status,
+        payment_status: lock ? 'pending' : 'pending', // Reset to pending when price is set
         updated_at: new Date().toISOString()
       }
       if (admin_notes) updateData.admin_notes = admin_notes
