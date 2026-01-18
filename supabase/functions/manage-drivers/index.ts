@@ -125,11 +125,13 @@ Deno.serve(async (req) => {
         })
       }
 
-      // Create notification for admin about password reset request
-      await supabaseAdmin.from('notifications').insert({
+      // Create notification for admin about password reset request using unified_notifications
+      await supabaseAdmin.from('unified_notifications').insert({
+        recipient_id: 'admin', // Will need admin query to get actual admin IDs
+        recipient_type: 'admin',
         type: 'password_reset_request',
+        title: 'Driver Password Reset Request',
         message: `Driver ${driver.full_name} (${driver.phone}) requested a password reset`,
-        target_admin_id: null, // All admins
         is_read: false
       })
 

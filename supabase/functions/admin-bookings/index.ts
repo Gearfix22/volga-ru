@@ -373,7 +373,7 @@ Deno.serve(async (req) => {
 
       const { data: currentBooking, error: fetchError } = await supabaseAdmin
         .from('bookings')
-        .select('status, payment_status, admin_final_price')
+        .select('status, payment_status, total_price')
         .eq('id', bookingId)
         .maybeSingle()
 
@@ -407,7 +407,7 @@ Deno.serve(async (req) => {
 
       // If admin_final_price is provided via PUT, also update booking_prices table
       if (admin_final_price !== undefined) {
-        updateData.admin_final_price = admin_final_price
+        updateData.total_price = admin_final_price
         
         // Sync to booking_prices table
         await supabaseAdmin
