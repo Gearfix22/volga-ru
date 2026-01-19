@@ -395,6 +395,66 @@ export type Database = {
           },
         ]
       }
+      booking_user_inputs: {
+        Row: {
+          booking_id: string
+          created_at: string | null
+          id: string
+          input_key: string
+          input_value: string | null
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string | null
+          id?: string
+          input_key: string
+          input_value?: string | null
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string | null
+          id?: string
+          input_key?: string
+          input_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_user_inputs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_user_inputs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_admin_bookings"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "booking_user_inputs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_booking_payment_guard"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "booking_user_inputs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_payment_audit"
+            referencedColumns: ["booking_id"]
+          },
+          {
+            foreignKeyName: "booking_user_inputs_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_booking_dashboard"
+            referencedColumns: ["booking_id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           admin_notes: string | null
@@ -1516,6 +1576,83 @@ export type Database = {
           is_active?: boolean | null
         }
         Relationships: []
+      }
+      service_inputs: {
+        Row: {
+          created_at: string | null
+          default_value: string | null
+          display_order: number | null
+          id: string
+          input_key: string
+          input_type: string
+          is_active: boolean | null
+          is_required: boolean | null
+          label: string
+          label_ar: string | null
+          label_en: string | null
+          label_ru: string | null
+          options: Json | null
+          placeholder: string | null
+          placeholder_ar: string | null
+          placeholder_en: string | null
+          placeholder_ru: string | null
+          service_id: string
+          updated_at: string | null
+          validation_rules: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          default_value?: string | null
+          display_order?: number | null
+          id?: string
+          input_key: string
+          input_type?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          label: string
+          label_ar?: string | null
+          label_en?: string | null
+          label_ru?: string | null
+          options?: Json | null
+          placeholder?: string | null
+          placeholder_ar?: string | null
+          placeholder_en?: string | null
+          placeholder_ru?: string | null
+          service_id: string
+          updated_at?: string | null
+          validation_rules?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          default_value?: string | null
+          display_order?: number | null
+          id?: string
+          input_key?: string
+          input_type?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          label?: string
+          label_ar?: string | null
+          label_en?: string | null
+          label_ru?: string | null
+          options?: Json | null
+          placeholder?: string | null
+          placeholder_ar?: string | null
+          placeholder_en?: string | null
+          placeholder_ru?: string | null
+          service_id?: string
+          updated_at?: string | null
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_inputs_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services: {
         Row: {

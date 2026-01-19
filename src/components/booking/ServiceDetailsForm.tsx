@@ -8,21 +8,30 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Clock, MapPin, Car, Building2, Ticket, Users, ArrowLeftRight, ArrowRight } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { EVENT_TYPES } from '@/types/booking';
+import { DynamicServiceForm } from './DynamicServiceForm';
 import type { ServiceDetails } from '@/types/booking';
 
 interface ServiceDetailsFormProps {
   serviceType: string;
   serviceDetails: ServiceDetails;
   onUpdateDetail: (key: string, value: string | string[]) => void;
+  serviceId?: string | null;
 }
+
+// Known service types that have hardcoded forms (for backward compatibility)
+const LEGACY_SERVICE_TYPES = ['Driver', 'Accommodation', 'Events', 'Guide'];
 
 export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
   serviceType,
   serviceDetails,
-  onUpdateDetail
+  onUpdateDetail,
+  serviceId
 }) => {
   const { t, isRTL } = useLanguage();
   const details = serviceDetails as any;
+  
+  // Check if this is a legacy service type with hardcoded form
+  const isLegacyType = LEGACY_SERVICE_TYPES.includes(serviceType);
 
   // SERVICE 1: Driver Only Booking Form
   const renderDriverForm = () => (
@@ -526,10 +535,21 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
   return (
     <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
       <CardContent className="p-6">
+        {/* Legacy hardcoded forms for backward compatibility */}
         {serviceType === 'Driver' && renderDriverForm()}
         {serviceType === 'Accommodation' && renderAccommodationForm()}
         {serviceType === 'Events' && renderEventsForm()}
         {serviceType === 'Guide' && renderGuideForm()}
+        
+        {/* Dynamic form for any other service type */}
+        {!isLegacyType && (
+          <DynamicServiceForm
+            serviceId={serviceId || null}
+            serviceType={serviceType}
+            serviceDetails={serviceDetails}
+            onUpdateDetail={onUpdateDetail}
+          />
+        )}
       </CardContent>
     </Card>
   );
