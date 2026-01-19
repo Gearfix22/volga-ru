@@ -4,14 +4,21 @@
  * Full CRUD operations for services - ADMIN ONLY
  * Mobile-compatible, API-first design
  * 
+ * DYNAMIC SERVICE TYPES:
+ * - No hardcoded service type restrictions
+ * - Admin can create any service type
+ * - Types are validated against existing or created as new
+ * 
  * Endpoints:
  * GET    /admin-services              - List all services
  * GET    /admin-services/:id          - Get specific service
+ * GET    /admin-services/:id/inputs   - Get service inputs
  * POST   /admin-services              - Create new service
  * PUT    /admin-services/:id          - Update service
  * DELETE /admin-services/:id          - Delete service
  * POST   /admin-services/:id/toggle   - Toggle active status
  * POST   /admin-services/reorder      - Bulk reorder services
+ * POST   /admin-services/:id/inputs   - Create/update service inputs
  */
 
 import { 
@@ -24,18 +31,16 @@ import {
   AuthContext
 } from '../_shared/auth.ts'
 
-// Valid service types
-const VALID_SERVICE_TYPES = ['Driver', 'Accommodation', 'Events', 'Guide'] as const
-
-// Validate service payload
+// Validate service payload - NO HARDCODED TYPES
 function validateServicePayload(payload: any, isCreate: boolean = true): { valid: boolean; error?: string } {
   if (isCreate) {
     if (!payload.name?.trim()) {
       return { valid: false, error: 'Service name is required' }
     }
-    if (!payload.type || !VALID_SERVICE_TYPES.includes(payload.type)) {
-      return { valid: false, error: `Service type must be one of: ${VALID_SERVICE_TYPES.join(', ')}` }
+    if (!payload.type?.trim()) {
+      return { valid: false, error: 'Service type is required' }
     }
+    // NO HARDCODED TYPE VALIDATION - any type is allowed
   }
   
   if (payload.base_price !== undefined && payload.base_price !== null) {
@@ -49,6 +54,45 @@ function validateServicePayload(payload: any, isCreate: boolean = true): { valid
   }
   
   return { valid: true }
+}
+
+// Create default inputs for a new service based on common patterns
+async function createDefaultInputs(supabaseAdmin: any, serviceId: string, serviceType: string) {
+  // Common inputs that most services need
+  const commonInputs = [
+    {
+      service_id: serviceId,
+      input_key: 'specialRequests',
+      label: 'Special Requests',
+      label_en: 'Special Requests',
+      label_ar: 'طلبات خاصة',
+      label_ru: 'Особые пожелания',
+      input_type: 'textarea',
+      is_required: false,
+      display_order: 99,
+      placeholder: 'Any special requirements...'
+    }
+  ]
+
+  // Add a date input as it's commonly needed
+  commonInputs.unshift({
+    service_id: serviceId,
+    input_key: 'preferredDate',
+    label: 'Preferred Date',
+    label_en: 'Preferred Date',
+    label_ar: 'التاريخ المفضل',
+    label_ru: 'Предпочтительная дата',
+    input_type: 'date',
+    is_required: true,
+    display_order: 1,
+    placeholder: ''
+  })
+
+  await supabaseAdmin
+    .from('service_inputs')
+    .insert(commonInputs)
+    .then(() => {})
+    .catch((e: any) => console.warn('Failed to create default inputs:', e))
 }
 
 Deno.serve(async (req) => {
@@ -88,9 +132,13 @@ Deno.serve(async (req) => {
       const { data, error } = await query
       if (error) throw error
 
+      // Also get unique service types for dropdown
+      const uniqueTypes = [...new Set((data || []).map((s: any) => s.type))]
+
       return jsonResponse({ 
         success: true,
         services: data,
+        service_types: uniqueTypes,
         count: data?.length || 0
       })
     }
@@ -125,6 +173,66 @@ Deno.serve(async (req) => {
     }
 
     // =========================================================
+    // GET /admin-services/:id/inputs - Get service inputs
+    // =========================================================
+    if (method === 'GET' && serviceId && action === 'inputs') {
+      const { data, error } = await supabaseAdmin
+        .from('service_inputs')
+        .select('*')
+        .eq('service_id', serviceId)
+        .order('display_order', { ascending: true })
+
+      if (error) throw error
+
+      return jsonResponse({ 
+        success: true, 
+        inputs: data || [],
+        count: data?.length || 0
+      })
+    }
+
+    // =========================================================
+    // POST /admin-services/:id/inputs - Create/update service inputs
+    // =========================================================
+    if (method === 'POST' && serviceId && action === 'inputs') {
+      const body = await req.json()
+      const { inputs } = body
+
+      if (!Array.isArray(inputs)) {
+        return errorResponse('Inputs must be an array', 400)
+      }
+
+      // Delete existing inputs and replace with new ones
+      await supabaseAdmin
+        .from('service_inputs')
+        .delete()
+        .eq('service_id', serviceId)
+
+      if (inputs.length > 0) {
+        const inputsWithServiceId = inputs.map((input: any, index: number) => ({
+          ...input,
+          service_id: serviceId,
+          display_order: input.display_order ?? index
+        }))
+
+        const { error } = await supabaseAdmin
+          .from('service_inputs')
+          .insert(inputsWithServiceId)
+
+        if (error) throw error
+      }
+
+      await logAdminAction(supabaseAdmin, user.id, 'service_inputs_updated', serviceId, 'service_inputs', { 
+        count: inputs.length 
+      })
+
+      return jsonResponse({ 
+        success: true, 
+        message: `${inputs.length} inputs saved`
+      })
+    }
+
+    // =========================================================
     // GET /admin-services/:id - Get specific service
     // =========================================================
     if (method === 'GET' && serviceId && !action) {
@@ -139,7 +247,18 @@ Deno.serve(async (req) => {
         return errorResponse('Service not found', 404)
       }
 
-      return jsonResponse({ success: true, service: data })
+      // Also fetch inputs for this service
+      const { data: inputs } = await supabaseAdmin
+        .from('service_inputs')
+        .select('*')
+        .eq('service_id', serviceId)
+        .order('display_order', { ascending: true })
+
+      return jsonResponse({ 
+        success: true, 
+        service: data,
+        inputs: inputs || []
+      })
     }
 
     // =========================================================
@@ -155,7 +274,7 @@ Deno.serve(async (req) => {
 
       const insertData = {
         name: body.name.trim(),
-        type: body.type,
+        type: body.type.trim(), // DYNAMIC - any type allowed
         description: body.description || null,
         base_price: body.base_price || null,
         currency: body.currency || 'USD',
@@ -166,7 +285,7 @@ Deno.serve(async (req) => {
         display_order: body.display_order || 0,
         service_type: body.service_type || null,
         status: body.status || 'active',
-        // Scheduling fields - CRITICAL for mobile booking flow
+        // Scheduling fields
         duration_minutes: body.duration_minutes || null,
         availability_days: body.availability_days || null,
         available_from: body.available_from || null,
@@ -191,6 +310,9 @@ Deno.serve(async (req) => {
         return errorResponse(`Failed to create service: ${error.message}`, 500)
       }
 
+      // Create default inputs for the new service
+      await createDefaultInputs(supabaseAdmin, data.id, data.type)
+
       await logAdminAction(supabaseAdmin, user.id, 'service_created', data.id, 'services', { 
         name: data.name,
         type: data.type 
@@ -199,7 +321,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ 
         success: true, 
         service: data,
-        message: 'Service created successfully'
+        message: 'Service created successfully. Default inputs added - customize them in service settings.'
       }, 201)
     }
 
@@ -273,7 +395,7 @@ Deno.serve(async (req) => {
       }
       
       if (body.name !== undefined) updateData.name = body.name.trim()
-      if (body.type !== undefined) updateData.type = body.type
+      if (body.type !== undefined) updateData.type = body.type.trim() // DYNAMIC - any type allowed
       if (body.description !== undefined) updateData.description = body.description
       if (body.base_price !== undefined) updateData.base_price = body.base_price
       if (body.currency !== undefined) updateData.currency = body.currency
@@ -284,7 +406,7 @@ Deno.serve(async (req) => {
       if (body.display_order !== undefined) updateData.display_order = body.display_order
       if (body.service_type !== undefined) updateData.service_type = body.service_type
       if (body.status !== undefined) updateData.status = body.status
-      // Scheduling fields - CRITICAL for mobile booking flow
+      // Scheduling fields
       if (body.duration_minutes !== undefined) updateData.duration_minutes = body.duration_minutes
       if (body.availability_days !== undefined) updateData.availability_days = body.availability_days
       if (body.available_from !== undefined) updateData.available_from = body.available_from
