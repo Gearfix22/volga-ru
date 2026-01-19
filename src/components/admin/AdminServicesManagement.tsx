@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Pencil, Trash2, GripVertical, Image, Loader2, Save, X, AlertCircle, Clock } from 'lucide-react';
+import { Plus, Pencil, Trash2, GripVertical, Image, Loader2, Save, X, AlertCircle, Clock, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -31,6 +31,7 @@ import {
   serviceToForm,
   type ServiceFormData
 } from '@/types/service';
+import { ServiceInputsManager } from './ServiceInputsManager';
 
 interface AdminServicesManagementProps {
   onRefresh?: () => void;
@@ -51,6 +52,7 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
   const [isToggling, setIsToggling] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState<ServiceFormData>(DEFAULT_SERVICE_FORM);
+  const [managingInputsService, setManagingInputsService] = useState<Service | null>(null);
 
   useEffect(() => {
     loadData();
@@ -296,6 +298,14 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
                   </TableCell>
                   <TableCell className={isRTL ? 'text-left' : 'text-right'}>
                     <div className={`flex items-center gap-2 ${isRTL ? 'justify-start' : 'justify-end'}`}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setManagingInputsService(service)}
+                        title={t('adminServices.manageInputs')}
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -598,6 +608,19 @@ const AdminServicesManagement: React.FC<AdminServicesManagementProps> = ({ onRef
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Service Inputs Manager */}
+      {managingInputsService && (
+        <Dialog open={!!managingInputsService} onOpenChange={(open) => !open && setManagingInputsService(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <ServiceInputsManager
+              serviceId={managingInputsService.id}
+              serviceName={managingInputsService.name}
+              onClose={() => setManagingInputsService(null)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

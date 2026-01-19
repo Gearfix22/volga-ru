@@ -560,6 +560,7 @@ const EnhancedBooking = () => {
                         serviceType={serviceType}
                         serviceDetails={serviceDetails}
                         onUpdateDetail={updateServiceDetail}
+                        serviceId={currentService?.id || null}
                       />
                     </div>
 
