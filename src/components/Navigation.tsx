@@ -37,11 +37,11 @@ export const Navigation: React.FC = () => {
               alt="Volga Services Logo"
               className="w-8 h-8 lg:w-10 lg:h-10 transition-transform group-hover:scale-105"
             />
-            <div className="font-bold text-lg lg:text-xl font-serif">
+            <div className="font-semibold text-lg lg:text-xl">
               <span className="bg-gradient-to-r from-brand-accent to-brand-primary bg-clip-text text-transparent">
-                VOLGA
+                Volga
               </span>
-              <span className="ml-1 text-foreground">SERVICES</span>
+              <span className="ml-1 text-foreground">Services</span>
             </div>
           </div>
 

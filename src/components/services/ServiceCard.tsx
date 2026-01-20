@@ -78,9 +78,9 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, icon: Icon, p
         
         <Button
           onClick={handleBookNow}
-          className="w-full bg-brand-secondary hover:bg-brand-secondary/90 active:bg-brand-secondary/80 text-brand-secondary-foreground text-sm lg:text-base py-3 min-h-[48px] shadow-lg hover:shadow-xl transition-all touch-manipulation"
+          className="w-full bg-primary hover:bg-primary/90 active:bg-primary/80 text-primary-foreground text-sm lg:text-base py-3 min-h-[48px] shadow-md hover:shadow-lg transition-all touch-manipulation"
         >
-          {t('common.bookNow')}
+          {t('common.selectService')}
         </Button>
       </CardContent>
     </Card>
