@@ -6,11 +6,19 @@
   "installCommand": "npm ci --legacy-peer-deps",
   "rewrites": [
     {
-      "source": "/((?!api|_next|static|favicon.ico|manifest.json|sw.js|offline.html|robots.txt|sitemap.xml|lovable-uploads|locales).*)",
+      "source": "/((?!api|_next|static|favicon.ico|manifest.json|sw.js|offline.html|robots.txt|sitemap.xml|lovable-uploads|locales|\\.well-known).*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
+    {
+      "source": "/.well-known/assetlinks.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Cache-Control", "value": "public, max-age=86400" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    },
     {
       "source": "/sw.js",
       "headers": [

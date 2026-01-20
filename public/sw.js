@@ -1,5 +1,6 @@
-// Volga Services - Production Service Worker for PWA/Android AAB
-const CACHE_NAME = 'volga-services-v2';
+// Volga Services - Production Service Worker for TWA/Android AAB
+// Version 3 - Optimized for Trusted Web Activity
+const CACHE_NAME = 'volga-services-v3';
 const OFFLINE_URL = '/offline.html';
 
 // Critical assets to cache immediately
