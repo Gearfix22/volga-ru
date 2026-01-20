@@ -1,15 +1,15 @@
 {
-  "name": "Volga Services - Premium Russian Tourism",
-  "short_name": "Volga Services",
-  "description": "Russia's premium tourist experience. VIP transportation, seamless hotel bookings, curated event access, and unforgettable Russian adventures.",
-  "start_url": "/",
-  "scope": "/",
-  "id": "/",
-  "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "name": "Volga Services",
+  "short_name": "Volga",
+  "description": "Premium Russian Tourism Services - VIP transportation, hotel bookings, event access, and unforgettable adventures.",
+  "start_url": "https://volgaservices.vercel.app/",
+  "scope": "https://volgaservices.vercel.app/",
+  "id": "https://volgaservices.vercel.app/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
   "theme_color": "#0F172A",
   "background_color": "#0F172A",
-  "orientation": "any",
+  "orientation": "portrait-primary",
   "prefer_related_applications": false,
   "icons": [
     {
@@ -75,7 +75,7 @@
   ],
   "shortcuts": [
     {
-      "name": "Book Now",
+      "name": "Book Service",
       "short_name": "Book",
       "description": "Start a new booking",
       "url": "/services",
