@@ -514,11 +514,11 @@ const EnhancedBooking = () => {
               </div>
             </div>
             
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+            <div className="text-center mb-6">
+              <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
                 {t('booking.bookYourService')}
               </h1>
-              <p className="text-xl text-slate-600 dark:text-slate-400">
+              <p className="text-base text-slate-600 dark:text-slate-400">
                 {isPreSelected 
                   ? t('booking.completeBookingDetails', { serviceType })
                   : t('booking.chooseServiceDetails')
@@ -553,8 +553,8 @@ const EnhancedBooking = () => {
                 {serviceType && (
                   <>
                     <div>
-                      <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-4">
-                        {t('booking.serviceTypeDetails', { serviceType })}
+                      <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-3">
+                        {t('booking.serviceDetails')}
                       </h2>
                       <ServiceDetailsForm
                         serviceType={serviceType}
@@ -657,16 +657,16 @@ const EnhancedBooking = () => {
                   </CardContent>
                 </Card>
 
-                {/* Submit Button */}
-                <div className="text-center">
+                {/* Submit Button - Primary action */}
+                <div className="pt-4">
                   <Button 
                     type="submit" 
                     size="lg" 
-                    className="px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                    disabled={!serviceType || !userInfo.fullName || !userInfo.email || !userInfo.phone}
+                    className="w-full sm:w-auto px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+                    disabled={!serviceType || !userInfo.fullName || !userInfo.email || !userInfo.phone || isSubmitting}
                   >
-                    {t('booking.proceedToPayment')}
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    {isSubmitting ? t('common.loading') : t('booking.submitBooking')}
+                    {!isSubmitting && <ArrowRight className="ml-2 h-5 w-5" />}
                   </Button>
                 </div>
               </form>

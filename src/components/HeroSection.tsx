@@ -41,15 +41,15 @@ export const HeroSection: React.FC = () => {
             {t('hero.subtitle')}
           </p>
           
-          {/* CTA Button - Mobile-optimized with proper touch target */}
+          {/* Primary CTA - Single action, result-oriented label */}
           <div className="flex justify-center items-center pt-6">
             <Button
               onClick={() => navigate('/enhanced-booking')}
               size="lg"
-              className="bg-white text-brand-primary hover:bg-white/90 active:bg-white/80 px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold rounded-xl shadow-2xl hover:shadow-3xl transition-all hover:scale-105 active:scale-100 min-h-[56px] touch-manipulation"
+              className="bg-white text-brand-primary hover:bg-white/90 active:bg-white/80 px-8 sm:px-10 py-5 sm:py-6 text-base sm:text-lg font-semibold rounded-xl shadow-xl hover:shadow-2xl transition-all hover:scale-[1.02] active:scale-100 min-h-[52px] touch-manipulation"
             >
-              {t('hero.bookAppointment')}
-              <ArrowRight className={`h-5 w-5 sm:h-6 sm:w-6 ${isRTL ? 'mr-2 sm:mr-3 rotate-180' : 'ml-2 sm:ml-3'}`} />
+              {t('hero.startBooking')}
+              <ArrowRight className={`h-5 w-5 ${isRTL ? 'mr-2 rotate-180' : 'ml-2'}`} />
             </Button>
           </div>
 

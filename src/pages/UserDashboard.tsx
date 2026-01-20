@@ -303,95 +303,94 @@ const UserDashboard = () => {
 
   return (
     <DashboardLayout title={t('dashboard.dashboard')}>
-      <div className="space-y-8">
-        {/* Header with Notification Bell */}
+      <div className="space-y-6">
+        {/* Header */}
         <div className={`flex justify-between items-center ${isRTL ? 'flex-row-reverse' : ''}`}>
           <div className={isRTL ? 'text-right' : ''}>
-            <h2 className="text-2xl font-bold text-foreground">{t('common.welcomeBack')}</h2>
-            <p className="text-muted-foreground">{t('common.manageBookings')}</p>
+            <h2 className="text-xl font-semibold text-foreground">{t('common.welcomeBack')}</h2>
+            <p className="text-sm text-muted-foreground">{t('common.manageBookings')}</p>
           </div>
           <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <CustomerNotificationBell />
-            <Button onClick={() => navigate('/')} variant="outline" size="lg">
-              <ArrowRight className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2 rotate-180'}`} />
+            <Button onClick={() => navigate('/')} variant="ghost" size="sm">
+              <ArrowRight className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1 rotate-180'}`} />
               {t('common.backToHome')}
             </Button>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className={`border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow ${isRTL ? 'border-l-0 border-r-4 border-r-primary' : ''}`}>
-            <CardContent className="p-6">
+        {/* Stats Cards - Compact */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className={`shadow-sm ${isRTL ? 'border-r-4 border-r-primary' : 'border-l-4 border-l-primary'}`}>
+            <CardContent className="p-4">
               <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <div className={isRTL ? 'text-right' : ''}>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">{t('common.totalBookings')}</p>
-                  <p className="text-3xl font-bold text-foreground">{stats.total}</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{t('common.totalBookings')}</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.total}</p>
                 </div>
-                <div className="p-3 bg-primary/10 rounded-full">
-                  <FileText className="h-6 w-6 text-primary" />
+                <div className="p-2 bg-primary/10 rounded-full">
+                  <FileText className="h-5 w-5 text-primary" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className={`border-l-4 border-l-green-500 shadow-sm hover:shadow-md transition-shadow ${isRTL ? 'border-l-0 border-r-4 border-r-green-500' : ''}`}>
-            <CardContent className="p-6">
+          <Card className={`shadow-sm ${isRTL ? 'border-r-4 border-r-green-500' : 'border-l-4 border-l-green-500'}`}>
+            <CardContent className="p-4">
               <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <div className={isRTL ? 'text-right' : ''}>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">{t('common.confirmed')}</p>
-                  <p className="text-3xl font-bold text-green-600">{stats.confirmed}</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{t('common.confirmed')}</p>
+                  <p className="text-2xl font-bold text-green-600">{stats.confirmed}</p>
                 </div>
-                <div className="p-3 bg-green-100 dark:bg-green-900/20 rounded-full">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-full">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className={`border-l-4 border-l-yellow-500 shadow-sm hover:shadow-md transition-shadow ${isRTL ? 'border-l-0 border-r-4 border-r-yellow-500' : ''}`}>
-            <CardContent className="p-6">
+          <Card className={`shadow-sm ${isRTL ? 'border-r-4 border-r-yellow-500' : 'border-l-4 border-l-yellow-500'}`}>
+            <CardContent className="p-4">
               <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <div className={isRTL ? 'text-right' : ''}>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">{t('common.pending')}</p>
-                  <p className="text-3xl font-bold text-yellow-600">{stats.pending}</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{t('common.pending')}</p>
+                  <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
                 </div>
-                <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-full">
-                  <Clock className="h-6 w-6 text-yellow-600" />
+                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/20 rounded-full">
+                  <Clock className="h-5 w-5 text-yellow-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className={`border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow ${isRTL ? 'border-l-0 border-r-4 border-r-orange-500' : ''}`}>
-            <CardContent className="p-6">
+          <Card className={`shadow-sm ${isRTL ? 'border-r-4 border-r-blue-500' : 'border-l-4 border-l-blue-500'}`}>
+            <CardContent className="p-4">
               <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <div className={isRTL ? 'text-right' : ''}>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">{t('common.inProgress')}</p>
-                  <p className="text-3xl font-bold text-orange-600">{stats.inProgress}</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">{t('common.inProgress')}</p>
+                  <p className="text-2xl font-bold text-blue-600">{stats.inProgress}</p>
                 </div>
-                <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-full">
-                  <RotateCcw className="h-6 w-6 text-orange-600" />
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-full">
+                  <RotateCcw className="h-5 w-5 text-blue-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Quick Actions */}
+        {/* Quick Actions - Compact */}
         <Card className="shadow-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg">{t('common.quickActions')}</CardTitle>
-            <CardDescription>{t('common.quickActionsDesc')}</CardDescription>
+          <CardHeader className="pb-2 pt-4">
+            <CardTitle className="text-base">{t('common.quickActions')}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button onClick={() => navigate('/booking')} className="flex-1" size="lg">
-                <Plus className={`h-5 w-5 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+          <CardContent className="pb-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button onClick={() => navigate('/enhanced-booking')} className="flex-1">
+                <Plus className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
                 {t('common.newBooking')}
               </Button>
-              <Button onClick={() => navigate('/services')} variant="outline" className="flex-1" size="lg">
-                <TrendingUp className={`h-5 w-5 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+              <Button onClick={() => navigate('/services')} variant="outline" className="flex-1">
+                <TrendingUp className={`h-4 w-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
                 {t('common.browseServices')}
               </Button>
             </div>
