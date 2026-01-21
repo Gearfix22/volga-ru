@@ -151,8 +151,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check email uniqueness by attempting to find existing user
     // This helps catch cases where email exists but wasn't fully registered
-    // MOBILE-SAFE: Use relative path for redirect (works in WebView)
-    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined;
+    // MOBILE-SAFE: Use verify-success page for email verification redirect
+    // This works in WebView, PWA, and standard browser
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://volgaservices.vercel.app';
+    const redirectUrl = `${baseUrl}/verify-success?type=signup`;
     
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
@@ -280,8 +282,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetPassword = async (email: string) => {
-    // MOBILE-SAFE: Use relative path for redirect (works in WebView)
-    const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/auth?type=recovery` : undefined;
+    // MOBILE-SAFE: Use full URL for password reset redirect
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://volgaservices.vercel.app';
+    const redirectUrl = `${baseUrl}/auth?type=recovery`;
     
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl,
