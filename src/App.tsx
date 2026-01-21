@@ -27,6 +27,7 @@ import EnhancedBooking from "./pages/EnhancedBooking";
 import EnhancedPayment from "./pages/EnhancedPayment";
 import EnhancedConfirmation from "./pages/EnhancedConfirmation";
 import Auth from "./pages/Auth";
+import VerifySuccess from "./pages/VerifySuccess";
 import UserDashboard from "./pages/UserDashboard";
 import ProfileSettings from "./pages/ProfileSettings";
 import Support from "./pages/Support";
@@ -105,6 +106,7 @@ const App = () => {
                   </CustomerRouteGuard>
                 } />
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/verify-success" element={<VerifySuccess />} />
                 <Route path="/services" element={
                   <CustomerRouteGuard>
                     <Services />

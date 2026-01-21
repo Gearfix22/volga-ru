@@ -2,15 +2,22 @@
   "name": "Volga Services",
   "short_name": "Volga",
   "description": "Premium Russian Tourism Services - VIP transportation, hotel bookings, event access, and unforgettable adventures.",
-  "start_url": "https://volgaservices.vercel.app/",
-  "scope": "https://volgaservices.vercel.app/",
-  "id": "https://volgaservices.vercel.app/",
-  "display": "fullscreen",
-  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "id": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "theme_color": "#0F172A",
   "background_color": "#0F172A",
   "orientation": "portrait-primary",
-  "prefer_related_applications": false,
+  "prefer_related_applications": true,
+  "related_applications": [
+    {
+      "platform": "play",
+      "id": "com.volgaservices.app",
+      "url": "https://play.google.com/store/apps/details?id=com.volgaservices.app"
+    }
+  ],
   "icons": [
     {
       "src": "/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png",
@@ -44,13 +51,13 @@
     },
     {
       "src": "/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png",
-      "sizes": "152x152",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png",
-      "sizes": "192x192",
+      "sizes": "256x256",
       "type": "image/png",
       "purpose": "any"
     },
@@ -78,7 +85,7 @@
       "name": "Book Service",
       "short_name": "Book",
       "description": "Start a new booking",
-      "url": "/services",
+      "url": "/services?source=pwa",
       "icons": [
         {
           "src": "/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png",
@@ -91,7 +98,7 @@
       "name": "My Dashboard",
       "short_name": "Dashboard",
       "description": "View your bookings",
-      "url": "/dashboard",
+      "url": "/user-dashboard?source=pwa",
       "icons": [
         {
           "src": "/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png",
@@ -113,8 +120,6 @@
       "label": "Volga Services Mobile App"
     }
   ],
-  "related_applications": [],
-  "handle_links": "preferred",
   "launch_handler": {
     "client_mode": "navigate-existing"
   }

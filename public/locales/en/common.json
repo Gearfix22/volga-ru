@@ -96,7 +96,20 @@
     "confirmYourPassword": "Confirm your password",
     "signingIn": "Signing In...",
     "creatingAccount": "Creating Account...",
-    "searchCountry": "Search country..."
+    "searchCountry": "Search country...",
+    "emailVerified": "Email Verified!",
+    "emailVerifiedDesc": "Your email has been successfully verified. You can now sign in to your account.",
+    "accountReady": "Account Ready",
+    "accountReadyDesc": "Your account is ready. Please sign in to continue.",
+    "verificationFailed": "Verification Issue",
+    "verificationFailedDesc": "There was an issue verifying your email. Please try signing in or request a new verification email.",
+    "readyToUse": "Your account is ready to use",
+    "whatsNext": "What's next?",
+    "nextStep1": "Sign in with your email and password",
+    "nextStep2": "Browse our premium services",
+    "nextStep3": "Create your first booking",
+    "continueToSignIn": "Continue to Sign In",
+    "verifying": "Verifying..."
   },
   "footer": {
     "description": "Russia's premium tourist experience. VIP transportation, seamless hotel bookings, curated event access, and unforgettable Russian adventures.",
