@@ -1547,6 +1547,126 @@ export type Database = {
         }
         Relationships: []
       }
+      review_prompts: {
+        Row: {
+          booking_id: string
+          completed_at: string | null
+          created_at: string
+          dismissed_at: string | null
+          id: string
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          booking_id: string
+          completed_at?: string | null
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          scheduled_at: string
+          sent_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          booking_id?: string
+          completed_at?: string | null
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          booking_id: string
+          communication_rating: number | null
+          created_at: string
+          driver_id: string | null
+          driver_rating: number | null
+          feedback_text: string | null
+          flag_reason: string | null
+          followup_completed: boolean | null
+          followup_notes: string | null
+          followup_type: string | null
+          guide_id: string | null
+          id: string
+          improvement_areas: string[] | null
+          is_flagged: boolean | null
+          moderated_at: string | null
+          moderated_by: string | null
+          overall_rating: number
+          positive_aspects: string[] | null
+          punctuality_rating: number | null
+          requires_followup: boolean | null
+          service_type: string
+          status: string
+          updated_at: string
+          user_id: string
+          value_rating: number | null
+        }
+        Insert: {
+          booking_id: string
+          communication_rating?: number | null
+          created_at?: string
+          driver_id?: string | null
+          driver_rating?: number | null
+          feedback_text?: string | null
+          flag_reason?: string | null
+          followup_completed?: boolean | null
+          followup_notes?: string | null
+          followup_type?: string | null
+          guide_id?: string | null
+          id?: string
+          improvement_areas?: string[] | null
+          is_flagged?: boolean | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          overall_rating: number
+          positive_aspects?: string[] | null
+          punctuality_rating?: number | null
+          requires_followup?: boolean | null
+          service_type: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          value_rating?: number | null
+        }
+        Update: {
+          booking_id?: string
+          communication_rating?: number | null
+          created_at?: string
+          driver_id?: string | null
+          driver_rating?: number | null
+          feedback_text?: string | null
+          flag_reason?: string | null
+          followup_completed?: boolean | null
+          followup_notes?: string | null
+          followup_type?: string | null
+          guide_id?: string | null
+          id?: string
+          improvement_areas?: string[] | null
+          is_flagged?: boolean | null
+          moderated_at?: string | null
+          moderated_by?: string | null
+          overall_rating?: number
+          positive_aspects?: string[] | null
+          punctuality_rating?: number | null
+          requires_followup?: boolean | null
+          service_type?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          value_rating?: number | null
+        }
+        Relationships: []
+      }
       service_categories: {
         Row: {
           category_name: string
@@ -2112,6 +2232,31 @@ export type Database = {
       }
     }
     Views: {
+      driver_rating_stats: {
+        Row: {
+          avg_communication: number | null
+          avg_driver: number | null
+          avg_overall: number | null
+          avg_punctuality: number | null
+          driver_id: string | null
+          high_rating_count: number | null
+          low_rating_count: number | null
+          total_reviews: number | null
+        }
+        Relationships: []
+      }
+      guide_rating_stats: {
+        Row: {
+          avg_communication: number | null
+          avg_overall: number | null
+          avg_punctuality: number | null
+          guide_id: string | null
+          high_rating_count: number | null
+          low_rating_count: number | null
+          total_reviews: number | null
+        }
+        Relationships: []
+      }
       v_admin_bookings: {
         Row: {
           admin_price: number | null

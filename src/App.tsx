@@ -12,6 +12,7 @@ import { AdminRouteGuard } from "@/components/auth/AdminRouteGuard";
 import { DriverRouteGuard } from "@/components/auth/DriverRouteGuard";
 import { CustomerRouteGuard } from "@/components/auth/CustomerRouteGuard";
 import { GuideRouteGuard } from "@/components/auth/GuideRouteGuard";
+import { ReviewPromptProvider } from "@/components/review";
 import { useWebViewBackHandler, useDeepLinkHandler } from "@/hooks/useWebViewCompat";
 import Index from "./pages/Index";
 import Services from "./pages/Services";
@@ -91,6 +92,7 @@ const App = () => {
         <Sonner />
         <AuthProvider>
           <LanguageProvider>
+            <ReviewPromptProvider>
             <ErrorBoundary>
               <BrowserRouter>
               <WebViewWrapper>
@@ -224,6 +226,7 @@ const App = () => {
               <AITravelGuideButton />
               </BrowserRouter>
             </ErrorBoundary>
+            </ReviewPromptProvider>
           </LanguageProvider>
         </AuthProvider>
       </TooltipProvider>
