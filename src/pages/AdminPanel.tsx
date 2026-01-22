@@ -17,8 +17,9 @@ import GuidesManagement from '@/components/admin/GuidesManagement';
 import { AdminDriverMap } from '@/components/admin/AdminDriverMap';
 import AdminServicesManagement from '@/components/admin/AdminServicesManagement';
 import { AdminPriceNegotiations } from '@/components/admin/AdminPriceNegotiations';
+import { AdminReviewsManagement } from '@/components/admin/AdminReviewsManagement';
 
-type TabType = 'overview' | 'bookings' | 'payments' | 'pricing' | 'drivers' | 'guides' | 'services' | 'map' | 'users' | 'logs';
+type TabType = 'overview' | 'bookings' | 'payments' | 'pricing' | 'drivers' | 'guides' | 'services' | 'map' | 'users' | 'logs' | 'reviews';
 
 const AdminPanel = () => {
   const { user, loading, hasRole } = useAuth();
@@ -54,6 +55,7 @@ const AdminPanel = () => {
       map: t('dashboard.liveMap'),
       users: t('dashboard.users'),
       logs: t('dashboard.logs'),
+      reviews: t('dashboard.reviews'),
     };
     return titles[tab] || t('dashboard.adminPanel');
   };
@@ -88,6 +90,7 @@ const AdminPanel = () => {
             {activeTab === 'users' && <UsersManagement />}
             {activeTab === 'payments' && <AdminPayments />}
             {activeTab === 'logs' && <AdminLogs />}
+            {activeTab === 'reviews' && <AdminReviewsManagement />}
           </main>
         </SidebarInset>
       </div>
