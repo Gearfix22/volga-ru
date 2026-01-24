@@ -55,46 +55,6 @@ export const DriverLocationTracker: React.FC<DriverLocationTrackerProps> = ({
     }
   };
 
-    const { latitude, longitude, heading, speed, accuracy } = coords;
-    
-    console.log('[LocationTracker] Sending location update:', {
-      bookingId: activeBookingId,
-      lat: latitude.toFixed(6),
-      lng: longitude.toFixed(6),
-      status: bookingStatus
-    });
-
-    // Update driver_locations table
-    const result = await updateDriverLocation({
-      latitude,
-      longitude,
-      heading: heading || undefined,
-      speed: speed || undefined,
-      accuracy: accuracy || undefined,
-      booking_id: activeBookingId,
-    });
-
-    // Also record to route history for trip replay
-    if (bookingStatus === 'on_trip' || bookingStatus === 'accepted') {
-      await recordRoutePoint(
-        activeBookingId,
-        user.id,
-        latitude,
-        longitude,
-        heading || undefined,
-        speed || undefined
-      );
-    }
-
-    if (!result.success) {
-      console.error('[LocationTracker] Failed to update location:', result.error);
-      setLocationError(`Update failed: ${result.error}`);
-    } else {
-      setLastUpdate(new Date());
-      setUpdateCount(prev => prev + 1);
-      setLocationError(null);
-      console.log('[LocationTracker] Location update successful');
-    }
   // Render connection status
   const renderConnectionIcon = () => {
     switch (state.connectionStatus) {
