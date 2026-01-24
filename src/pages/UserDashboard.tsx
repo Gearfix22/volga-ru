@@ -252,7 +252,8 @@ const UserDashboard = () => {
   };
 
   const handleResumeBooking = (draft: DraftBooking) => {
-    navigate('/booking', {
+    // Unified booking page - all booking actions route to /enhanced-booking
+    navigate('/enhanced-booking', {
       state: { resumeDraft: draft, serviceType: draft.service_type }
     });
   };
@@ -450,7 +451,7 @@ const UserDashboard = () => {
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-muted-foreground mb-4">{t('common.noBookingsYet')}</p>
-                <Button onClick={() => navigate('/booking')}>
+                <Button onClick={() => navigate('/enhanced-booking')}>
                   {t('common.createFirstBooking')}
                 </Button>
               </div>

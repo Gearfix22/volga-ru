@@ -148,7 +148,8 @@ export const UserDashboardContent = () => {
   };
 
   const handleResumeBooking = (draft: DraftBooking) => {
-    navigate('/booking', {
+    // Unified booking page - all booking actions route to /enhanced-booking
+    navigate('/enhanced-booking', {
       state: {
         resumeDraft: draft,
         serviceType: draft.service_type
@@ -279,7 +280,7 @@ export const UserDashboardContent = () => {
 
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-4">
-        <Button onClick={() => navigate('/booking')} className="gap-2">
+        <Button onClick={() => navigate('/enhanced-booking')} className="gap-2">
           <Plus className="h-4 w-4" />
           {t('userDashboard.newBooking')}
         </Button>
@@ -317,7 +318,7 @@ export const UserDashboardContent = () => {
                 <div className="text-center py-8">
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">{t('emptyStates.noActiveBookings')}</p>
-                  <Button className="mt-4" onClick={() => navigate('/booking')}>
+                  <Button className="mt-4" onClick={() => navigate('/enhanced-booking')}>
                     {t('userDashboard.makeBooking')}
                   </Button>
                 </div>
