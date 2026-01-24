@@ -33,9 +33,10 @@ class Logger {
       console.log(`%c[${level.toUpperCase()}] ${message}`, style, data || '');
     }
 
-    // In production, you could send critical errors to a logging service
+    // In production, critical errors are logged to console.error for APK/WebView debugging
+    // External error tracking can be integrated here if needed (e.g., Sentry, LogRocket)
     if (!this.isDevelopment && level === 'error') {
-      // TODO: Send to error tracking service (Sentry, LogRocket, etc.)
+      console.error(`[PROD ERROR] ${message}`, data || '');
     }
   }
 

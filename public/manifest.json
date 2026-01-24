@@ -85,7 +85,7 @@
       "name": "Book Service",
       "short_name": "Book",
       "description": "Start a new booking",
-      "url": "/services?source=pwa",
+      "url": "/enhanced-booking?source=pwa",
       "icons": [
         {
           "src": "/lovable-uploads/59c9df84-8fe5-4586-8345-8d4dc6f37535.png",

@@ -20,10 +20,7 @@ import Gallery from "./pages/Gallery";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
-import Booking from "./pages/Booking";
-// Legacy pages - kept for reference but not used (redirected)
-// import Payment from "./pages/Payment";
-// import BookingConfirmation from "./pages/BookingConfirmation";
+// Legacy booking page removed - all routes now redirect to EnhancedBooking
 import EnhancedBooking from "./pages/EnhancedBooking";
 import EnhancedPayment from "./pages/EnhancedPayment";
 import EnhancedConfirmation from "./pages/EnhancedConfirmation";
@@ -129,11 +126,8 @@ const App = () => {
                     <Contact />
                   </CustomerRouteGuard>
                 } />
-                <Route path="/booking" element={
-                  <CustomerRouteGuard>
-                    <Booking />
-                  </CustomerRouteGuard>
-                } />
+                {/* Legacy booking route - redirect to unified booking page */}
+                <Route path="/booking" element={<Navigate to="/enhanced-booking" replace />} />
                 {/* Legacy payment route - redirect to unified payment */}
                 <Route path="/payment" element={<Navigate to="/enhanced-payment" replace />} />
                 {/* Legacy booking confirmation - redirect to unified confirmation */}
