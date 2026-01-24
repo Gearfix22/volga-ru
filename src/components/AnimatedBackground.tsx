@@ -1,60 +1,33 @@
-
 import React from 'react';
 
+/**
+ * Professional solid gradient background for booking app
+ * No background images - clean, solid colors only
+ */
 export const AnimatedBackground: React.FC = () => {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* Kremlin landmark background photo */}
+      {/* Solid gradient background - professional teal to slate */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1513326738677-b964603b136d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2126&q=80')`
+          background: 'linear-gradient(135deg, hsl(180 83% 24%) 0%, hsl(200 60% 20%) 50%, hsl(220 40% 15%) 100%)'
         }}
       />
       
-      {/* Dark overlay for better text readability */}
-      <div className="absolute inset-0 bg-black/40" />
-      
-      {/* Russian flag colors gradient overlay */}
-      <div className="absolute inset-0 russia-gradient opacity-60" />
-      
-      {/* Optimized floating elements overlay */}
-      <div className="absolute inset-0" aria-hidden="true">
-        <div 
-          className="absolute top-1/4 left-1/4 w-80 h-80 bg-white/8 rounded-full blur-3xl will-change-transform"
-          style={{
-            animation: 'float 15s ease-in-out infinite',
-            animationDelay: '0s'
-          }}
-        />
-        <div 
-          className="absolute top-3/4 right-1/4 w-64 h-64 bg-coastal-blue/15 rounded-full blur-3xl will-change-transform"
-          style={{
-            animation: 'float 20s ease-in-out infinite',
-            animationDelay: '7s'
-          }}
-        />
-        <div 
-          className="absolute bottom-1/4 left-1/2 w-48 h-48 bg-brand-primary/10 rounded-full blur-3xl will-change-transform"
-          style={{
-            animation: 'float 25s ease-in-out infinite',
-            animationDelay: '12s'
-          }}
-        />
-      </div>
-      
-      {/* Kremlin-inspired pattern overlay */}
-      <div className="absolute inset-0 kremlin-pattern opacity-20" />
-      
-      {/* Subtle shimmer effect */}
+      {/* Subtle overlay for depth */}
       <div 
-        className="absolute inset-0 opacity-20"
+        className="absolute inset-0"
         style={{
-          backgroundImage: `
-            linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.1) 50%, transparent 70%)
-          `,
-          backgroundSize: '200% 200%',
-          animation: 'wave 20s ease-in-out infinite'
+          background: 'radial-gradient(ellipse at 30% 20%, hsl(180 70% 30% / 0.3) 0%, transparent 50%)'
+        }}
+      />
+      
+      {/* Bottom fade for content readability */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(to bottom, transparent 0%, hsl(220 40% 10% / 0.5) 100%)'
         }}
       />
     </div>
