@@ -295,6 +295,8 @@
     "provideSpecificInfo": "قدم المعلومات المحددة للخدمة المختارة",
     "contactInformation": "معلومات الاتصال",
     "contactInfoDesc": "سنستخدم هذه المعلومات للتواصل معك بخصوص حجزك",
+    "contactInfoFromProfile": "نستخدم معلومات ملفك الشخصي لهذا الحجز",
+    "updateProfileHint": "لتحديث معلومات الاتصال، قم بزيارة إعدادات حسابك.",
     "pickupLocation": "موقع الاستلام",
     "dropoffLocation": "موقع التوصيل",
     "enterPickupLocation": "أدخل عنوان الاستلام",
@@ -418,6 +420,7 @@
     "pleaseSelectService": "يرجى اختيار نوع الخدمة",
     "contactInfoRequired": "معلومات الاتصال مطلوبة",
     "fillAllContactFields": "يرجى ملء جميع حقول الاتصال المطلوبة",
+    "updateProfileRequired": "يرجى تحديث ملفك الشخصي بمعلومات الاتصال الكاملة في إعدادات الحساب.",
     "invalidEmail": "بريد إلكتروني غير صالح",
     "enterValidEmail": "يرجى إدخال عنوان بريد إلكتروني صالح",
     "invalidPhone": "رقم هاتف غير صالح",
@@ -1148,6 +1151,7 @@
   },
   "common": {
     "loading": "جاري التحميل...",
+    "notProvided": "غير متوفر",
     "verifyingAccess": "جاري التحقق من الوصول...",
     "loadingBookings": "جاري تحميل الحجوزات...",
     "days": {

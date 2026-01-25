@@ -43,7 +43,7 @@ const EnhancedBooking = () => {
   const [serviceDetails, setServiceDetails] = useState<ServiceDetails>({});
   const [userInfo, setUserInfo] = useState<UserInfo>({
     fullName: '',
-    email: user?.email || '',
+    email: '',
     phone: '',
     language: 'english'
   });
@@ -80,6 +80,7 @@ const EnhancedBooking = () => {
             ...prev,
             phone: profile.phone || prev.phone,
             fullName: profile.full_name || prev.fullName,
+            email: user.email || prev.email,
             language: profile.preferred_language || prev.language
           }));
           setProfileLoaded(true);
@@ -258,7 +259,7 @@ const EnhancedBooking = () => {
     if (!userInfo.fullName || !userInfo.email || !userInfo.phone) {
       toast({
         title: t('booking.contactInfoRequired'),
-        description: t('booking.fillAllContactFields'),
+        description: t('booking.updateProfileRequired'),
         variant: "destructive"
       });
       return false;
@@ -572,80 +573,64 @@ const EnhancedBooking = () => {
                   </>
                 )}
 
-                {/* User Information */}
+                {/* User Information - Read-only for authenticated users */}
                 <Card className="backdrop-blur-sm bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-700/50">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <User className="h-5 w-5" />
                       {t('booking.contactInformation')}
                     </CardTitle>
-                    <CardDescription>{t('booking.contactInfoDesc')}</CardDescription>
+                    <CardDescription>
+                      {user ? t('booking.contactInfoFromProfile') : t('booking.contactInfoDesc')}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="fullName" className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          {t('booking.fullName')} *
-                        </Label>
-                        <Input
-                          id="fullName"
-                          value={userInfo.fullName}
-                          onChange={(e) => updateUserInfo('fullName', e.target.value)}
-                          placeholder={t('booking.enterFullName')}
-                          maxLength={100}
-                          className="focus:ring-2 focus:ring-primary"
-                        />
+                    {/* Read-only summary for authenticated users */}
+                    {user && profileLoaded ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-xs text-muted-foreground">{t('booking.fullName')}</p>
+                              <p className="font-medium text-foreground">{userInfo.fullName || t('common.notProvided')}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-xs text-muted-foreground">{t('booking.emailAddress')}</p>
+                              <p className="font-medium text-foreground">{userInfo.email || user.email || t('common.notProvided')}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-xs text-muted-foreground">{t('booking.phoneNumber')}</p>
+                              <p className="font-medium text-foreground">{userInfo.phone || t('common.notProvided')}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                            <Globe className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <p className="text-xs text-muted-foreground">{t('booking.preferredLanguage')}</p>
+                              <p className="font-medium text-foreground capitalize">{userInfo.language || 'english'}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground pt-2 border-t">
+                          {t('booking.updateProfileHint')}
+                        </p>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email" className="flex items-center gap-2">
-                          <Mail className="h-4 w-4" />
-                          {t('booking.emailAddress')} *
-                        </Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={userInfo.email}
-                          onChange={(e) => updateUserInfo('email', e.target.value)}
-                          placeholder={t('booking.enterEmail')}
-                          maxLength={255}
-                          className="focus:ring-2 focus:ring-primary"
-                        />
+                    ) : (
+                      /* Fallback loading state while profile loads */
+                      <div className="flex items-center justify-center py-6 text-muted-foreground">
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent mr-2" />
+                        {t('common.loading')}
                       </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="phone" className="flex items-center gap-2">
-                          <Phone className="h-4 w-4" />
-                          {t('booking.phoneNumber')} *
-                        </Label>
-                        <Input
-                          id="phone"
-                          type="tel"
-                          value={userInfo.phone}
-                          onChange={(e) => updateUserInfo('phone', e.target.value)}
-                          placeholder={t('booking.enterPhone')}
-                          maxLength={20}
-                          className="focus:ring-2 focus:ring-primary"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="language" className="flex items-center gap-2">
-                          <Globe className="h-4 w-4" />
-                          {t('booking.preferredLanguage')}
-                        </Label>
-                        <Select value={userInfo.language} onValueChange={(value) => updateUserInfo('language', value)}>
-                          <SelectTrigger className="focus:ring-2 focus:ring-primary">
-                            <SelectValue placeholder={t('booking.selectLanguage')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="english">{t('common.english')}</SelectItem>
-                            <SelectItem value="arabic">{t('common.arabic')}</SelectItem>
-                            <SelectItem value="russian">{t('common.russian')}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                    )}
 
                     {/* Driver info notice - Driver service always includes a driver */}
                     {serviceType === 'Driver' && (

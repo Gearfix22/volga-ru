@@ -237,6 +237,8 @@
     "provideSpecificInfo": "Provide specific information for your selected service",
     "contactInformation": "Contact Information",
     "contactInfoDesc": "We'll use this information to contact you about your booking",
+    "contactInfoFromProfile": "Using your profile information for this booking",
+    "updateProfileHint": "To update your contact information, visit your account settings.",
     "pickupLocation": "Pickup Location",
     "dropoffLocation": "Drop-off Location",
     "enterPickupLocation": "Enter pickup address",
@@ -361,6 +363,7 @@
     "pleaseSelectService": "Please select a service type",
     "contactInfoRequired": "Contact Information Required",
     "fillAllContactFields": "Please fill in all required contact fields",
+    "updateProfileRequired": "Please update your profile with complete contact information in account settings.",
     "submissionInProgress": "Submission in Progress",
     "pleaseWait": "Please wait while your booking is being submitted",
     "invalidEmail": "Invalid Email",
@@ -1212,6 +1215,7 @@
   },
   "common": {
     "loading": "Loading...",
+    "notProvided": "Not provided",
     "verifyingAccess": "Verifying access...",
     "loadingBookings": "Loading bookings...",
     "days": {

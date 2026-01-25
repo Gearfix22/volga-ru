@@ -277,6 +277,8 @@
     "provideSpecificInfo": "Укажите информацию для выбранной услуги",
     "contactInformation": "Контактная информация",
     "contactInfoDesc": "Мы используем эту информацию для связи с вами по поводу бронирования",
+    "contactInfoFromProfile": "Используем данные вашего профиля для этого бронирования",
+    "updateProfileHint": "Чтобы обновить контактные данные, перейдите в настройки аккаунта.",
     "pickupLocation": "Место посадки",
     "dropoffLocation": "Место высадки",
     "enterPickupLocation": "Введите адрес посадки",
@@ -400,6 +402,7 @@
     "pleaseSelectService": "Пожалуйста, выберите тип услуги",
     "contactInfoRequired": "Контактная информация обязательна",
     "fillAllContactFields": "Пожалуйста, заполните все обязательные контактные поля",
+    "updateProfileRequired": "Пожалуйста, обновите ваш профиль с полной контактной информацией в настройках аккаунта.",
     "invalidEmail": "Неверный email",
     "enterValidEmail": "Пожалуйста, введите действительный email",
     "invalidPhone": "Неверный номер телефона",
@@ -1130,6 +1133,7 @@
   },
   "common": {
     "loading": "Загрузка...",
+    "notProvided": "Не указано",
     "verifyingAccess": "Проверка доступа...",
     "loadingBookings": "Загрузка бронирований...",
     "days": {
