@@ -8,24 +8,19 @@ import { AuthRequiredWrapper } from '@/components/booking/AuthRequiredWrapper';
 import { ResumeBookingDialog } from '@/components/booking/ResumeBookingDialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowRight, User, Mail, Phone, Globe, Save, Clock, CheckCircle, Car } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { ServiceTypeSelector } from '@/components/booking/ServiceTypeSelector';
-import { ServiceDetailsForm } from '@/components/booking/ServiceDetailsForm';
-import { PricingDisplay } from '@/components/booking/PricingDisplay';
+import { MultiServiceSelector } from '@/components/booking/MultiServiceSelector';
+import { MultiServiceDetailsForm } from '@/components/booking/MultiServiceDetailsForm';
+import { BookingSummaryCard } from '@/components/booking/BookingSummaryCard';
 import { BookingFormTracker } from '@/components/booking/BookingFormTracker';
 import { useDataTracking } from '@/hooks/useDataTracking';
 import { saveDraftBooking, getLatestDraft, deleteDraftBooking, DraftBooking } from '@/services/bookingService';
 import { getServiceByType, ServiceData } from '@/services/servicesService';
 import { supabase } from '@/integrations/supabase/client';
-import { useServiceValidation } from '@/hooks/useServiceValidation';
 import type { ServiceDetails, UserInfo } from '@/types/booking';
 
 const EnhancedBooking = () => {
@@ -35,12 +30,13 @@ const EnhancedBooking = () => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const { trackForm } = useDataTracking();
-  const { validateServiceDetails: validateServiceSchema } = useServiceValidation();
   const [searchParams] = useSearchParams();
   
-  const [serviceType, setServiceType] = useState('');
-  const [currentService, setCurrentService] = useState<ServiceData | null>(null);
-  const [serviceDetails, setServiceDetails] = useState<ServiceDetails>({});
+  // Multi-service selection state
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [serviceDetailsMap, setServiceDetailsMap] = useState<Record<string, ServiceDetails>>({});
+  const [serviceDataMap, setServiceDataMap] = useState<Record<string, ServiceData>>({});
+  
   const [userInfo, setUserInfo] = useState<UserInfo>({
     fullName: '',
     email: '',
@@ -53,10 +49,8 @@ const EnhancedBooking = () => {
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  // Driver is automatically required for Driver service - no user toggle needed
 
   const serviceFromUrl = searchParams.get('service');
-  const isPreSelected = !!serviceFromUrl;
 
   // Fetch user profile and auto-populate phone number
   useEffect(() => {
@@ -97,8 +91,9 @@ const EnhancedBooking = () => {
   useEffect(() => {
     const resumeDraft = location.state?.resumeDraft as DraftBooking;
     if (resumeDraft) {
-      setServiceType(resumeDraft.service_type);
-      setServiceDetails(resumeDraft.service_details);
+      // Legacy support: convert single service to multi-service format
+      setSelectedServices([resumeDraft.service_type]);
+      setServiceDetailsMap({ [resumeDraft.service_type]: resumeDraft.service_details });
       setUserInfo(resumeDraft.user_info);
       setCurrentDraftId(resumeDraft.id);
       
@@ -109,10 +104,9 @@ const EnhancedBooking = () => {
     }
   }, [location.state, t, toast]);
 
-  // Pre-select service type from URL parameters and fetch service data
+  // Pre-select service type from URL parameters
   useEffect(() => {
     if (serviceFromUrl && !location.state?.resumeDraft) {
-      // Service type mapping for URL compatibility
       const serviceMap: { [key: string]: string } = {
         'driver': 'Driver',
         'transportation': 'Driver',
@@ -126,42 +120,51 @@ const EnhancedBooking = () => {
       };
       
       const mappedService = serviceMap[serviceFromUrl.toLowerCase()] || serviceFromUrl;
-      setServiceType(mappedService);
+      if (!selectedServices.includes(mappedService)) {
+        setSelectedServices([mappedService]);
+      }
     }
   }, [serviceFromUrl, location.state]);
 
-  // Fetch service data from database when service type changes
+  // Fetch service data when selected services change
   useEffect(() => {
     const loadServiceData = async () => {
-      if (!serviceType) {
-        setCurrentService(null);
-        return;
+      const newDataMap: Record<string, ServiceData> = {};
+      
+      for (const serviceType of selectedServices) {
+        if (!serviceDataMap[serviceType]) {
+          const service = await getServiceByType(serviceType);
+          if (service) {
+            newDataMap[serviceType] = service;
+          }
+        }
       }
       
-      const service = await getServiceByType(serviceType);
-      setCurrentService(service);
+      if (Object.keys(newDataMap).length > 0) {
+        setServiceDataMap(prev => ({ ...prev, ...newDataMap }));
+      }
     };
     
     loadServiceData();
-  }, [serviceType]);
+  }, [selectedServices]);
 
-  // Check for existing draft on mount (only if not already resuming)
+  // Check for existing draft on mount
   useEffect(() => {
     if (user && !location.state?.resumeDraft) {
       checkForExistingDraft();
     }
   }, [user, location.state]);
 
-  // Auto-save functionality - debounced
+  // Auto-save functionality
   useEffect(() => {
-    if (user && serviceType) {
+    if (user && selectedServices.length > 0) {
       const timer = setTimeout(() => {
         autoSave();
-      }, 5000); // Auto-save after 5 seconds of inactivity
+      }, 5000);
 
       return () => clearTimeout(timer);
     }
-  }, [serviceType, serviceDetails, userInfo, user]);
+  }, [selectedServices, serviceDetailsMap, userInfo, user]);
 
   const checkForExistingDraft = async () => {
     try {
@@ -175,19 +178,20 @@ const EnhancedBooking = () => {
   };
 
   const autoSave = async () => {
-    if (!user || !serviceType) return;
+    if (!user || selectedServices.length === 0) return;
     
     setIsSaving(true);
     try {
+      // Save first service as primary (legacy compatibility)
+      const primaryService = selectedServices[0];
       const progress = determineProgress();
-      const totalPrice = calculatePrice();
       
       const draft = await saveDraftBooking(
-        serviceType,
-        serviceDetails,
+        primaryService,
+        serviceDetailsMap[primaryService] || {},
         userInfo,
         progress,
-        totalPrice
+        0
       );
       
       if (draft) {
@@ -201,25 +205,14 @@ const EnhancedBooking = () => {
     }
   };
 
-  const checkRequiredFields = (): boolean => {
-    const details = serviceDetails as any;
-    // All 4 service types: Driver, Accommodation, Events, Guide
-    const requiredFields: { [key: string]: string[] } = {
-      'Driver': ['pickupLocation', 'dropoffLocation', 'pickupDate', 'pickupTime', 'vehicleType', 'passengers'],
-      'Accommodation': ['location', 'checkIn', 'checkOut', 'guests'],
-      'Events': ['eventType', 'location', 'date', 'numberOfPeople'],
-      'Guide': ['location', 'date', 'duration', 'numberOfPeople']
-    };
-
-    const missing = requiredFields[serviceType]?.filter(field => !details[field]) || [];
-    return missing.length === 0;
-  };
-
   const determineProgress = (): DraftBooking['booking_progress'] => {
-    if (!serviceType) return 'service_selection';
+    if (selectedServices.length === 0) return 'service_selection';
     
-    const hasRequiredDetails = checkRequiredFields();
-    if (!hasRequiredDetails) return 'details_filled';
+    const hasDetails = selectedServices.some(s => {
+      const details = serviceDetailsMap[s];
+      return details && Object.keys(details).length > 0;
+    });
+    if (!hasDetails) return 'details_filled';
     
     const hasUserInfo = userInfo.fullName && userInfo.email && userInfo.phone;
     if (!hasUserInfo) return 'user_info_filled';
@@ -227,32 +220,33 @@ const EnhancedBooking = () => {
     return 'ready_for_payment';
   };
 
-  const updateServiceDetail = (key: string, value: string | string[]) => {
-    setServiceDetails(prev => ({
-      ...prev,
-      [key]: value
-    }));
+  const handleToggleService = (serviceType: string) => {
+    setSelectedServices(prev => {
+      if (prev.includes(serviceType)) {
+        return prev.filter(s => s !== serviceType);
+      } else {
+        return [...prev, serviceType];
+      }
+    });
   };
 
-  const updateUserInfo = (key: keyof UserInfo, value: string) => {
-    setUserInfo(prev => ({
+  const handleUpdateServiceDetail = (serviceType: string, key: string, value: string | string[]) => {
+    setServiceDetailsMap(prev => ({
       ...prev,
-      [key]: value
+      [serviceType]: {
+        ...prev[serviceType],
+        [key]: value
+      }
     }));
   };
 
   const validateForm = (): boolean => {
-    if (!serviceType) {
+    if (selectedServices.length === 0) {
       toast({
         title: t('booking.serviceRequired'),
         description: t('booking.pleaseSelectService'),
         variant: "destructive"
       });
-      return false;
-    }
-
-    // Use zod schema validation for service details
-    if (!validateServiceSchema(serviceType, serviceDetails)) {
       return false;
     }
 
@@ -276,49 +270,23 @@ const EnhancedBooking = () => {
       return false;
     }
 
-    // Validate phone number format
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-    if (!phoneRegex.test(userInfo.phone.replace(/[\s\-\(\)]/g, ''))) {
-      toast({
-        title: t('booking.invalidPhone'),
-        description: t('booking.enterValidPhone'),
-        variant: "destructive"
-      });
-      return false;
-    }
-
     return true;
   };
 
-  // Calculate price from database service data - NO HARDCODED VALUES
-  const calculatePrice = (): number => {
-    // Price comes from the database via currentService
-    // If no service data or no base_price, return 0 (admin will set price)
-    if (!currentService || !currentService.base_price) {
-      return 0;
-    }
-    return currentService.base_price;
-  };
-
-  // Get currency from service data
-  const getServiceCurrency = (): string => {
-    return currentService?.currency || 'USD';
-  };
-
   const handleManualSave = async () => {
-    if (!user || !serviceType) return;
+    if (!user || selectedServices.length === 0) return;
     
     setIsSaving(true);
     try {
+      const primaryService = selectedServices[0];
       const progress = determineProgress();
-      const totalPrice = calculatePrice();
       
       await saveDraftBooking(
-        serviceType,
-        serviceDetails,
+        primaryService,
+        serviceDetailsMap[primaryService] || {},
         userInfo,
         progress,
-        totalPrice
+        0
       );
       
       setLastSaved(new Date());
@@ -337,16 +305,14 @@ const EnhancedBooking = () => {
     }
   };
 
-  // NEGATIVE TEST: Track submission state for double-submission prevention
+  // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submissionLockRef = React.useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // NEGATIVE TEST 1: Prevent double submission
     if (submissionLockRef.current || isSubmitting) {
-      console.warn('Duplicate submission blocked');
       toast({
         title: t('booking.submissionInProgress'),
         description: t('booking.pleaseWait'),
@@ -357,15 +323,14 @@ const EnhancedBooking = () => {
     
     if (!validateForm()) {
       trackForm('booking', 'abandoned', {
-        serviceType,
-        serviceDetails,
+        selectedServices,
+        serviceDetailsMap,
         userInfo,
         reason: 'validation_failed'
       });
       return;
     }
 
-    // Lock submission immediately
     submissionLockRef.current = true;
     setIsSubmitting(true);
     setIsSaving(true);
@@ -381,17 +346,30 @@ const EnhancedBooking = () => {
         return;
       }
 
-      const currency = getServiceCurrency();
+      // Create a combined booking for multiple services
+      const combinedServiceDetails = {
+        _multiService: true,
+        _selectedServices: selectedServices,
+        ...selectedServices.reduce((acc, serviceType) => {
+          acc[`_${serviceType.toLowerCase()}_details`] = serviceDetailsMap[serviceType] || {};
+          return acc;
+        }, {} as Record<string, any>)
+      };
+
+      // Use primary service type for the booking record
+      const primaryService = selectedServices[0];
+      const primaryServiceData = serviceDataMap[primaryService];
       
-      // Call create-booking edge function
       const { data, error } = await supabase.functions.invoke('create-booking', {
         body: {
-          service_type: serviceType,
-          service_id: currentService?.id || null,
-          service_details: serviceDetails,
+          service_type: primaryService,
+          service_id: primaryServiceData?.id || null,
+          service_details: combinedServiceDetails,
           user_info: userInfo,
-          currency,
-          customer_notes: (serviceDetails as any).specialRequests || null
+          currency: 'USD',
+          customer_notes: selectedServices.length > 1 
+            ? `Multi-service booking: ${selectedServices.join(', ')}` 
+            : null
         }
       });
 
@@ -405,14 +383,12 @@ const EnhancedBooking = () => {
         return;
       }
 
-      // Track form submission
       trackForm('booking', 'submitted', {
-        serviceType,
+        selectedServices,
         bookingId: data?.booking?.id,
-        hasAllRequiredFields: true
+        isMultiService: selectedServices.length > 1
       });
 
-      // Delete draft after successful submission
       if (currentDraftId) {
         try {
           await deleteDraftBooking(currentDraftId);
@@ -426,17 +402,18 @@ const EnhancedBooking = () => {
         description: t('booking.awaitingAdminReview'),
       });
 
-      // Navigate to confirmation page (not payment - price needs admin approval first)
       navigate('/enhanced-confirmation', {
         state: { 
           bookingData: {
-            serviceType,
-            serviceDetails,
+            serviceType: primaryService,
+            serviceDetails: combinedServiceDetails,
             userInfo,
-            totalPrice: 0, // Will be set by admin
-            currency,
+            totalPrice: 0,
+            currency: 'USD',
             status: 'under_review',
-            bookingId: data?.booking?.id
+            bookingId: data?.booking?.id,
+            _selectedServices: selectedServices,
+            _serviceDetailsMap: serviceDetailsMap
           },
           isNewBooking: true
         }
@@ -451,7 +428,6 @@ const EnhancedBooking = () => {
     } finally {
       setIsSaving(false);
       setIsSubmitting(false);
-      // Keep lock active for 3 seconds to prevent rapid re-clicks
       setTimeout(() => {
         submissionLockRef.current = false;
       }, 3000);
@@ -459,11 +435,17 @@ const EnhancedBooking = () => {
   };
 
   const handleResumeBooking = (draft: DraftBooking) => {
-    setServiceType(draft.service_type);
-    setServiceDetails(draft.service_details);
+    setSelectedServices([draft.service_type]);
+    setServiceDetailsMap({ [draft.service_type]: draft.service_details });
     setUserInfo(draft.user_info);
     setCurrentDraftId(draft.id);
   };
+
+  // Build service ID map for forms
+  const serviceIdMap = selectedServices.reduce((acc, type) => {
+    acc[type] = serviceDataMap[type]?.id || null;
+    return acc;
+  }, {} as Record<string, string | null>);
 
   return (
     <AuthRequiredWrapper requireAuth={true}>
@@ -497,7 +479,7 @@ const EnhancedBooking = () => {
                   onClick={handleManualSave}
                   variant="outline"
                   size="sm"
-                  disabled={isSaving || !serviceType}
+                  disabled={isSaving || selectedServices.length === 0}
                 >
                   <Save className="h-4 w-4 mr-2" />
                   {t('booking.saveProgress')}
@@ -517,18 +499,15 @@ const EnhancedBooking = () => {
             
             <div className="text-center mb-6">
               <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                {t('booking.bookYourService')}
+                {t('booking.multiServiceBookingTitle')}
               </h1>
               <p className="text-base text-slate-600 dark:text-slate-400">
-                {isPreSelected 
-                  ? t('booking.completeBookingDetails', { serviceType })
-                  : t('booking.chooseServiceDetails')
-                }
+                {t('booking.multiServiceBookingDesc')}
               </p>
             </div>
 
             {/* Progress Indicator */}
-            {serviceType && (
+            {selectedServices.length > 0 && (
               <Alert className="mb-6">
                 <CheckCircle className="h-4 w-4" />
                 <AlertDescription>
@@ -538,39 +517,37 @@ const EnhancedBooking = () => {
             )}
 
             <BookingFormTracker
-              serviceType={serviceType}
-              serviceDetails={serviceDetails}
+              serviceType={selectedServices[0] || ''}
+              serviceDetails={serviceDetailsMap[selectedServices[0]] || {}}
               userInfo={userInfo}
             >
               <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Service Type Selection */}
-                <ServiceTypeSelector
-                  serviceType={serviceType}
-                  onSelectService={setServiceType}
-                  preSelected={isPreSelected}
-                />
-
-                {/* Service Details Form */}
-                {serviceType && (
-                  <>
-                    <div>
-                      <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-3">
-                        {t('booking.serviceDetails')}
-                      </h2>
-                      <ServiceDetailsForm
-                        serviceType={serviceType}
-                        serviceDetails={serviceDetails}
-                        onUpdateDetail={updateServiceDetail}
-                        serviceId={currentService?.id || null}
-                      />
-                    </div>
-
-                    {/* Pricing Display */}
-                    <PricingDisplay
-                      serviceType={serviceType}
-                      serviceDetails={serviceDetails}
+                {/* Multi-Service Selection */}
+                <Card className="bg-card/80 backdrop-blur-sm border-border">
+                  <CardContent className="pt-6">
+                    <MultiServiceSelector
+                      selectedServices={selectedServices}
+                      onToggleService={handleToggleService}
                     />
-                  </>
+                  </CardContent>
+                </Card>
+
+                {/* Service Details Forms */}
+                {selectedServices.length > 0 && (
+                  <MultiServiceDetailsForm
+                    selectedServices={selectedServices}
+                    serviceDetailsMap={serviceDetailsMap}
+                    onUpdateServiceDetail={handleUpdateServiceDetail}
+                    serviceIdMap={serviceIdMap}
+                  />
+                )}
+
+                {/* Booking Summary */}
+                {selectedServices.length > 0 && (
+                  <BookingSummaryCard
+                    selectedServices={selectedServices}
+                    serviceDetailsMap={serviceDetailsMap}
+                  />
                 )}
 
                 {/* User Information - Read-only for authenticated users */}
@@ -585,7 +562,6 @@ const EnhancedBooking = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {/* Read-only summary for authenticated users */}
                     {user && profileLoaded ? (
                       <div className="space-y-3">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -625,15 +601,14 @@ const EnhancedBooking = () => {
                         </p>
                       </div>
                     ) : (
-                      /* Fallback loading state while profile loads */
                       <div className="flex items-center justify-center py-6 text-muted-foreground">
                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent mr-2" />
                         {t('common.loading')}
                       </div>
                     )}
 
-                    {/* Driver info notice - Driver service always includes a driver */}
-                    {serviceType === 'Driver' && (
+                    {/* Driver info notice */}
+                    {selectedServices.includes('Driver') && (
                       <div className="flex items-center gap-2 pt-4 border-t text-sm text-muted-foreground">
                         <Car className="h-4 w-4 text-primary" />
                         <span>{t('booking.driverIncluded')}</span>
@@ -642,13 +617,13 @@ const EnhancedBooking = () => {
                   </CardContent>
                 </Card>
 
-                {/* Submit Button - Primary action */}
+                {/* Submit Button */}
                 <div className="pt-4">
                   <Button 
                     type="submit" 
                     size="lg" 
                     className="w-full sm:w-auto px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-                    disabled={!serviceType || !userInfo.fullName || !userInfo.email || !userInfo.phone || isSubmitting}
+                    disabled={selectedServices.length === 0 || !userInfo.fullName || !userInfo.email || !userInfo.phone || isSubmitting}
                   >
                     {isSubmitting ? t('common.loading') : t('booking.submitBooking')}
                     {!isSubmitting && <ArrowRight className="ml-2 h-5 w-5" />}
