@@ -111,11 +111,32 @@ const EnhancedConfirmation = () => {
     }
     
     try {
+      // Fetch profile data to ensure name and phone are in sync
+      let fullName = bookingData.userInfo?.fullName || '';
+      let phone = bookingData.userInfo?.phone || '';
+      
+      if (user?.id && (!fullName || !phone)) {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, phone')
+            .eq('id', user.id)
+            .maybeSingle();
+          
+          if (profile) {
+            fullName = fullName || profile.full_name || 'Customer';
+            phone = phone || profile.phone || '';
+          }
+        } catch (err) {
+          console.warn('Could not fetch profile for email:', err);
+        }
+      }
+      
       const userInfo = {
         ...bookingData.userInfo,
         email: userEmail,
-        fullName: bookingData.userInfo?.fullName || user?.user_metadata?.full_name || 'Customer',
-        phone: bookingData.userInfo?.phone || ''
+        fullName: fullName || 'Customer',
+        phone
       };
       
       const { error } = await supabase.functions.invoke('send-booking-email', {

@@ -276,14 +276,36 @@ const UserDashboard = () => {
     }
   };
 
-  const handlePayNow = (booking: Booking) => {
-    // Navigate to payment page with booking ID - price comes from v_booking_payment_guard
+  const handlePayNow = async (booking: Booking) => {
+    // Fetch user profile data to ensure consistent userInfo across all pages
+    let userInfo = { fullName: '', email: user?.email || '', phone: '', language: 'english' };
+    
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, phone, preferred_language')
+        .eq('id', user?.id)
+        .maybeSingle();
+      
+      if (profile) {
+        userInfo = {
+          fullName: profile.full_name || '',
+          email: user?.email || '',
+          phone: profile.phone || '',
+          language: profile.preferred_language || 'english'
+        };
+      }
+    } catch (error) {
+      console.error('Error fetching profile for payment:', error);
+    }
+    
+    // Navigate to payment page with booking ID and synced userInfo
     navigate('/enhanced-payment', {
       state: { 
         bookingId: booking.id, 
         bookingData: {
           serviceType: booking.service_type,
-          userInfo: { fullName: '', email: '', phone: '' }, // Will be fetched
+          userInfo,
           serviceDetails: booking.service_details
         }
       }
