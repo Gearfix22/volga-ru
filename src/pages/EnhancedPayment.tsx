@@ -161,18 +161,40 @@ const EnhancedPayment = () => {
           setPayablePrice(null);
         }
         
-        // If no bookingData provided, fetch basic info from bookings table
+        // If no bookingData provided, fetch basic info from bookings table AND user profile
         if (!initialBookingData) {
           const { data: booking, error } = await supabase
             .from('bookings')
-            .select('service_type, user_info, service_details')
+            .select('service_type, user_info, service_details, user_id')
             .eq('id', bookingId)
             .single();
           
           if (!error && booking) {
-            const userInfo = typeof booking.user_info === 'object' && booking.user_info !== null
+            // First get userInfo from booking
+            let userInfo = typeof booking.user_info === 'object' && booking.user_info !== null
               ? booking.user_info as { fullName?: string; email?: string; phone?: string; language?: string }
               : { fullName: '', email: '', phone: '', language: 'english' };
+            
+            // If booking has user_id, fetch fresh profile data to ensure sync
+            if (booking.user_id) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name, phone, preferred_language')
+                .eq('id', booking.user_id)
+                .maybeSingle();
+              
+              // Get user email from auth
+              const { data: { user: authUser } } = await supabase.auth.getUser();
+              
+              if (profile) {
+                userInfo = {
+                  fullName: profile.full_name || userInfo.fullName || '',
+                  email: authUser?.email || userInfo.email || '',
+                  phone: profile.phone || userInfo.phone || '',
+                  language: profile.preferred_language || userInfo.language || 'english'
+                };
+              }
+            }
             
             setBookingData({
               serviceType: booking.service_type,

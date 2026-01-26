@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -33,12 +33,37 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 
+interface UserProfile {
+  full_name: string | null;
+  phone: string | null;
+}
+
 const AppSidebar = () => {
   const { user, hasRole } = useAuth();
   const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const { state } = useSidebar();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  // Fetch user profile for display in sidebar
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id) return;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, phone')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      if (!error && data) {
+        setUserProfile(data);
+      }
+    };
+    
+    fetchProfile();
+  }, [user?.id]);
 
   const userMenuItems = [
     {
@@ -190,12 +215,17 @@ const AppSidebar = () => {
         <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
           <Avatar className="h-8 w-8">
             <AvatarFallback>
-              {user?.email?.charAt(0).toUpperCase() || 'U'}
+              {userProfile?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
           {state === 'expanded' && (
             <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : ''}`}>
-              <p className="text-sm font-medium truncate">
+              {userProfile?.full_name && (
+                <p className="text-sm font-medium truncate">
+                  {userProfile.full_name}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground truncate">
                 {user?.email}
               </p>
               <Button
