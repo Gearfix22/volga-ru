@@ -212,6 +212,32 @@ const EnhancedConfirmation = () => {
     }
   };
 
+  // Helper for multi-service display
+  const renderMultiServiceDetails = (serviceType: string, details: any) => {
+    const serviceDetails = details?.[`_${serviceType.toLowerCase()}_details`] || {};
+    
+    switch (serviceType) {
+      case 'Driver':
+        return serviceDetails.pickupLocation ? (
+          <span>{serviceDetails.pickupLocation} → {serviceDetails.dropoffLocation}</span>
+        ) : t('serviceDetailsNotAvailable');
+      case 'Accommodation':
+        return serviceDetails.location ? (
+          <span>{serviceDetails.location} ({serviceDetails.checkIn} - {serviceDetails.checkOut})</span>
+        ) : t('serviceDetailsNotAvailable');
+      case 'Events':
+        return serviceDetails.eventType ? (
+          <span className="capitalize">{serviceDetails.eventType} - {serviceDetails.location}</span>
+        ) : t('serviceDetailsNotAvailable');
+      case 'Guide':
+        return serviceDetails.location ? (
+          <span>{serviceDetails.location}, {serviceDetails.duration} {t('booking.hours')}</span>
+        ) : t('serviceDetailsNotAvailable');
+      default:
+        return t('serviceDetailsNotAvailable');
+    }
+  };
+
   const renderServiceDetails = () => {
     const details = bookingData.serviceDetails as any;
     
@@ -550,10 +576,26 @@ const EnhancedConfirmation = () => {
               <CardContent className="space-y-6">
                 <div>
                   <h3 className="font-semibold mb-3">{t('serviceInformation')}</h3>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Badge variant="secondary">{bookingData.serviceType}</Badge>
-                  </div>
-                  {renderServiceDetails()}
+                  {/* Multi-service display */}
+                  {(bookingData.serviceDetails as any)?._multiService && (bookingData.serviceDetails as any)?._selectedServices ? (
+                    <div className="space-y-4">
+                      {((bookingData.serviceDetails as any)._selectedServices as string[]).map((serviceType: string) => (
+                        <div key={serviceType} className="p-3 bg-muted/50 rounded-lg">
+                          <Badge variant="secondary" className="mb-2">{serviceType}</Badge>
+                          <div className="text-sm text-muted-foreground">
+                            {renderMultiServiceDetails(serviceType, bookingData.serviceDetails)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Badge variant="secondary">{bookingData.serviceType}</Badge>
+                      </div>
+                      {renderServiceDetails()}
+                    </>
+                  )}
                 </div>
 
                 <div>
