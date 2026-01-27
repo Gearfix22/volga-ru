@@ -1,4 +1,18 @@
 {
+  "booking.initialPrice": "Initial price",
+  "booking.quoteByAdmin": "Quote by admin",
+  "booking.estimatedTotal": "Estimated total",
+  "booking.finalPriceByAdmin": "Final price set by admin",
+  "booking.initialEstimate": "Initial estimate",
+  "booking.finalPrice": "Final price",
+  "booking.noDetailsProvided": "No details provided",
+  "booking.passengers": "passengers",
+  "booking.tickets": "tickets",
+  "payment.pricingDetails": "Pricing Details",
+  "payment.finalApprovedPrice": "Final approved price",
+  "payment.approved": "Approved",
+  "payment.discountApplied": "Discount of {{amount}} applied",
+  "payment.adjustedPrice": "Price adjusted by admin",
   "navbar": {
     "home": "Home",
     "services": "Services",

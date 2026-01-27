@@ -15,14 +15,17 @@ import {
   ChevronUp,
   AlertCircle,
   Check,
+  DollarSign,
   LucideIcon
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getServices, getPricingText, getLocalizedServiceName, getLocalizedServiceDescription, type ServiceData } from '@/services/servicesService';
+import { formatPrice } from '@/services/currencyService';
 
 interface MultiServiceSelectorProps {
   selectedServices: string[];
   onToggleService: (serviceType: string) => void;
+  onServiceDataLoaded?: (serviceDataMap: Record<string, ServiceData>) => void;
 }
 
 // Icon mapping by service type
@@ -43,7 +46,8 @@ const SERVICE_SHORT_DESC: Record<string, string> = {
 
 export const MultiServiceSelector: React.FC<MultiServiceSelectorProps> = ({
   selectedServices,
-  onToggleService
+  onToggleService,
+  onServiceDataLoaded
 }) => {
   const { t, language } = useLanguage();
   const [services, setServices] = useState<ServiceData[]>([]);
@@ -66,7 +70,17 @@ export const MultiServiceSelector: React.FC<MultiServiceSelectorProps> = ({
           }
         });
         
-        setServices(Array.from(uniqueTypes.values()));
+        const serviceArray = Array.from(uniqueTypes.values());
+        setServices(serviceArray);
+        
+        // Notify parent about loaded service data for price calculations
+        if (onServiceDataLoaded) {
+          const dataMap: Record<string, ServiceData> = {};
+          serviceArray.forEach(s => {
+            dataMap[s.type] = s;
+          });
+          onServiceDataLoaded(dataMap);
+        }
       } catch (err) {
         console.error('Failed to load services:', err);
         setError(t('booking.failedToLoadServices'));
@@ -76,7 +90,7 @@ export const MultiServiceSelector: React.FC<MultiServiceSelectorProps> = ({
     };
 
     loadServices();
-  }, [t]);
+  }, [t, onServiceDataLoaded]);
 
   const toggleExpand = (serviceType: string) => {
     setExpandedServices(prev => {
@@ -92,6 +106,12 @@ export const MultiServiceSelector: React.FC<MultiServiceSelectorProps> = ({
 
   const isSelected = (serviceType: string) => selectedServices.includes(serviceType);
   const isExpanded = (serviceType: string) => expandedServices.has(serviceType);
+
+  // Calculate estimated total from initial prices
+  const estimatedTotal = selectedServices.reduce((sum, type) => {
+    const service = services.find(s => s.type === type);
+    return sum + (service?.base_price || 0);
+  }, 0);
 
   if (loading) {
     return (
@@ -154,8 +174,7 @@ export const MultiServiceSelector: React.FC<MultiServiceSelectorProps> = ({
           const Icon = SERVICE_ICONS[service.type] || Car;
           const selected = isSelected(service.type);
           const expanded = isExpanded(service.type);
-          const pricing = getPricingText(service, t);
-          const hasFixedPrice = service.base_price !== null && service.base_price > 0;
+          const hasBasePrice = service.base_price !== null && service.base_price > 0;
           const localizedName = getLocalizedServiceName(service, language);
           const localizedDesc = getLocalizedServiceDescription(service, language);
           const shortDescKey = SERVICE_SHORT_DESC[service.type];
@@ -206,17 +225,30 @@ export const MultiServiceSelector: React.FC<MultiServiceSelectorProps> = ({
                     </p>
                   </div>
                   
-                  {/* Price Badge */}
-                  <Badge 
-                    variant="outline" 
-                    className={`shrink-0 text-xs ${
-                      hasFixedPrice 
-                        ? 'border-green-500/50 text-green-600 dark:text-green-400' 
-                        : 'border-amber-500/50 text-amber-600 dark:text-amber-400'
-                    }`}
-                  >
-                    {pricing}
-                  </Badge>
+                  {/* Initial Price Badge */}
+                  <div className="flex flex-col items-end shrink-0">
+                    {hasBasePrice ? (
+                      <>
+                        <Badge 
+                          variant="outline" 
+                          className="border-green-500/50 text-green-600 dark:text-green-400 text-xs"
+                        >
+                          <DollarSign className="h-3 w-3 mr-0.5" />
+                          {service.base_price}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground mt-0.5">
+                          {t('booking.initialPrice')}
+                        </span>
+                      </>
+                    ) : (
+                      <Badge 
+                        variant="outline" 
+                        className="border-amber-500/50 text-amber-600 dark:text-amber-400 text-xs"
+                      >
+                        {t('booking.quoteByAdmin')}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
                 {/* Expandable Details */}
@@ -278,23 +310,46 @@ export const MultiServiceSelector: React.FC<MultiServiceSelectorProps> = ({
         })}
       </div>
 
-      {/* Selection Summary */}
+      {/* Selection Summary with Initial Price Estimate */}
       {selectedServices.length > 0 && (
-        <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-          <p className="text-sm font-medium text-foreground mb-2">
+        <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-lg space-y-3">
+          <p className="text-sm font-medium text-foreground">
             {t('booking.selectedServicesLabel')}:
           </p>
           <div className="flex flex-wrap gap-2">
             {selectedServices.map((type) => {
               const service = services.find(s => s.type === type);
               const Icon = SERVICE_ICONS[type] || Car;
+              const price = service?.base_price;
               return (
-                <Badge key={type} variant="secondary" className="flex items-center gap-1.5 py-1">
+                <Badge key={type} variant="secondary" className="flex items-center gap-1.5 py-1.5 px-3">
                   <Icon className="h-3 w-3" />
-                  {service ? getLocalizedServiceName(service, language) : type}
+                  <span>{service ? getLocalizedServiceName(service, language) : type}</span>
+                  {price && price > 0 && (
+                    <span className="text-green-600 dark:text-green-400 font-medium ml-1">
+                      ${price}
+                    </span>
+                  )}
                 </Badge>
               );
             })}
+          </div>
+          
+          {/* Estimated Total */}
+          <div className="flex items-center justify-between pt-2 border-t border-primary/20">
+            <span className="text-sm text-muted-foreground">{t('booking.estimatedTotal')}:</span>
+            <div className="text-right">
+              {estimatedTotal > 0 ? (
+                <>
+                  <span className="text-lg font-bold text-foreground">${estimatedTotal.toFixed(2)}</span>
+                  <p className="text-[10px] text-muted-foreground">{t('booking.finalPriceByAdmin')}</p>
+                </>
+              ) : (
+                <Badge variant="outline" className="border-amber-500/50 text-amber-600">
+                  {t('booking.quoteByAdmin')}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       )}

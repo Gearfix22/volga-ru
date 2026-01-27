@@ -1,4 +1,18 @@
 {
+  "booking.initialPrice": "Начальная цена",
+  "booking.quoteByAdmin": "Цена по запросу",
+  "booking.estimatedTotal": "Примерная сумма",
+  "booking.finalPriceByAdmin": "Окончательная цена устанавливается админом",
+  "booking.initialEstimate": "Начальная оценка",
+  "booking.finalPrice": "Окончательная цена",
+  "booking.noDetailsProvided": "Детали не указаны",
+  "booking.passengers": "пассажиров",
+  "booking.tickets": "билетов",
+  "payment.pricingDetails": "Детали цены",
+  "payment.finalApprovedPrice": "Утвержденная цена",
+  "payment.approved": "Одобрено",
+  "payment.discountApplied": "Применена скидка {{amount}}",
+  "payment.adjustedPrice": "Цена скорректирована админом",
   "navbar": {
     "home": "Главная",
     "services": "Услуги",
