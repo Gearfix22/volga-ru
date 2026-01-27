@@ -7,6 +7,7 @@ import { BackButton } from '@/components/BackButton';
 import { AuthRequiredWrapper } from '@/components/booking/AuthRequiredWrapper';
 import { BankTransferForm } from '@/components/payment/BankTransferForm';
 import { EnhancedCurrencySelector } from '@/components/booking/EnhancedCurrencySelector';
+import { PaymentServicesSummary } from '@/components/booking/PaymentServicesSummary';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +32,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { completeDraftBooking } from '@/services/bookingService';
 import { canPayForBooking, subscribeToPaymentGuardChanges } from '@/services/paymentGuardService';
 import { convertFromUSD, getCurrencyRates, type CurrencyCode, type CurrencyRate, formatPrice } from '@/services/currencyService';
-import type { BookingData } from '@/types/booking';
+import type { BookingData, ServiceDetails, UserInfo } from '@/types/booking';
 
 /**
  * UNIFIED PAYMENT PROCESSING
@@ -100,6 +101,11 @@ const EnhancedPayment = () => {
   const [currencyRates, setCurrencyRates] = useState<CurrencyRate[]>([]);
   const [convertedAmount, setConvertedAmount] = useState<number>(0);
   const [currentBookingId, setCurrentBookingId] = useState<string | null>(bookingId || null);
+  
+  // Multi-service state for payment display
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [serviceDetailsMap, setServiceDetailsMap] = useState<Record<string, ServiceDetails>>({});
+  const [initialPrice, setInitialPrice] = useState<number>(0);
 
   // Stripe payment form fields
   const [cardNumber, setCardNumber] = useState('');
@@ -196,6 +202,29 @@ const EnhancedPayment = () => {
               }
             }
             
+            // Parse multi-service data from service_details
+            const serviceDetails = typeof booking.service_details === 'object' && booking.service_details !== null 
+              ? booking.service_details as any 
+              : {};
+            
+            if (serviceDetails._multiService && serviceDetails._selectedServices) {
+              setSelectedServices(serviceDetails._selectedServices);
+              
+              // Parse individual service details
+              const detailsMap: Record<string, ServiceDetails> = {};
+              for (const sType of serviceDetails._selectedServices) {
+                const key = `_${sType.toLowerCase()}_details`;
+                if (serviceDetails[key]) {
+                  detailsMap[sType] = serviceDetails[key];
+                }
+              }
+              setServiceDetailsMap(detailsMap);
+            } else {
+              // Single service booking
+              setSelectedServices([booking.service_type]);
+              setServiceDetailsMap({ [booking.service_type]: serviceDetails });
+            }
+            
             setBookingData({
               serviceType: booking.service_type,
               userInfo: {
@@ -204,9 +233,26 @@ const EnhancedPayment = () => {
                 phone: userInfo.phone || '',
                 language: userInfo.language || 'english'
               },
-              serviceDetails: (typeof booking.service_details === 'object' && booking.service_details !== null ? booking.service_details : {}) as import('@/types/booking').ServiceDetails,
+              serviceDetails: serviceDetails as import('@/types/booking').ServiceDetails,
               totalPrice: 0 // Will be overridden by payablePrice
             });
+          }
+        } else if (initialBookingData.serviceDetails) {
+          // Parse multi-service from initial booking data
+          const serviceDetails = initialBookingData.serviceDetails as any;
+          if (serviceDetails._multiService && serviceDetails._selectedServices) {
+            setSelectedServices(serviceDetails._selectedServices);
+            const detailsMap: Record<string, ServiceDetails> = {};
+            for (const sType of serviceDetails._selectedServices) {
+              const key = `_${sType.toLowerCase()}_details`;
+              if (serviceDetails[key]) {
+                detailsMap[sType] = serviceDetails[key];
+              }
+            }
+            setServiceDetailsMap(detailsMap);
+          } else {
+            setSelectedServices([initialBookingData.serviceType]);
+            setServiceDetailsMap({ [initialBookingData.serviceType]: serviceDetails });
           }
         }
       }
@@ -572,58 +618,42 @@ const EnhancedPayment = () => {
       );
     }
     
+    // Use PaymentServicesSummary for multi-service display
     return (
-    <Card className="backdrop-blur-sm bg-white/90 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-700 sticky top-24">
-      <CardHeader className="pb-3">
-        <CardTitle className={`flex items-center gap-2 text-xl ${isRTL ? 'flex-row-reverse' : ''}`}>
-          <CheckCircle className="h-6 w-6 text-green-600" />
-          {t('payment.bookingSummary')}
-        </CardTitle>
-        <CardDescription>{t('messages.reviewBookingDetails')}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-3">
-          <div className={`flex items-center justify-between pb-2 border-b ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <span className="text-muted-foreground">{t('dashboard.serviceType')}:</span>
-            <Badge variant="secondary" className="font-semibold">{bookingData.serviceType}</Badge>
-          </div>
-          <div className={`flex items-center justify-between pb-2 border-b ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <span className="text-muted-foreground">{t('messages.customerInformation')}:</span>
-            <span className="font-medium">{bookingData.userInfo.fullName}</span>
-          </div>
-          <div className={`flex items-center justify-between pb-2 border-b ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <span className="text-muted-foreground">{t('footer.email')}:</span>
-            <span className="text-sm">{bookingData.userInfo.email}</span>
-          </div>
-          <div className={`flex items-center justify-between pb-2 border-b ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <span className="text-muted-foreground">{t('footer.phone')}:</span>
-            <span className="text-sm">{bookingData.userInfo.phone}</span>
-          </div>
-        </div>
+      <div className="space-y-4 sticky top-24">
+        <PaymentServicesSummary
+          selectedServices={selectedServices.length > 0 ? selectedServices : [bookingData.serviceType]}
+          serviceDetailsMap={Object.keys(serviceDetailsMap).length > 0 ? serviceDetailsMap : { [bookingData.serviceType]: bookingData.serviceDetails }}
+          userInfo={bookingData.userInfo}
+          initialPrice={initialPrice}
+          finalPrice={finalAmount}
+          currency="USD"
+        />
         
         {/* Enhanced Currency Selector with Conversion Display */}
-        <div className="border-t-2 pt-4 mt-4">
-          <EnhancedCurrencySelector
-            selectedCurrency={selectedCurrency}
-            onCurrencyChange={(currency, rate) => {
-              setSelectedCurrency(currency);
-              setSelectedExchangeRate(rate);
-            }}
-            basePriceUSD={finalAmount}
-            label={t('payment.selectCurrency') || 'Select Currency'}
-            showConversion={true}
-            showRateInfo={true}
-          />
-        </div>
-        <Alert className="mt-4">
-          <Shield className="h-4 w-4" />
-          <AlertDescription className="text-xs">
-            {t('messages.securePayment')}
-          </AlertDescription>
-        </Alert>
-      </CardContent>
-    </Card>
-  );
+        <Card className="backdrop-blur-sm bg-white/90 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-700">
+          <CardContent className="p-4 space-y-4">
+            <EnhancedCurrencySelector
+              selectedCurrency={selectedCurrency}
+              onCurrencyChange={(currency, rate) => {
+                setSelectedCurrency(currency);
+                setSelectedExchangeRate(rate);
+              }}
+              basePriceUSD={finalAmount}
+              label={t('payment.selectCurrency') || 'Select Currency'}
+              showConversion={true}
+              showRateInfo={true}
+            />
+            <Alert className="mt-4">
+              <Shield className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                {t('messages.securePayment')}
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      </div>
+    );
   };
 
   const renderPaymentMethodSelector = () => (

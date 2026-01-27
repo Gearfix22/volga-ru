@@ -1,4 +1,18 @@
 {
+  "booking.initialPrice": "السعر الأولي",
+  "booking.quoteByAdmin": "عرض سعر من المسؤول",
+  "booking.estimatedTotal": "المجموع التقديري",
+  "booking.finalPriceByAdmin": "السعر النهائي يحدده المسؤول",
+  "booking.initialEstimate": "التقدير الأولي",
+  "booking.finalPrice": "السعر النهائي",
+  "booking.noDetailsProvided": "لم يتم تقديم تفاصيل",
+  "booking.passengers": "ركاب",
+  "booking.tickets": "تذاكر",
+  "payment.pricingDetails": "تفاصيل الأسعار",
+  "payment.finalApprovedPrice": "السعر النهائي المعتمد",
+  "payment.approved": "تمت الموافقة",
+  "payment.discountApplied": "تم تطبيق خصم {{amount}}",
+  "payment.adjustedPrice": "تم تعديل السعر من قبل المسؤول",
   "navbar": {
     "home": "الرئيسية",
     "services": "الخدمات",

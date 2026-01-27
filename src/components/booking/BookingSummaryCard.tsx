@@ -12,14 +12,21 @@ import {
   Clock, 
   Users,
   DollarSign,
+  User,
+  Mail,
+  Phone,
   LucideIcon
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { ServiceDetails } from '@/types/booking';
+import type { ServiceDetails, UserInfo } from '@/types/booking';
+import type { ServiceData } from '@/services/servicesService';
 
 interface BookingSummaryCardProps {
   selectedServices: string[];
   serviceDetailsMap: Record<string, ServiceDetails>;
+  serviceDataMap?: Record<string, ServiceData>;
+  userInfo?: UserInfo;
+  showUserInfo?: boolean;
 }
 
 // Icon mapping by service type
@@ -40,13 +47,24 @@ const SERVICE_TITLES: Record<string, string> = {
 
 export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
   selectedServices,
-  serviceDetailsMap
+  serviceDetailsMap,
+  serviceDataMap,
+  userInfo,
+  showUserInfo = false
 }) => {
   const { t } = useLanguage();
 
   if (selectedServices.length === 0) {
     return null;
   }
+
+  // Calculate estimated total from initial prices
+  const estimatedTotal = serviceDataMap 
+    ? selectedServices.reduce((sum, type) => {
+        const service = serviceDataMap[type];
+        return sum + (service?.base_price || 0);
+      }, 0)
+    : 0;
 
   const renderServiceSummary = (serviceType: string) => {
     const details = serviceDetailsMap[serviceType] as any;
@@ -163,23 +181,58 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* User Info Section (read-only) */}
+        {showUserInfo && userInfo && (
+          <>
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {t('booking.contactInformation')}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                <div className="flex items-center gap-2 p-2 bg-muted/50 rounded">
+                  <User className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="truncate">{userInfo.fullName || t('common.notProvided')}</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-muted/50 rounded">
+                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="truncate">{userInfo.email || t('common.notProvided')}</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-muted/50 rounded sm:col-span-2">
+                  <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>{userInfo.phone || t('common.notProvided')}</span>
+                </div>
+              </div>
+            </div>
+            <Separator />
+          </>
+        )}
+
         {/* Services List */}
         <div className="space-y-3">
           {selectedServices.map((serviceType, index) => {
             const Icon = SERVICE_ICONS[serviceType] || Car;
             const titleKey = SERVICE_TITLES[serviceType];
+            const serviceData = serviceDataMap?.[serviceType];
+            const basePrice = serviceData?.base_price;
             
             return (
               <div key={serviceType}>
                 {index > 0 && <Separator className="my-3" />}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-                      <Icon className="h-4 w-4" />
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <span className="font-medium text-foreground text-sm">
+                        {titleKey ? t(titleKey) : serviceType}
+                      </span>
                     </div>
-                    <span className="font-medium text-foreground text-sm">
-                      {titleKey ? t(titleKey) : serviceType}
-                    </span>
+                    {basePrice && basePrice > 0 && (
+                      <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                        ${basePrice.toFixed(2)}
+                      </span>
+                    )}
                   </div>
                   {renderServiceSummary(serviceType)}
                 </div>
@@ -188,14 +241,24 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
           })}
         </div>
 
-        {/* Pricing Notice */}
-        <div className="pt-3 border-t border-border">
+        {/* Pricing Section */}
+        <div className="pt-3 border-t border-border space-y-2">
+          {/* Initial Price Estimate */}
+          {estimatedTotal > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">{t('booking.initialEstimate')}:</span>
+              <span className="font-medium">${estimatedTotal.toFixed(2)}</span>
+            </div>
+          )}
+          
+          {/* Final Price Status */}
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-foreground">{t('booking.totalPrice')}</span>
+            <span className="text-sm font-medium text-foreground">{t('booking.finalPrice')}:</span>
             <Badge variant="outline" className="text-amber-600 dark:text-amber-400 border-amber-500/50">
               {t('booking.awaitingAdminPricing')}
             </Badge>
           </div>
+          
           <p className="text-xs text-muted-foreground mt-2">
             {t('booking.pricingNote')}
           </p>

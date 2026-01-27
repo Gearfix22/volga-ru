@@ -37,6 +37,11 @@ const EnhancedBooking = () => {
   const [serviceDetailsMap, setServiceDetailsMap] = useState<Record<string, ServiceDetails>>({});
   const [serviceDataMap, setServiceDataMap] = useState<Record<string, ServiceData>>({});
   
+  // Callback to receive service data from MultiServiceSelector
+  const handleServiceDataLoaded = React.useCallback((dataMap: Record<string, ServiceData>) => {
+    setServiceDataMap(prev => ({ ...prev, ...dataMap }));
+  }, []);
+  
   const [userInfo, setUserInfo] = useState<UserInfo>({
     fullName: '',
     email: '',
@@ -528,6 +533,7 @@ const EnhancedBooking = () => {
                     <MultiServiceSelector
                       selectedServices={selectedServices}
                       onToggleService={handleToggleService}
+                      onServiceDataLoaded={handleServiceDataLoaded}
                     />
                   </CardContent>
                 </Card>
@@ -547,6 +553,9 @@ const EnhancedBooking = () => {
                   <BookingSummaryCard
                     selectedServices={selectedServices}
                     serviceDetailsMap={serviceDetailsMap}
+                    serviceDataMap={serviceDataMap}
+                    userInfo={userInfo}
+                    showUserInfo={false}
                   />
                 )}
 

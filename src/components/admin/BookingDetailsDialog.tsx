@@ -9,12 +9,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { User, Mail, Phone, Calendar, DollarSign, FileText, Car, Edit, Save, X, Loader2, Lock, Check } from 'lucide-react';
+import { User, Mail, Phone, Calendar, DollarSign, FileText, Car, Edit, Save, X, Loader2, Lock, Check, Building2, Ticket, UserCheck, MapPin, Clock, Users } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { BookingStatusTimeline } from '@/components/booking/BookingStatusTimeline';
 import { getPaymentGuard, type PaymentGuardData } from '@/services/paymentGuardService';
 import { setBookingPrice as adminSetBookingPrice, updateBooking } from '@/services/adminService';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface BookingDetailsDialogProps {
   booking: any;
@@ -23,6 +24,14 @@ interface BookingDetailsDialogProps {
   onPriceUpdated?: () => void;
 }
 
+// Service icon mapping
+const SERVICE_ICONS: Record<string, any> = {
+  'Driver': Car,
+  'Accommodation': Building2,
+  'Events': Ticket,
+  'Guide': UserCheck
+};
+
 export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
   booking,
   open,
@@ -30,6 +39,7 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
   onPriceUpdated,
 }) => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [editingPrice, setEditingPrice] = useState(false);
   const [priceValue, setPriceValue] = useState('');
   const [saving, setSaving] = useState(false);
@@ -56,6 +66,133 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
   // Price is locked after approval (using v_booking_payment_guard)
   const canEditPriceFlag = !priceGuard?.locked;
   const displayPrice = priceGuard?.approved_price || null;
+
+  // Helper to render service-specific details
+  const renderServiceTypeDetails = (serviceType: string, details: any) => {
+    if (!details || Object.keys(details).length === 0) {
+      return <p className="text-sm text-muted-foreground italic">No details provided</p>;
+    }
+
+    const Icon = SERVICE_ICONS[serviceType] || FileText;
+
+    const renderField = (label: string, value: any, icon?: any) => {
+      if (!value) return null;
+      const FieldIcon = icon;
+      return (
+        <div className="flex items-center gap-2 text-sm">
+          {FieldIcon && <FieldIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+          <span className="font-medium">{label}:</span>
+          <span className="text-muted-foreground">{String(value)}</span>
+        </div>
+      );
+    };
+
+    switch (serviceType) {
+      case 'Driver':
+        return (
+          <div className="space-y-2">
+            {renderField('Pickup', details.pickupLocation, MapPin)}
+            {renderField('Dropoff', details.dropoffLocation, MapPin)}
+            {renderField('Date', details.pickupDate, Calendar)}
+            {renderField('Time', details.pickupTime, Clock)}
+            {renderField('Vehicle', details.vehicleType, Car)}
+            {renderField('Passengers', details.passengers, Users)}
+          </div>
+        );
+      case 'Accommodation':
+        return (
+          <div className="space-y-2">
+            {renderField('Location', details.location, MapPin)}
+            {renderField('Check-in', details.checkIn, Calendar)}
+            {renderField('Check-out', details.checkOut, Calendar)}
+            {renderField('Guests', details.guests, Users)}
+            {renderField('Room Type', details.roomType, Building2)}
+          </div>
+        );
+      case 'Events':
+        return (
+          <div className="space-y-2">
+            {renderField('Event Type', details.eventType, Ticket)}
+            {renderField('Location', details.location, MapPin)}
+            {renderField('Date', details.date, Calendar)}
+            {renderField('Tickets', details.tickets, Users)}
+          </div>
+        );
+      case 'Guide':
+        return (
+          <div className="space-y-2">
+            {renderField('Location', details.location, MapPin)}
+            {renderField('Date', details.date, Calendar)}
+            {renderField('Duration', details.duration ? `${details.duration} hours` : null, Clock)}
+            {renderField('Language', details.language, UserCheck)}
+          </div>
+        );
+      default:
+        // Generic display for unknown service types
+        return (
+          <div className="space-y-2">
+            {Object.entries(details)
+              .filter(([key]) => !key.startsWith('_'))
+              .map(([key, value]) => (
+                <div key={key} className="flex items-start gap-2 text-sm">
+                  <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                  <span className="text-muted-foreground">{String(value)}</span>
+                </div>
+              ))}
+          </div>
+        );
+    }
+  };
+
+  // Parse multi-service bookings
+  const renderMultiServiceDetails = (serviceDetails: any) => {
+    if (!serviceDetails) return <p className="text-sm text-muted-foreground">No details available</p>;
+
+    // Check for multi-service format
+    if (serviceDetails._multiService && serviceDetails._selectedServices) {
+      const selectedServices = serviceDetails._selectedServices as string[];
+      
+      return (
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2 mb-3">
+            {selectedServices.map((sType: string) => {
+              const Icon = SERVICE_ICONS[sType] || FileText;
+              return (
+                <Badge key={sType} variant="outline" className="flex items-center gap-1">
+                  <Icon className="h-3 w-3" />
+                  {sType}
+                </Badge>
+              );
+            })}
+          </div>
+          
+          {selectedServices.map((serviceType: string, idx: number) => {
+            const key = `_${serviceType.toLowerCase()}_details`;
+            const details = serviceDetails[key];
+            const Icon = SERVICE_ICONS[serviceType] || FileText;
+            
+            return (
+              <div key={serviceType} className="space-y-2">
+                {idx > 0 && <Separator className="my-3" />}
+                <div className="flex items-center gap-2 font-medium">
+                  <div className="p-1.5 rounded bg-primary/10 text-primary">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  {serviceType}
+                </div>
+                <div className="pl-8">
+                  {renderServiceTypeDetails(serviceType, details)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    
+    // Single service format - render with the booking's service_type
+    return renderServiceTypeDetails(booking.service_type, serviceDetails);
+  };
 
   const handleEditPrice = () => {
     if (!canEditPriceFlag) {
@@ -400,10 +537,8 @@ export const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
           {/* Service Details */}
           <div>
             <h3 className="text-lg font-semibold mb-3">Service Details</h3>
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <pre className="text-xs whitespace-pre-wrap break-words overflow-x-auto">
-                {JSON.stringify(booking.service_details, null, 2)}
-              </pre>
+            <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+              {renderMultiServiceDetails(booking.service_details)}
             </div>
           </div>
 
