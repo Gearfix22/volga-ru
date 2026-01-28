@@ -4,16 +4,12 @@
  * User creates a booking - this is the ONLY way to create bookings via API
  * Mobile-compatible, API-first design
  * 
- * WORKFLOW:
- * 1. User submits booking request
- * 2. Booking created with status 'under_review'
- * 3. Admin reviews and sets price (via admin-bookings/set-price)
- * 4. Customer confirms and pays
- * 
- * DYNAMIC SERVICE TYPES:
- * - No hardcoded service types
- * - Validates against active services in database
- * - Fetches required inputs from service_inputs table
+ * STRICT RULES:
+ * 1. EVERY code path MUST return a Response
+ * 2. Function only validates, saves, returns status
+ * 3. NO navigation/redirect logic
+ * 4. Multi-service safe validation
+ * 5. All errors wrapped in try/catch
  * 
  * POST /create-booking - Create new booking
  */
@@ -27,139 +23,198 @@ import {
   AuthContext
 } from '../_shared/auth.ts'
 
-// Validate booking payload with comprehensive checks - NO HARDCODED SERVICE TYPES
+// Validate booking payload with multi-service support
 async function validateBookingPayload(
   supabaseAdmin: any,
   payload: any
 ): Promise<{ valid: boolean; error?: string; serviceData?: any }> {
-  // Validate service_type exists
-  if (!payload.service_type) {
-    return { valid: false, error: 'Service type is required' }
-  }
-  
-  // DYNAMIC VALIDATION: Check if service_type exists in database
-  const { data: service, error: serviceError } = await supabaseAdmin
-    .from('services')
-    .select('id, type, name, is_active')
-    .or(`type.eq.${payload.service_type},id.eq.${payload.service_id || '00000000-0000-0000-0000-000000000000'}`)
-    .eq('is_active', true)
-    .limit(1)
-    .maybeSingle()
-
-  if (serviceError) {
-    console.error('Service validation error:', serviceError)
-    return { valid: false, error: 'Failed to validate service type' }
-  }
-
-  // If no service found, check if it's a new/custom type (allow it but log)
-  if (!service) {
-    console.warn(`Service type '${payload.service_type}' not found in active services - allowing as custom type`)
-  }
-  
-  // Validate user info exists
-  if (!payload.user_info) {
-    return { valid: false, error: 'User info is required' }
-  }
-  
-  const userInfo = payload.user_info
-  
-  // Validate required user info fields
-  if (!userInfo.fullName?.trim()) {
-    return { valid: false, error: 'Full name is required' }
-  }
-  if (userInfo.fullName.length > 100) {
-    return { valid: false, error: 'Full name must be less than 100 characters' }
-  }
-  if (!userInfo.phone?.trim()) {
-    return { valid: false, error: 'Phone number is required' }
-  }
-  
-  // Validate service_details against required inputs from database
-  const details = payload.service_details || {}
-  
-  // Fetch required inputs for this service (if service exists)
-  if (service) {
-    const { data: requiredInputs } = await supabaseAdmin
-      .from('service_inputs')
-      .select('input_key, label, is_required')
-      .eq('service_id', service.id)
-      .eq('is_required', true)
-      .eq('is_active', true)
-
-    if (requiredInputs && requiredInputs.length > 0) {
-      for (const input of requiredInputs) {
-        if (!details[input.input_key] && details[input.input_key] !== 0) {
-          return { valid: false, error: `${input.label} is required` }
+  try {
+    // Validate service_type exists
+    if (!payload.service_type) {
+      return { valid: false, error: 'Service type is required' }
+    }
+    
+    // Validate user_info exists
+    if (!payload.user_info) {
+      return { valid: false, error: 'User info is required' }
+    }
+    
+    const userInfo = payload.user_info
+    
+    // Validate required user info fields
+    if (!userInfo.fullName?.trim()) {
+      return { valid: false, error: 'Full name is required' }
+    }
+    if (userInfo.fullName.length > 100) {
+      return { valid: false, error: 'Full name must be less than 100 characters' }
+    }
+    if (!userInfo.phone?.trim()) {
+      return { valid: false, error: 'Phone number is required' }
+    }
+    
+    // MULTI-SERVICE VALIDATION
+    const details = payload.service_details || {}
+    
+    // Check if this is a multi-service booking
+    if (details._multiService === true) {
+      const selectedServices = details._selectedServices
+      
+      // Validate at least one service is selected
+      if (!Array.isArray(selectedServices) || selectedServices.length === 0) {
+        return { valid: false, error: 'At least one service must be selected' }
+      }
+      
+      // Validate EVERY selected service has details
+      for (const serviceType of selectedServices) {
+        const serviceKey = `_${serviceType.toLowerCase()}_details`
+        const serviceDetails = details[serviceKey]
+        
+        // Reject if service details is null, undefined, or empty object
+        if (!serviceDetails || typeof serviceDetails !== 'object') {
+          return { 
+            valid: false, 
+            error: `Service "${serviceType}" is missing required details` 
+          }
+        }
+        
+        // Check for at least some user-entered data
+        const hasData = Object.keys(serviceDetails).some(key => 
+          !key.startsWith('_') && serviceDetails[key] !== null && serviceDetails[key] !== ''
+        )
+        
+        if (!hasData) {
+          return { 
+            valid: false, 
+            error: `Please fill in the details for "${serviceType}" service` 
+          }
         }
       }
     }
-  }
-  
-  // Date validation: prevent past dates for common date fields
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  
-  const dateFields = ['pickupDate', 'checkIn', 'date', 'departureDate', 'tourDate', 'eventDate']
-  for (const field of dateFields) {
-    if (details[field]) {
-      const fieldDate = new Date(details[field])
-      if (fieldDate < today) {
-        return { valid: false, error: `${field.replace(/([A-Z])/g, ' $1').trim()} cannot be in the past` }
+    
+    // DYNAMIC VALIDATION: Check if service_type exists in database
+    const { data: service, error: serviceError } = await supabaseAdmin
+      .from('services')
+      .select('id, type, name, is_active')
+      .or(`type.eq.${payload.service_type},id.eq.${payload.service_id || '00000000-0000-0000-0000-000000000000'}`)
+      .eq('is_active', true)
+      .limit(1)
+      .maybeSingle()
+
+    if (serviceError) {
+      console.error('Service validation error:', serviceError)
+      return { valid: false, error: 'Failed to validate service type' }
+    }
+
+    // If no service found, allow as custom type but log
+    if (!service) {
+      console.warn(`Service type '${payload.service_type}' not found in active services - allowing as custom type`)
+    }
+    
+    // Fetch required inputs for this service (if service exists)
+    if (service) {
+      const { data: requiredInputs } = await supabaseAdmin
+        .from('service_inputs')
+        .select('input_key, label, is_required')
+        .eq('service_id', service.id)
+        .eq('is_required', true)
+        .eq('is_active', true)
+
+      if (requiredInputs && requiredInputs.length > 0) {
+        for (const input of requiredInputs) {
+          if (!details[input.input_key] && details[input.input_key] !== 0) {
+            return { valid: false, error: `${input.label} is required` }
+          }
+        }
       }
     }
-  }
-  
-  // Check-out must be after check-in
-  if (details.checkIn && details.checkOut) {
-    const checkIn = new Date(details.checkIn)
-    const checkOut = new Date(details.checkOut)
-    if (checkOut <= checkIn) {
-      return { valid: false, error: 'Check-out date must be after check-in date' }
+    
+    // Date validation: prevent past dates for common date fields
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    const dateFields = ['pickupDate', 'checkIn', 'date', 'departureDate', 'tourDate', 'eventDate']
+    for (const field of dateFields) {
+      if (details[field]) {
+        const fieldDate = new Date(details[field])
+        if (fieldDate < today) {
+          return { valid: false, error: `${field.replace(/([A-Z])/g, ' $1').trim()} cannot be in the past` }
+        }
+      }
     }
+    
+    // Check-out must be after check-in
+    if (details.checkIn && details.checkOut) {
+      const checkIn = new Date(details.checkIn)
+      const checkOut = new Date(details.checkOut)
+      if (checkOut <= checkIn) {
+        return { valid: false, error: 'Check-out date must be after check-in date' }
+      }
+    }
+    
+    return { valid: true, serviceData: service }
+  } catch (error) {
+    console.error('Validation error:', error)
+    return { valid: false, error: 'Validation failed. Please check your input.' }
   }
-  
-  return { valid: true, serviceData: service }
 }
 
-// Check for duplicate recent booking (within 1 minute) - prevent accidental double submission
+// Check for duplicate recent booking (within 1 minute)
 async function checkDuplicateBooking(
   supabaseAdmin: any,
   userId: string,
   serviceType: string
 ): Promise<boolean> {
-  const oneMinuteAgo = new Date(Date.now() - 60000).toISOString()
-  
-  const { data } = await supabaseAdmin
-    .from('bookings')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('service_type', serviceType)
-    .gte('created_at', oneMinuteAgo)
-    .limit(1)
-  
-  return data && data.length > 0
+  try {
+    const oneMinuteAgo = new Date(Date.now() - 60000).toISOString()
+    
+    const { data } = await supabaseAdmin
+      .from('bookings')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('service_type', serviceType)
+      .gte('created_at', oneMinuteAgo)
+      .limit(1)
+    
+    return data && data.length > 0
+  } catch (error) {
+    console.error('Duplicate check error:', error)
+    return false // Allow booking if check fails
+  }
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
+  // Handle CORS preflight - ALWAYS return response
   const corsResponse = handleCors(req)
   if (corsResponse) return corsResponse
 
+  // Wrap ENTIRE function in try/catch
   try {
     // Require authentication
     const authResult = await getAuthContext(req)
     if (authResult instanceof Response) return authResult
     
     const { userId, supabaseAdmin } = authResult as AuthContext
+    
+    // Validate user_id exists
+    if (!userId) {
+      return errorResponse('User authentication required', 401)
+    }
+    
     const method = req.method
 
     // =========================================================
     // POST /create-booking - Create new booking
     // =========================================================
     if (method === 'POST') {
-      const body = await req.json()
+      let body: any
       
-      // Validate payload with dynamic service type checking
+      try {
+        body = await req.json()
+      } catch (parseError) {
+        return errorResponse('Invalid JSON in request body', 400)
+      }
+      
+      // Validate payload with multi-service support
       const validation = await validateBookingPayload(supabaseAdmin, body)
       if (!validation.valid) {
         return errorResponse(validation.error!, 400)
@@ -219,67 +274,83 @@ Deno.serve(async (req) => {
 
       // Store individual user inputs for structured querying
       if (service_details && typeof service_details === 'object') {
-        const userInputs = Object.entries(service_details)
-          .filter(([key]) => !key.startsWith('_')) // Skip internal fields
-          .map(([key, value]) => ({
-            booking_id: booking.id,
-            input_key: key,
-            input_value: String(value)
-          }))
+        try {
+          const userInputs = Object.entries(service_details)
+            .filter(([key]) => !key.startsWith('_')) // Skip internal fields
+            .map(([key, value]) => ({
+              booking_id: booking.id,
+              input_key: key,
+              input_value: String(value)
+            }))
 
-        if (userInputs.length > 0) {
-          await supabaseAdmin
-            .from('booking_user_inputs')
-            .insert(userInputs)
-            .then(() => {})
-            .catch((e: any) => console.warn('Failed to store user inputs:', e))
+          if (userInputs.length > 0) {
+            await supabaseAdmin
+              .from('booking_user_inputs')
+              .insert(userInputs)
+          }
+        } catch (inputError) {
+          console.warn('Failed to store user inputs:', inputError)
+          // Don't fail the booking for this
         }
       }
 
       // Initialize booking_prices record (price will be set by admin)
-      const { error: priceError } = await supabaseAdmin
-        .from('booking_prices')
-        .insert({
-          booking_id: booking.id,
-          amount: 0, // Placeholder - admin will set actual price
-          admin_price: null, // Admin has not set price yet
-          currency: currency || 'USD',
-          tax: 0,
-          locked: false // Price is not locked until admin sets it
-        })
-
-      if (priceError) {
+      try {
+        await supabaseAdmin
+          .from('booking_prices')
+          .insert({
+            booking_id: booking.id,
+            amount: 0, // Placeholder - admin will set actual price
+            admin_price: null, // Admin has not set price yet
+            currency: currency || 'USD',
+            tax: 0,
+            locked: false // Price is not locked until admin sets it
+          })
+      } catch (priceError) {
         console.error('Create booking_prices error:', priceError)
         // Don't fail the booking - prices can be created later
       }
 
       // Record initial status in history
-      await supabaseAdmin.from('booking_status_history').insert({
-        booking_id: booking.id,
-        old_status: null,
-        new_status: 'under_review',
-        changed_by: userId,
-        notes: 'Booking created by customer'
-      })
+      try {
+        await supabaseAdmin.from('booking_status_history').insert({
+          booking_id: booking.id,
+          old_status: null,
+          new_status: 'under_review',
+          changed_by: userId,
+          notes: 'Booking created by customer'
+        })
+      } catch (historyError) {
+        console.warn('Failed to record status history:', historyError)
+      }
 
       // Notify admins
-      await supabaseAdmin.from('unified_notifications').insert({
-        recipient_type: 'admin',
-        recipient_id: '00000000-0000-0000-0000-000000000000', // Placeholder for all admins
-        type: 'new_booking',
-        title: 'New Booking Request',
-        message: `New ${service_type} booking from ${user_info.fullName}`,
-        booking_id: booking.id
-      })
+      try {
+        await supabaseAdmin.from('unified_notifications').insert({
+          recipient_type: 'admin',
+          recipient_id: '00000000-0000-0000-0000-000000000000',
+          type: 'new_booking',
+          title: 'New Booking Request',
+          message: `New ${service_type} booking from ${user_info.fullName}`,
+          booking_id: booking.id
+        })
+      } catch (notifyError) {
+        console.warn('Failed to notify admins:', notifyError)
+      }
 
       // Log user activity
-      await supabaseAdmin.from('user_activities').insert({
-        user_id: userId,
-        activity_type: 'booking_created',
-        activity_data: { booking_id: booking.id, service_type },
-        activity_description: `Created ${service_type} booking`
-      })
+      try {
+        await supabaseAdmin.from('user_activities').insert({
+          user_id: userId,
+          activity_type: 'booking_created',
+          activity_data: { booking_id: booking.id, service_type },
+          activity_description: `Created ${service_type} booking`
+        })
+      } catch (activityError) {
+        console.warn('Failed to log activity:', activityError)
+      }
 
+      // SUCCESS RESPONSE - status 201
       return jsonResponse({ 
         success: true, 
         booking: {
@@ -292,10 +363,15 @@ Deno.serve(async (req) => {
       }, 201)
     }
 
+    // Method not allowed - ALWAYS return response
     return errorResponse('Method not allowed', 405)
 
   } catch (error: any) {
+    // CATCH ALL unexpected errors - NEVER crash or return undefined
     console.error('Create booking error:', error)
-    return errorResponse(error.message || 'Internal server error', 500)
+    return errorResponse(
+      error.message || 'Internal server error. Please try again.',
+      500
+    )
   }
 })

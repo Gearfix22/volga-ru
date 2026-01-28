@@ -2,14 +2,12 @@
  * CONFIRM-BOOKING EDGE FUNCTION
  * 
  * User confirms booking after admin sets price
- * This moves the booking to 'awaiting_payment' or directly triggers payment
  * 
- * Mobile-compatible, API-first design
- * 
- * WORKFLOW:
- * 1. Admin sets price (via admin-bookings/set-price) - price is locked
- * 2. Customer calls this endpoint to confirm
- * 3. Booking status changes to 'awaiting_payment' or 'paid'
+ * STRICT RULES:
+ * 1. EVERY code path MUST return a Response
+ * 2. Function only validates, saves, returns status
+ * 3. NO navigation/redirect logic
+ * 4. All errors wrapped in try/catch
  * 
  * POST /confirm-booking/:id - Confirm booking price
  */
@@ -24,16 +22,22 @@ import {
 } from '../_shared/auth.ts'
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
+  // Handle CORS preflight - ALWAYS return response
   const corsResponse = handleCors(req)
   if (corsResponse) return corsResponse
 
+  // Wrap ENTIRE function in try/catch
   try {
     // Require authentication
     const authResult = await getAuthContext(req)
     if (authResult instanceof Response) return authResult
     
     const { userId, supabaseAdmin } = authResult as AuthContext
+    
+    // Validate user_id exists
+    if (!userId) {
+      return errorResponse('User authentication required', 401)
+    }
     
     // Parse URL
     const url = new URL(req.url)
@@ -44,7 +48,18 @@ Deno.serve(async (req) => {
     // =========================================================
     // POST /confirm-booking/:id - Confirm booking price
     // =========================================================
-    if (method === 'POST' && bookingId) {
+    if (method === 'POST') {
+      // Validate booking ID is provided
+      if (!bookingId) {
+        return errorResponse('Booking ID is required', 400)
+      }
+      
+      // Validate booking ID format (UUID)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      if (!uuidRegex.test(bookingId)) {
+        return errorResponse('Invalid booking ID format', 400)
+      }
+
       // Fetch booking and verify ownership
       const { data: booking, error: fetchError } = await supabaseAdmin
         .from('bookings')
@@ -53,11 +68,16 @@ Deno.serve(async (req) => {
         .eq('user_id', userId) // CRITICAL: Ensure user owns this booking
         .maybeSingle()
 
-      if (fetchError || !booking) {
-        return errorResponse('Booking not found', 404)
+      if (fetchError) {
+        console.error('Booking fetch error:', fetchError)
+        return errorResponse('Failed to fetch booking', 500)
+      }
+      
+      if (!booking) {
+        return errorResponse('Booking not found or access denied', 404)
       }
 
-      // Check status - must be awaiting_payment (ALIGNED WITH DATABASE ENUM)
+      // Check status - must be awaiting_payment or approved
       const confirmableStatuses = ['awaiting_payment', 'approved']
       if (!confirmableStatuses.includes(booking.status)) {
         return errorResponse(
@@ -73,7 +93,12 @@ Deno.serve(async (req) => {
         .eq('booking_id', bookingId)
         .maybeSingle()
 
-      if (priceError || !priceData) {
+      if (priceError) {
+        console.error('Price fetch error:', priceError)
+        return errorResponse('Failed to fetch price data', 500)
+      }
+      
+      if (!priceData) {
         return errorResponse('Price data not found. Please contact support.', 500)
       }
 
@@ -96,25 +121,37 @@ Deno.serve(async (req) => {
         })
         .eq('id', bookingId)
 
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error('Booking update error:', updateError)
+        return errorResponse('Failed to confirm booking', 500)
+      }
 
       // Record status change
-      await supabaseAdmin.from('booking_status_history').insert({
-        booking_id: bookingId,
-        old_status: booking.status,
-        new_status: newStatus,
-        changed_by: userId,
-        notes: 'Customer confirmed booking price'
-      })
+      try {
+        await supabaseAdmin.from('booking_status_history').insert({
+          booking_id: bookingId,
+          old_status: booking.status,
+          new_status: newStatus,
+          changed_by: userId,
+          notes: 'Customer confirmed booking price'
+        })
+      } catch (historyError) {
+        console.warn('Failed to record status history:', historyError)
+      }
 
       // Log user activity
-      await supabaseAdmin.from('user_activities').insert({
-        user_id: userId,
-        activity_type: 'booking_confirmed',
-        activity_data: { booking_id: bookingId, price: priceData.admin_price },
-        activity_description: `Confirmed booking price: ${priceData.currency} ${priceData.admin_price}`
-      })
+      try {
+        await supabaseAdmin.from('user_activities').insert({
+          user_id: userId,
+          activity_type: 'booking_confirmed',
+          activity_data: { booking_id: bookingId, price: priceData.admin_price },
+          activity_description: `Confirmed booking price: ${priceData.currency} ${priceData.admin_price}`
+        })
+      } catch (activityError) {
+        console.warn('Failed to log activity:', activityError)
+      }
 
+      // SUCCESS RESPONSE
       return jsonResponse({ 
         success: true, 
         status: newStatus,
@@ -126,10 +163,40 @@ Deno.serve(async (req) => {
       })
     }
 
-    return errorResponse('Booking ID required', 400)
+    // GET requests - return booking status
+    if (method === 'GET') {
+      if (!bookingId) {
+        return errorResponse('Booking ID is required', 400)
+      }
+      
+      const { data: booking, error } = await supabaseAdmin
+        .from('bookings')
+        .select('id, status, payment_status')
+        .eq('id', bookingId)
+        .eq('user_id', userId)
+        .maybeSingle()
+      
+      if (error || !booking) {
+        return errorResponse('Booking not found', 404)
+      }
+      
+      return jsonResponse({
+        success: true,
+        booking_id: booking.id,
+        status: booking.status,
+        payment_status: booking.payment_status
+      })
+    }
+
+    // Method not allowed - ALWAYS return response
+    return errorResponse('Method not allowed', 405)
 
   } catch (error: any) {
+    // CATCH ALL unexpected errors - NEVER crash or return undefined
     console.error('Confirm booking error:', error)
-    return errorResponse(error.message || 'Internal server error', 500)
+    return errorResponse(
+      error.message || 'Internal server error. Please try again.',
+      500
+    )
   }
 })

@@ -2,19 +2,12 @@
  * PROCESS-PAYMENT EDGE FUNCTION
  * 
  * UNIFIED payment processing for ALL payment methods
- * This is the SINGLE entry point for customer payments
  * 
- * CRITICAL: This function normalizes payment handling across:
- * - Cash on Arrival
- * - Credit Card
- * - Bank Transfer
- * 
- * WORKFLOW:
- * 1. Validate booking ownership and eligibility
- * 2. Verify price from booking_prices (SINGLE SOURCE OF TRUTH)
- * 3. Process payment based on method
- * 4. Update booking status consistently
- * 5. Create audit trail
+ * STRICT RULES:
+ * 1. EVERY code path MUST return a Response
+ * 2. Function only validates, processes, returns status
+ * 3. NO navigation/redirect logic
+ * 4. All errors wrapped in try/catch
  * 
  * POST /process-payment - Process payment for a booking
  * Body: { booking_id, payment_method, transaction_id?, receipt_url?, customer_notes? }
@@ -47,14 +40,15 @@ interface ProcessPaymentRequest {
 }
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
+  // Handle CORS preflight - ALWAYS return response
   const corsResponse = handleCors(req)
   if (corsResponse) return corsResponse
 
+  // Wrap ENTIRE function in try/catch
   try {
     // Only accept POST
     if (req.method !== 'POST') {
-      return errorResponse('Method not allowed', 405)
+      return errorResponse('Method not allowed. Use POST.', 405)
     }
 
     // Require authentication
@@ -63,8 +57,19 @@ Deno.serve(async (req) => {
     
     const { userId, supabaseAdmin } = authResult as AuthContext
 
-    // Parse request body
-    const body: ProcessPaymentRequest = await req.json()
+    // Validate user_id exists
+    if (!userId) {
+      return errorResponse('User authentication required', 401)
+    }
+
+    // Parse request body safely
+    let body: ProcessPaymentRequest
+    try {
+      body = await req.json()
+    } catch (parseError) {
+      return errorResponse('Invalid JSON in request body', 400)
+    }
+    
     const { 
       booking_id, 
       payment_method, 
@@ -84,7 +89,17 @@ Deno.serve(async (req) => {
       return errorResponse('booking_id is required', 400)
     }
 
-    if (!payment_method || !VALID_PAYMENT_METHODS.includes(payment_method)) {
+    // Validate booking ID format (UUID)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(booking_id)) {
+      return errorResponse('Invalid booking_id format', 400)
+    }
+
+    if (!payment_method) {
+      return errorResponse('payment_method is required', 400)
+    }
+
+    if (!VALID_PAYMENT_METHODS.includes(payment_method as PaymentMethod)) {
       return errorResponse(`payment_method must be one of: ${VALID_PAYMENT_METHODS.join(', ')}`, 400)
     }
 
@@ -96,8 +111,12 @@ Deno.serve(async (req) => {
       .eq('user_id', userId) // CRITICAL: Ensure user owns this booking
       .maybeSingle()
 
-    if (bookingError || !booking) {
+    if (bookingError) {
       console.error('Booking fetch error:', bookingError)
+      return errorResponse('Failed to fetch booking', 500)
+    }
+    
+    if (!booking) {
       return errorResponse('Booking not found or access denied', 404)
     }
 
@@ -127,8 +146,12 @@ Deno.serve(async (req) => {
       .eq('booking_id', booking_id)
       .maybeSingle()
 
-    if (priceError || !priceData) {
+    if (priceError) {
       console.error('Price fetch error:', priceError)
+      return errorResponse('Failed to fetch price data', 500)
+    }
+    
+    if (!priceData) {
       return errorResponse('Price data not found. Admin must set price first.', 400, 'NO_PRICE')
     }
 
@@ -166,7 +189,6 @@ Deno.serve(async (req) => {
 
       case 'credit_card':
         // Credit Card - immediate payment confirmation
-        // NOTE: In production, integrate with Stripe/payment gateway
         newPaymentStatus = 'paid'
         newBookingStatus = 'paid'
         paymentMessage = 'Credit card payment processed successfully.'
@@ -215,54 +237,70 @@ Deno.serve(async (req) => {
 
     if (updateError) {
       console.error('Booking update error:', updateError)
-      return errorResponse('Failed to process payment', 500)
+      return errorResponse('Failed to process payment. Please try again.', 500)
     }
 
     // Record status change in history
-    await supabaseAdmin.from('booking_status_history').insert({
-      booking_id: booking_id,
-      old_status: booking.status,
-      new_status: newBookingStatus,
-      changed_by: userId,
-      notes: `Payment submitted via ${payment_method}. Transaction: ${finalTransactionId}`
-    })
+    try {
+      await supabaseAdmin.from('booking_status_history').insert({
+        booking_id: booking_id,
+        old_status: booking.status,
+        new_status: newBookingStatus,
+        changed_by: userId,
+        notes: `Payment submitted via ${payment_method}. Transaction: ${finalTransactionId}`
+      })
+    } catch (historyError) {
+      console.warn('Failed to record status history:', historyError)
+    }
 
     // Save receipt if provided (for bank transfer)
     if (receipt_url && payment_method === 'bank_transfer') {
-      await supabaseAdmin.from('payment_receipts').insert({
-        booking_id: booking_id,
-        file_url: receipt_url,
-        file_name: `receipt_${finalTransactionId}`,
-        upload_date: new Date().toISOString()
-      })
+      try {
+        await supabaseAdmin.from('payment_receipts').insert({
+          booking_id: booking_id,
+          file_url: receipt_url,
+          file_name: `receipt_${finalTransactionId}`,
+          upload_date: new Date().toISOString()
+        })
+      } catch (receiptError) {
+        console.warn('Failed to save receipt:', receiptError)
+      }
     }
 
     // Log user activity
-    await supabaseAdmin.from('user_activities').insert({
-      user_id: userId,
-      activity_type: 'payment_submitted',
-      activity_data: { 
-        booking_id, 
-        payment_method, 
-        amount: totalAmount,
-        currency: finalCurrency,
-        transaction_id: finalTransactionId
-      },
-      activity_description: `Submitted ${payment_method} payment of ${totalAmount} ${finalCurrency}`
-    })
+    try {
+      await supabaseAdmin.from('user_activities').insert({
+        user_id: userId,
+        activity_type: 'payment_submitted',
+        activity_data: { 
+          booking_id, 
+          payment_method, 
+          amount: totalAmount,
+          currency: finalCurrency,
+          transaction_id: finalTransactionId
+        },
+        activity_description: `Submitted ${payment_method} payment of ${totalAmount} ${finalCurrency}`
+      })
+    } catch (activityError) {
+      console.warn('Failed to log activity:', activityError)
+    }
 
     // Notify admins
-    await supabaseAdmin.from('unified_notifications').insert({
-      recipient_type: 'admin',
-      recipient_id: '00000000-0000-0000-0000-000000000000',
-      type: 'payment_submitted',
-      title: 'Payment Submitted',
-      message: `${payment_method} payment of ${totalAmount} ${finalCurrency} submitted for booking. ${requiresVerification ? 'Requires verification.' : ''}`,
-      booking_id: booking_id
-    })
+    try {
+      await supabaseAdmin.from('unified_notifications').insert({
+        recipient_type: 'admin',
+        recipient_id: '00000000-0000-0000-0000-000000000000',
+        type: 'payment_submitted',
+        title: 'Payment Submitted',
+        message: `${payment_method} payment of ${totalAmount} ${finalCurrency} submitted for booking. ${requiresVerification ? 'Requires verification.' : ''}`,
+        booking_id: booking_id
+      })
+    } catch (notifyError) {
+      console.warn('Failed to notify admins:', notifyError)
+    }
 
     // =========================================================
-    // RESPONSE
+    // SUCCESS RESPONSE
     // =========================================================
 
     return jsonResponse({
@@ -281,7 +319,11 @@ Deno.serve(async (req) => {
     })
 
   } catch (error: any) {
+    // CATCH ALL unexpected errors - NEVER crash or return undefined
     console.error('Process payment error:', error)
-    return errorResponse(error.message || 'Internal server error', 500)
+    return errorResponse(
+      error.message || 'Internal server error. Please try again.',
+      500
+    )
   }
 })

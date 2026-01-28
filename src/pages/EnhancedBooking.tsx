@@ -314,9 +314,43 @@ const EnhancedBooking = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submissionLockRef = React.useRef(false);
 
+  // Validate multi-service details before submission
+  const validateServiceDetails = (): { valid: boolean; error?: string } => {
+    if (selectedServices.length === 0) {
+      return { valid: false, error: t('booking.pleaseSelectService') };
+    }
+
+    for (const serviceType of selectedServices) {
+      const details = serviceDetailsMap[serviceType];
+      
+      // Check if details exist and are not empty
+      if (!details || typeof details !== 'object') {
+        return { 
+          valid: false, 
+          error: t('booking.serviceDetailsMissing', { service: serviceType }) || `Please fill in details for ${serviceType}` 
+        };
+      }
+      
+      // Check for at least some user-entered data (excluding internal fields)
+      const hasData = Object.keys(details).some(key => 
+        !key.startsWith('_') && details[key] !== null && details[key] !== '' && details[key] !== undefined
+      );
+      
+      if (!hasData) {
+        return { 
+          valid: false, 
+          error: t('booking.serviceDetailsMissing', { service: serviceType }) || `Please fill in details for ${serviceType}` 
+        };
+      }
+    }
+
+    return { valid: true };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Prevent double submission
     if (submissionLockRef.current || isSubmitting) {
       toast({
         title: t('booking.submissionInProgress'),
@@ -326,6 +360,7 @@ const EnhancedBooking = () => {
       return;
     }
     
+    // Basic form validation
     if (!validateForm()) {
       trackForm('booking', 'abandoned', {
         selectedServices,
@@ -336,11 +371,23 @@ const EnhancedBooking = () => {
       return;
     }
 
+    // Multi-service details validation
+    const detailsValidation = validateServiceDetails();
+    if (!detailsValidation.valid) {
+      toast({
+        title: t('booking.incompleteDetails'),
+        description: detailsValidation.error,
+        variant: 'destructive'
+      });
+      return;
+    }
+
     submissionLockRef.current = true;
     setIsSubmitting(true);
     setIsSaving(true);
     
     try {
+      // Verify authentication
       const { data: authData } = await supabase.auth.getSession();
       if (!authData.session) {
         toast({
@@ -351,12 +398,16 @@ const EnhancedBooking = () => {
         return;
       }
 
-      // Create a combined booking for multiple services
+      // Build combined service details with proper structure
       const combinedServiceDetails = {
-        _multiService: true,
+        _multiService: selectedServices.length > 1,
         _selectedServices: selectedServices,
         ...selectedServices.reduce((acc, serviceType) => {
-          acc[`_${serviceType.toLowerCase()}_details`] = serviceDetailsMap[serviceType] || {};
+          const details = serviceDetailsMap[serviceType] || {};
+          // Only include if there's actual data
+          if (Object.keys(details).length > 0) {
+            acc[`_${serviceType.toLowerCase()}_details`] = details;
+          }
           return acc;
         }, {} as Record<string, any>)
       };
@@ -365,6 +416,7 @@ const EnhancedBooking = () => {
       const primaryService = selectedServices[0];
       const primaryServiceData = serviceDataMap[primaryService];
       
+      // Call Edge Function and await response
       const { data, error } = await supabase.functions.invoke('create-booking', {
         body: {
           service_type: primaryService,
@@ -378,6 +430,7 @@ const EnhancedBooking = () => {
         }
       });
 
+      // CRITICAL: Check for Edge Function errors
       if (error) {
         console.error('Create booking error:', error);
         toast({
@@ -388,12 +441,47 @@ const EnhancedBooking = () => {
         return;
       }
 
+      // CRITICAL: Validate response structure
+      if (!data) {
+        console.error('No data returned from create-booking');
+        toast({
+          title: t('error'),
+          description: t('booking.submitError'),
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // CRITICAL: Check response success flag
+      if (data.success !== true) {
+        console.error('Booking creation failed:', data.error || data.message);
+        toast({
+          title: t('error'),
+          description: data.error || data.message || t('booking.submitError'),
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // CRITICAL: Validate booking ID exists
+      if (!data.booking?.id) {
+        console.error('No booking ID returned');
+        toast({
+          title: t('error'),
+          description: t('booking.submitError'),
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // SUCCESS: Track form submission
       trackForm('booking', 'submitted', {
         selectedServices,
-        bookingId: data?.booking?.id,
+        bookingId: data.booking.id,
         isMultiService: selectedServices.length > 1
       });
 
+      // Delete draft if exists
       if (currentDraftId) {
         try {
           await deleteDraftBooking(currentDraftId);
@@ -402,11 +490,13 @@ const EnhancedBooking = () => {
         }
       }
 
+      // Show success message
       toast({
         title: t('booking.bookingSubmitted'),
         description: t('booking.awaitingAdminReview'),
       });
 
+      // SUCCESS: Navigate to confirmation page ONLY after successful response
       navigate('/enhanced-confirmation', {
         state: { 
           bookingData: {
@@ -415,8 +505,8 @@ const EnhancedBooking = () => {
             userInfo,
             totalPrice: 0,
             currency: 'USD',
-            status: 'under_review',
-            bookingId: data?.booking?.id,
+            status: data.booking.status || 'under_review',
+            bookingId: data.booking.id,
             _selectedServices: selectedServices,
             _serviceDetailsMap: serviceDetailsMap
           },
@@ -424,6 +514,7 @@ const EnhancedBooking = () => {
         }
       });
     } catch (error: any) {
+      // CATCH ALL errors - never silently fail
       console.error('Submit booking error:', error);
       toast({
         title: t('error'),
@@ -433,6 +524,7 @@ const EnhancedBooking = () => {
     } finally {
       setIsSaving(false);
       setIsSubmitting(false);
+      // Release submission lock after 3 seconds
       setTimeout(() => {
         submissionLockRef.current = false;
       }, 3000);
