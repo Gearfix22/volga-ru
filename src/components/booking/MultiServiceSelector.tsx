@@ -55,6 +55,10 @@ export const MultiServiceSelector: React.FC<MultiServiceSelectorProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [expandedServices, setExpandedServices] = useState<Set<string>>(new Set());
 
+  // Store callback ref to avoid infinite loops
+  const onServiceDataLoadedRef = React.useRef(onServiceDataLoaded);
+  onServiceDataLoadedRef.current = onServiceDataLoaded;
+
   useEffect(() => {
     const loadServices = async () => {
       try {
@@ -74,12 +78,12 @@ export const MultiServiceSelector: React.FC<MultiServiceSelectorProps> = ({
         setServices(serviceArray);
         
         // Notify parent about loaded service data for price calculations
-        if (onServiceDataLoaded) {
+        if (onServiceDataLoadedRef.current) {
           const dataMap: Record<string, ServiceData> = {};
           serviceArray.forEach(s => {
             dataMap[s.type] = s;
           });
-          onServiceDataLoaded(dataMap);
+          onServiceDataLoadedRef.current(dataMap);
         }
       } catch (err) {
         console.error('Failed to load services:', err);
@@ -90,7 +94,7 @@ export const MultiServiceSelector: React.FC<MultiServiceSelectorProps> = ({
     };
 
     loadServices();
-  }, [t, onServiceDataLoaded]);
+  }, [t]); // Removed onServiceDataLoaded to prevent infinite loops
 
   const toggleExpand = (serviceType: string) => {
     setExpandedServices(prev => {
