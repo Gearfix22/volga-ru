@@ -39,11 +39,15 @@ Deno.serve(async (req) => {
       return errorResponse('User authentication required', 401)
     }
     
-    // Parse URL
+    // Parse URL (support both direct calls and /functions/v1/<fn>/<id> routing)
     const url = new URL(req.url)
     const pathParts = url.pathname.split('/').filter(Boolean)
     const method = req.method
-    const bookingId = pathParts.length > 1 ? pathParts[1] : null
+
+    const fnIndex = pathParts.findIndex((p) => p === 'confirm-booking')
+    const bookingId = fnIndex >= 0 && pathParts.length > fnIndex + 1
+      ? pathParts[fnIndex + 1]
+      : null
 
     // =========================================================
     // POST /confirm-booking/:id - Confirm booking price
