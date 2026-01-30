@@ -37,9 +37,15 @@ const EnhancedBooking = () => {
   const [serviceDetailsMap, setServiceDetailsMap] = useState<Record<string, ServiceDetails>>({});
   const [serviceDataMap, setServiceDataMap] = useState<Record<string, ServiceData>>({});
   
-  // Callback to receive service data from MultiServiceSelector
+  // Use ref to track if service data has been loaded to prevent loops
+  const serviceDataLoadedRef = React.useRef(false);
+  
+  // Stable callback using ref pattern to prevent infinite loops
   const handleServiceDataLoaded = React.useCallback((dataMap: Record<string, ServiceData>) => {
-    setServiceDataMap(prev => ({ ...prev, ...dataMap }));
+    // Only update if we haven't loaded yet or if data actually changed
+    if (serviceDataLoadedRef.current) return;
+    serviceDataLoadedRef.current = true;
+    setServiceDataMap(dataMap);
   }, []);
   
   const [userInfo, setUserInfo] = useState<UserInfo>({
@@ -131,17 +137,20 @@ const EnhancedBooking = () => {
     }
   }, [serviceFromUrl, location.state]);
 
-  // Fetch service data when selected services change
+  // Fetch service data when selected services change - use useMemo for stable reference
+  const selectedServicesKey = React.useMemo(() => selectedServices.join(','), [selectedServices]);
+  
   useEffect(() => {
     const loadServiceData = async () => {
+      const missingTypes = selectedServices.filter(type => !serviceDataMap[type]);
+      if (missingTypes.length === 0) return;
+      
       const newDataMap: Record<string, ServiceData> = {};
       
-      for (const serviceType of selectedServices) {
-        if (!serviceDataMap[serviceType]) {
-          const service = await getServiceByType(serviceType);
-          if (service) {
-            newDataMap[serviceType] = service;
-          }
+      for (const serviceType of missingTypes) {
+        const service = await getServiceByType(serviceType);
+        if (service) {
+          newDataMap[serviceType] = service;
         }
       }
       
@@ -151,7 +160,8 @@ const EnhancedBooking = () => {
     };
     
     loadServiceData();
-  }, [selectedServices]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedServicesKey]); // Use stable key instead of array
 
   // Check for existing draft on mount
   useEffect(() => {
@@ -160,7 +170,12 @@ const EnhancedBooking = () => {
     }
   }, [user, location.state]);
 
-  // Auto-save functionality
+  // Auto-save functionality - use stable dependency keys
+  const serviceDetailsKey = React.useMemo(
+    () => JSON.stringify(Object.keys(serviceDetailsMap).sort()),
+    [serviceDetailsMap]
+  );
+  
   useEffect(() => {
     if (user && selectedServices.length > 0) {
       const timer = setTimeout(() => {
@@ -169,7 +184,8 @@ const EnhancedBooking = () => {
 
       return () => clearTimeout(timer);
     }
-  }, [selectedServices, serviceDetailsMap, userInfo, user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedServicesKey, serviceDetailsKey, user?.id]); // Use stable keys
 
   const checkForExistingDraft = async () => {
     try {

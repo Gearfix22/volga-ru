@@ -30,6 +30,9 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
   const { t, isRTL } = useLanguage();
   const details = serviceDetails as any;
   
+  // Create unique ID prefix for this form instance to avoid conflicts in multi-service mode
+  const idPrefix = React.useMemo(() => `${serviceType.toLowerCase()}-`, [serviceType]);
+  
   // Check if this is a legacy service type with hardcoded form
   const isLegacyType = LEGACY_SERVICE_TYPES.includes(serviceType);
 
@@ -48,15 +51,15 @@ export const ServiceDetailsForm: React.FC<ServiceDetailsFormProps> = ({
           className={`flex gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}
         >
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="one-way" id="one-way" />
-            <Label htmlFor="one-way" className="flex items-center gap-2 cursor-pointer">
+            <RadioGroupItem value="one-way" id={`${serviceType}-one-way`} />
+            <Label htmlFor={`${serviceType}-one-way`} className="flex items-center gap-2 cursor-pointer">
               <ArrowRight className="h-4 w-4" />
               {t('booking.oneWay')}
             </Label>
           </div>
           <div className="flex items-center space-x-2">
-            <RadioGroupItem value="round-trip" id="round-trip" />
-            <Label htmlFor="round-trip" className="flex items-center gap-2 cursor-pointer">
+            <RadioGroupItem value="round-trip" id={`${serviceType}-round-trip`} />
+            <Label htmlFor={`${serviceType}-round-trip`} className="flex items-center gap-2 cursor-pointer">
               <ArrowLeftRight className="h-4 w-4" />
               {t('booking.roundTrip')}
             </Label>
