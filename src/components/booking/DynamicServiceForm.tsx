@@ -82,6 +82,11 @@ export const DynamicServiceForm: React.FC<DynamicServiceFormProps> = ({
   const [error, setError] = useState<string | null>(null);
   const details = serviceDetails as Record<string, any>;
 
+  // Ref to track if defaults have been applied to prevent infinite loops
+  const defaultsAppliedRef = React.useRef(false);
+  const onUpdateDetailRef = React.useRef(onUpdateDetail);
+  onUpdateDetailRef.current = onUpdateDetail;
+  
   // Fetch service inputs from database
   useEffect(() => {
     const fetchInputs = async () => {
@@ -114,13 +119,6 @@ export const DynamicServiceForm: React.FC<DynamicServiceFormProps> = ({
           // Transform raw data to typed ServiceInput
           const transformedInputs = (data || []).map(transformServiceInput);
           setInputs(transformedInputs);
-          
-          // Set default values for inputs that have them
-          transformedInputs.forEach((input) => {
-            if (input.default_value && !details[input.input_key]) {
-              onUpdateDetail(input.input_key, input.default_value);
-            }
-          });
         }
       } catch (err) {
         console.error('Error:', err);
@@ -132,6 +130,21 @@ export const DynamicServiceForm: React.FC<DynamicServiceFormProps> = ({
 
     fetchInputs();
   }, [serviceId, serviceType]);
+  
+  // Apply default values ONCE after inputs load - separate effect to prevent loops
+  useEffect(() => {
+    if (inputs.length === 0 || defaultsAppliedRef.current) return;
+    
+    // Mark defaults as applied immediately to prevent re-runs
+    defaultsAppliedRef.current = true;
+    
+    // Apply defaults for inputs that need them
+    inputs.forEach((input) => {
+      if (input.default_value && !details[input.input_key]) {
+        onUpdateDetailRef.current(input.input_key, input.default_value);
+      }
+    });
+  }, [inputs, details]);
 
   // Get localized label
   const getLocalizedLabel = (input: ServiceInput): string => {

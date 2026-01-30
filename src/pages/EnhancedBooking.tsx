@@ -37,14 +37,16 @@ const EnhancedBooking = () => {
   const [serviceDetailsMap, setServiceDetailsMap] = useState<Record<string, ServiceDetails>>({});
   const [serviceDataMap, setServiceDataMap] = useState<Record<string, ServiceData>>({});
   
-  // Use ref to track if service data has been loaded to prevent loops
+  // Use refs to prevent infinite loops and track loaded state
   const serviceDataLoadedRef = React.useRef(false);
+  const lastServiceDataRef = React.useRef<string>('');
   
   // Stable callback using ref pattern to prevent infinite loops
   const handleServiceDataLoaded = React.useCallback((dataMap: Record<string, ServiceData>) => {
-    // Only update if we haven't loaded yet or if data actually changed
-    if (serviceDataLoadedRef.current) return;
-    serviceDataLoadedRef.current = true;
+    const dataKey = Object.keys(dataMap).sort().join(',');
+    // Only update if data actually changed
+    if (lastServiceDataRef.current === dataKey) return;
+    lastServiceDataRef.current = dataKey;
     setServiceDataMap(dataMap);
   }, []);
   
@@ -170,22 +172,29 @@ const EnhancedBooking = () => {
     }
   }, [user, location.state]);
 
-  // Auto-save functionality - use stable dependency keys
-  const serviceDetailsKey = React.useMemo(
-    () => JSON.stringify(Object.keys(serviceDetailsMap).sort()),
-    [serviceDetailsMap]
-  );
+  // Auto-save ref to prevent repeated saves
+  const lastAutoSaveRef = React.useRef<string>('');
   
   useEffect(() => {
-    if (user && selectedServices.length > 0) {
-      const timer = setTimeout(() => {
-        autoSave();
-      }, 5000);
+    if (!user || selectedServices.length === 0) return;
+    
+    // Create a stable fingerprint of current state
+    const stateFingerprint = JSON.stringify({
+      services: selectedServices.sort(),
+      details: Object.keys(serviceDetailsMap).sort()
+    });
+    
+    // Skip if nothing changed
+    if (lastAutoSaveRef.current === stateFingerprint) return;
+    
+    const timer = setTimeout(() => {
+      lastAutoSaveRef.current = stateFingerprint;
+      autoSave();
+    }, 5000);
 
-      return () => clearTimeout(timer);
-    }
+    return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedServicesKey, serviceDetailsKey, user?.id]); // Use stable keys
+  }, [selectedServicesKey, user?.id]); // Minimal stable dependencies
 
   const checkForExistingDraft = async () => {
     try {

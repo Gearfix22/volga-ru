@@ -58,6 +58,9 @@ export const MultiServiceSelector: React.FC<MultiServiceSelectorProps> = ({
   // Store callback ref to avoid infinite loops
   const onServiceDataLoadedRef = React.useRef(onServiceDataLoaded);
   onServiceDataLoadedRef.current = onServiceDataLoaded;
+  
+  // Track if data has been loaded to parent
+  const parentNotifiedRef = React.useRef(false);
 
   useEffect(() => {
     const loadServices = async () => {
@@ -77,8 +80,9 @@ export const MultiServiceSelector: React.FC<MultiServiceSelectorProps> = ({
         const serviceArray = Array.from(uniqueTypes.values());
         setServices(serviceArray);
         
-        // Notify parent about loaded service data for price calculations
-        if (onServiceDataLoadedRef.current) {
+        // Notify parent ONCE about loaded service data for price calculations
+        if (onServiceDataLoadedRef.current && !parentNotifiedRef.current) {
+          parentNotifiedRef.current = true;
           const dataMap: Record<string, ServiceData> = {};
           serviceArray.forEach(s => {
             dataMap[s.type] = s;
@@ -94,7 +98,7 @@ export const MultiServiceSelector: React.FC<MultiServiceSelectorProps> = ({
     };
 
     loadServices();
-  }, [t]); // Removed onServiceDataLoaded to prevent infinite loops
+  }, [t]); // Stable dependency - only translation function
 
   const toggleExpand = (serviceType: string) => {
     setExpandedServices(prev => {
