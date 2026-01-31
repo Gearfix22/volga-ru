@@ -1,35 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { ServiceCard } from './ServiceCard';
 import { Car, Building2, Ticket, UserCheck, LucideIcon, Loader2 } from 'lucide-react';
-import { getServices, ServiceData, getPricingText } from '@/services/servicesService';
+import { getPricingText } from '@/services/servicesService';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useServices } from '@/hooks/useServices';
 
 interface ServicesGridProps {
   activeCategory: string;
 }
 
-// Icon mapping
+// Icon mapping - extensible for new service types
 const ICONS: Record<string, LucideIcon> = {
   'Driver': Car,
+  'Transportation': Car,
   'Accommodation': Building2,
+  'Hotels': Building2,
   'Events': Ticket,
-  'Guide': UserCheck
+  'Events & Entertainment': Ticket,
+  'Guide': UserCheck,
+  'Custom Trips': UserCheck
 };
 
 export const ServicesGrid: React.FC<ServicesGridProps> = ({ activeCategory }) => {
   const { t, isRTL } = useLanguage();
-  const [services, setServices] = useState<ServiceData[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadServices = async () => {
-      setLoading(true);
-      const data = await getServices();
-      setServices(data);
-      setLoading(false);
-    };
-    loadServices();
-  }, []);
+  const { services, loading, error } = useServices();
 
   const filteredServices = activeCategory === 'all' 
     ? services 
@@ -39,6 +33,14 @@ export const ServicesGrid: React.FC<ServicesGridProps> = ({ activeCategory }) =>
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`text-center py-12 text-destructive ${isRTL ? 'rtl' : ''}`}>
+        {error}
       </div>
     );
   }
