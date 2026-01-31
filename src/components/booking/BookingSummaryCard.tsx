@@ -18,6 +18,7 @@ import {
   LucideIcon
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useServices } from '@/hooks/useServices';
 import type { ServiceDetails, UserInfo } from '@/types/booking';
 import type { ServiceData } from '@/services/servicesService';
 
@@ -29,20 +30,16 @@ interface BookingSummaryCardProps {
   showUserInfo?: boolean;
 }
 
-// Icon mapping by service type
+// Icon mapping by service type - extensible for new types
 const SERVICE_ICONS: Record<string, LucideIcon> = {
   'Driver': Car,
+  'Transportation': Car,
   'Accommodation': Building2,
+  'Hotels': Building2,
   'Events': Ticket,
-  'Guide': UserCheck
-};
-
-// Service titles for i18n
-const SERVICE_TITLES: Record<string, string> = {
-  'Driver': 'services.driver',
-  'Accommodation': 'services.accommodation',
-  'Events': 'services.events',
-  'Guide': 'services.guide'
+  'Events & Entertainment': Ticket,
+  'Guide': UserCheck,
+  'Custom Trips': UserCheck
 };
 
 export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
@@ -53,6 +50,7 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
   showUserInfo = false
 }) => {
   const { t } = useLanguage();
+  const { getServiceName } = useServices();
 
   if (selectedServices.length === 0) {
     return null;
@@ -211,9 +209,10 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
         <div className="space-y-3">
           {selectedServices.map((serviceType, index) => {
             const Icon = SERVICE_ICONS[serviceType] || Car;
-            const titleKey = SERVICE_TITLES[serviceType];
             const serviceData = serviceDataMap?.[serviceType];
             const basePrice = serviceData?.base_price;
+            // Use shared hook for consistent service name resolution
+            const serviceName = getServiceName(serviceType);
             
             return (
               <div key={serviceType}>
@@ -225,7 +224,7 @@ export const BookingSummaryCard: React.FC<BookingSummaryCardProps> = ({
                         <Icon className="h-4 w-4" />
                       </div>
                       <span className="font-medium text-foreground text-sm">
-                        {titleKey ? t(titleKey) : serviceType}
+                        {serviceName}
                       </span>
                     </div>
                     {basePrice && basePrice > 0 && (
